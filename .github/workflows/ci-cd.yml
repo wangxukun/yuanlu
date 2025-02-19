@@ -1,0 +1,66 @@
+name: CI Workflow
+
+on:
+  push:
+    branches:
+      - master # 推送到 `master` 时触发工作流（用于生产部署）
+      - develop # 推送到 `develop` 时触发工作流（用于开发环境部署）
+      - feature/* # 推送到功能分支时触发工作流（进行构建和测试）
+  pull_request:
+    branches:
+      - master # 拉取请求合并到 `master` 时触发工作流
+      - develop # 拉取请求合并到 `develop` 时触发工作流
+
+jobs:
+  # CI job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Lint code
+        run: npm run lint
+
+  # CD job for deployment to development environment
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop' # 只在 `develop` 分支触发
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Development Server
+        run: |
+          echo "Deploying to development server..."
+          # 添加实际部署命令，例如 SSH 或 Docker 部署
+          # 这里是一个简单示例：
+          # ssh user@dev-server 'bash deploy.sh'
+
+  # CD job for deployment to production environment
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master' # 只在 `master` 分支触发
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Production Server
+        run: |
+          echo "Deploying to production server..."
+          # 添加实际部署命令，例如 SSH 或 Docker 部署
+          # 这里是一个简单示例：
+          # ssh user@prod-server 'bash deploy.sh'
