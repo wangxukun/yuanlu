@@ -1,4 +1,5 @@
 name: CI Workflow
+# 这是工作流的名称，显示在 GitHub Actions 页面上
 
 on:
   push:
@@ -11,56 +12,127 @@ on:
       - master # 拉取请求合并到 `master` 时触发工作流
       - develop # 拉取请求合并到 `develop` 时触发工作流
 
+# 'on' 定义了触发工作流的事件。在这里我们定义了两个事件：
+# - `push`: 当有新的提交推送到 `master`、`develop` 或功能分支（`feature/*`）时触发。
+# - `pull_request`: 当有 PR 合并到 `master` 或 `develop` 分支时触发。
+
 jobs:
-  # CI job
+  # CI job: 构建和测试任务
   build:
     runs-on: ubuntu-latest
+    # 该 job 在最新的 Ubuntu 环境中运行
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        # 第一步是签出（checkout）代码，从 Git 仓库拉取源代码到工作目录
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "20"
+        # 设置 Node.js 环境，指定使用版本为 20此步骤确保后续的构建和测试都在该 Node.js 版本中运行。
 
       - name: Install dependencies
         run: npm install
+        # 运行 `npm install` 命令安装项目依赖
 
       - name: Run tests
         run: npm test
+        # 执行 `npm test` 命令来运行所有单元测试，确保代码的正确性。
 
       - name: Lint code
         run: npm run lint
+        # 运行 `npm run lint` 来检查代码质量，确保代码符合指定的编码规范。
 
   # CD job for deployment to development environment
   deploy-dev:
     runs-on: ubuntu-latest
     needs: build
+    # 这个 job 依赖于 `build` job 成功执行后再进行部署（通过 `needs: build` 实现）。
+
     if: github.ref == 'refs/heads/develop' # 只在 `develop` 分支触发
+    # 只有当推送到 `develop` 分支时才触发此部署任务。
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        # 与 `build` job 一样，这里也需要签出代码。
+
+      - name: Set up SSH key for development deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.A_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          A_SSH_PRIVATE_KEY: ${{ secrets.A_SSH_PRIVATE_KEY }}
+        # 设置 SSH 密钥，用于与阿里云 ECS 开发环境的服务器建立安全连接。
+        # - 创建 `~/.ssh` 目录。
+        # - 将 GitHub Secrets 中存储的私钥提取到 `id_rsa` 文件中，并设置文件权限。
+        # `A_SSH_PRIVATE_KEY` 是存储在 GitHub Secrets 中的私钥。
+
+      - name: Add ECS Development host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.A_ECS_HOST }} >> ~/.ssh/known_hosts
+        # 将阿里云 ECS 开发环境的主机公钥添加到 `known_hosts` 文件中，以便 SSH 连接时避免出现安全警告。
+        # `A_ECS_HOST` 是存储在 GitHub Secrets 中的开发环境 ECS 主机地址。
 
       - name: Deploy to Development Server
         run: |
           echo "Deploying to development server..."
-          # 添加实际部署命令，例如 SSH 或 Docker 部署
-          # 这里是一个简单示例：
-          # ssh user@dev-server 'bash deploy.sh'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "cd /var/www/ && git pull && npm install && npm run build && pm2 restart all"
+        env:
+          A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
+          A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
+        # 使用 SSH 连接到开发环境服务器，执行部署任务：
+        # 1. `cd /var/www/`: 切换到应用程序目录。
+        # 2. `git pull`: 拉取最新的代码。
+        # 3. `npm install`: 安装依赖。
+        # 4. `npm run build`: 构建项目。
+        # 5. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
 
   # CD job for deployment to production environment
   deploy-prod:
     runs-on: ubuntu-latest
     needs: build
+    # 同样依赖于 `build` job 成功执行后再进行生产环境部署。
+
     if: github.ref == 'refs/heads/master' # 只在 `master` 分支触发
+    # 只有当推送到 `master` 分支时才触发此部署任务。
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        # 签出代码。
+
+      - name: Set up SSH key for production deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.B_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          B_SSH_PRIVATE_KEY: ${{ secrets.B_SSH_PRIVATE_KEY }}
+        # 设置 SSH 密钥，用于与阿里云 ECS 生产环境的服务器建立安全连接。
+        # 这里的私钥 `B_SSH_PRIVATE_KEY` 存储在 GitHub Secrets 中，确保私钥文件的权限设置为 `600`。
+
+      - name: Add ECS Production host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.B_ECS_HOST }} >> ~/.ssh/known_hosts
+        # 将阿里云 ECS 生产环境的主机公钥添加到 `known_hosts` 文件中，以便 SSH 连接时避免出现安全警告。
+        # `B_ECS_HOST` 是存储在 GitHub Secrets 中的生产环境 ECS 主机地址。
 
       - name: Deploy to Production Server
         run: |
           echo "Deploying to production server..."
-          # 添加实际部署命令，例如 SSH 或 Docker 部署
-          # 这里是一个简单示例：
-          # ssh user@prod-server 'bash deploy.sh'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/ && git pull && npm install && npm run build && pm2 restart all"
+        env:
+          B_ECS_HOST: ${{ secrets.B_ECS_HOST }}
+          B_SSH_USERNAME: ${{ secrets.B_SSH_USERNAME }}
+        # 使用 SSH 连接到生产环境服务器，执行与开发环境部署类似的操作：
+        # 1. `cd /path/to/your/app`: 切换到应用程序目录。
+        # 2. `git pull`: 拉取最新的代码。
+        # 3. `npm install`: 安装依赖。
+        # 4. `npm run build`: 构建项目。
+        # 5. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
