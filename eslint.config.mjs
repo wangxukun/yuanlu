@@ -3,13 +3,6 @@ import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import eslintConfigPrettier from "eslint-config-prettier";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const compat = new FlatCompat({
-  // import.meta.dirname is available after Node.js v20.11.0
-  baseDirectory: import.meta.dirname,
-  recommendedConfig: pluginJs.configs.recommended,
-});
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -44,9 +37,6 @@ export default [
       "react/jsx-uses-react": "off", // 关闭旧规则
     },
   },
-  ...compat.config({
-    extends: ["eslint:recommended", "next"],
-  }),
   // Prettier 兼容（必须放在最后）
   eslintConfigPrettier,
 ];
