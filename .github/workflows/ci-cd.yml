@@ -81,12 +81,12 @@ jobs:
       - name: Deploy to Development Server
         run: |
           echo "Deploying to development server..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "cd /var/www/ && git pull && npm install && npm run build && pm2 restart all"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout develop && npm install && npm run build && pm2 restart all"
         env:
           A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
           A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
         # 使用 SSH 连接到开发环境服务器，执行部署任务：
-        # 1. `cd /var/www/`: 切换到应用程序目录。
+        # 1. `cd /var/www/yuanlu/`: 切换到应用程序目录。
         # 2. `git pull`: 拉取最新的代码。
         # 3. `npm install`: 安装依赖。
         # 4. `npm run build`: 构建项目。
@@ -126,7 +126,7 @@ jobs:
       - name: Deploy to Production Server
         run: |
           echo "Deploying to production server..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/ && git pull && npm install && npm run build && pm2 restart all"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout master && npm install && npm run build && pm2 restart all"
         env:
           B_ECS_HOST: ${{ secrets.B_ECS_HOST }}
           B_SSH_USERNAME: ${{ secrets.B_SSH_USERNAME }}
