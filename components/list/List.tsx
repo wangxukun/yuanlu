@@ -36,7 +36,7 @@ export default function List({ title, items }: ListProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-7xl">
+    <div className="bg-gray-50 rounded-xl p-6 w-full max-w-7xl">
       {/* 标题行 */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-bold text-slate-500">{title}</h2>
@@ -71,7 +71,7 @@ export default function List({ title, items }: ListProps) {
             key={index}
             role="button"
             onClick={() => handleItemClick(item.id)}
-            className="group relative border border-gray-100 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+            className="group relative bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
           >
             {/* 图片容器 */}
             <div className="relative h-48 w-48 mb-4 rounded-md overflow-hidden">

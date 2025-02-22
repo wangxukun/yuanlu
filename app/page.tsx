@@ -1,6 +1,5 @@
 // 在你的页面组件中
 import List from "@/components/list/List";
-import Image from "next/image";
 
 const sampleItems = [
   {
@@ -70,16 +69,8 @@ const sampleItems = [
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <header className="row-start-1 flex gap-6 flex-wrap items-center justify-center">
-        <Image
-          src="/static/images/logo.png"
-          alt="远路漫漫"
-          width={80}
-          height={80}
-        />
-      </header>
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+    <div className="flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <main className="flex flex-col gap-8 row-start-2 items-center justify-items-center sm:items-start">
         <List title="热门节目" items={sampleItems} />
         <List title="会员专享" items={sampleItems} />
         <List title="最近更新" items={sampleItems} />
