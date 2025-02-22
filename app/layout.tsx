@@ -31,7 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        <div className="bg-white pt-16 min-h-screen">
+        <div className="bg-white pt-10 min-h-screen">
           {/* 这里的 pt-16 是为了给 Header 留出空间 */}
           {children}
         </div>
