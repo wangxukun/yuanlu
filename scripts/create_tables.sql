@@ -8,22 +8,21 @@ CREATE DATABASE yuanlu;
 -- 该表存储系统用户的基本信息
 CREATE TABLE "User" (
     UserID SERIAL PRIMARY KEY, -- 用户唯一标识符，自增主键
-    Username VARCHAR(255) NOT NULL UNIQUE, -- 用户名，唯一且不能为空
+    Phone VARCHAR(15) NOT NULL UNIQUE, -- 手机号码，可选且唯一
     Password VARCHAR(255) NOT NULL, -- 密码哈希值，不能为空
-    Email VARCHAR(255) NOT NULL UNIQUE, -- 邮箱地址，唯一且不能为空
-    Phone VARCHAR(15) UNIQUE, -- 手机号码，可选且唯一
     Role VARCHAR(50) DEFAULT '普通用户', -- 用户角色，默认为普通用户
     LanguagePreference VARCHAR(50), -- 用户的语言偏好
     RegistrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 用户注册时间，默认为当前时间
     LastLoginDate TIMESTAMP -- 用户最后登录时间
 );
 
--- 创建用户扩展信息表 (UserProfile)
+-- 创建用户扩展信息表 (User_Profile)
 -- 该表存储用户的扩展信息，与 User 表一对一关联
-CREATE TABLE UserProfile (
+CREATE TABLE User_Profile (
     UserID INT PRIMARY KEY REFERENCES "User"(UserID) ON DELETE CASCADE, -- 用户ID，外键关联到 User 表，主键
     Nickname VARCHAR(255), -- 用户昵称，可选
     AvatarUrl VARCHAR(255) DEFAULT 'default_avatar_url', -- 用户头像 URL，默认为系统默认头像
+    Email VARCHAR(255), -- 邮箱地址，唯一且不能为空
     Bio TEXT, -- 用户个人简介，可选
     LearnLevel VARCHAR(50) -- 用户学习水平（初、中、高），可选
 );
@@ -54,9 +53,9 @@ CREATE TABLE Episode (
     Status VARCHAR(50) DEFAULT '已发布' -- 播客状态（未发布、已发布），默认为已发布
 );
 
--- 创建收听历史表 (ListeningHistory)
+-- 创建收听历史表 (Listening_History)
 -- 该表存储用户的播客收听记录
-CREATE TABLE ListeningHistory (
+CREATE TABLE Listening_History (
     HistoryID SERIAL PRIMARY KEY, -- 收听历史唯一标识符，自增主键
     UserID INT REFERENCES "User"(UserID) ON DELETE CASCADE, -- 用户 ID，外键关联到 User 表
     PodcastID INT REFERENCES Episode(EpisodeId) ON DELETE CASCADE, -- 播客 ID，外键关联到 Episode 表
@@ -122,18 +121,18 @@ CREATE TABLE Quizzes (
     CorrectAnswer VARCHAR(255) NOT NULL -- 正确答案
 );
 
--- 创建学习小组表 (StudyGroups)
+-- 创建学习小组表 (Study_Groups)
 -- 该表存储用户创建的学习小组
-CREATE TABLE StudyGroups (
+CREATE TABLE Study_Groups (
     GroupID SERIAL PRIMARY KEY, -- 学习小组唯一标识符，自增主键
     GroupName VARCHAR(255) NOT NULL, -- 小组名称
     CreatorID INT REFERENCES "User"(UserID) ON DELETE CASCADE, -- 创建者 ID，外键关联到 User 表
     CreationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 创建时间，默认为当前时间
 );
 
--- 创建讨论区表 (DiscussionThreads)
+-- 创建讨论区表 (Discussion_Threads)
 -- 该表存储用户对播客的讨论帖子
-CREATE TABLE DiscussionThreads (
+CREATE TABLE Discussion_Threads (
     ThreadID SERIAL PRIMARY KEY, -- 讨论帖子唯一标识符，自增主键
     PodcastID INT REFERENCES Episode(EpisodeId) ON DELETE CASCADE, -- 播客 ID，外键关联到 Episode 表
     UserID INT REFERENCES "User"(UserID) ON DELETE CASCADE, -- 用户 ID，外键关联到 User 表
@@ -171,18 +170,18 @@ CREATE TABLE Subscriptions (
     EndDate TIMESTAMP -- 订阅结束时间
 );
 
--- 创建学习路径表 (LearningPaths)
+-- 创建学习路径表 (Learning_Paths)
 -- 该表存储用户的学习路径
-CREATE TABLE LearningPaths (
+CREATE TABLE Learning_Paths (
     PathID SERIAL PRIMARY KEY, -- 学习路径唯一标识符，自增主键
     UserID INT REFERENCES "User"(UserID) ON DELETE CASCADE, -- 用户 ID，外键关联到 User 表
     PathName VARCHAR(255) NOT NULL, -- 学习路径名称
     CreationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 创建时间，默认为当前时间
 );
 
--- 创建语音识别表 (SpeechRecognition)
+-- 创建语音识别表 (Speech_Recognition)
 -- 该表存储用户的语音识别记录
-CREATE TABLE SpeechRecognition (
+CREATE TABLE Speech_Recognition (
     RecognitionID SERIAL PRIMARY KEY, -- 语音识别唯一标识符，自增主键
     UserID INT REFERENCES "User"(UserID) ON DELETE CASCADE, -- 用户 ID，外键关联到 User 表
     PodcastID INT REFERENCES Episode(EpisodeId) ON DELETE CASCADE, -- 播客 ID，外键关联到 Episode 表

@@ -149,7 +149,8 @@ export default function Header() {
               <span className="hidden sm:inline text-slate-600">搜索</span>
             </button>
 
-            <button
+            <Link
+              href="/auth/register"
               className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors hover:drop-shadow-md"
               onClick={handleLogin} // 模拟登录
             >
@@ -168,7 +169,7 @@ export default function Header() {
               <span className="text-slate-500 hidden sm:inline">
                 {isLoggedIn ? userName : "登录"}
               </span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -188,7 +189,7 @@ export default function Header() {
           <div className="fixed top-0 left-0 h-full w-3/5 bg-white shadow-lg">
             {/* 用户信息组件 */}
             <Link
-              href={isLoggedIn ? "/user-center" : "/login"}
+              href={isLoggedIn ? "/user-center" : "/auth/register"}
               passHref
               onClick={closeMenu}
             >
