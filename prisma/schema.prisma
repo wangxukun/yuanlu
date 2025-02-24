@@ -214,3 +214,11 @@ model vocabulary {
   addeddate    DateTime? @default(now()) @db.Timestamp(6)
   User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
+
+model captcha {
+  id        String   @id @default(cuid()) // 唯一标识符，使用 cuid() 函数生成默认值
+  code      String // 用户看到并输入的验证码字符串
+  answer    String // 验证码的答案（用于验证用户输入是否正确）
+  expiresAt DateTime // 验证码过期时间，用于判断验证码是否有效
+  createdAt DateTime @default(now()) // 创建时间，默认值为当前时间
+}
