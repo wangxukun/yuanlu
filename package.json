@@ -7,7 +7,7 @@
     "build": "next build",
     "test": "echo Test not enabled",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint --fix",
     "prepare": "husky"
   },
   "dependencies": {
