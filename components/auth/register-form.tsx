@@ -6,8 +6,18 @@ import { Button } from "@/components/button";
 import { createUser } from "@/app/lib/actions";
 import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
+import Captcha from "@/components/captcha";
+import { useState } from "react";
 
 export default function Form() {
+  // 图片验证码是否验证
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+
+  // 处理验证码验证成功
+  const handleCaptchaVerify = () => {
+    setIsCaptchaVerified(true);
+  };
+
   return (
     <form action={createUser} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
@@ -36,6 +46,18 @@ export default function Form() {
               <PhoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
+          <div>
+            <label
+              className="mb-3 mt-5 block text-xs font-medium text-gray-900"
+              htmlFor="captcha"
+            >
+              图片验证码
+            </label>
+            <div className="relative">
+              <Captcha onVerify={handleCaptchaVerify} />
+              <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+          </div>
           <div className="mt-4">
             <label
               className="mb-3 mt-5 block text-xs font-medium text-gray-900"
@@ -55,8 +77,12 @@ export default function Form() {
               />
               <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
               <a
-                href="#"
-                className="absolute right-3 top-1/2 h-[18px] w-[110] -translate-y-1/2 text-sm text-cyan-700 peer-focus:text-gray-900 z-50"
+                href="/"
+                className={`absolute right-3 top-1/2 h-[18px] w-[110] -translate-y-1/2 text-sm text-cyan-700 peer-focus:text-gray-900 z-50 ${
+                  !isCaptchaVerified
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }`}
               >
                 获取验证码
               </a>

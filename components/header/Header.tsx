@@ -19,7 +19,7 @@ export default function Header() {
   // 模拟用户登录状态
   const handleLogin = () => {
     setIsLoggedIn(true);
-    setUserName("用户名称"); // 模拟设置用户名
+    setUserName("已登录"); // 模拟设置用户名
   };
 
   return (
@@ -150,7 +150,7 @@ export default function Header() {
             </button>
 
             <Link
-              href="/auth/register"
+              href="/auth/login"
               className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors hover:drop-shadow-md"
               onClick={handleLogin} // 模拟登录
             >

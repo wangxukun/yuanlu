@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline"; // 引入 Heroicons
 
 export default function Captcha({
   onVerify,
@@ -7,7 +8,8 @@ export default function Captcha({
 }) {
   const [captchaId, setCaptchaId] = useState("");
   const [answer, setAnswer] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false); // 使用布尔值表示是否验证失败
+  const [success, setSuccess] = useState(false); // 使用布尔值表示是否验证成功
   const [imageUrl, setImageUrl] = useState<string | null>(null); // 存储图片的 Blob URL
 
   // 初始化加载验证码图片
@@ -40,7 +42,7 @@ export default function Captcha({
       const url = URL.createObjectURL(blob);
       setImageUrl(url);
     } else {
-      setError("无法加载验证码");
+      setError(true); // 加载失败时显示错误图标
     }
   };
 
@@ -52,42 +54,55 @@ export default function Captcha({
     });
 
     if (res.ok) {
+      setSuccess(true); // 验证成功
+      setError(false); // 清除错误状态
       onVerify(captchaId); // 将验证码 ID 传递给父组件
     } else {
-      setError("验证码错误");
+      setError(true); // 验证失败
+      setSuccess(false); // 清除成功状态
       await refreshCaptcha();
     }
   };
 
+  const handleBlur = () => {
+    handleVerify();
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        {/*动态设置图片的src*/}
+    <div className="flex justify-between items-center space-x-4">
+      {/* 验证码输入框在左边 */}
+      <div className="flex flex-col space-y-2">
+        <input
+          type="text"
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          onBlur={handleBlur}
+          placeholder="输入验证码"
+          className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
+        />
+      </div>
+      {/* 显示成功或错误图标 */}
+      {success && (
+        <CheckCircleIcon className="w-6 h-6 text-green-500" /> // 成功图标
+      )}
+      {error && (
+        <XCircleIcon className="w-6 h-6 text-red-500" /> // 错误图标
+      )}
+      {/* 验证码图片在右边 */}
+      <div className="flex items-center">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt="验证码"
             onClick={refreshCaptcha}
-            className="cursor-pointer"
+            className="cursor-pointer max-w-[80px] max-h-[80px]"
           />
         ) : (
-          <div className="w-[200px] h-[100px] bg-gray-200 flex items-center justify-center">
+          <div className="max-w-[80px] max-h-[80px] bg-gray-200 flex items-center justify-center">
             加载中...
           </div>
         )}
-
-        <input
-          type="text"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="输入验证码"
-          className="p-2 border"
-        />
       </div>
-      {error && <p className="text-red-500">{error}</p>}
-      <button onClick={handleVerify} className="bg-blue-500 text-white p-2">
-        验证
-      </button>
     </div>
   );
 }

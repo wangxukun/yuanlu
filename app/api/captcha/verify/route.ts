@@ -19,11 +19,14 @@ export async function POST(req: Request) {
       where: { id: captchaId },
     });
 
+    // 验证码不存在或已过期
     if (!captcha || captcha.expiresAt < new Date()) {
       return NextResponse.json({ error: "验证码已过期" }, { status: 400 });
     }
 
-    if (captcha.answer !== answer) {
+    // 验证答案
+    // 不区分大小写
+    if (captcha.answer !== answer.toUpperCase()) {
       return NextResponse.json({ error: "验证码错误" }, { status: 400 });
     }
 
