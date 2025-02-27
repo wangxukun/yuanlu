@@ -10,12 +10,46 @@ import Captcha from "@/components/captcha";
 import { useState } from "react";
 
 export default function Form() {
-  // 图片验证码是否验证
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  // 处理验证码验证成功
   const handleCaptchaVerify = () => {
     setIsCaptchaVerified(true);
+  };
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^1[3456789]\d{9}$/; // 中国手机号码正则表达式
+    if (!phoneRegex.test(phone)) {
+      setPhoneError("请输入有效的手机号码");
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const validatePassword = (password: string) => {
+    // 密码规则：8-16位，包含数字、字母、符号中的至少两种
+    const passwordRegex =
+      /^(?:(?=.*\d)(?=.*[A-Za-z])|(?=.*\d)(?=.*[@$!%*#?&])|(?=.*[A-Za-z])(?=.*[@$!%*#?&]))[A-Za-z\d@$!%*#?&]{8,16}$/;
+    if (!passwordRegex.test(password)) {
+      setPasswordError("密码必须在8-16位之间，由数字、英文、符号中的两种");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPhone(value);
+    validatePhone(value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    validatePassword(value);
   };
 
   return (
@@ -42,9 +76,14 @@ export default function Form() {
                 name="phone"
                 placeholder="请输入手机号"
                 required
+                value={phone}
+                onChange={handlePhoneChange}
               />
               <PhoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            {phoneError && (
+              <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+            )}
           </div>
           <div>
             <label
@@ -103,9 +142,14 @@ export default function Form() {
                 name="password"
                 placeholder="8-16位，数字、英文、符号中的两种"
                 required
+                value={password}
+                onChange={handlePasswordChange}
               />
               <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            {passwordError && (
+              <p className="text-red-500 text-xs mt-1">{passwordError}</p>
+            )}
           </div>
         </div>
         <div className="mt-4 text-xs">
