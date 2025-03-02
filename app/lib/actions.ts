@@ -34,7 +34,6 @@ export async function userRegister(prevState: State, formData: FormData) {
   const { phone, auth_code, password } = validatedFields.data;
   // 验证短信验证码
   if (await isSmsVerified(phone, auth_code)) {
-    // try {
     // 调用注册 API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/auth/register`, {
@@ -54,15 +53,6 @@ export async function userRegister(prevState: State, formData: FormData) {
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
     revalidatePath("/auth/register");
     redirect("/auth/login");
-    // return {
-    //   message: '用户注册成功',
-    // };
-    // } catch (error) {
-    //   console.error("用户注册时出错:", error);
-    //   return {
-    //     message: '服务器内部错误，用户注册失败。',
-    //   };
-    // }
   } else {
     return {
       errors: {

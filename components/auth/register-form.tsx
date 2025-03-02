@@ -35,15 +35,6 @@ export default function Form() {
   };
   const [state, formAction] = useActionState(userRegister, initialState);
 
-  // 处理图片验证码验证成功回调函数
-  // const handleCaptchaVerify = (captchaId: string) => {
-  //   if(authCodeError.length > 0){
-  //     setIsCaptchaVerified(false); // 设置验证码验证状态为通过
-  //   }else {
-  //     setIsCaptchaVerified(true);
-  //   }
-  // };
-
   // 验证手机号格式
   const validatePhone = (phone: string) => {
     // 定义中国手机号码的正则表达式
@@ -258,10 +249,6 @@ export default function Form() {
                   {error}
                 </p>
               ))}
-            {/*短信验证错误提示*/}
-            {/*{authCodeError && (*/}
-            {/*    <p className="text-red-500 text-xs mt-1">{authCodeError}</p>*/}
-            {/*)}*/}
           </div>
           {/* 密码输入框 */}
           <div>
@@ -341,6 +328,16 @@ export default function Form() {
             aria-live="polite"
             aria-atomic="true"
           ></div>
+        </div>
+        <h1 className="text-red-500 text-center text-xs">
+          {state.message} {state.errors?.phone}
+        </h1>
+        <div className="mt-1 text-right text-sm text-gray-500">
+          已有账号？ {/* 文本 */}
+          <Link href="/auth/login">
+            {/* 链接 */}
+            <span className="text-cyan-700">立即登录</span> {/* 文本 */}
+          </Link>
         </div>
       </div>
     </form>
