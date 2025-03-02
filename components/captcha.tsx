@@ -3,8 +3,12 @@ import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline"; // �
 
 export default function Captcha({
   onVerify,
+  setCaptchaError,
+  setIsCaptchaVerified,
 }: {
   onVerify: (captchaId: string) => void;
+  setCaptchaError: (captchaError: string) => void;
+  setIsCaptchaVerified: (isCaptchaVerified: boolean) => void;
 }) {
   const [captchaId, setCaptchaId] = useState("");
   const [answer, setAnswer] = useState("");
@@ -27,12 +31,13 @@ export default function Captcha({
   }, [imageUrl]);
 
   const refreshCaptcha = async () => {
-    const res = await fetch("/api/captcha/generate", {
+    const res = await fetch("/api/auth/captcha/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}), // 如果需要传递参数，可以在这里添加
     });
 
+    // 如果请求成功（生成图片验证码），获取验证码 ID
     if (res.ok) {
       const captchaId = res.headers.get("X-Captcha-Id");
       setCaptchaId(captchaId || "");
@@ -47,19 +52,24 @@ export default function Captcha({
   };
 
   const handleVerify = async () => {
-    const res = await fetch("/api/captcha/verify", {
+    const res = await fetch("/api/auth/captcha/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ captchaId, answer }),
     });
 
+    // 如果验证成功，将验证码 ID 传递给父组件
     if (res.ok) {
       setSuccess(true); // 验证成功
       setError(false); // 清除错误状态
       onVerify(captchaId); // 将验证码 ID 传递给父组件
+      setCaptchaError(""); // 清除错误信息
+      setIsCaptchaVerified(true);
     } else {
       setError(true); // 验证失败
       setSuccess(false); // 清除成功状态
+      setCaptchaError("请先完成验证码验证"); // 设置错误信息
+      setIsCaptchaVerified(false);
       await refreshCaptcha();
     }
   };
@@ -77,6 +87,7 @@ export default function Captcha({
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           onBlur={handleBlur}
+          required
           placeholder="输入验证码"
           className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
         />

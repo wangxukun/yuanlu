@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
-  const { phone, code } = await request.json();
+  const { phone, auth_code } = await request.json();
+  console.log("sms-phone:", phone);
+  console.log("sms-auth_code:", auth_code);
 
-  if (!phone || !code) {
+  if (!phone || !auth_code) {
     return NextResponse.json(
       { success: false, message: "手机号和验证码不能为空" },
       { status: 400 },
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
 
   try {
     // 查询验证码
-    const smsCode = await prisma.smsCode.findFirst({
+    const table_sms_code = await prisma.sms_code.findFirst({
       where: {
         phone,
         createdAt: {
@@ -26,14 +28,15 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!smsCode) {
+    console.log("table_sms_code:", table_sms_code);
+    if (!table_sms_code) {
       return NextResponse.json(
         { success: false, message: "验证码已过期或不存在" },
         { status: 400 },
       );
     }
 
-    if (smsCode.code !== code) {
+    if (table_sms_code.code !== auth_code) {
       return NextResponse.json(
         { success: false, message: "验证码错误" },
         { status: 400 },
@@ -41,11 +44,11 @@ export async function POST(request: Request) {
     }
 
     // 验证通过后删除验证码
-    await prisma.smsCode.deleteMany({
+    await prisma.sms_code.deleteMany({
       where: { phone },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("验证码校验错误:", error);
     return NextResponse.json(

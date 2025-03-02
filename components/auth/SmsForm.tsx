@@ -3,17 +3,33 @@
 
 import { useState } from "react";
 
+/**
+ * SMS验证码发送表单组件
+ *
+ * 该组件允许用户输入手机号码，并请求发送验证码短信
+ * 它包括手机号输入框和发送验证码按钮，按钮在倒计时结束前会禁用
+ */
 export default function SmsForm() {
-  const [phone, setPhone] = useState("");
-  const [countdown, setCountdown] = useState(0);
+  const [phone, setPhone] = useState(""); // 状态管理手机号码
+  const [countdown, setCountdown] = useState(0); // 状态管理发送验证码按钮的倒计时
 
-  // 校验手机号格式
+  /**
+   * 校验手机号格式
+   *
+   * @param phone 手机号码字符串
+   * @returns 返回布尔值，表示手机号格式是否正确
+   */
   const validatePhone = (phone: string) => {
     const regex = /^1[3-9]\d{9}$/;
     return regex.test(phone);
   };
 
-  // 发送验证码请求
+  /**
+   * 发送验证码请求
+   *
+   * 此函数首先校验手机号格式，然后通过fetch API发送请求以获取验证码
+   * 请求成功后，开始60秒倒计时，在此期间按钮将被禁用
+   */
   const sendVerificationCode = async () => {
     if (!validatePhone(phone)) {
       alert("请输入有效的手机号码");

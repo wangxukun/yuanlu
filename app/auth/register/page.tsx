@@ -1,6 +1,6 @@
 // server page
-// import Form from "@/components/auth/register-form";
-import Form from "@/components/auth/SmsForm";
+import Form from "@/components/auth/register-form";
+// import Form from "@/components/auth/SmsForm";
 
 export default async function Page() {
   return (
