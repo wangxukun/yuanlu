@@ -16,6 +16,7 @@ export type State = {
 
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
+const UserLogin = registerFormSchema.omit({ auth_code: true, isAgree: true });
 
 export async function userRegister(prevState: State, formData: FormData) {
   const rawFormData = {
@@ -79,26 +80,44 @@ export const isSmsVerified = async (phone: string, auth_code: string) => {
   return res.ok;
 };
 
-// 定义检查手机号是否已存在的函数
-// export const checkPhoneExists = async (phone: string): Promise<boolean> => {
-//   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-//   const res = await fetch(`${baseUrl}/api/auth/check-phone-exists`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ phone }),
-//   });
-//   if (res.ok) {
-//     const data = await res.json();
-//     return data.exists; // 假设返回的 JSON 对象包含一个 `exists` 字段
-//   } else {
-//     return false;
-//   }
-// };
-
-export async function login(formData: FormData) {
+/**
+ * 用户登录
+ * @param prevState
+ * @param formData
+ */
+export async function login(prevState: State, formData: FormData) {
   const rawFormData = {
     phone: formData.get("phone"),
-    authCode: formData.get("password"),
+    password: formData.get("password"),
   };
+  const validatedFields = UserLogin.safeParse(rawFormData);
   console.log(rawFormData);
+  console.log(validatedFields);
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "用户登录失败",
+    };
+  }
+  const { phone, password } = validatedFields.data;
+  // 调用注册 API
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return {
+      errors: {
+        phone: [data.message || "登录失败"],
+      },
+      message: "用户登录失败",
+    };
+  }
+  // 注册成功后，重定向到 /auth/register-success 页面
+  // 更新成功后，刷新缓存并重定向到 /auth/login 页面
+  revalidatePath("/auth/login");
+  redirect("/");
 }
