@@ -50,9 +50,10 @@ export async function userRegister(prevState: State, formData: FormData) {
         message: "用户注册失败",
       };
     }
+    // 注册成功后，重定向到 /auth/register-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
     revalidatePath("/auth/register");
-    redirect("/auth/login");
+    redirect("/auth/register-success");
   } else {
     return {
       errors: {
@@ -79,20 +80,20 @@ export const isSmsVerified = async (phone: string, auth_code: string) => {
 };
 
 // 定义检查手机号是否已存在的函数
-export const checkPhoneExists = async (phone: string): Promise<boolean> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/auth/check-phone-exists`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone }),
-  });
-  if (res.ok) {
-    const data = await res.json();
-    return data.exists; // 假设返回的 JSON 对象包含一个 `exists` 字段
-  } else {
-    return false;
-  }
-};
+// export const checkPhoneExists = async (phone: string): Promise<boolean> => {
+//   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+//   const res = await fetch(`${baseUrl}/api/auth/check-phone-exists`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ phone }),
+//   });
+//   if (res.ok) {
+//     const data = await res.json();
+//     return data.exists; // 假设返回的 JSON 对象包含一个 `exists` 字段
+//   } else {
+//     return false;
+//   }
+// };
 
 export async function login(formData: FormData) {
   const rawFormData = {

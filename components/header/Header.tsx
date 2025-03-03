@@ -95,7 +95,7 @@ export default function Header() {
               className="rounded-full"
             />
             <span className="text-xl text-slate-500 font-bold leading-tight">
-              远路漫漫播客
+              远路播客
             </span>
           </Link>
 

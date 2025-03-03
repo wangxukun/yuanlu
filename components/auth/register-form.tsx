@@ -7,10 +7,125 @@ import Link from "next/link"; // 导入 Next.js 的 Link 组件，用于导航
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件
 import { ArrowRightIcon } from "@heroicons/react/20/solid"; // 导入 Heroicons 图标组件
 import { Button } from "@/components/button"; // 导入自定义的 Button 组件
-import { userRegister, State, checkPhoneExists } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
+import { userRegister, State } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
 import { lusitana } from "@/components/fonts"; // 导入自定义字体 lusitana
 import Captcha from "@/components/captcha"; // 导入 Captcha 组件，用于验证码验证
 import { useActionState, useState } from "react"; // 导入 React 的 useState 钩子，用于状态管理
+
+// 用户协议内容
+const userAgreementContent = `
+  <div class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-500">用户协议（User Agreement）</h2>
+    <p class="text-sm text-gray-500">生效日期：2025年3月3日</p>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">1. 协议接受</h3>
+      <p class="text-sm text-gray-500">
+        用户注册或使用本网站服务前，需仔细阅读并同意本协议。若不同意条款，请停止使用服务。
+      </p>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">2. 服务内容</h3>
+      <p class="text-sm text-gray-500">
+        本网站提供英语学习播客、文本资料、录音工具及社区互动功能（如评论、笔记分享）。用户需自行负责上传内容的合法性及原创性。
+      </p>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">3. 用户行为规范</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li>禁止发布违法、侵权或不实信息；</li>
+        <li>不得干扰网站正常运营或 bypass 安全措施；</li>
+        <li>用户生成内容（UGC）的知识产权归属用户，但本网站有权非独占性使用相关内容。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">4. 免责声明</h3>
+      <p class="text-sm text-gray-500">
+        本网站对播客内容的准确性、完整性不承担法律责任，用户需自行判断信息适用性。
+      </p>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">5. 协议修改与终止</h3>
+      <p class="text-sm text-gray-500">
+        本网站可单方面更新协议，用户继续使用视为接受变更；若用户违反条款，本网站有权终止其账户。
+      </p>
+    </div>
+  </div>
+`;
+
+// 隐私政策内容
+const privacyPolicyContent = `
+  <div class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-500">隐私政策（Privacy Policy）</h2>
+    <p class="text-sm text-gray-500">生效日期：2025年3月3日</p>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">1. 信息收集</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li><strong>个人信息</strong>：注册时收集姓名、邮箱、设备信息；</li>
+        <li><strong>使用数据</strong>：访问日志、播客播放记录、互动行为（如笔记、评论）。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">2. 信息使用</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li>提供个性化学习推荐；</li>
+        <li>优化网站功能及用户体验；</li>
+        <li>发送服务通知或营销信息（用户可退订）。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">3. 数据共享</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li>未经用户许可，不向第三方出售或共享个人信息；</li>
+        <li>以下情况例外：法律要求、保护网站权益或用户安全。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">4. 用户权利</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li>可访问、更正或删除个人信息；</li>
+        <li>可撤回同意或注销账户（需联系 <a href="mailto:wxk-zd@qq.com" class="text-cyan-700">wxk-zd@qq.com</a>）。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">5. 数据安全</h3>
+      <p class="text-sm text-gray-500">
+        采用加密技术及访问控制措施保护用户数据，防止未经授权的访问或泄露。
+      </p>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">6. 第三方服务</h3>
+      <p class="text-sm text-gray-500">
+        网站可能集成第三方工具（如分析插件），其数据处理遵循各自隐私政策。
+      </p>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">合规说明</h3>
+      <ul class="list-disc list-inside text-sm text-gray-500">
+        <li>符合中国《个人信息保护法》；</li>
+        <li>争议解决适用中国法律，用户可向本网站所在地法院提起诉讼。</li>
+      </ul>
+    </div>
+
+    <div class="space-y-3">
+      <h3 class="text-base font-semibold text-gray-900">联系方式</h3>
+      <p class="text-sm text-gray-500">
+        如有疑问，请联系：<a href="mailto:wxk-zd@qq.com" class="text-cyan-700">wxk-zd@qq.com</a>。
+      </p>
+    </div>
+  </div>
+`;
 
 // 定义注册表单组件
 export default function Form() {
@@ -19,8 +134,6 @@ export default function Form() {
   const [captchaError, setCaptchaError] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
   const [password, setPassword] = useState(""); // 定义状态变量 password，用于存储用户输入的密码
   const [phoneError, setPhoneError] = useState(""); // 定义状态变量 phoneError，用于存储手机号验证错误信息
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false); // 定义状态变量 isPhoneVerified，用于存储手机号是否已验证
-  const [isExistsPhone, setIsExistsPhone] = useState(false); // 定义状态变量 isExistsPhone，用于存储手机号是否已存在]
   const [passwordError, setPasswordError] = useState(""); // 定义状态变量 passwordError，用于存储密码验证错误信息
   const [isAgree, setIsAgree] = useState(false); // 定义状态变量 isAgree，用于存储用户是否同意协议
   const [countdown, setCountdown] = useState(0); // 状态管理发送验证码按钮的倒计时
@@ -34,6 +147,21 @@ export default function Form() {
     message: null,
   };
   const [state, formAction] = useActionState(userRegister, initialState);
+
+  // 新增对话框相关状态
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState("");
+
+  // 新增打开对话框的函数
+  const openDialog = (content: string) => {
+    setDialogContent(content);
+    setIsDialogOpen(true);
+  };
+
+  // 新增关闭对话框的函数
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+  };
 
   // 验证手机号格式
   const validatePhone = (phone: string) => {
@@ -68,23 +196,6 @@ export default function Form() {
     validatePhone(value); // 验证手机号格式
   };
 
-  // 处理手机号失去焦点的回调函数
-  const handlePhoneBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const phoneNumber = e.target.value; // 获取输入框的值
-    // 验证手机号格式通过，产更新手机号验证状态
-    setIsPhoneVerified(validatePhone(phoneNumber));
-    if (isPhoneVerified) {
-      // 验证手机号是否已存在
-      const exists = await checkPhoneExists(phoneNumber);
-      setIsExistsPhone(exists); // 更新手机号是否存在状态
-      if (isExistsPhone) {
-        setPhoneError("该手机号已存在");
-      } else {
-        setPhoneError(""); // 清除错误信息
-      }
-    }
-  };
-
   // 处理密码输入框变化的回调函数
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value; // 获取输入框的值
@@ -103,10 +214,6 @@ export default function Form() {
     console.log("发送验证码请求, 图形验证结果是：", isCaptchaVerified);
     if (!validatePhone(phone)) {
       setPhoneError("请输入有效的手机号码");
-      return;
-    }
-    if (isExistsPhone) {
-      setPhoneError("该手机号已存在");
       return;
     }
     if (!isCaptchaVerified) {
@@ -177,7 +284,6 @@ export default function Form() {
                 required
                 value={phone}
                 onChange={handlePhoneChange}
-                onBlur={handlePhoneBlur}
               />
               {/* 手机号图标 */}
               <PhoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
@@ -237,7 +343,7 @@ export default function Form() {
               <button
                 onClick={sendVerificationCode}
                 disabled={countdown > 0}
-                className="absolute right-3 top-1/2 h-[18px] w-[110] -translate-y-1/2 text-sm text-cyan-700 peer-focus:text-gray-900 z-50"
+                className="absolute right-3 top-1/2 h-[18px] w-[110] -translate-y-1/2 text-sm text-cyan-700 peer-focus:text-gray-900 z-10"
               >
                 {countdown ? `${countdown}秒后重试` : "获取验证码"}
               </button>
@@ -291,17 +397,19 @@ export default function Form() {
               />{" "}
               {/* 复选框 */}
               我已阅读并同意 {/* 文本 */}
-              <Link href="/">
-                {" "}
-                {/* 链接 */}
-                <span className="text-cyan-700">《用户协议》</span> {/* 文本 */}
-              </Link>
+              <span
+                className="text-cyan-700 cursor-pointer"
+                onClick={() => openDialog(userAgreementContent)}
+              >
+                《用户协议》
+              </span>{" "}
               、 {/* 文本 */}
-              <Link href="/">
-                {" "}
-                {/* 链接 */}
-                <span className="text-cyan-700">《隐私政策》</span> {/* 文本 */}
-              </Link>
+              <span
+                className="text-cyan-700 cursor-pointer"
+                onClick={() => openDialog(privacyPolicyContent)}
+              >
+                《隐私政策》
+              </span>
             </label>
             {/* 服务器端未同意用户协议及隐私政策提示 */}
             {state.errors?.isAgree &&
@@ -340,6 +448,27 @@ export default function Form() {
           </Link>
         </div>
       </div>
+
+      {/* 《用户协议》《隐私政策》对话框组件 */}
+      {isDialogOpen && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20"
+          onClick={closeDialog}
+        >
+          <div
+            className="bg-white p-6 rounded-lg max-w-2xl w-full h-96 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500"
+              onClick={closeDialog}
+            >
+              &times;
+            </button>
+            <div dangerouslySetInnerHTML={{ __html: dialogContent }} />
+          </div>
+        </div>
+      )}
     </form>
   );
 }
