@@ -51,8 +51,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("验证码校验错误:", error);
+
+    let errorMessage = "服务器内部错误";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
     return NextResponse.json(
-      { success: false, message: error.message || "服务器内部错误" },
+      { success: false, message: errorMessage },
       { status: 500 },
     );
   }
