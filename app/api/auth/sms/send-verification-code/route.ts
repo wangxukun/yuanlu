@@ -48,6 +48,14 @@ export async function POST(request: Request) {
     // 发送短信
     const result = await smsClient.sendSms(sendReq);
 
+    // 处理短信发送结果
+    if (!result || !result.body) {
+      return NextResponse.json({
+        success: false,
+        error: "Invalid response from SMS service",
+      });
+    }
+
     if (result.body.code === "OK") {
       return NextResponse.json({ success: true });
     } else {
