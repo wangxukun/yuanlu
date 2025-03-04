@@ -69,8 +69,13 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("短信发送错误:", error);
+
+    let errorMessage = "服务器内部错误";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
     return NextResponse.json(
-      { success: false, message: error.message || "服务器内部错误" },
+      { success: false, message: errorMessage },
       { status: 500 },
     );
   }
