@@ -49,17 +49,17 @@ export default function Header() {
 
           {/* 手机尺寸下居中显示 LOGO 和网站标题 */}
           <div className="lg:hidden flex items-center justify-center flex-grow">
-            <Link href="http://localhost:3000/" passHref>
+            <Link href={`${process.env.NEXT_PUBLIC_BASE_URL}`} passHref>
               <div className="flex items-center space-x-4">
                 <Image
                   src="/static/images/logo.png"
-                  alt="远路漫漫播客 Logo"
+                  alt="远路播客 Logo"
                   width={40}
                   height={40}
                   className="rounded-full"
                 />
                 <span className="text-xl text-slate-500 font-bold leading-tight">
-                  远路漫漫播客
+                  远路播客
                 </span>
               </div>
             </Link>
@@ -83,7 +83,7 @@ export default function Header() {
 
           {/* 桌面尺寸下的左侧 LOGO 和网站标题 */}
           <Link
-            href="http://localhost:3000/"
+            href={`${process.env.NEXT_PUBLIC_BASE_URL}`}
             passHref
             className="hidden lg:flex items-center space-x-4"
           >
