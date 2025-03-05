@@ -142,7 +142,7 @@ export default function Form() {
       phone: [],
       auth_code: [],
       password: [],
-      isAgree: false,
+      isAgree: [],
     },
     message: null,
   };
@@ -414,7 +414,9 @@ export default function Form() {
               </span>
             </label>
             {/* 服务器端未同意用户协议及隐私政策提示 */}
-            {state.errors?.isAgree && !agree && state.errors.isAgree ? (
+            {state.errors?.isAgree &&
+            !agree &&
+            state.errors.isAgree.length > 0 ? (
               <p className="text-red-500 text-xs mt-1">
                 必须同意用户协议和隐私政策
               </p>
