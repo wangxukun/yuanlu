@@ -22,6 +22,14 @@ export type userLoginState = {
   message?: string | null;
 };
 
+export type userLoginState = {
+  errors?: {
+    phone?: string[];
+    password?: string[];
+  };
+  message?: string | null;
+};
+
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
 const UserLogin = registerFormSchema.omit({ auth_code: true, isAgree: true });
