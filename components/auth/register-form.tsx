@@ -7,7 +7,7 @@ import Link from "next/link"; // 导入 Next.js 的 Link 组件，用于导航
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件
 import { ArrowRightIcon } from "@heroicons/react/20/solid"; // 导入 Heroicons 图标组件
 import { Button } from "@/components/button"; // 导入自定义的 Button 组件
-import { userRegister, State } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
+import { userRegister, userRegisterState } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
 import { lusitana } from "@/components/fonts"; // 导入自定义字体 lusitana
 import Captcha from "@/components/captcha"; // 导入 Captcha 组件，用于验证码验证
 import { useActionState, useState } from "react"; // 导入 React 的 useState 钩子，用于状态管理
@@ -135,9 +135,9 @@ export default function Form() {
   const [password, setPassword] = useState(""); // 定义状态变量 password，用于存储用户输入的密码
   const [phoneError, setPhoneError] = useState(""); // 定义状态变量 phoneError，用于存储手机号验证错误信息
   const [passwordError, setPasswordError] = useState(""); // 定义状态变量 passwordError，用于存储密码验证错误信息
-  const [isAgree, setIsAgree] = useState(false); // 定义状态变量 isAgree，用于存储用户是否同意协议
+  const [agree, setAgree] = useState(false); // 定义状态变量 isAgree，用于存储用户是否同意协议
   const [countdown, setCountdown] = useState(0); // 状态管理发送验证码按钮的倒计时
-  const initialState: State = {
+  const initialState: userRegisterState = {
     errors: {
       phone: [],
       auth_code: [],
@@ -249,7 +249,7 @@ export default function Form() {
   };
 
   const handleAgreeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIsAgree(event.target.checked);
+    setAgree(event.target.checked);
   };
   // 渲染注册表单组件
   return (
@@ -391,7 +391,7 @@ export default function Form() {
               <input
                 name="agree"
                 type="checkbox"
-                checked={isAgree}
+                checked={agree}
                 onChange={handleAgreeChange}
                 className="mr-2"
               />{" "}
@@ -413,7 +413,7 @@ export default function Form() {
             </label>
             {/* 服务器端未同意用户协议及隐私政策提示 */}
             {state.errors?.isAgree &&
-            !isAgree &&
+            !agree &&
             state.errors.isAgree.length > 0 ? (
               <p className="text-red-500 text-xs mt-1">
                 {state.errors.isAgree[0]}

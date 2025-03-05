@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { registerFormSchema } from "@/app/lib/form-schema";
 
-export type State = {
+export type userRegisterState = {
   errors?: {
     phone?: string[]; // 保存多段验证未通过的提示信息，如‘手机号格式不正确’，‘手机号已存在’
     auth_code?: string[];
@@ -14,11 +14,22 @@ export type State = {
   message?: string | null;
 };
 
+export type userLoginState = {
+  errors?: {
+    phone?: string[];
+    password?: string[];
+  };
+  message?: string | null;
+};
+
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
 const UserLogin = registerFormSchema.omit({ auth_code: true, isAgree: true });
 
-export async function userRegister(prevState: State, formData: FormData) {
+export async function userRegister(
+  prevState: userRegisterState,
+  formData: FormData,
+): Promise<userRegisterState> {
   const rawFormData = {
     phone: formData.get("phone") as string,
     auth_code: formData.get("auth_code") as string,
@@ -27,10 +38,16 @@ export async function userRegister(prevState: State, formData: FormData) {
   };
   const validatedFields = UserRegister.safeParse(rawFormData);
   if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "用户注册失败",
-    };
+    return new Promise((resolve) => {
+      resolve({
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: "用户注册失败",
+      });
+    });
+    // return {
+    //   errors: validatedFields.error.flatten().fieldErrors,
+    //   message: "用户注册失败",
+    // };
   }
   const { phone, auth_code, password } = validatedFields.data;
   // 验证短信验证码
@@ -44,23 +61,40 @@ export async function userRegister(prevState: State, formData: FormData) {
     });
     const data = await res.json();
     if (!res.ok) {
-      return {
-        errors: {
-          phone: [data.message || "注册失败"],
-        },
-        message: "用户注册失败",
-      };
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            phone: [data.message],
+          },
+          message: "用户注册失败",
+        });
+      });
+      // return {
+      //   errors: {
+      //     phone: [data.message || "注册失败"],
+      //   },
+      //   message: "用户注册失败",
+      // };
     }
     // 注册成功后，重定向到 /auth/register-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
     revalidatePath("/auth/register");
     redirect("/auth/register-success");
   } else {
-    return {
-      errors: {
-        auth_code: ["短信验证码错误"],
-      },
-    };
+    return new Promise((resolve) => {
+      resolve({
+        errors: {
+          auth_code: ["短信验证码错误"],
+        },
+        message: "用户注册失败",
+      });
+    });
+    // return {
+    //   errors: {
+    //     auth_code: ["短信验证码错误"],
+    //   },
+    //   message: "用户注册失败",
+    // };
   }
 }
 
@@ -85,19 +119,26 @@ export const isSmsVerified = async (phone: string, auth_code: string) => {
  * @param prevState
  * @param formData
  */
-export async function login(prevState: State, formData: FormData) {
+export async function login(
+  prevState: userLoginState,
+  formData: FormData,
+): Promise<userLoginState> {
   const rawFormData = {
     phone: formData.get("phone"),
     password: formData.get("password"),
   };
   const validatedFields = UserLogin.safeParse(rawFormData);
-  console.log(rawFormData);
-  console.log(validatedFields);
   if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "用户登录失败",
-    };
+    return new Promise((resolve) => {
+      resolve({
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: "用户登录失败",
+      });
+    });
+    // return {
+    //   errors: validatedFields.error.flatten().fieldErrors,
+    //   message: "用户登录失败",
+    // };
   }
   const { phone, password } = validatedFields.data;
   // 调用注册 API
@@ -109,12 +150,20 @@ export async function login(prevState: State, formData: FormData) {
   });
   const data = await res.json();
   if (!res.ok) {
-    return {
-      errors: {
-        phone: [data.message || "登录失败"],
-      },
-      message: "用户登录失败",
-    };
+    return new Promise((resolve) => {
+      resolve({
+        errors: {
+          phone: [data.message || "登录失败"],
+        },
+        message: "用户登录失败",
+      });
+    });
+    // return {
+    //   errors: {
+    //     phone: [data.message || "登录失败"],
+    //   },
+    //   message: "用户登录失败",
+    // };
   }
   // 注册成功后，重定向到 /auth/register-success 页面
   // 更新成功后，刷新缓存并重定向到 /auth/login 页面
