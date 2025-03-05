@@ -3,18 +3,13 @@
 import Link from "next/link";
 import { PhoneIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/button";
-import { login, userLoginState } from "@/app/lib/actions";
+import { login, LoginState } from "@/app/lib/actions";
 import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { useActionState } from "react";
 
 export default function Form() {
-  // const [phone, setPhone] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
-  // const [phoneError, setPhoneError] = useState(""); // 定义状态变量 phoneError，用于存储手机号验证错误信息
-  // const [password, setPassword] = useState(""); // 定义状态变量 password，用于存储用户输入的密码
-  // const [passwordError, setPasswordError] = useState(""); // 定义状态变量 passwordError，用于存储密码验证错误信息
-
-  const initialState: userLoginState = {
+  const initialState: LoginState = {
     errors: {
       phone: [],
       password: [],
