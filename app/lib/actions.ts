@@ -40,7 +40,7 @@ export async function userRegister(
   if (!validatedFields.success) {
     return new Promise((resolve) => {
       resolve({
-        errors: validatedFields.error.flatten().fieldErrors,
+        errors: validatedFields.error.flatten().fieldErrors as string,
         message: "用户注册失败",
       });
     });
@@ -131,7 +131,7 @@ export async function login(
   if (!validatedFields.success) {
     return new Promise((resolve) => {
       resolve({
-        errors: validatedFields.error.flatten().fieldErrors,
+        errors: validatedFields.error.flatten().fieldErrors as string,
         message: "用户登录失败",
       });
     });
