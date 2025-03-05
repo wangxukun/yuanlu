@@ -49,7 +49,7 @@ export default function Header() {
 
           {/* 手机尺寸下居中显示 LOGO 和网站标题 */}
           <div className="lg:hidden flex items-center justify-center flex-grow">
-            <Link href={`${process.env.NEXT_PUBLIC_BASE_URL}`} passHref>
+            <Link href="/" passHref>
               <div className="flex items-center space-x-4">
                 <Image
                   src="/static/images/logo.png"
