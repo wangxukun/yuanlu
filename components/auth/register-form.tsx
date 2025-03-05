@@ -7,7 +7,7 @@ import Link from "next/link"; // 导入 Next.js 的 Link 组件，用于导航
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件
 import { ArrowRightIcon } from "@heroicons/react/20/solid"; // 导入 Heroicons 图标组件
 import { Button } from "@/components/button"; // 导入自定义的 Button 组件
-import { userRegister, userRegisterState } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
+import { userRegister, RegisterState } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
 import { lusitana } from "@/components/fonts"; // 导入自定义字体 lusitana
 import Captcha from "@/components/captcha"; // 导入 Captcha 组件，用于验证码验证
 import { useActionState, useState } from "react";
@@ -137,12 +137,12 @@ export default function Form() {
   const [passwordError, setPasswordError] = useState(""); // 定义状态变量 passwordError，用于存储密码验证错误信息
   const [agree, setAgree] = useState(false); // 定义状态变量 isAgree，用于存储用户是否同意协议
   const [countdown, setCountdown] = useState(0); // 状态管理发送验证码按钮的倒计时
-  const initialState: userRegisterState = {
+  const initialState: RegisterState = {
     errors: {
       phone: [],
       auth_code: [],
       password: [],
-      isAgree: false,
+      isAgree: [],
     },
     message: null,
   };
@@ -209,7 +209,9 @@ export default function Form() {
    * 此函数首先校验手机号格式，然后通过fetch API发送请求以获取验证码
    * 请求成功后，开始60秒倒计时，在此期间按钮将被禁用
    */
-  const sendVerificationCode = async (event) => {
+  const sendVerificationCode = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     event.preventDefault(); // 阻止表单默认提交行为
     console.log("发送验证码请求, 图形验证结果是：", isCaptchaVerified);
     if (!validatePhone(phone)) {
@@ -389,7 +391,7 @@ export default function Form() {
           <div className="mt-4 text-xs">
             <label className="flex items-center cursor-pointer">
               <input
-                name="agree"
+                name="isAgree"
                 type="checkbox"
                 checked={agree}
                 onChange={handleAgreeChange}
@@ -412,7 +414,9 @@ export default function Form() {
               </span>
             </label>
             {/* 服务器端未同意用户协议及隐私政策提示 */}
-            {state.errors?.isAgree && !agree && state.errors.isAgree ? (
+            {state.errors?.isAgree &&
+            !agree &&
+            state.errors.isAgree.length > 0 ? (
               <p className="text-red-500 text-xs mt-1">
                 必须同意用户协议和隐私政策
               </p>
