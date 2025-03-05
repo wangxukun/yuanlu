@@ -22,14 +22,6 @@ export type LoginState = {
   message?: string | null;
 };
 
-export type userLoginState = {
-  errors?: {
-    phone?: string[];
-    password?: string[];
-  };
-  message?: string | null;
-};
-
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
 const UserLogin = registerFormSchema.omit({ auth_code: true, isAgree: true });
@@ -77,12 +69,6 @@ export async function userRegister(
           message: "用户注册失败",
         });
       });
-      // return {
-      //   errors: {
-      //     phone: [data.message || "注册失败"],
-      //   },
-      //   message: "用户注册失败",
-      // };
     }
     // 注册成功后，重定向到 /auth/register-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
@@ -97,12 +83,6 @@ export async function userRegister(
         message: "用户注册失败",
       });
     });
-    // return {
-    //   errors: {
-    //     auth_code: ["短信验证码错误"],
-    //   },
-    //   message: "用户注册失败",
-    // };
   }
 }
 
@@ -143,10 +123,6 @@ export async function login(
         message: "用户登录失败",
       });
     });
-    // return {
-    //   errors: validatedFields.error.flatten().fieldErrors,
-    //   message: "用户登录失败",
-    // };
   }
   const { phone, password } = validatedFields.data;
   // 调用注册 API
@@ -166,12 +142,6 @@ export async function login(
         message: "用户登录失败",
       });
     });
-    // return {
-    //   errors: {
-    //     phone: [data.message || "登录失败"],
-    //   },
-    //   message: "用户登录失败",
-    // };
   }
   // 注册成功后，重定向到 /auth/register-success 页面
   // 更新成功后，刷新缓存并重定向到 /auth/login 页面
