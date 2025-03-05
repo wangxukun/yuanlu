@@ -10,7 +10,7 @@ import { Button } from "@/components/button"; // 导入自定义的 Button 组�
 import { userRegister, userRegisterState } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
 import { lusitana } from "@/components/fonts"; // 导入自定义字体 lusitana
 import Captcha from "@/components/captcha"; // 导入 Captcha 组件，用于验证码验证
-import { useActionState, useState } from "react"; // 导入 React 的 useState 钩子，用于状态管理
+import { useActionState, useState } from "react";
 
 // 用户协议内容
 const userAgreementContent = `
@@ -142,7 +142,7 @@ export default function Form() {
       phone: [],
       auth_code: [],
       password: [],
-      isAgree: [],
+      isAgree: false,
     },
     message: null,
   };
@@ -412,11 +412,9 @@ export default function Form() {
               </span>
             </label>
             {/* 服务器端未同意用户协议及隐私政策提示 */}
-            {state.errors?.isAgree &&
-            !agree &&
-            state.errors.isAgree.length > 0 ? (
+            {state.errors?.isAgree && !agree && state.errors.isAgree ? (
               <p className="text-red-500 text-xs mt-1">
-                {state.errors.isAgree[0]}
+                必须同意用户协议和隐私政策
               </p>
             ) : null}
           </div>
