@@ -1,37 +1,26 @@
 "use client";
+
 import Link from "next/link";
 import { PhoneIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/button";
+import { login, LoginState } from "@/app/lib/actions";
 import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 
 export default function Form() {
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const result = await signIn("credentials", {
-      redirect: false,
-      phone,
-      password,
-    });
-    console.log("result: ", result);
-
-    if (result?.error) {
-      alert(result.error);
-    } else {
-      router.push("/dashboard");
-    }
+  const initialState: LoginState = {
+    errors: {
+      phone: [],
+      password: [],
+    },
+    message: null,
   };
 
+  const [state, formAction] = useActionState(login, initialState);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form action={formAction} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
         <h1
           className={`${lusitana.className} mb-3 justify-self-center font-bold text-2xl text-slate-500`}
@@ -52,13 +41,18 @@ export default function Form() {
                 id="phone"
                 type="text"
                 name="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
                 placeholder="请输入手机号"
                 required
               />
               <PhoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            {/* 后端密码错误提示 */}
+            {/*{state.errors?.phone &&*/}
+            {/*    state.errors.phone.map((error, index) => (*/}
+            {/*        <p key={index} className="text-red-500 text-xs mt-1">*/}
+            {/*          {error}*/}
+            {/*        </p>*/}
+            {/*    ))}*/}
           </div>
 
           <div>
@@ -74,13 +68,18 @@ export default function Form() {
                 id="password"
                 type="password"
                 name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="请输入密码"
                 required
               />
               <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            {/* 后端密码错误提示 */}
+            {/*{state.errors?.password &&*/}
+            {/*    state.errors.password.map((error, index) => (*/}
+            {/*        <p key={index} className="text-red-500 text-xs mt-1">*/}
+            {/*          {error}*/}
+            {/*        </p>*/}
+            {/*    ))}*/}
           </div>
         </div>
 
@@ -104,6 +103,11 @@ export default function Form() {
           <Link href="/auth/signup">
             <span className="text-cyan-700">没有账号</span>
           </Link>
+        </div>
+        <div className="flex justify-center">
+          {state.message && (
+            <p className="text-red-500 text-xs mt-1">{state.message}</p>
+          )}
         </div>
       </div>
     </form>

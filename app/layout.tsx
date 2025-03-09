@@ -4,6 +4,8 @@ import { lusitana } from "@/components/fonts";
 import "./globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
+import AuthProvider from "@/app/AuthProvider";
+import "@/app/lib/sessionCleaner";
 
 export const metadata: Metadata = {
   title: "远路漫漫播客",
@@ -21,7 +23,7 @@ export default function RootLayout({
         <Header />
         <div className="bg-white pt-10 min-h-screen">
           {/* 这里的 pt-10 是为了给 Header 留出空间 */}
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </div>
         <Footer />
       </body>

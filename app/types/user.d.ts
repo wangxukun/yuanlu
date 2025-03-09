@@ -1,4 +1,4 @@
-// /types/user.ts
+// /types/user.d.ts
 
 // 用户基本信息
 export interface User {

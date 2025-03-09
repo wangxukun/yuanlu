@@ -189,7 +189,7 @@ export default function Header() {
           <div className="fixed top-0 left-0 h-full w-3/5 bg-white shadow-lg">
             {/* 用户信息组件 */}
             <Link
-              href={isLoggedIn ? "/user-center" : "/auth/register"}
+              href={isLoggedIn ? "/user-center" : "/auth/signup"}
               passHref
               onClick={closeMenu}
             >

@@ -1,4 +1,4 @@
-// app/components/auth/register-form.tsx
+// app/components/auth/signup-form.tsx
 
 // 标记为客户端组件，表示该组件将在客户端渲染和执行
 "use client";

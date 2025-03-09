@@ -54,7 +54,7 @@ export async function userRegister(
   if (await isSmsVerified(phone, auth_code)) {
     // 调用注册 API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/auth/register`, {
+    const res = await fetch(`${baseUrl}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, password }),
@@ -70,9 +70,9 @@ export async function userRegister(
         });
       });
     }
-    // 注册成功后，重定向到 /auth/register-success 页面
+    // 注册成功后，重定向到 /auth/signup-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
-    revalidatePath("/auth/register");
+    revalidatePath("/auth/signup");
     redirect("/auth/register-success");
   } else {
     return new Promise((resolve) => {
@@ -143,7 +143,7 @@ export async function login(
       });
     });
   }
-  // 注册成功后，重定向到 /auth/register-success 页面
+  // 注册成功后，重定向到 /auth/signup-success 页面
   // 更新成功后，刷新缓存并重定向到 /auth/login 页面
   revalidatePath("/auth/login");
   redirect("/");

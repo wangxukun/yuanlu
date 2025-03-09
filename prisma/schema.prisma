@@ -11,10 +11,12 @@ model User {
   userid             Int                  @id @default(autoincrement())
   phone              String               @unique @db.VarChar(15)
   password           String               @db.VarChar(255)
-  role               String?              @default("普通用户") @db.VarChar(50)
-  languagepreference String?              @default("中文") @db.VarChar(50)
-  registrationdate   DateTime?            @default(now()) @db.Timestamptz(6)
-  lastlogindate      DateTime?            @db.Timestamptz(6)
+  role               String?              @default("user") @db.VarChar(50)
+  languagePreference String?              @default("zh-CN") @db.VarChar(50)
+  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime?            @updatedAt @db.Timestamptz(6)
+  isOnline           Boolean?             @default(false)
+  lastActiveAt       DateTime?            @db.Timestamptz(6)
   achievements       achievements[]
   comments           comments[]
   discussion_threads discussion_threads[]
@@ -34,28 +36,28 @@ model User {
 model achievements {
   achievementid   Int       @id @default(autoincrement())
   userid          Int?
-  achievementname String    @db.VarChar(255)
-  achievementdate DateTime? @default(now()) @db.Timestamp(6)
+  achievementName String    @db.VarChar(255)
+  achievementDate DateTime? @default(now()) @db.Timestamptz(6)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model advertisements {
   adid      Int       @id @default(autoincrement())
-  adtitle   String    @db.VarChar(255)
-  adcontent String?
-  adurl     String?   @db.VarChar(255)
-  startdate DateTime? @default(now()) @db.Timestamp(6)
-  enddate   DateTime? @db.Timestamp(6)
+  adTitle   String    @db.VarChar(255)
+  adContent String?
+  adUrl     String?   @db.VarChar(255)
+  startAt   DateTime? @default(now()) @db.Timestamptz(6)
+  endAt     DateTime? @db.Timestamptz(6)
 }
 
 model category {
   categoryid       Int        @id @default(autoincrement())
   name             String     @unique @db.VarChar(255)
-  coverurl         String     @default("default_cover_url") @db.VarChar(255)
+  coverUrl         String     @default("default_cover_url") @db.VarChar(255)
   description      String?
-  parentcategoryid Int?
-  category         category?  @relation("categoryTocategory", fields: [parentcategoryid], references: [categoryid], onUpdate: NoAction)
-  other_category   category[] @relation("categoryTocategory")
+  parentCategoryid Int?
+  category         category?  @relation("categoryTocategory", fields: [parentCategoryid], references: [categoryid], onUpdate: NoAction)
+  otherCategory    category[] @relation("categoryTocategory")
   episode          episode[]
 }
 
@@ -63,8 +65,8 @@ model comments {
   commentid   Int       @id @default(autoincrement())
   userid      Int?
   podcastid   Int?
-  commenttext String?
-  commentdate DateTime? @default(now()) @db.Timestamp(6)
+  commentText String?
+  commentAt   DateTime? @default(now()) @db.Timestamptz(6)
   episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -73,9 +75,9 @@ model discussion_threads {
   threadid      Int       @id @default(autoincrement())
   podcastid     Int?
   userid        Int?
-  threadtitle   String    @db.VarChar(255)
-  threadcontent String?
-  postdate      DateTime? @default(now()) @db.Timestamp(6)
+  threadTitle   String    @db.VarChar(255)
+  threadContent String?
+  postAt        DateTime? @default(now()) @db.Timestamptz(6)
   episode       episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User          User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -83,15 +85,15 @@ model discussion_threads {
 model episode {
   episodeid          Int                  @id @default(autoincrement())
   title              String               @db.VarChar(255)
-  coverurl           String               @default("default_cover_url") @db.VarChar(255)
+  coverUrl           String               @default("default_cover_url") @db.VarChar(255)
   description        String?
-  audiourl           String               @db.VarChar(255)
+  audioUrl           String               @db.VarChar(255)
   duration           String?              @db.VarChar(10)
   categoryid         Int?
   uploaderid         Int?
-  createdat          DateTime?            @default(now()) @db.Timestamp(6)
-  updatedat          DateTime?            @db.Timestamp(6)
-  status             String?              @default("已发布") @db.VarChar(50)
+  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime?            @db.Timestamptz(6)
+  status             String?              @default("unpublished") @db.VarChar(50)
   comments           comments[]
   discussion_threads discussion_threads[]
   category           category?            @relation(fields: [categoryid], references: [categoryid], onUpdate: NoAction)
@@ -108,34 +110,34 @@ model favorites {
   favoriteid   Int       @id @default(autoincrement())
   userid       Int?
   podcastid    Int?
-  favoritedate DateTime? @default(now()) @db.Timestamp(6)
+  favoritedate DateTime? @default(now()) @db.Timestamptz(6)
   episode      episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model learning_paths {
-  pathid       Int       @id @default(autoincrement())
-  userid       Int?
-  pathname     String    @db.VarChar(255)
-  creationdate DateTime? @default(now()) @db.Timestamp(6)
-  User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  pathid     Int       @id @default(autoincrement())
+  userid     Int?
+  pathName   String    @db.VarChar(255)
+  creationAt DateTime? @default(now()) @db.Timestamptz(6)
+  User       User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model listening_history {
-  historyid  Int       @id @default(autoincrement())
-  userid     Int?
-  podcastid  Int?
-  listendate DateTime? @default(now()) @db.Timestamp(6)
-  episode    episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
-  User       User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  historyid Int       @id @default(autoincrement())
+  userid    Int?
+  podcastid Int?
+  listenAt  DateTime? @default(now()) @db.Timestamptz(6)
+  episode   episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User      User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model notifications {
   notificationid   Int       @id @default(autoincrement())
   userid           Int?
-  notificationtext String?
-  notificationdate DateTime? @default(now()) @db.Timestamp(6)
-  isread           Boolean?  @default(false)
+  notificationText String?
+  notificationAt   DateTime? @default(now()) @db.Timestamptz(6)
+  isRead           Boolean?  @default(false)
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -144,7 +146,7 @@ model quizzes {
   podcastid     Int?
   question      String
   options       Json?
-  correctanswer String   @db.VarChar(255)
+  correctAnswer String   @db.VarChar(255)
   episode       episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -154,7 +156,7 @@ model ratings {
   userid      Int?
   podcastid   Int?
   ratingvalue Int?
-  ratingdate  DateTime? @default(now()) @db.Timestamp(6)
+  ratingDate  DateTime? @default(now()) @db.Timestamptz(6)
   episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -165,25 +167,25 @@ model speech_recognition {
   podcastid       Int?
   speechtext      String?
   accuracyscore   Float?
-  recognitiondate DateTime? @default(now()) @db.Timestamp(6)
+  recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
   episode         episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model study_groups {
-  groupid      Int       @id @default(autoincrement())
-  groupname    String    @db.VarChar(255)
-  creatorid    Int?
-  creationdate DateTime? @default(now()) @db.Timestamp(6)
-  User         User?     @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  groupid    Int       @id @default(autoincrement())
+  groupName  String    @db.VarChar(255)
+  creatorid  Int?
+  creationAt DateTime? @default(now()) @db.Timestamptz(6)
+  User       User?     @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model subscriptions {
   subscriptionid   Int       @id @default(autoincrement())
   userid           Int?
-  subscriptiontype String    @db.VarChar(50)
-  startdate        DateTime? @default(now()) @db.Timestamp(6)
-  enddate          DateTime? @db.Timestamp(6)
+  subscriptionType String    @db.VarChar(50)
+  startDate        DateTime? @default(now()) @db.Timestamptz(6)
+  endDate          DateTime? @db.Timestamptz(6)
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -191,18 +193,18 @@ model subtitles {
   subtitleid Int      @id @default(autoincrement())
   podcastid  Int?
   text       String?
-  starttime  String?  @db.VarChar(10)
-  endtime    String?  @db.VarChar(10)
+  startTime  String?  @db.VarChar(10)
+  endTime    String?  @db.VarChar(10)
   episode    episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model user_profile {
   userid     Int     @id
   nickname   String? @db.VarChar(255)
-  avatarurl  String? @default("default_avatar_url") @db.VarChar(255)
+  avatarUrl  String? @default("default_avatar_url") @db.VarChar(255)
   email      String? @db.VarChar(255)
   bio        String?
-  learnlevel String? @db.VarChar(50)
+  learnLevel String? @db.VarChar(50)
   User       User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -211,7 +213,7 @@ model vocabulary {
   userid       Int?
   word         String    @db.VarChar(255)
   definition   String?
-  addeddate    DateTime? @default(now()) @db.Timestamp(6)
+  addedDate    DateTime? @default(now()) @db.Timestamptz(6)
   User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 

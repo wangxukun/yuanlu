@@ -3,7 +3,7 @@ import Dysmsapi20170525, { SendSmsRequest } from "@alicloud/dysmsapi20170525";
 import * as $OpenApi from "@alicloud/openapi-client";
 import { randomInt } from "crypto";
 import { NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
+import { prisma } from "@/app/lib/prisma";
 
 // 阿里云配置
 const config = new $OpenApi.Config({

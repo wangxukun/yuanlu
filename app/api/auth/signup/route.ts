@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
+import { prisma } from "@/app/lib/prisma";
 import bcrypt from "bcrypt";
 
 export async function POST(request: Request) {
@@ -27,9 +27,9 @@ export async function POST(request: Request) {
       data: {
         phone,
         password: hashedPassword, // 存储哈希后的密码
-        role: "普通用户",
-        languagepreference: "中文",
-        registrationdate: new Date(),
+        role: "user",
+        languagePreference: "zh-CN",
+        createAt: new Date(),
       },
     });
 
