@@ -85,4 +85,4 @@ const authOptions = {
 // 初始化 NextAuth 并导出路由处理程序
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST, authOptions };
+export { handler as GET, handler as POST, handler as signOut, authOptions };

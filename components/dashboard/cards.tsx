@@ -8,10 +8,10 @@ import { lusitana } from "@/components/fonts";
 import { fetchOnlineUsers } from "@/app/lib/data";
 
 const iconMap = {
-  collected: BanknotesIcon,
-  customers: UserGroupIcon,
-  pending: ClockIcon,
-  invoices: InboxIcon,
+  onlineUser: BanknotesIcon,
+  registrationUser: UserGroupIcon,
+  vip: ClockIcon,
+  audios: InboxIcon,
 };
 
 export default async function CardWrapper() {

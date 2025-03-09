@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import React from "react";
 import { lusitana } from "@/components/fonts";
-import "./globals.css";
+import "../globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import AuthProvider from "@/app/AuthProvider";
