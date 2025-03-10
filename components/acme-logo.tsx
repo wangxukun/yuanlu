@@ -1,13 +1,23 @@
-import { GlobeAltIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 import { lusitana } from "@/components/fonts";
 
 export default function AcmeLogo() {
   return (
     <div
-      className={`${lusitana.className} flex flex-row items-center leading-none text-white`}
+      className={`${lusitana.className} flex flex-row items-center leading-none text-gray-600`}
     >
-      <GlobeAltIcon className="h-12 w-12 rotate-[15deg]" />
-      <p className="text-[44px] ">Acme</p>
+      <div className="flex items-center space-x-4">
+        <Image
+          src="/static/images/logo.png"
+          alt="远路播客 Logo"
+          width={80}
+          height={80}
+          className="rounded-full"
+        />
+        <span className="text-base text-slate-500 font-bold leading-tight">
+          远路播客
+        </span>
+      </div>
     </div>
   );
 }
