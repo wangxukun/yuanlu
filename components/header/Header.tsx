@@ -9,6 +9,7 @@ import {
   TagIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import Player from "@/components/player/Player";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -101,6 +102,10 @@ export default function Header() {
               远路播客
             </span>
           </Link>
+
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+            <Player />
+          </div>
 
           {/* 桌面尺寸下的右侧按钮组 */}
           <div className="hidden lg:flex items-center space-x-4 text-sm">

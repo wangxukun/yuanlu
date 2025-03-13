@@ -25,7 +25,7 @@ export default function List({ title, items }: ListProps) {
   // 处理卡片点击
   const handleItemClick = (id: string) => {
     const encodedId = encodeURIComponent(id);
-    router.push(`/channel/${encodedId}`);
+    router.push(`/category/${encodedId}`);
   };
 
   // 处理更多链接点击

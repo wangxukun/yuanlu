@@ -4,8 +4,6 @@ import { prisma } from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
   const { phone, auth_code } = await request.json();
-  console.log("sms-phone:", phone);
-  console.log("sms-auth_code:", auth_code);
 
   if (!phone || !auth_code) {
     return NextResponse.json(

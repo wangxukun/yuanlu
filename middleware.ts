@@ -6,7 +6,7 @@ import { getToken } from "next-auth/jwt";
 const ROUTE_CONFIG = {
   user: {
     redirectPath: "/",
-    allowedRoutes: ["/profile", "/settings", "/notifications"],
+    allowedRoutes: ["/personal-center", "/settings", "/notifications"],
   },
   admin: {
     redirectPath: "/dashboard",

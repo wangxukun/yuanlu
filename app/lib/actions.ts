@@ -98,7 +98,6 @@ export const isSmsVerified = async (phone: string, auth_code: string) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, auth_code }),
   });
-
   return res.ok;
 };
 
