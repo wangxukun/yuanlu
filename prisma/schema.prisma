@@ -94,7 +94,7 @@ model episode {
   createAt           DateTime?            @default(now()) @db.Timestamptz(6)
   updateAt           DateTime?            @db.Timestamptz(6)
   status             String?              @default("unpublished") @db.VarChar(50)
-  isExclusive        Boolean?             @default(false) // 新增字段，标识是否为会员独享
+  isExclusive        Boolean?             @default(false)
   comments           comments[]
   discussion_threads discussion_threads[]
   category           category?            @relation(fields: [categoryid], references: [categoryid], onUpdate: NoAction)
