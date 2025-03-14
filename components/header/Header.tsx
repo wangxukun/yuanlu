@@ -2,11 +2,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react"; // 引入 useState 来管理菜单状态
+import { useSession } from "next-auth/react";
+import LoginHomeBtn from "@/components/auth/login-home-btn";
+import {
+  ViewColumnsIcon,
+  TagIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import Player from "@/components/player/Player";
 
 export default function Header() {
+  const { data: session } = useSession();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false); // 菜单状态
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 用户登录状态
-  const [userName, setUserName] = useState(""); // 用户名
+  const [isLoggedIn] = useState(false); // 用户登录状态
+  const [userName] = useState(""); // 用户名
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -14,12 +24,6 @@ export default function Header() {
 
   const closeMenu = () => {
     setIsMenuOpen(false); // 点击子菜单项时关闭菜单
-  };
-
-  // 模拟用户登录状态
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setUserName("已登录"); // 模拟设置用户名
   };
 
   return (
@@ -99,77 +103,37 @@ export default function Header() {
             </span>
           </Link>
 
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+            <Player />
+          </div>
+
           {/* 桌面尺寸下的右侧按钮组 */}
           <div className="hidden lg:flex items-center space-x-4 text-sm">
             <button className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-700"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M17.293 7.293a1 1 0 011.414 1.414l-11 11a1 1 0 01-1.414-1.414l11-11zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <TagIcon className="w-6" />
               <span className="hidden sm:inline text-slate-600">标签</span>
             </button>
 
             <button className="flex items-center hover:drop-shadow-md space-x-2 px-4 py-2 rounded-lg transition-colors">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-700"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="hidden sm:inline text-slate-600">频道</span>
+              <ViewColumnsIcon className="w-6" />
+              <span className="hidden sm:inline text-slate-600">分类</span>
             </button>
 
             <button className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-700"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <MagnifyingGlassIcon className="w-6" />
               <span className="hidden sm:inline text-slate-600">搜索</span>
             </button>
 
-            <Link
-              href="/auth/login"
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors hover:drop-shadow-md"
-              onClick={handleLogin} // 模拟登录
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-700"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-slate-500 hidden sm:inline">
-                {isLoggedIn ? userName : "登录"}
-              </span>
-            </Link>
+            {/* 登录按钮 */}
+            <LoginHomeBtn />
+            {session && session.user && (
+              <div className="hidden lg:flex items-end justify-end space-x-4 text-sm">
+                {session.user.phone.replace(
+                  /^(\d{3})\d{4}(\d{4})$/,
+                  `$1****$2`,
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -189,7 +153,7 @@ export default function Header() {
           <div className="fixed top-0 left-0 h-full w-3/5 bg-white shadow-lg">
             {/* 用户信息组件 */}
             <Link
-              href={isLoggedIn ? "/user-center" : "/auth/register"}
+              href={isLoggedIn ? "/user-center" : "/auth/signup"}
               passHref
               onClick={closeMenu}
             >

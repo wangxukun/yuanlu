@@ -1,4 +1,10 @@
-export type UserField = {
-  id: string;
-  name: string;
+export type User = {
+  userid: string;
+  phone: string;
+};
+
+export type onlineUser = {
+  userid: string;
+  phone: string;
+  lastActiveAt: Date;
 };
