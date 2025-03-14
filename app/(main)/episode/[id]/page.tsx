@@ -59,10 +59,8 @@ export default function EpisodePage() {
   const [showTranslation, setShowTranslation] = useState(false);
   // 状态管理：收藏状态
   const [isCollected, setIsCollected] = useState(initialCollected);
-  // 状态管理：播放状态
-  const [isPlaying] = useState(false);
 
-  const { setEpisode, togglePlay } = usePlayerStore();
+  const { isPlaying, setEpisode, togglePlay } = usePlayerStore();
 
   return (
     <div className="rounded-xl shadow-md p-6 mt-4 max-w-6xl mx-auto">
