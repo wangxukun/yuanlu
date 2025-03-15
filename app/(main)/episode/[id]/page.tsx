@@ -5,13 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { usePlayerStore } from "@/store/player-store";
 import { Episode } from "@/app/types/podcast";
+import { formatTime } from "@/app/lib/tools";
 
 // 更新后的Mock数据
 const mockEpisode: Episode = {
   id: "1",
   title: "Rage bait: How online anger makes money",
   date: "2025-02-13",
-  duration: "6分钟",
+  duration: 417,
   imageUrl: "/static/images/240104.jpg",
   isExclusive: false,
   publisher: "BBC Learning English",
@@ -92,7 +93,7 @@ export default function EpisodePage() {
           </div>
 
           <p className="text-sm text-gray-500 mb-4">
-            {mockEpisode.date} · {mockEpisode.duration}
+            {mockEpisode.date} · {formatTime(mockEpisode.duration)}
           </p>
 
           {/* 操作按钮组 */}

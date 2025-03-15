@@ -16,7 +16,7 @@ export default async function Page() {
   // 更新活动时间
   try {
     await prisma.user.update({
-      where: { userid: Number(session.user.userid) },
+      where: { userid: session.user.userid },
       data: { lastActiveAt: new Date() },
     });
   } finally {

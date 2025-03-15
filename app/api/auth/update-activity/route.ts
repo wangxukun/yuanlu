@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   const token = await getToken({ req: request });
   if (token?.id) {
     await prisma.user.update({
-      where: { userid: Number(token.id) },
+      where: { userid: token.id },
       data: { lastActiveAt: new Date() },
     });
   }

@@ -40,7 +40,7 @@ export const authOptions: AuthOptions = {
         if (!isValid) return null;
         // 返回用户信息
         return {
-          id: user.userid.toString(),
+          id: user.userid,
           phone: user.phone,
           role: user.role || "user",
         };
@@ -70,14 +70,14 @@ export const authOptions: AuthOptions = {
     async signIn({ user }: { user: User }) {
       // 用户登录时标记为在线
       await prisma.user.update({
-        where: { userid: Number(user.id) },
+        where: { userid: user.id },
         data: { isOnline: true, lastActiveAt: new Date() },
       });
     },
     async signOut({ token }: { token: JWT }) {
       // 用户退出时标记为离线
       await prisma.user.update({
-        where: { userid: Number(token.id) },
+        where: { userid: token.id },
         data: { isOnline: false },
       });
     },

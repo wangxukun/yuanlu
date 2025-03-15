@@ -2,7 +2,7 @@ export interface Episode {
   id: string;
   title: string;
   date: string;
-  duration: string;
+  duration: number;
   imageUrl: string;
   isExclusive: boolean;
   publisher: string;
