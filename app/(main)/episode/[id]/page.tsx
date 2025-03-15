@@ -61,7 +61,7 @@ export default function EpisodePage() {
   // 状态管理：收藏状态
   const [isCollected, setIsCollected] = useState(initialCollected);
 
-  const { isPlaying, setEpisode, togglePlay } = usePlayerStore();
+  const { isPlaying, setEpisode, togglePlay, setDuration } = usePlayerStore();
 
   return (
     <div className="rounded-xl shadow-md p-6 mt-4 max-w-6xl mx-auto">
@@ -148,6 +148,7 @@ export default function EpisodePage() {
             <button
               onClick={() => {
                 setEpisode(mockEpisode);
+                setDuration(mockEpisode.duration);
                 togglePlay();
               }}
               className="flex items-center px-4 py-1 bg-slate-200 text-xs text-gray-500 rounded-lg hover:bg-slate-300 transition-colors"
