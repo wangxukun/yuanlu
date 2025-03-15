@@ -1,6 +1,7 @@
 "use client";
 import { usePlayerStore } from "@/store/player-store";
 import { useEffect, useRef } from "react";
+import { formatTime } from "@/app/lib/tools";
 
 export default function Player() {
   const {
@@ -27,7 +28,7 @@ export default function Player() {
   }, [isPlaying]);
 
   return (
-    <div className="flex items-center w-full space-x-4">
+    <div className="flex items-center w-full bg-cyan-400 space-x-4">
       {/* 封面图片 */}
       {currentEpisode && (
         <img
@@ -81,11 +82,4 @@ export default function Player() {
       />
     </div>
   );
-}
-
-// 时间格式化工具函数
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
