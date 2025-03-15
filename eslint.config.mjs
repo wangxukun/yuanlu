@@ -35,6 +35,7 @@ export default [
       ...pluginReact.configs["jsx-runtime"].rules, // 继承推荐规则
       "react/react-in-jsx-scope": "off", // 关闭旧规则
       "react/jsx-uses-react": "off", // 关闭旧规则
+      "no-redeclare": ["error"], // 禁止重复声明变量
     },
   },
   // Prettier 兼容（必须放在最后）

@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userid             String               @id @default(cuid())
+  phone              String               @unique @db.VarChar(15)
+  password           String               @db.VarChar(255)
+  role               String?              @default("user") @db.VarChar(50)
+  languagePreference String?              @default("zh-CN") @db.VarChar(50)
+  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime?            @updatedAt @db.Timestamptz(6)
+  isOnline           Boolean?             @default(false)
+  lastActiveAt       DateTime?            @db.Timestamptz(6)
+  achievements       achievements[]
+  comments           comments[]
+  discussion_threads discussion_threads[]
+  episode            episode[]
+  favorites          favorites[]
+  learning_paths     learning_paths[]
+  listening_history  listening_history[]
+  notifications      notifications[]
+  ratings            ratings[]
+  speech_recognition speech_recognition[]
+  study_groups       study_groups[]
+  subscriptions      subscriptions[]
+  user_profile       user_profile?
+  vocabulary         vocabulary[]
+}
+
+model achievements {
+  achievementid   Int       @id @default(autoincrement())
+  userid          String?
+  achievementName String    @db.VarChar(255)
+  achievementDate DateTime? @default(now()) @db.Timestamptz(6)
+  User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model advertisements {
+  adid      Int       @id @default(autoincrement())
+  adTitle   String    @db.VarChar(255)
+  adContent String?
+  adUrl     String?   @db.VarChar(255)
+  startAt   DateTime? @default(now()) @db.Timestamptz(6)
+  endAt     DateTime? @db.Timestamptz(6)
+}
+
+model category {
+  categoryid       Int        @id @default(autoincrement())
+  name             String     @unique @db.VarChar(255)
+  coverUrl         String     @default("default_cover_url") @db.VarChar(255)
+  description      String?
+  parentCategoryid Int?
+  category         category?  @relation("categoryTocategory", fields: [parentCategoryid], references: [categoryid], onUpdate: NoAction)
+  otherCategory    category[] @relation("categoryTocategory")
+  episode          episode[]
+}
+
+model comments {
+  commentid   Int       @id @default(autoincrement())
+  userid      String?
+  podcastid   String?
+  commentText String?
+  commentAt   DateTime? @default(now()) @db.Timestamptz(6)
+  episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model discussion_threads {
+  threadid      Int       @id @default(autoincrement())
+  podcastid     String?
+  userid        String?
+  threadTitle   String    @db.VarChar(255)
+  threadContent String?
+  postAt        DateTime? @default(now()) @db.Timestamptz(6)
+  episode       episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User          User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model episode {
+  episodeid          String               @id @default(cuid())
+  title              String               @db.VarChar(255)
+  coverUrl           String               @default("default_cover_url") @db.VarChar(255)
+  description        String?
+  audioUrl           String               @db.VarChar(255)
+  duration           String?              @db.VarChar(10)
+  categoryid         Int?
+  uploaderid         String?
+  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime?            @db.Timestamptz(6)
+  status             String?              @default("unpublished") @db.VarChar(50)
+  isExclusive        Boolean?             @default(false)
+  comments           comments[]
+  discussion_threads discussion_threads[]
+  category           category?            @relation(fields: [categoryid], references: [categoryid], onUpdate: NoAction)
+  User               User?                @relation(fields: [uploaderid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  favorites          favorites[]
+  listening_history  listening_history[]
+  quizzes            quizzes[]
+  ratings            ratings[]
+  speech_recognition speech_recognition[]
+  subtitles          subtitles[]
+}
+
+model favorites {
+  favoriteid   Int       @id @default(autoincrement())
+  userid       String?
+  podcastid    String?
+  favoritedate DateTime? @default(now()) @db.Timestamptz(6)
+  episode      episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model learning_paths {
+  pathid     Int       @id @default(autoincrement())
+  userid     String?
+  pathName   String    @db.VarChar(255)
+  creationAt DateTime? @default(now()) @db.Timestamptz(6)
+  User       User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model listening_history {
+  historyid Int       @id @default(autoincrement())
+  userid    String?
+  podcastid String?
+  listenAt  DateTime? @default(now()) @db.Timestamptz(6)
+  episode   episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User      User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notifications {
+  notificationid   Int       @id @default(autoincrement())
+  userid           String?
+  notificationText String?
+  notificationAt   DateTime? @default(now()) @db.Timestamptz(6)
+  isRead           Boolean?  @default(false)
+  User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model quizzes {
+  quizid        Int      @id @default(autoincrement())
+  podcastid     String?
+  question      String
+  options       Json?
+  correctAnswer String   @db.VarChar(255)
+  episode       episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ratings {
+  ratingid    Int       @id @default(autoincrement())
+  userid      String?
+  podcastid   String?
+  ratingvalue Int?
+  ratingDate  DateTime? @default(now()) @db.Timestamptz(6)
+  episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model speech_recognition {
+  recognitionid   Int       @id @default(autoincrement())
+  userid          String?
+  podcastid       String?
+  speechtext      String?
+  accuracyscore   Float?
+  recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
+  episode         episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model study_groups {
+  groupid    Int       @id @default(autoincrement())
+  groupName  String    @db.VarChar(255)
+  creatorid  String?
+  creationAt DateTime? @default(now()) @db.Timestamptz(6)
+  User       User?     @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model subscriptions {
+  subscriptionid   Int       @id @default(autoincrement())
+  userid           String?
+  subscriptionType String    @db.VarChar(50)
+  startDate        DateTime? @default(now()) @db.Timestamptz(6)
+  endDate          DateTime? @db.Timestamptz(6)
+  User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model subtitles {
+  subtitleid Int      @id @default(autoincrement())
+  podcastid  String?
+  text       String?
+  startTime  String?  @db.VarChar(10)
+  endTime    String?  @db.VarChar(10)
+  episode    episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_profile {
+  userid     String  @id
+  nickname   String? @db.VarChar(255)
+  avatarUrl  String? @default("default_avatar_url") @db.VarChar(255)
+  email      String? @db.VarChar(255)
+  bio        String?
+  learnLevel String? @db.VarChar(50)
+  User       User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model vocabulary {
+  vocabularyid Int       @id @default(autoincrement())
+  userid       String?
+  word         String    @db.VarChar(255)
+  definition   String?
+  addedDate    DateTime? @default(now()) @db.Timestamptz(6)
+  User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model captcha {
+  id        String   @id @default(cuid())
+  code      String
+  answer    String
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model sms_code {
+  id        Int      @id @default(autoincrement())
+  phone     String   @db.VarChar(15)
+  code      String   @db.VarChar(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+}
