@@ -126,6 +126,7 @@ export default function Header() {
 
             {/* 登录按钮 */}
             <LoginHomeBtn />
+            {/* 登录后，显示部分电话号码 */}
             {session && session.user && (
               <div className="hidden lg:flex items-end justify-end space-x-4 text-sm">
                 {session.user.phone.replace(
@@ -133,6 +134,12 @@ export default function Header() {
                   `$1****$2`,
                 )}
               </div>
+            )}
+            {/* 当用户为管理员时，有导航到控制台的链接 */}
+            {session && session.user && session.user.role === "admin" && (
+              <Link href="/dashboard" passHref>
+                控制台
+              </Link>
             )}
           </div>
         </div>

@@ -52,8 +52,10 @@ model advertisements {
 
 model category {
   categoryid       Int        @id @default(autoincrement())
-  name             String     @unique @db.VarChar(255)
+  title            String     @unique @db.VarChar(255)
   coverUrl         String     @default("default_cover_url") @db.VarChar(255)
+  coverFileName    String?    @db.VarChar(255)
+  from             String?    @db.VarChar(255)
   description      String?
   parentCategoryid Int?
   category         category?  @relation("categoryTocategory", fields: [parentCategoryid], references: [categoryid], onUpdate: NoAction)
@@ -86,8 +88,14 @@ model episode {
   episodeid          String               @id @default(cuid())
   title              String               @db.VarChar(255)
   coverUrl           String               @default("default_cover_url") @db.VarChar(255)
+  coverFileName      String?              @db.VarChar(255)
   description        String?
   audioUrl           String               @db.VarChar(255)
+  audioFileName      String?              @db.VarChar(255)
+  subtitleEnUrl      String?              @db.VarChar(255)
+  subtitleEnFileName String?              @db.VarChar(255)
+  subtitleZhUrl      String?              @db.VarChar(255)
+  subtitleZhFileName String?              @db.VarChar(255)
   duration           String?              @db.VarChar(10)
   categoryid         Int?
   uploaderid         String?
@@ -193,7 +201,8 @@ model subscriptions {
 model subtitles {
   subtitleid Int      @id @default(autoincrement())
   podcastid  String?
-  text       String?
+  en         String?
+  zh         String?
   startTime  String?  @db.VarChar(10)
   endTime    String?  @db.VarChar(10)
   episode    episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)

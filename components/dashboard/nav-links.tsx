@@ -14,11 +14,16 @@ import clsx from "clsx";
 const links = [
   { name: "信息概况", href: "/dashboard", icon: HomeIcon },
   {
-    name: "播客发布",
-    href: "/dashboard/podcast-publish",
+    name: "播客管理",
+    href: "/dashboard/podcasts",
     icon: DocumentDuplicateIcon,
   },
-  { name: "Customers", href: "/dashboard/customers", icon: UserGroupIcon },
+  {
+    name: "剧集管理",
+    href: "/dashboard/episodes",
+    icon: DocumentDuplicateIcon,
+  },
+  { name: "用户", href: "/dashboard/customers", icon: UserGroupIcon },
 ];
 
 export default function NavLinks() {
