@@ -1,6 +1,6 @@
 // app/api/verify-code/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import prisma from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
   const { phone, auth_code } = await request.json();

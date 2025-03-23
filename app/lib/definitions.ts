@@ -8,3 +8,8 @@ export type onlineUser = {
   phone: string;
   lastActiveAt: Date;
 };
+
+export type PodcastField = {
+  categoryid: number;
+  title: string;
+};
