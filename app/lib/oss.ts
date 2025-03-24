@@ -22,8 +22,15 @@ if (
 }
 
 const client = new OSS(config);
+
+// 获取存储空间的访问权限。
+export async function getBucketAcl() {
+  const result = await client.getBucketACL("wxkzd");
+  console.log("acl: ", result.acl);
+}
+
 // 上传文件
-export async function uploadToOSS(
+export async function uploadFile(
   fileContent: Buffer | Blob,
   uniqueFilename: string,
 ): Promise<{ fileUrl: string; fileName: string }> {
@@ -38,6 +45,7 @@ export async function uploadToOSS(
     if (!result.name) {
       throw new Error("文件上传失败");
     }
+    // 生成签名URL
     const url = client.signatureUrl(result.name, {
       expires: 3600,
     });

@@ -3,7 +3,7 @@
  * 上传文件到OSS并返回上传文件的URL
  */
 import { NextRequest, NextResponse } from "next/server";
-import { uploadToOSS } from "@/app/lib/oss";
+import { uploadFile } from "@/app/lib/oss";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     const fileName = `yuanlu/podcastes/episodes/audios/${timestamp}_${Math.random().toString(36).substring(2)}.${coverFile.name.split(".").pop()}`;
-    const { fileUrl: audioUrl } = await uploadToOSS(buffer, fileName);
+    const { fileUrl: audioUrl } = await uploadFile(buffer, fileName);
 
     return NextResponse.json({
       message: "音频上传成功",
