@@ -19,6 +19,8 @@ interface PlayerState {
   setCurrentTime: (time: number) => void;
   // 设置当前播放集数的函数
   setEpisode: (episode: Episode) => void;
+  // 设置音频总时长的函数
+  setDuration: (duration: number) => void;
 }
 
 // 使用create函数创建一个Zustand store，并导出usePlayerStore钩子
@@ -32,9 +34,13 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   // 初始化currentEpisode为null
   currentEpisode: null,
   // 定义togglePlay函数，切换isPlaying状态
-  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+  togglePlay: () => {
+    set((state) => ({ isPlaying: !state.isPlaying }));
+  },
   // 定义setCurrentTime函数，设置currentTime
   setCurrentTime: (time) => set({ currentTime: time }),
   // 定义setEpisode函数，设置currentEpisode
   setEpisode: (episode) => set({ currentEpisode: episode }),
+  // 定义setDuration函数，设置duration
+  setDuration: (duration) => set({ duration: duration }),
 }));

@@ -27,8 +27,8 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white z-50">
-      <div className="max-w-md sm:max-w-3xl lg:max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 w-full bg-gray-50 z-50">
+      <div className="max-w-md sm:max-w-3xl lg:max-w-7xl mx-auto py-0 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* 手机尺寸下的菜单按钮 */}
           <button
@@ -103,7 +103,7 @@ export default function Header() {
             </span>
           </Link>
 
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+          <div className="hidden lg:flex flex-1 max-w-96 mx-4">
             <Player />
           </div>
 
@@ -126,6 +126,7 @@ export default function Header() {
 
             {/* 登录按钮 */}
             <LoginHomeBtn />
+            {/* 登录后，显示部分电话号码 */}
             {session && session.user && (
               <div className="hidden lg:flex items-end justify-end space-x-4 text-sm">
                 {session.user.phone.replace(
@@ -133,6 +134,12 @@ export default function Header() {
                   `$1****$2`,
                 )}
               </div>
+            )}
+            {/* 当用户为管理员时，有导航到控制台的链接 */}
+            {session && session.user && session.user.role === "admin" && (
+              <Link href="/dashboard" passHref>
+                控制台
+              </Link>
             )}
           </div>
         </div>

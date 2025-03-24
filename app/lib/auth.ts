@@ -2,7 +2,7 @@ import { AuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/app/lib/prisma";
+import prisma from "@/app/lib/prisma";
 import bcrypt from "bcrypt";
 
 // 定义 NextAuth 配置

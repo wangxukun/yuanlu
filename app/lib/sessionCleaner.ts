@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { prisma } from "@/app/lib/prisma";
+import prisma from "@/app/lib/prisma";
 
 // 每5分钟执行一次, 更新30分钟前的用户状态为离线
 cron.schedule("*/5 * * * *", async () => {
@@ -11,5 +11,6 @@ cron.schedule("*/5 * * * *", async () => {
     },
     data: { isOnline: false },
   });
+  await prisma.$disconnect();
   console.log("Updated inactive users to offline");
 });
