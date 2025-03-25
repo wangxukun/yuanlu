@@ -1,6 +1,6 @@
 import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import React from "react";
-import EpisodeForm from "@/components/dashboard/podcasts/episode-form";
+import EpisodeForm from "@/components/dashboard/episodes/episode-form";
 import { fetchPodcasts } from "@/app/lib/data";
 export default async function Page() {
   const podcasts = await fetchPodcasts();
