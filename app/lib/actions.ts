@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { registerFormSchema } from "@/app/lib/form-schema";
-import { deleteObject, uploadToOSS } from "@/app/lib/oss";
+import { deleteObject, uploadFile } from "@/app/lib/oss";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -201,7 +201,7 @@ export async function createPodcast(
     const buffer = Buffer.from(bytes);
     const uniqueFilename = `yuanlu/podcastes/covers/${timestamp}_${Math.random().toString(36).substring(2)}.${coverFile.name.split(".").pop()}`;
     // 3. 上传到OSS
-    const { fileUrl: coverUrl } = await uploadToOSS(buffer, uniqueFilename);
+    const { fileUrl: coverUrl } = await uploadFile(buffer, uniqueFilename);
     const res = await fetch(`${baseUrl}/api/podcast/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
