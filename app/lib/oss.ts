@@ -25,7 +25,7 @@ const client = new OSS(config);
 
 // 获取存储空间的访问权限。
 export async function getBucketAcl() {
-  const result = await client.getBucketACL(process.env.OSS_BUCKET);
+  const result = await client.getBucketACL(process.env.OSS_BUCKET as string);
   console.log(`${process.env.OSS_BUCKET} acl: `, result.acl);
 }
 
