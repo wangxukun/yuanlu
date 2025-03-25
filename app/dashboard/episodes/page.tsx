@@ -1,8 +1,8 @@
 import { lusitana } from "@/components/fonts";
 import Search from "@/components/search";
-import { CreateEpisodeBtn } from "@/components/dashboard/podcasts/buttons";
+import { CreateEpisodeBtn } from "@/components/dashboard/buttons";
 import React, { Suspense } from "react";
-import PodcastsTable from "@/components/dashboard/podcasts/podcastsTable";
+import EpisodesTable from "@/components/dashboard/episodes/episodesTable";
 
 export default function Page() {
   return (
@@ -16,7 +16,7 @@ export default function Page() {
           <CreateEpisodeBtn />
         </div>
 
-        <PodcastsTable />
+        <EpisodesTable />
       </Suspense>
 
       {/*<div className="mt-5 flex w-full justify-center">*/}

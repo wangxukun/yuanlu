@@ -1,5 +1,5 @@
 import { lusitana } from "@/components/fonts";
-import { CreatePodcastBtn } from "@/components/dashboard/podcasts/buttons";
+import { CreatePodcastBtn } from "@/components/dashboard/buttons";
 import Search from "@/components/search";
 import React, { Suspense } from "react";
 import PodcastsTable from "@/components/dashboard/podcasts/podcastsTable";
