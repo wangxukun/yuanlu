@@ -22,8 +22,15 @@ if (
 }
 
 const client = new OSS(config);
+
+// 获取存储空间的访问权限。
+export async function getBucketAcl() {
+  const result = await client.getBucketACL(process.env.OSS_BUCKET);
+  console.log(`${process.env.OSS_BUCKET} acl: `, result.acl);
+}
+
 // 上传文件
-export async function uploadToOSS(
+export async function uploadFile(
   fileContent: Buffer | Blob,
   uniqueFilename: string,
 ): Promise<{ fileUrl: string; fileName: string }> {
@@ -33,17 +40,19 @@ export async function uploadToOSS(
     fileContent = Buffer.from(arrayBuffer);
   }
   try {
+    console.log(process.env.OSS_ACCESS_KEY_ID);
     const result = await client.put(uniqueFilename, fileContent);
 
     if (!result.name) {
       throw new Error("文件上传失败");
     }
-    const url = client.signatureUrl(result.name, {
-      expires: 3600,
-    });
+    // 生成签名URL
+    // const url = client.signatureUrl(result.name, {
+    //   expires: 3600,
+    // });
 
     return {
-      fileUrl: url,
+      fileUrl: result.url,
       fileName: result.name,
     };
   } catch (error) {
@@ -52,16 +61,19 @@ export async function uploadToOSS(
   }
 }
 
-// 更新文件地址
-export async function updateFileUrl(
+/**
+ * 生成临时签名文件路径
+ * @param fileName // 文件名
+ * @param expire  // 有效时间
+ */
+export async function generateSignatureUrl(
   fileName: string,
   expire: number,
 ): Promise<string> {
   try {
-    const url = client.signatureUrl(fileName, {
+    return client.signatureUrl(fileName, {
       expires: expire,
     });
-    return url;
   } catch (error) {
     console.error("OSS更新文件地址错误", error);
     throw new Error("文件地址更新失败");
@@ -73,9 +85,7 @@ export async function deleteObject(fileName: string) {
   try {
     // 填写Object完整路径。Object完整路径中不能包含Bucket名称。
     // fileName="yuanlu/podcastes/covers/1742616413531_v8u19i72m4k.jpg"
-    const result = await client.delete(fileName);
-    console.log("删除OSS中封面图片成功");
-    return result;
+    return await client.delete(fileName);
   } catch (error) {
     console.log(error);
   }

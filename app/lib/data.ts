@@ -1,3 +1,5 @@
+import { generateSignatureUrl } from "@/app/lib/oss";
+
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 /**
@@ -52,5 +54,13 @@ export async function fetchPodcasts(): Promise<Podcast[]> {
     throw new Error("Failed to fetch podcasts");
   }
   const data = await res.json();
+  if (data.length > 0) {
+    for (let i = 0; i < data.length; i++) {
+      data[i].coverUrl = await generateSignatureUrl(
+        data[i].coverFileName,
+        3600 * 3,
+      );
+    }
+  }
   return data;
 }
