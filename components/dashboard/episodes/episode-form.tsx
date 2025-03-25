@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useActionState, useState } from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import {
@@ -11,7 +12,6 @@ import {
   ClockIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
-import { createEpisode, EpisodeState } from "@/app/lib/actions";
 import { PodcastField } from "@/app/lib/definitions";
 
 export default function EpisodeForm({
@@ -26,26 +26,23 @@ export default function EpisodeForm({
     audioUrl?: string;
     audioFileName?: string;
     audioMessage?: string;
-    subtitleUrl?: string;
-    subtitleFileName?: string;
-    subtitleMessage?: string;
+    subtitleEnUrl?: string;
+    subtitleEnFileName?: string;
+    subtitleEnMessage?: string;
+    subtitleZhUrl?: string;
+    subtitleZhFileName?: string;
+    subtitleZhMessage?: string;
   }>();
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [podcastId, setPodcastId] = useState("");
   const [episodeTitle, setEpisodeTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
-  const [audioUrl, setAudioUrl] = useState<string>();
-
-  const initialState: EpisodeState = {
-    message: null,
-    status: 0,
-  };
-
-  const [state, formAction] = useActionState<EpisodeState, FormData>(
-    createEpisode,
-    initialState,
-  );
+  const [audioUrl, setAudioUrl] = useState("");
+  const [publishStatus, setPublishStatus] = useState("paid");
+  const [isExclusive, setIsExclusive] = useState(false);
+  const router = useRouter();
 
   // 异步封面文件上传
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +102,7 @@ export default function EpisodeForm({
   };
 
   // 中英文字幕上传
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // 将文件进行上传
@@ -120,18 +117,86 @@ export default function EpisodeForm({
           await response.json();
         setUploadedFiles((prev) => ({
           ...prev,
-          subtitleUrl: subtitleUrl,
-          subtitleFileName: subtitleFileName,
-          subtitleMessage: message,
+          subtitleEnUrl: subtitleUrl,
+          subtitleEnFileName: subtitleFileName,
+          subtitleEnMessage: message,
         }));
       } catch (error) {
-        console.error("上传音频文件失败", error);
+        console.error("上传字幕文件失败", error);
       }
     }
   };
 
+  // 中文字幕上传
+  const handleZhChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 将文件进行上传
+      try {
+        const formData = new FormData();
+        formData.append("subtitle", file);
+        const response = await fetch("/api/podcast/upload-episode-subtitle", {
+          method: "POST",
+          body: formData,
+        });
+        const { subtitleUrl, subtitleFileName, message } =
+          await response.json();
+        setUploadedFiles((prev) => ({
+          ...prev,
+          subtitleZhUrl: subtitleUrl,
+          subtitleZhFileName: subtitleFileName,
+          subtitleZhMessage: message,
+        }));
+      } catch (error) {
+        console.error("上传字幕文件失败", error);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("podcastid", podcastId);
+    formData.append("episodeTitle", episodeTitle);
+    formData.append("coverUrl", uploadedFiles?.coverUrl || "");
+    formData.append("coverFileName", uploadedFiles?.coverFileName || "");
+    formData.append("audioUrl", uploadedFiles?.audioUrl || "");
+    formData.append("audioFileName", uploadedFiles?.audioFileName || "");
+    formData.append("duration", duration);
+    formData.append("subtitleEnUrl", uploadedFiles?.subtitleEnUrl || "");
+    formData.append(
+      "subtitleEnFileName",
+      uploadedFiles?.subtitleEnFileName || "",
+    );
+    formData.append("subtitleZhUrl", uploadedFiles?.subtitleZhUrl || "");
+    formData.append(
+      "subtitleZhFileName",
+      uploadedFiles?.subtitleZhFileName || "",
+    );
+    formData.append("description", description);
+    formData.append("publishStatus", publishStatus);
+    formData.append("isExclusive", isExclusive.toString());
+
+    try {
+      const response = await fetch("/api/episode/create", {
+        method: "POST",
+        body: formData,
+      } as RequestInit);
+
+      if (response.ok) {
+        console.log("单集创建成功");
+        await router.push("/dashboard/episodes/create-success");
+      } else {
+        console.log("单集创建失败");
+      }
+    } catch (error) {
+      console.error("单集创建失败: ", error);
+    }
+  };
+
   return (
-    <form action={formAction} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* 播客名称 */}
         <div className="mb-4">
@@ -144,6 +209,9 @@ export default function EpisodeForm({
               name="podcastid"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               defaultValue=""
+              onChange={(e) => {
+                setPodcastId(e.target.value);
+              }}
               aria-describedby="customer-error"
             >
               <option value="" disabled>
@@ -279,12 +347,12 @@ export default function EpisodeForm({
                 type="file"
                 accept=".srt,.vtt"
                 className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleChange}
+                onChange={handleEnChange}
               />
               <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
-          <span>{uploadedFiles?.subtitleMessage}</span>
+          <span>{uploadedFiles?.subtitleEnMessage}</span>
         </div>
 
         {/* 中文字幕 */}
@@ -303,12 +371,12 @@ export default function EpisodeForm({
                 type="file"
                 accept=".srt,.vtt"
                 className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleChange}
+                onChange={handleZhChange}
               />
               <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
-          <span>{uploadedFiles?.subtitleMessage}</span>
+          <span>{uploadedFiles?.subtitleZhMessage}</span>
         </div>
 
         {/* 发布状态 */}
@@ -321,7 +389,9 @@ export default function EpisodeForm({
                   id="pending"
                   name="status"
                   type="radio"
+                  checked={publishStatus === "pending"}
                   value="pending"
+                  onChange={(e) => setPublishStatus(e.target.value)}
                   className="text-white-600 h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
                 />
                 <label
@@ -336,7 +406,9 @@ export default function EpisodeForm({
                   id="paid"
                   name="status"
                   type="radio"
+                  checked={publishStatus === "paid"}
                   value="paid"
+                  onChange={(e) => setPublishStatus(e.target.value)}
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                 />
                 <label
@@ -362,7 +434,8 @@ export default function EpisodeForm({
                   id="isExclusive"
                   name="isExclusive"
                   type="checkbox"
-                  value="isExclusive"
+                  checked={isExclusive}
+                  onChange={(e) => setIsExclusive(e.target.checked)}
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                 />
                 <label
@@ -411,9 +484,6 @@ export default function EpisodeForm({
         </Link>
         <Button type="submit">发布播客剧集</Button>
       </div>
-      {state.message && (
-        <p className="mt-4 text-sm text-red-500">{state.message}</p>
-      )}
     </form>
   );
 }

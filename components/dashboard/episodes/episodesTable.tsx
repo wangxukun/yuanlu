@@ -14,7 +14,7 @@ interface Podcast {
   from: string;
 }
 
-export default async function PodCastsTable() {
+export default async function EpisodesTable() {
   const podcasts = ((await fetchPodcasts()) as Podcast[]) || [];
 
   return (
