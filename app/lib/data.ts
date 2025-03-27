@@ -64,3 +64,52 @@ export async function fetchPodcasts(): Promise<Podcast[]> {
   }
   return data;
 }
+
+export interface EpisodeTableData {
+  episodeid: string;
+  coverUrl: string;
+  coverFileName: string;
+  category: {
+    categoryid: number;
+    title: string;
+  };
+  title: string;
+  audioUrl: string;
+  audioFileName: string;
+  subtitleEnUrl: string;
+  subtitleEnFileName: string;
+  subtitleZhUrl: string;
+  subtitleZhFileName: string;
+  createAt: string;
+  status: string;
+  isExclusive: boolean;
+}
+/**
+ * 获取episode列表
+ */
+export async function fetchEpisodes(): Promise<EpisodeTableData[]> {
+  const res = await fetch(`${baseUrl}/api/episode/list`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch episodes");
+  }
+  const data = await res.json();
+  if (data.length > 0) {
+    for (let i = 0; i < data.length; i++) {
+      // 生成封面图片的签名链接
+      data[i].coverUrl = await generateSignatureUrl(
+        data[i].coverFileName,
+        3600 * 3,
+      );
+
+      // 生成音频文件的签名链接
+      data[i].audioUrl = await generateSignatureUrl(
+        data[i].audioFileName,
+        3600 * 3,
+      );
+    }
+  }
+  return data;
+}
