@@ -295,3 +295,50 @@ export async function deletePodcast(
     status: data.status,
   };
 }
+
+export type EpisodeDelState = {
+  message?: string;
+  status: number;
+};
+// 删除剧集
+export async function deleteEpisode(
+  id: string,
+  coverFileName: string,
+  audioFileName: string,
+  subtitleEnFileName: string,
+  subtitleZhFileName: string,
+): Promise<EpisodeDelState> {
+  // 删除OSS中封面图片
+  const delCoverResult = await deleteObject(coverFileName);
+  const delAudioResult = await deleteObject(audioFileName);
+  const delSubtitleEnResult = await deleteObject(subtitleEnFileName);
+  const delSubtitleZhResult = await deleteObject(subtitleZhFileName);
+
+  const res = await fetch(`${baseUrl}/api/episode/delete`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ episodeid: id }),
+  });
+  const data = await res.json();
+  console.log("删除OSS中封面图片", delCoverResult);
+  console.log("删除OSS中音频文件", delAudioResult);
+  console.log("删除OSS中英文字幕文件", delSubtitleEnResult);
+  console.log("删除OSS中中文字幕文件", delSubtitleZhResult);
+  console.log("删除数据库中数据", res);
+  if (
+    !delCoverResult ||
+    !delAudioResult ||
+    !delSubtitleEnResult ||
+    !delSubtitleZhResult ||
+    !res.ok
+  ) {
+    return {
+      message: "",
+      status: 500,
+    };
+  }
+  return {
+    message: data.message,
+    status: data.status,
+  };
+}

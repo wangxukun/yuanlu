@@ -424,9 +424,7 @@ export default function EpisodeForm({
 
         {/* 是否需要订阅 */}
         <fieldset>
-          <legend className="mb-2 block text-sm font-medium">
-            是否需要订阅
-          </legend>
+          <legend className="mb-2 block text-sm font-medium">付费订阅</legend>
           <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3">
             <div className="flex gap-4">
               <div className="flex items-center">
@@ -440,9 +438,9 @@ export default function EpisodeForm({
                 />
                 <label
                   htmlFor="isExclusive"
-                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
                 >
-                  订阅版 <CheckIcon className="h-4 w-4" />
+                  {/*订阅版 <CheckIcon className="h-4 w-4" />*/} 需要付费订阅
                 </label>
               </div>
             </div>
