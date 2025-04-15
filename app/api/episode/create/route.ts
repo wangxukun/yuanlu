@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     const coverFileName = stringifyField(formData.get("coverFileName"));
     const audioUrl = stringifyField(formData.get("audioUrl"));
     const audioFileName = stringifyField(formData.get("audioFileName"));
-    const duration = stringifyField(formData.get("duration"));
+    const duration = Number(stringifyField(formData.get("duration")));
+    const publishDate = new Date(stringifyField(formData.get("publishDate")));
     const subtitleEnUrl = stringifyField(formData.get("subtitleEnUrl"));
     const subtitleEnFileName = stringifyField(
       formData.get("subtitleEnFileName"),
@@ -48,10 +49,7 @@ export async function POST(request: NextRequest) {
       !audioUrl ||
       !audioFileName ||
       !duration ||
-      !subtitleEnUrl ||
-      !subtitleEnFileName ||
-      !subtitleZhUrl ||
-      !subtitleZhFileName ||
+      !publishDate ||
       !description ||
       !publishStatus
     ) {
@@ -71,6 +69,7 @@ export async function POST(request: NextRequest) {
         coverFileName: coverFileName,
         description: description,
         audioUrl: audioUrl,
+        publishAt: publishDate,
         audioFileName: audioFileName,
         subtitleEnUrl: subtitleEnUrl,
         subtitleEnFileName: subtitleEnFileName,

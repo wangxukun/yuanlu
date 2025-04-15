@@ -8,7 +8,8 @@
     "test": "echo Test not enabled",
     "start": "next start",
     "lint": "eslint --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "crawler": "npm tsx app/crawler/index.ts"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^3.1.1",
@@ -24,6 +25,7 @@
     "next": "^15.2.0",
     "next-auth": "^4.24.11",
     "node-cron": "^3.0.3",
+    "puppeteer-core": "^24.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "use-debounce": "^10.0.4",
@@ -39,6 +41,7 @@
     "@types/ali-oss": "^6.16.11",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
+    "@types/puppeteer-core": "^7.0.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "eslint": "^9.20.1",

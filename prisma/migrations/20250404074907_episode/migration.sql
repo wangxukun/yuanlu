@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "episode" ADD COLUMN     "publishAt" DATE NOT NULL DEFAULT CURRENT_DATE;

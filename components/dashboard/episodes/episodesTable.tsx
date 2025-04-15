@@ -61,7 +61,7 @@ export default async function EpisodesTable() {
                   音频
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  日期
+                  发布日期
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   状态
@@ -110,7 +110,7 @@ export default async function EpisodesTable() {
                     </audio>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {new Date(episode.createAt).toLocaleDateString()}
+                    {new Date(episode.publishAt).toLocaleDateString()}
                   </td>
                   <td className="px-3 py-3">
                     <EpisodeStatus status={episode.status} />

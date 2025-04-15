@@ -96,9 +96,10 @@ model episode {
   subtitleEnFileName String?              @db.VarChar(255)
   subtitleZhUrl      String?              @db.VarChar(255)
   subtitleZhFileName String?              @db.VarChar(255)
-  duration           String?              @db.VarChar(10)
+  duration           Int                  @default(0)
   categoryid         Int?
   uploaderid         String?
+  publishAt          DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
   createAt           DateTime?            @default(now()) @db.Timestamptz(6)
   updateAt           DateTime?            @db.Timestamptz(6)
   status             String?              @default("unpublished") @db.VarChar(50)

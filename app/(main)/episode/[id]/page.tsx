@@ -4,11 +4,10 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { usePlayerStore } from "@/store/player-store";
-import { Episode } from "@/app/types/podcast";
 import { formatTime } from "@/app/lib/tools";
 
 // 更新后的Mock数据
-const mockEpisode: Episode = {
+const mockEpisode = {
   id: "1",
   title: "Rage bait: How online anger makes money",
   date: "2025-02-13",
@@ -61,7 +60,7 @@ export default function EpisodePage() {
   // 状态管理：收藏状态
   const [isCollected, setIsCollected] = useState(initialCollected);
 
-  const { isPlaying, setEpisode, togglePlay, setDuration } = usePlayerStore();
+  const { isPlaying, togglePlay } = usePlayerStore();
 
   return (
     <div className="rounded-xl shadow-md p-6 mt-4 max-w-6xl mx-auto">
@@ -147,8 +146,6 @@ export default function EpisodePage() {
 
             <button
               onClick={() => {
-                setEpisode(mockEpisode);
-                setDuration(mockEpisode.duration);
                 togglePlay();
               }}
               className="flex items-center px-4 py-1 bg-slate-200 text-xs text-gray-500 rounded-lg hover:bg-slate-300 transition-colors"
