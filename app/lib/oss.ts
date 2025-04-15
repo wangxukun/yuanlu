@@ -11,7 +11,6 @@ const config: Options = {
   // 填写Bucket名称。
   bucket: process.env.OSS_BUCKET as string,
 };
-
 if (
   !config.region ||
   !config.accessKeyId ||

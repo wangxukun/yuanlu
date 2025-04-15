@@ -20,10 +20,7 @@ export async function GET() {
     // 确保异常时也释放连接
     await prisma.$disconnect();
     console.error("[GET /api/podcast/list]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error", status: 500 });
   } finally {
     // 最佳实践：在finally块中执行清理操作
     await prisma.$disconnect();

@@ -4,17 +4,18 @@ import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-interface ListItem {
-  id: string;
-  imageUrl: string;
-  subtitle: string;
-  source: string;
-  label: string;
+interface Podcast {
+  categoryid: number;
+  title: string;
+  description: string;
+  coverUrl: string;
+  coverFileName?: string;
+  from: string;
 }
 
 interface ListProps {
   title: string;
-  items: ListItem[];
+  items: Podcast[];
 }
 
 export default function List({ title, items }: ListProps) {
@@ -23,7 +24,7 @@ export default function List({ title, items }: ListProps) {
   const showMoreLink = items.length > 8;
 
   // 处理卡片点击
-  const handleItemClick = (id: string) => {
+  const handleItemClick = (id: number) => {
     const encodedId = encodeURIComponent(id);
     router.push(`/category/${encodedId}`);
   };
@@ -70,14 +71,14 @@ export default function List({ title, items }: ListProps) {
           <div
             key={index}
             role="button"
-            onClick={() => handleItemClick(item.id)}
+            onClick={() => handleItemClick(item.categoryid)}
             className="group relative bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
           >
             {/* 图片容器 */}
             <div className="relative h-48 w-48 mb-4 rounded-md overflow-hidden">
               <Image
-                src={item.imageUrl}
-                alt={item.label}
+                src={item.coverUrl}
+                alt={item.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -99,13 +100,10 @@ export default function List({ title, items }: ListProps) {
 
             {/* 内容区块 */}
             <div className="space-y-2">
-              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                {item.label}
-              </span>
               <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
-                {item.subtitle}
+                {item.title}
               </h3>
-              <p className="text-sm text-gray-500">{item.source}</p>
+              <p className="text-sm text-gray-500">{item.from}</p>
             </div>
           </div>
         ))}

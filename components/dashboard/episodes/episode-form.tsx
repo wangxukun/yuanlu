@@ -42,6 +42,7 @@ export default function EpisodeForm({
   const [audioUrl, setAudioUrl] = useState("");
   const [publishStatus, setPublishStatus] = useState("paid");
   const [isExclusive, setIsExclusive] = useState(false);
+  const [publishDate, setPublishDate] = useState<string>("");
   const router = useRouter();
 
   // 异步封面文件上传
@@ -61,7 +62,7 @@ export default function EpisodeForm({
         const response = await fetch("/api/podcast/upload-episode-cover", {
           method: "POST",
           body: formData,
-        });
+        } as RequestInit);
         const { coverUrl, coverFileName, message } = await response.json();
         setUploadedFiles((prev) => ({
           ...prev,
@@ -87,7 +88,7 @@ export default function EpisodeForm({
         const response = await fetch("/api/podcast/upload-episode-audio", {
           method: "POST",
           body: formData,
-        });
+        } as RequestInit);
         const { audioUrl, audioFileName, message } = await response.json();
         setUploadedFiles((prev) => ({
           ...prev,
@@ -112,7 +113,7 @@ export default function EpisodeForm({
         const response = await fetch("/api/podcast/upload-episode-subtitle", {
           method: "POST",
           body: formData,
-        });
+        } as RequestInit);
         const { subtitleUrl, subtitleFileName, message } =
           await response.json();
         setUploadedFiles((prev) => ({
@@ -138,7 +139,7 @@ export default function EpisodeForm({
         const response = await fetch("/api/podcast/upload-episode-subtitle", {
           method: "POST",
           body: formData,
-        });
+        } as RequestInit);
         const { subtitleUrl, subtitleFileName, message } =
           await response.json();
         setUploadedFiles((prev) => ({
@@ -164,6 +165,7 @@ export default function EpisodeForm({
     formData.append("audioUrl", uploadedFiles?.audioUrl || "");
     formData.append("audioFileName", uploadedFiles?.audioFileName || "");
     formData.append("duration", duration);
+    formData.append("publishDate", publishDate);
     formData.append("subtitleEnUrl", uploadedFiles?.subtitleEnUrl || "");
     formData.append(
       "subtitleEnFileName",
@@ -327,6 +329,30 @@ export default function EpisodeForm({
                 required
               />
               <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        {/* 发布日期 */}
+        <div className="mb-4">
+          <label
+            htmlFor="publishDate"
+            className="mb-2 block text-sm font-medium"
+          >
+            发布日期
+          </label>
+          <div className="relative mt-2 rounded-md">
+            <div className="relative">
+              <input
+                id="publishDate"
+                name="publishDate"
+                type="date"
+                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                value={publishDate}
+                onChange={(e) => setPublishDate(e.target.value)}
+                required
+              />
+              <ClockIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
         </div>
