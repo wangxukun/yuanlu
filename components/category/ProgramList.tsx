@@ -12,6 +12,8 @@ interface ProgramListProps {
 
 export default function ProgramList({ episodes }: ProgramListProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  // 收藏状态
+  // const [isCollected, setIsCollected] = useState(false);
 
   // 排序函数
   const sortedEpisodes = [...episodes].sort((a, b) => {
@@ -37,7 +39,7 @@ export default function ProgramList({ episodes }: ProgramListProps) {
 
       {/* 节目列表 */}
       {sortedEpisodes.map((episode) => (
-        <Link key={episode.episodeid} href={`/episode/${episode.episodeid}?`}>
+        <Link key={episode.episodeid} href={`/episode/${episode.episodeid}`}>
           <div className="group/item border-b border-gray-300 p-2 hover:bg-zinc-200 rounded-lg last:border-b-0">
             <div className="flex items-center space-x-4">
               {/* 节目图片 */}

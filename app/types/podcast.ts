@@ -15,6 +15,7 @@ export interface Episode {
   publishAt: string;
   status: string;
   isExclusive: boolean;
+  category: Podcast;
 }
 
 export interface Podcast {
@@ -24,4 +25,26 @@ export interface Podcast {
   coverUrl: string;
   from: string;
   episode: Episode[];
+}
+
+export interface EpisodeTableData {
+  episodeid: string;
+  coverUrl: string;
+  coverFileName: string;
+  title: string;
+  duration: string;
+  audioUrl: string;
+  audioFileName: string;
+  subtitleEnUrl: string;
+  subtitleEnFileName: string;
+  subtitleZhUrl: string;
+  subtitleZhFileName: string;
+  publishAt: string;
+  createAt: string;
+  status: string;
+  isExclusive: boolean;
+  category: {
+    categoryid: number;
+    title: string;
+  };
 }

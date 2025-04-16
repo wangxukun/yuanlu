@@ -1,5 +1,5 @@
 import { generateSignatureUrl } from "@/app/lib/oss";
-import { Episode } from "@/app/types/podcast";
+import { Episode, EpisodeTableData } from "@/app/types/podcast";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -82,8 +82,8 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
     throw new Error("Failed to fetch podcast");
   }
   const data = await res.json();
+  data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
   if (data.episode && data.episode.length > 0) {
-    data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
     for (let i = 0, len = data.episode.length; i < len; i++) {
       data.episode[i].coverUrl = await generateSignatureUrl(
         data.episode[i].coverFileName,
@@ -106,27 +106,6 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
   return data;
 }
 
-export interface EpisodeTableData {
-  episodeid: string;
-  coverUrl: string;
-  coverFileName: string;
-  title: string;
-  duration: string;
-  audioUrl: string;
-  audioFileName: string;
-  subtitleEnUrl: string;
-  subtitleEnFileName: string;
-  subtitleZhUrl: string;
-  subtitleZhFileName: string;
-  publishAt: string;
-  createAt: string;
-  status: string;
-  isExclusive: boolean;
-  category: {
-    categoryid: number;
-    title: string;
-  };
-}
 /**
  * 获取episode列表
  */
@@ -153,6 +132,39 @@ export async function fetchEpisodes(): Promise<EpisodeTableData[]> {
         3600 * 3,
       );
     }
+  }
+  return data;
+}
+
+/**
+ * 获取单集详情，包含所属的 podcast
+ * @param id episode id
+ */
+export async function fetchEpisodeById(id: string): Promise<Episode> {
+  const res = await fetch(`${baseUrl}/api/episode/detail?id=${id}`, {
+    method: "GET",
+    headers: {},
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch episode");
+  }
+  const data = await res.json();
+  data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
+  data.audioUrl = await generateSignatureUrl(data.audioFileName, 3600 * 3);
+  data.subtitleEnUrl = await generateSignatureUrl(
+    data.subtitleEnFileName,
+    3600 * 3,
+  );
+  data.subtitleZhUrl = await generateSignatureUrl(
+    data.subtitleZhFileName,
+    3600 * 3,
+  );
+  if (data.category) {
+    data.category.coverUrl = await generateSignatureUrl(
+      data.category.coverFileName,
+      3600 * 3,
+    );
   }
   return data;
 }

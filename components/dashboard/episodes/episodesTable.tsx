@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { fetchEpisodes, EpisodeTableData } from "@/app/lib/data";
+import { fetchEpisodes } from "@/app/lib/data";
+import { EpisodeTableData } from "@/app/types/podcast";
 import {
   DeleteEpisodeBtn,
   UpdateEpisodeBtn,
