@@ -20,7 +20,6 @@ export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
   );
   const setDuration = usePlayerStore((state) => state.setDuration);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
-  const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
   const play = usePlayerStore((state) => state.play);
   const pause = usePlayerStore((state) => state.pause);
 
@@ -29,28 +28,27 @@ export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
     return new Date(b.publishAt).getTime() - new Date(a.publishAt).getTime();
   })[0];
 
-  useEffect(() => {
-    if (audioRef) {
-      console.log("可以控制 Header 中的 audio：", audioRef);
-      // 示例操作：audioRef.play();
-    }
-  }, [audioRef]);
+  // useEffect(() => {
+  //   if (audioRef) {
+  //     console.log("可以控制 Header 中的 audio：", audioRef);
+  //     // 示例操作：audioRef.play();
+  //   }
+  // }, [audioRef]);
 
   // 当 currentAudioUrl 发生变化时，更新音频源并播放
   useEffect(() => {
     if (currentAudioUrl && audioRef && audioRef.src !== currentAudioUrl) {
       const audioElement = audioRef;
       try {
+        console.log("currentAudioUrl值改变，重头开始播放");
         // 暂停当前音频
-        audioElement.pause();
+        pause();
         // 设置新的音频源
         audioElement.src = currentAudioUrl;
         // 加载新的音频资源
         audioElement.load();
         // 播放新的音频
-        audioElement.play().catch((error) => {
-          console.error("Audio playback failed:", error);
-        });
+        play();
       } catch (error) {
         console.error("Error while switching audio source:", error);
       }
@@ -59,9 +57,6 @@ export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
 
   const handlePlay = () => {
     const audioUrl = lastEpisode.audioUrl;
-    console.log("audioRef: ", audioRef);
-    console.log("currentAudioUrl: ", currentAudioUrl);
-    console.log("audioUrl: ", audioUrl);
     if (audioRef) {
       // 如果当前音频 URL 已经是目标音频，则直接播放或暂停
       if (currentAudioUrl === audioUrl) {
@@ -75,7 +70,6 @@ export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
         setCurrentAudioUrl(audioUrl);
         setCurrentEpisode(lastEpisode);
         setDuration(lastEpisode.duration);
-        setIsPlaying(true);
       }
     }
   };
