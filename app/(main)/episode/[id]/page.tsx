@@ -50,7 +50,7 @@ export default async function EpisodePage({
   const episode = await fetchEpisodeById(id);
 
   return (
-    <div className="rounded-xl shadow-md p-6 mt-4 max-w-6xl mx-auto">
+    <div className="flex p-6 mt-0 w-full justify-center mx-auto">
       <EpisodeSummarize episode={episode} />
       {/*/!* 第三行：单集文稿 *!/*/}
       {/*<div>*/}

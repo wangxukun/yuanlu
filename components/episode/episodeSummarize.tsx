@@ -11,7 +11,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const [isCollected, setIsCollected] = useState(false);
   const { isPlaying, togglePlay } = usePlayerStore();
   return (
-    <>
+    <div className="flex flex-col justify-start w-full max-w-[1200px]">
       <div className="flex items-start space-x-6 mb-8">
         {/* 修改为16:9比例的图片容器 */}
         <div className="relative w-48 aspect-video rounded-lg overflow-hidden flex-shrink-0">
@@ -121,12 +121,12 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       </div>
 
       {/* 第二行：单集简介 */}
-      <div className="mb-8">
+      <div className="flex flex-col mb-8">
         <h2 className="text-lg font-bold text-slate-500 mb-4">单集简介</h2>
         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
           {episode.description}
         </p>
       </div>
-    </>
+    </div>
   );
 }
