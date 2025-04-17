@@ -1,5 +1,6 @@
 import { generateSignatureUrl } from "@/app/lib/oss";
 import { Episode, EpisodeTableData } from "@/app/types/podcast";
+import axios from "axios";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -93,14 +94,18 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
         data.episode[i].audioFileName,
         3600 * 3,
       );
-      data.episode[i].subtitleEnUrl = await generateSignatureUrl(
-        data.episode[i].subtitleEnFileName,
-        3600 * 3,
-      );
-      data.episode[i].subtitleZhUrl = await generateSignatureUrl(
-        data.episode[i].subtitleZhFileName,
-        3600 * 3,
-      );
+      if (data.episode[i].subtitleEnUrl.length > 0) {
+        data.episode[i].subtitleEnUrl = await generateSignatureUrl(
+          data.episode[i].subtitleEnFileName,
+          3600 * 3,
+        );
+      }
+      if (data.episode[i].subtitleZhUrl.length > 0) {
+        data.episode[i].subtitleZhUrl = await generateSignatureUrl(
+          data.episode[i].subtitleZhFileName,
+          3600 * 3,
+        );
+      }
     }
   }
   return data;
@@ -152,14 +157,18 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
   const data = await res.json();
   data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
   data.audioUrl = await generateSignatureUrl(data.audioFileName, 3600 * 3);
-  data.subtitleEnUrl = await generateSignatureUrl(
-    data.subtitleEnFileName,
-    3600 * 3,
-  );
-  data.subtitleZhUrl = await generateSignatureUrl(
-    data.subtitleZhFileName,
-    3600 * 3,
-  );
+  if (data.subtitleEnUrl.length > 0) {
+    data.subtitleEnUrl = await generateSignatureUrl(
+      data.subtitleEnFileName,
+      3600 * 3,
+    );
+  }
+  if (data.subtitleZhUrl.length > 0) {
+    data.subtitleZhUrl = await generateSignatureUrl(
+      data.subtitleZhFileName,
+      3600 * 3,
+    );
+  }
   if (data.category) {
     data.category.coverUrl = await generateSignatureUrl(
       data.category.coverFileName,
@@ -168,3 +177,50 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
   }
   return data;
 }
+
+/**
+ * 获取字幕
+ * @param subtitleUrl
+ */
+export async function fetchSubtitles(subtitleUrl: string) {
+  if (subtitleUrl?.length === 0) {
+    return [];
+  } else {
+    try {
+      const response = await axios.get(subtitleUrl);
+      return parseSrt(response.data);
+    } catch (err) {
+      console.error("Failed to fetch subtitles:", err);
+    }
+  }
+}
+
+interface SubtitleItem {
+  id: number;
+  startTime: string;
+  endTime: string;
+  text: string;
+}
+
+// SRT 文件解析函数
+const parseSrt = (srtText: string): SubtitleItem[] => {
+  const subtitleBlocks = srtText.trim().split(/\r?\n\r?\n/);
+  return subtitleBlocks
+    .map((block) => {
+      const lines = block.split(/\r?\n/);
+      if (lines.length < 3) return null;
+      const id = parseInt(lines[0]);
+      const timeMatch = lines[1].match(
+        /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/,
+      );
+      if (!timeMatch) return null;
+      const text = lines.slice(2).join("\n");
+      return {
+        id,
+        startTime: timeMatch[1],
+        endTime: timeMatch[2],
+        text,
+      };
+    })
+    .filter(Boolean) as SubtitleItem[];
+};

@@ -18,6 +18,7 @@
     "@types/lodash": "^4.17.16",
     "@types/node-cron": "^3.0.11",
     "ali-oss": "^6.22.0",
+    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "canvas": "^3.1.0",
     "clsx": "^2.1.1",
