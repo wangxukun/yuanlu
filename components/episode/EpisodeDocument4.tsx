@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { usePlayerStore } from "@/store/player-store";
 
 interface SubtitleItem {
   id: number;
@@ -17,11 +16,6 @@ export default function EpisodeDocument({
   const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
-
-  // 获取播放器状态
-  const currentTime = usePlayerStore((state) => state.currentTime);
-  const isPlaying = usePlayerStore((state) => state.isPlaying);
 
   useEffect(() => {
     try {
@@ -33,34 +27,7 @@ export default function EpisodeDocument({
     } finally {
       setLoading(false);
     }
-  }, [subtitle]); // 修复依赖项为 subtitle 而不是 subtitles
-
-  // 监听播放时间变化，更新高亮字幕
-  useEffect(() => {
-    if (!isPlaying || subtitles.length === 0) {
-      setActiveSubtitleId(null);
-      return;
-    }
-
-    // 将当前时间转换为秒数
-    const currentSeconds = currentTime;
-
-    // 查找当前应该高亮的字幕
-    const activeSubtitle = subtitles.find((sub) => {
-      const startTime = convertTimeToSeconds(sub.startTime);
-      const endTime = convertTimeToSeconds(sub.endTime);
-      return currentSeconds >= startTime && currentSeconds <= endTime;
-    });
-
-    setActiveSubtitleId(activeSubtitle?.id || null);
-  }, [currentTime, isPlaying, subtitles]);
-
-  // 将时间字符串 (HH:MM:SS,mmm) 转换为秒数
-  const convertTimeToSeconds = (timeStr: string): number => {
-    const [hms, ms] = timeStr.split(",");
-    const [hours, minutes, seconds] = hms.split(":").map(Number);
-    return hours * 3600 + minutes * 60 + seconds + Number(ms) / 1000;
-  };
+  }, [subtitles]);
 
   // 格式化时间显示 (HH:MM:SS)
   const formatTime = (timeStr: string): string => {
@@ -134,13 +101,9 @@ export default function EpisodeDocument({
         {subtitles.map((subtitle) => (
           <div
             key={subtitle.id}
-            className={`px-6 group/item py-4 transition-colors duration-150 ${
-              activeSubtitleId === subtitle.id
-                ? "bg-blue-50 border-l-4 border-blue-500" // 高亮样式
-                : "hover:bg-gray-100" // 默认悬停样式
-            }`}
+            className="px-6 group/item py-4 hover:bg-gray-100 transition-colors duration-150"
           >
-            <div className="flex items-baseline mb-1">
+            <div className="hidden group-hover/item:inline-block hover:cursor-pointer flex items-baseline mb-1">
               <span className="text-xs font-mono text-gray-500 mr-2">
                 {formatTime(subtitle.startTime)}
               </span>
@@ -148,13 +111,7 @@ export default function EpisodeDocument({
                 - {formatTime(subtitle.endTime)}
               </span>
             </div>
-            <p
-              className={`text-gray-800 leading-relaxed ${
-                activeSubtitleId === subtitle.id ? "font-medium" : ""
-              }`}
-            >
-              {subtitle.text}
-            </p>{" "}
+            <p className="text-gray-800 leading-relaxed">{subtitle.text}</p>
           </div>
         ))}
       </div>
