@@ -2,22 +2,24 @@
 import React, { useState, useEffect } from "react";
 import { usePlayerStore } from "@/store/player-store";
 
-interface SubtitleItem {
+interface Subtitles {
   id: number;
   startTime: string;
   endTime: string;
-  text: string;
+  textEn: string;
+  textZh: string;
 }
 
 export default function EpisodeDocument({
   subtitle,
 }: {
-  subtitle: SubtitleItem[];
+  subtitle: Subtitles[];
 }) {
-  const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
+  const [subtitles, setSubtitles] = useState<Subtitles[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
+  const [showTranslation, setShowTranslation] = useState(false);
 
   // 获取播放器状态
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -127,20 +129,40 @@ export default function EpisodeDocument({
 
   return (
     <div className="w-full max-w-[1200px] rounded-lg overflow-hidden">
-      <div className="py-4 border-b border-gray-200">
+      <div className="flex justify-between py-4 border-b border-gray-200">
         <h3 className="text-lg font-medium text-slate-500">剧集字幕</h3>
+        {/* 新增翻译切换按钮 */}
+        <button
+          onClick={() => setShowTranslation(!showTranslation)}
+          className="flex items-center space-x-2 px-4 py-1 text-xs text-slate-500 font-bold bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h3M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+            />
+          </svg>
+          <span>{showTranslation ? "隐藏翻译" : "显示翻译"}</span>
+        </button>
       </div>
       <div className="divide-y divide-gray-200">
         {subtitles.map((subtitle) => (
           <div
             key={subtitle.id}
-            className={`px-6 group/item py-4 transition-colors duration-150 ${
+            className={`px-6 group/item py-2 transition-colors duration-150 ${
               activeSubtitleId === subtitle.id
                 ? "bg-blue-50 border-l-4 border-blue-500" // 高亮样式
                 : "hover:bg-gray-100" // 默认悬停样式
             }`}
           >
-            <div className="flex items-baseline mb-1">
+            <div className="hidden flex items-baseline mb-1">
               <span className="text-xs font-mono text-gray-500 mr-2">
                 {formatTime(subtitle.startTime)}
               </span>
@@ -148,13 +170,16 @@ export default function EpisodeDocument({
                 - {formatTime(subtitle.endTime)}
               </span>
             </div>
-            <p
+            <div
               className={`text-gray-800 leading-relaxed ${
                 activeSubtitleId === subtitle.id ? "font-medium" : ""
               }`}
             >
-              {subtitle.text}
-            </p>{" "}
+              <p>{subtitle.textEn}</p>
+              {showTranslation && (
+                <p className="text-slate-500 text-xs">{subtitle.textZh}</p>
+              )}
+            </div>{" "}
           </div>
         ))}
       </div>

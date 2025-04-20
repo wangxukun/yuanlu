@@ -182,7 +182,7 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
  * 获取字幕
  * @param subtitleUrl
  */
-export async function fetchSubtitles(subtitleUrl: string) {
+async function fetchSubtitles(subtitleUrl: string) {
   if (subtitleUrl?.length === 0) {
     return [];
   } else {
@@ -224,3 +224,46 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
     })
     .filter(Boolean) as SubtitleItem[];
 };
+
+export async function mergeSubtitles(episode: Episode) {
+  const subtitleEn =
+    (await fetchSubtitles(episode.subtitleEnUrl as string)) || null;
+  const subtitleZh =
+    (await fetchSubtitles(episode.subtitleZhUrl as string)) || null;
+  if (subtitleEn === null) {
+    return [];
+  }
+  if (subtitleEn.length === 0) {
+    return [];
+  }
+  if (subtitleZh === null) {
+    return subtitleEn.map((item) => {
+      return {
+        id: item.id,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        textEn: item.text,
+        textZh: "",
+      };
+    });
+  }
+
+  if (subtitleEn.length !== subtitleZh.length) {
+    throw new Error("中英文字幕不匹配");
+  }
+
+  return subtitleEn.map((enItem) => {
+    // 找到对应ID的中文字幕项
+    const zhItem = subtitleZh.find((item) => item.id === enItem.id);
+    if (!zhItem) {
+      throw new Error(`Chinese subtitle not found for ID: ${enItem.id}`);
+    }
+    return {
+      id: enItem.id,
+      startTime: enItem.startTime,
+      endTime: enItem.endTime,
+      textEn: enItem.text,
+      textZh: zhItem.text,
+    };
+  });
+}
