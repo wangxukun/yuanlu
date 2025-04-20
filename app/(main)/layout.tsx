@@ -33,8 +33,10 @@ export default function RootLayout({
               {/* 顶部导航栏 */}
               <Header />
               {/* 主体内容区域 */}
-              <main className="flex-1 bg-gray-50 overflow-y-auto p-4">
-                {children}
+              <main className="flex-1 bg-gray-50 overflow-y-auto">
+                <div className="w-full min-h-[calc(100vh-8rem)]">
+                  {children}
+                </div>
                 {/* 底部页脚 */}
                 <Footer />
               </main>
