@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
+import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
 
 interface Subtitles {
   id: number;
@@ -12,8 +14,10 @@ interface Subtitles {
 
 export default function EpisodeDocument({
   subtitle,
+  episode,
 }: {
   subtitle: Subtitles[];
+  episode: Episode;
 }) {
   const [subtitles, setSubtitles] = useState<Subtitles[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,7 +27,27 @@ export default function EpisodeDocument({
 
   // 获取播放器状态
   const currentTime = usePlayerStore((state) => state.currentTime);
+  const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
+  const currentEpisode = usePlayerStore((state) => state.currentEpisode);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const audioRef = usePlayerStore((state) => state.audioRef);
+  const play = usePlayerStore((state) => state.play);
+
+  // 处理字幕点击事件
+  const handleSubtitleClick = (subtitle: Subtitles) => {
+    const startTime = convertTimeToSeconds(subtitle.startTime);
+    setCurrentTime(startTime);
+    if (audioRef) {
+      try {
+        // 更新播放时间点
+        audioRef.currentTime = startTime;
+        // 播放新的音频
+        play();
+      } catch (error) {
+        console.error("Error while switching audio source:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     try {
@@ -47,14 +71,17 @@ export default function EpisodeDocument({
     // 将当前时间转换为秒数
     const currentSeconds = currentTime;
 
-    // 查找当前应该高亮的字幕
-    const activeSubtitle = subtitles.find((sub) => {
-      const startTime = convertTimeToSeconds(sub.startTime);
-      const endTime = convertTimeToSeconds(sub.endTime);
-      return currentSeconds >= startTime && currentSeconds <= endTime;
-    });
-
-    setActiveSubtitleId(activeSubtitle?.id || null);
+    // 在当前音频播放页面时，更新高亮字幕
+    if (currentEpisode && currentEpisode.episodeid === episode.episodeid) {
+      // 查找当前应该高亮的字幕
+      const activeSubtitle = subtitles.find((sub) => {
+        const startTime = convertTimeToSeconds(sub.startTime);
+        const endTime = convertTimeToSeconds(sub.endTime);
+        return currentSeconds >= startTime && currentSeconds <= endTime;
+      });
+      setActiveSubtitleId(activeSubtitle?.id || null);
+    }
+    // 当音频在播放时，currentTime会不断变化
   }, [currentTime, isPlaying, subtitles]);
 
   // 将时间字符串 (HH:MM:SS,mmm) 转换为秒数
@@ -65,9 +92,9 @@ export default function EpisodeDocument({
   };
 
   // 格式化时间显示 (HH:MM:SS)
-  const formatTime = (timeStr: string): string => {
-    return timeStr.split(",")[0]; // 去掉毫秒部分
-  };
+  // const formatTime = (timeStr: string): string => {
+  //   return timeStr.split(",")[0]; // 去掉毫秒部分
+  // };
 
   if (loading) {
     return (
@@ -156,28 +183,31 @@ export default function EpisodeDocument({
         {subtitles.map((subtitle) => (
           <div
             key={subtitle.id}
-            className={`px-6 group/item py-2 transition-colors duration-150 ${
+            onClick={() => handleSubtitleClick(subtitle)}
+            className={`group/item py-2 transition-colors duration-150 ${
               activeSubtitleId === subtitle.id
-                ? "bg-blue-50 border-l-4 border-blue-500" // 高亮样式
-                : "hover:bg-gray-100" // 默认悬停样式
+                ? "" // 高亮样式
+                : "px-7" // 默认悬停样式
             }`}
           >
-            <div className="hidden flex items-baseline mb-1">
-              <span className="text-xs font-mono text-gray-500 mr-2">
-                {formatTime(subtitle.startTime)}
-              </span>
-              <span className="text-xs font-mono text-gray-500">
-                - {formatTime(subtitle.endTime)}
-              </span>
-            </div>
             <div
-              className={`text-gray-800 leading-relaxed ${
+              className={`text-gray-800 hover:cursor-pointer leading-relaxed ${
                 activeSubtitleId === subtitle.id ? "font-medium" : ""
               }`}
             >
-              <p>{subtitle.textEn}</p>
+              <p className="flex items-center">
+                {activeSubtitleId === subtitle.id && (
+                  <SunIcon className="inline-block h-4 w-4 mr-3" />
+                )}
+                {subtitle.textEn}
+                <ArrowUturnLeftIcon className="invisible group-hover/item:visible inline-block h-4 w-4 ml-2" />
+              </p>
               {showTranslation && (
-                <p className="text-slate-500 text-xs">{subtitle.textZh}</p>
+                <p
+                  className={`text-slate-500 text-xs ${activeSubtitleId === subtitle.id ? "px-7" : ""}`}
+                >
+                  {subtitle.textZh}
+                </p>
               )}
             </div>{" "}
           </div>
