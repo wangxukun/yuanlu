@@ -4,22 +4,26 @@ import { PhoneIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/button";
 import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import RegisterDialog from "@/components/auth/register-dialog";
 
-export default function Form({
-  onSuccess,
-  onRegister,
-}: {
-  onSuccess?: () => void;
-  onRegister?: () => void;
-}) {
+export default function Form({ onSuccess }: { onSuccess?: () => void }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+
+  // 创建引用，绑定到手机号输入框
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+
+  // 组件渲染完成后，聚焦手机号输入框
+  useEffect(() => {
+    if (phoneInputRef.current) {
+      phoneInputRef.current.focus();
+    }
+  }, []); // 空依赖数组，确保只在组件挂载时执行一次
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +38,6 @@ export default function Form({
       onSuccess?.(); // 登录成功处理函数：关闭对话框
       router.push("/dashboard");
     }
-  };
-
-  // Add this handler for the register button
-  const handleRegisterClick = () => {
-    setShowRegisterDialog(true);
-    // onClose?.(); // Close the login dialog
-    onRegister?.();
   };
 
   return (
@@ -62,6 +59,7 @@ export default function Form({
               </label>
               <div className="relative">
                 <input
+                  ref={phoneInputRef} // 绑定引用
                   className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
                   id="phone"
                   type="text"
@@ -117,7 +115,9 @@ export default function Form({
             <span className="text-gray-500 pl-1 pr-1"> | </span>
             <button
               type="button"
-              onClick={handleRegisterClick}
+              onClick={() => {
+                setShowRegisterDialog(true);
+              }}
               className="text-cyan-700"
             >
               没有账号

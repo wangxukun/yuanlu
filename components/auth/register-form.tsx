@@ -3,14 +3,13 @@
 // 标记为客户端组件，表示该组件将在客户端渲染和执行
 "use client";
 
-import Link from "next/link"; // 导入 Next.js 的 Link 组件，用于导航
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件
 import { ArrowRightIcon } from "@heroicons/react/20/solid"; // 导入 Heroicons 图标组件
 import { Button } from "@/components/button"; // 导入自定义的 Button 组件
 import { userRegister, RegisterState } from "@/app/lib/actions"; // 导入 userRegister 动作函数，用于创建用户
 import { lusitana } from "@/components/fonts"; // 导入自定义字体 lusitana
 import Captcha from "@/components/captcha"; // 导入 Captcha 组件，用于验证码验证
-import { useActionState, useState } from "react";
+import { useActionState, useState, useRef, useEffect } from "react";
 
 // 用户协议内容
 const userAgreementContent = `
@@ -146,6 +145,16 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
     },
     message: null,
   };
+
+  // 创建引用，绑定到手机号输入框
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+
+  // 组件渲染完成后，聚焦手机号输入框
+  useEffect(() => {
+    if (phoneInputRef.current) {
+      phoneInputRef.current.focus();
+    }
+  }, []); // 空依赖数组，确保只在组件挂载时执行一次
 
   // 新增对话框相关状态
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -294,6 +303,7 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
             {/* 手机号输入框 */}
             <div className="relative">
               <input
+                ref={phoneInputRef} // 绑定引用
                 className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
                 id="phone"
                 type="text"
@@ -459,11 +469,16 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
           {state.message} {state.errors?.phone}
         </h1>
         <div className="mt-1 text-right text-sm text-gray-500">
-          已有账号？ {/* 文本 */}
-          <Link href="/auth/login">
-            {/* 链接 */}
-            <span className="text-cyan-700">立即登录</span> {/* 文本 */}
-          </Link>
+          已有账号？
+          <button
+            type="button"
+            onClick={() => {
+              onSuccess?.();
+            }}
+            className="text-cyan-700"
+          >
+            立即登录
+          </button>
         </div>
       </div>
 
