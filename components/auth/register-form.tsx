@@ -1,6 +1,3 @@
-// app/components/auth/signup-form.tsx
-
-// 标记为客户端组件，表示该组件将在客户端渲染和执行
 "use client";
 
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件

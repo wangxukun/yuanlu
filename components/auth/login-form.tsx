@@ -6,13 +6,11 @@ import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import RegisterDialog from "@/components/auth/register-dialog";
 
 export default function Form({ onSuccess }: { onSuccess?: () => void }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
 
   // 创建引用，绑定到手机号输入框
@@ -36,7 +34,7 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
       alert(result.error);
     } else {
       onSuccess?.(); // 登录成功处理函数：关闭对话框
-      router.push("/dashboard");
+      // router.push("/dashboard");
     }
   };
 
