@@ -128,7 +128,7 @@ const privacyPolicyContent = `
 `;
 
 // 定义注册表单组件
-export default function Form() {
+export default function Form({ onSuccess }: { onSuccess?: () => void }) {
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false); // 定义状态变量 isCaptchaVerified，用于存储验证码是否验证通过
   const [phone, setPhone] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
   const [captchaError, setCaptchaError] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
@@ -146,7 +146,6 @@ export default function Form() {
     },
     message: null,
   };
-  const [state, formAction] = useActionState(userRegister, initialState);
 
   // 新增对话框相关状态
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -188,6 +187,23 @@ export default function Form() {
       setPasswordError(""); // 清除错误信息
     }
   };
+
+  // 处理表单提交
+  const handleFormAction = async (
+    prevState: RegisterState,
+    formData: FormData,
+  ) => {
+    const result = await userRegister(initialState, formData);
+    if (!result.errors || Object.keys(result.errors).length === 0) {
+      onSuccess?.();
+    }
+    return result;
+  };
+
+  const [state, formAction] = useActionState<RegisterState, FormData>(
+    handleFormAction,
+    initialState,
+  );
 
   // 处理手机号输入框变化的回调函数
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {

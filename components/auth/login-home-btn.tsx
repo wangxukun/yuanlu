@@ -1,11 +1,15 @@
 "use client";
 // 新建客户端组件
 import { useSession, signOut } from "next-auth/react";
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation";
 import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
+import { useState } from "react";
+import LoginDialog from "@/components/auth/login-dialog";
 
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
   if (session) {
     return (
       <button
@@ -18,14 +22,20 @@ export default function LoginHomeBtn() {
   }
 
   return (
-    <button
-      className="sm:bg-purple-700 sm:w-[140px] h-7 text-white flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
-      onClick={() => redirect("/auth/login")}
-    >
-      <UserIcon className="hidden sm:block sm:w-3 h-3" />
-      <span className="text-xs text-purple-700 sm:text-white font-bold sm:inline">
-        登录
-      </span>
-    </button>
+    <>
+      <button
+        className="sm:bg-purple-700 sm:w-[140px] h-7 text-white flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
+        // onClick={() => redirect("/auth/login")}
+        onClick={() => setShowLoginDialog(true)}
+      >
+        <UserIcon className="hidden sm:block sm:w-3 h-3" />
+        <span className="text-xs text-purple-700 sm:text-white font-bold sm:inline">
+          登录
+        </span>
+      </button>
+      {showLoginDialog && (
+        <LoginDialog onLoginDialogClose={() => setShowLoginDialog(false)} />
+      )}
+    </>
   );
 }
