@@ -8,7 +8,7 @@ export default function RegisterSuccess() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/auth/login");
+      router.push("/");
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -19,7 +19,7 @@ export default function RegisterSuccess() {
       <div className="flex flex-col items-center justify-center space-y-4">
         <h2 className="text-lg font-bold text-slate-500">注册成功</h2>
         <p className="text-sm text-gray-500">
-          您已成功注册，将在3秒后跳转到登录页面...
+          您已成功注册，将在3秒后跳转到主页面...
         </p>
       </div>
     </div>

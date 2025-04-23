@@ -94,7 +94,7 @@ export async function userRegister(
     }
     // 注册成功后，重定向到 /auth/signup-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
-    revalidatePath("/auth/signup");
+    // revalidatePath("/auth/signup");
     redirect("/auth/register-success");
   } else {
     return new Promise((resolve) => {

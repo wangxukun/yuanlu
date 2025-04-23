@@ -17,6 +17,10 @@ interface PlayerState {
   currentEpisode: Episode | null;
   // 当前播放的音频URL
   currentAudioUrl: string;
+  // 音频音量大小
+  volume: number;
+  // 设置音频音量大小的函数
+  setVolume: (volume: number) => void;
   // 绑定audioRef的函数
   setAudioRef: (ref: HTMLAudioElement) => void;
   // 设置isPlaying状态的函数
@@ -54,6 +58,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setCurrentEpisode: (episode: Episode) => set({ currentEpisode: episode }),
   setDuration: (duration: number) => set({ duration: duration }),
   setCurrentAudioUrl: (url: string) => set({ currentAudioUrl: url }),
+  volume: 0.5, // 默认最大音量 (0-1范围)
+  setVolume: (volume: number) => {
+    const audio = get().audioRef;
+    if (audio) {
+      audio.volume = volume;
+    }
+    set({ volume });
+  },
   togglePlay: () => {
     set((state) => ({ isPlaying: !state.isPlaying }));
   },
