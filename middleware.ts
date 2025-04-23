@@ -10,7 +10,7 @@ const ROUTE_CONFIG = {
   },
   admin: {
     redirectPath: "/dashboard",
-    allowedRoutes: ["/dashboard", "/admin/users", "/admin/analytics"],
+    allowedRoutes: ["/dashboard", "/admin/user", "/admin/analytics"],
   },
 } as const;
 

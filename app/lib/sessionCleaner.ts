@@ -13,10 +13,10 @@ cron.schedule("*/5 * * * *", async () => {
       data: { isOnline: false },
     });
     await prisma.$disconnect();
-    console.log("Updated inactive users to offline");
+    console.log("Updated inactive user to offline");
   } catch (err) {
     if (err instanceof Error && "code" in err && err.code === "P2025") {
-      console.log("No inactive users found");
+      console.log("No inactive user found");
     }
   }
 });

@@ -1,8 +1,23 @@
 import { generateSignatureUrl } from "@/app/lib/oss";
 import { Episode, EpisodeTableData } from "@/app/types/podcast";
 import axios from "axios";
+import { User } from "@/app/types/user";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+/**
+ * 获取用户列表
+ */
+export async function fetchUsers(): Promise<User[]> {
+  const res = await fetch(`${baseUrl}/api/user/list`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch users");
+  }
+  return await res.json();
+}
 
 /**
  * 在线用户数和用户列表
