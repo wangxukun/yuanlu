@@ -342,3 +342,41 @@ export async function deleteEpisode(
     status: data.status,
   };
 }
+
+export type UserDelState = {
+  message?: string;
+  status: number;
+};
+// 删除用户
+export async function deleteUser(
+  id: string,
+  avatarFileName: string,
+): Promise<UserDelState> {
+  let delAvatarResult = null;
+  if (!avatarFileName) {
+    // 删除OSS中用户头像
+    delAvatarResult = await deleteObject(avatarFileName);
+  }
+  const res = await fetch(`${baseUrl}/api/user/delete`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userid: id }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return {
+      message: "",
+      status: 500,
+    };
+  }
+  if (avatarFileName && !delAvatarResult) {
+    return {
+      message: "",
+      status: 500,
+    };
+  }
+  return {
+    message: data.message,
+    status: data.status,
+  };
+}

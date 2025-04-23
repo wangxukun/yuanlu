@@ -1,7 +1,7 @@
 import { lusitana } from "@/components/fonts";
 import Search from "@/components/search";
 import React, { Suspense } from "react";
-import UsersTable from "@/components/dashboard/user/usersTable";
+import UsersTable from "@/components/dashboard/users/usersTable";
 
 export default function Page() {
   return (

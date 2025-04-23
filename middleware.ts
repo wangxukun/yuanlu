@@ -10,7 +10,7 @@ const ROUTE_CONFIG = {
   },
   admin: {
     redirectPath: "/dashboard",
-    allowedRoutes: ["/dashboard", "/admin/user", "/admin/analytics"],
+    allowedRoutes: ["/dashboard", "/admin/users", "/admin/analytics"],
   },
 } as const;
 
@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   // 根据用户的角色进行路由拦截
   // const { role } = token;
-  // const config = ROUTE_CONFIG[role] || ROUTE_CONFIG.user;
+  // const config = ROUTE_CONFIG[role] || ROUTE_CONFIG.users;
   const { role } = token as { role: keyof typeof ROUTE_CONFIG }; // 类型断言
   const config = ROUTE_CONFIG[role] ?? ROUTE_CONFIG.user; // 使用空值合并运算符
 

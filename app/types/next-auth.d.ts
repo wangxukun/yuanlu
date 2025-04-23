@@ -12,9 +12,9 @@ declare module "next-auth" {
   interface Session {
     // ↓ 扩展 Session 类型
     user: {
-      phone: string; // → 使 session.user.phone 类型合法化
-      id: string; // → 使 session.user.userid 类型合法化
-      role: string; // → 使 session.user.role 类型合法化
+      phone: string; // → 使 session.users.phone 类型合法化
+      id: string; // → 使 session.users.userid 类型合法化
+      role: string; // → 使 session.users.role 类型合法化
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
   }
 }

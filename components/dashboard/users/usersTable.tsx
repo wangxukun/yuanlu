@@ -1,5 +1,10 @@
 import { fetchUsers } from "@/app/lib/data";
 import { User } from "@/app/types/user";
+import {
+  DeleteUserBtn,
+  ReadUserBtn,
+  UpdateUserBtn,
+} from "@/components/dashboard/buttons";
 
 export default async function UsersTable() {
   const users = ((await fetchUsers()) as User[]) || [];
@@ -48,9 +53,6 @@ export default async function UsersTable() {
                 <th scope="col" className="px-3 py-5 font-medium">
                   最后活动时间
                 </th>
-                <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -81,7 +83,16 @@ export default async function UsersTable() {
                   <td className="px-3 py-3 align-middle">
                     {user.lastActiveAt?.toLocaleString()}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3">edit</td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <div className="flex justify-end gap-3">
+                      <ReadUserBtn id={user.userid} />
+                      <UpdateUserBtn id={user.userid} />
+                      <DeleteUserBtn
+                        id={user.userid}
+                        avatarFileName={user.userProfile?.avatarFileName || ""}
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

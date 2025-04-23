@@ -11,7 +11,7 @@ model User {
   userid             String               @id @default(cuid())
   phone              String               @unique @db.VarChar(15)
   password           String               @db.VarChar(255)
-  role               String?              @default("user") @db.VarChar(50)
+  role               String?              @default("users") @db.VarChar(50)
   languagePreference String?              @default("zh-CN") @db.VarChar(50)
   createAt           DateTime?            @default(now()) @db.Timestamptz(6)
   updateAt           DateTime?            @updatedAt @db.Timestamptz(6)
@@ -210,13 +210,14 @@ model subtitles {
 }
 
 model user_profile {
-  userid     String  @id
-  nickname   String? @db.VarChar(255)
-  avatarUrl  String? @default("default_avatar_url") @db.VarChar(255)
-  email      String? @db.VarChar(255)
-  bio        String?
-  learnLevel String? @db.VarChar(50)
-  User       User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  userid         String  @id
+  nickname       String? @db.VarChar(255)
+  avatarUrl      String? @default("default_avatar_url") @db.VarChar(255)
+  avatarFileName String? @db.VarChar(255)
+  email          String? @db.VarChar(255)
+  bio            String?
+  learnLevel     String? @db.VarChar(50)
+  User           User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model vocabulary {

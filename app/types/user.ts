@@ -1,4 +1,4 @@
-// /types/user.ts
+// /types/users.ts
 
 // 用户查询响应数据
 export interface User {
@@ -18,6 +18,7 @@ export interface UserProfile {
   userid: string;
   nickName: string;
   avatarUrl: string;
+  avatarFileName: string;
   email: string;
   bio: string;
   learnLevel: string;

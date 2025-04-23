@@ -23,7 +23,7 @@ const links = [
     href: "/dashboard/episodes",
     icon: DocumentDuplicateIcon,
   },
-  { name: "用户管理", href: "/dashboard/user", icon: UserGroupIcon },
+  { name: "用户管理", href: "/dashboard/users", icon: UserGroupIcon },
 ];
 
 export default function NavLinks() {
