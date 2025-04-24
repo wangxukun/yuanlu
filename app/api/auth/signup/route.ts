@@ -33,10 +33,13 @@ export async function POST(request: Request) {
         createAt: new Date(),
       },
     });
-    //
-    // return NextResponse.json(
-    //   { errors: null, success: true, message: "用户注册成功", status: 200 },
-    // );
+
+    return NextResponse.json({
+      errors: null,
+      success: true,
+      message: "用户注册成功",
+      status: 200,
+    });
   } catch (error) {
     console.error("用户注册时出错:", error);
     return NextResponse.json({

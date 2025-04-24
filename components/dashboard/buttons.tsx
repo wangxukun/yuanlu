@@ -224,7 +224,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
   const handleConfirmDelete = (event: React.FormEvent) => {
     event.preventDefault(); // 阻止表单默认提交行为
     const formData = new FormData(event.currentTarget as HTMLFormElement); // 从表单创建 FormData
-    // 使用 startTransition 包裹 formAction
+    // 使用 startTransition 包裹 formActiont
     startTransition(() => {
       formAction(formData); // 传递 FormData 给 formAction
     });
