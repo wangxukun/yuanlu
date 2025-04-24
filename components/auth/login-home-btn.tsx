@@ -5,10 +5,14 @@ import { useSession, signOut } from "next-auth/react";
 import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 import LoginDialog from "@/components/auth/login-dialog";
+import RegisterDialog from "@/components/auth/register-dialog";
+import PromptBox from "@/components/auth/prompt-box";
 
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
 
   if (session) {
     return (
@@ -34,8 +38,19 @@ export default function LoginHomeBtn() {
         </span>
       </button>
       {showLoginDialog && (
-        <LoginDialog onLoginDialogClose={() => setShowLoginDialog(false)} />
+        <LoginDialog
+          onLoginDialogClose={() => setShowLoginDialog(false)}
+          onShowRegisterDialog={() => setShowRegisterDialog(true)}
+        />
       )}
+      {showRegisterDialog && (
+        <RegisterDialog
+          onRegisterDialogClose={() => setShowRegisterDialog(false)}
+          onShowLoginDialog={() => setShowLoginDialog(true)}
+          onShowRegisterPromptBox={() => setShowPromptDialog(true)}
+        />
+      )}
+      {showPromptDialog && <PromptBox />}
     </>
   );
 }

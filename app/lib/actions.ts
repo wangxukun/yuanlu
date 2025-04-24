@@ -14,6 +14,8 @@ export type RegisterState = {
     isAgree?: string[];
   };
   message?: string | null;
+  success?: boolean;
+  status?: number;
 };
 
 export type LoginState = {
@@ -95,7 +97,13 @@ export async function userRegister(
     // 注册成功后，重定向到 /auth/signup-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
     // revalidatePath("/auth/signup");
-    redirect("/auth/register-success");
+    // redirect("/auth/register-success");
+    return {
+      errors: data.errors,
+      message: data.message,
+      success: data.success,
+      status: data.status,
+    };
   } else {
     return new Promise((resolve) => {
       resolve({
