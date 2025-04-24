@@ -6,12 +6,16 @@ import { lusitana } from "@/components/fonts";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import RegisterDialog from "@/components/auth/register-dialog";
 
-export default function Form({ onSuccess }: { onSuccess?: () => void }) {
+export default function Form({
+  onSuccess,
+  onRegister,
+}: {
+  onSuccess?: () => void;
+  onRegister?: () => void;
+}) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
 
   // 创建引用，绑定到手机号输入框
   const phoneInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +118,8 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
             <button
               type="button"
               onClick={() => {
-                setShowRegisterDialog(true);
+                onRegister?.();
+                onSuccess?.();
               }}
               className="text-cyan-700"
             >
@@ -123,11 +128,6 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
           </div>
         </div>
       </form>
-      {showRegisterDialog && (
-        <RegisterDialog
-          onRegisterDialogClose={() => setShowRegisterDialog(false)}
-        />
-      )}
     </>
   );
 }

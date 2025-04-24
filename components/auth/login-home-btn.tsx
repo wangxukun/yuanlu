@@ -5,10 +5,15 @@ import { useSession, signOut } from "next-auth/react";
 import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 import LoginDialog from "@/components/auth/login-dialog";
+import RegisterDialog from "@/components/auth/register-dialog";
+import PromptBox from "@/components/auth/prompt-box";
 
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showRegisterSuccessPrompt, setShowRegisterSuccessPrompt] =
+    useState(false);
 
   if (session) {
     return (
@@ -33,8 +38,31 @@ export default function LoginHomeBtn() {
           登录
         </span>
       </button>
+      {/*<button*/}
+      {/*  className="sm:bg-purple-700 sm:w-[140px] h-7 text-white flex items-center space-x-2 px-4 hover:drop-shadow-md rounded-lg transition-colors"*/}
+      {/*  onClick={() => setShowRegisterSuccessPrompt(true)}*/}
+      {/*>*/}
+      {/*  Prompt*/}
+      {/*</button>*/}
       {showLoginDialog && (
-        <LoginDialog onLoginDialogClose={() => setShowLoginDialog(false)} />
+        <LoginDialog
+          onLoginDialogClose={() => setShowLoginDialog(false)}
+          onShowRegisterDialog={() => setShowRegisterDialog(true)}
+        />
+      )}
+      {showRegisterDialog && (
+        <RegisterDialog
+          onRegisterDialogClose={() => setShowRegisterDialog(false)}
+          onShowLoginDialog={() => setShowLoginDialog(true)}
+          onShowRegisterPromptBox={() => setShowRegisterSuccessPrompt(true)}
+        />
+      )}
+      {showRegisterSuccessPrompt && (
+        <PromptBox
+          onPromptBoxClose={() => setShowRegisterSuccessPrompt(false)}
+          title="注册成功"
+          message="提示将在3秒后关闭"
+        />
       )}
     </>
   );

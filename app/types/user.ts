@@ -1,15 +1,28 @@
-// /types/user.d.ts
+// /types/users.ts
 
-// 用户基本信息
+// 用户查询响应数据
 export interface User {
   userid: string; // 用户唯一标识
   phone: string; // 手机号码
   password: string; // 密码
-  avatarUrl?: string; // 用户头像URL（可选）
   role: "user" | "admin"; // 用户角色，普通用户或管理员
-  languagepreference: "zh-CN" | "en"; // 用户语言选择，默认为中文
-  registrationdate: Date; // 注册日期
-  lastlogindate?: Date; // 最后登录日期（可选）
+  languagePreference: "zh-CN" | "en-US"; // 用户语言选择，默认为中文
+  createAt: Date; // 注册日期
+  updateAt: Date;
+  isOnline: boolean;
+  lastActiveAt?: Date; // 最后登录日期
+  userProfile: UserProfile;
+}
+
+export interface UserProfile {
+  userid: string;
+  nickName: string;
+  avatarUrl: string;
+  avatarFileName: string;
+  email: string;
+  bio: string;
+  learnLevel: string;
+  user: User;
 }
 
 // 用户登录请求参数

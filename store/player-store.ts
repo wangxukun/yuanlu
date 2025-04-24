@@ -58,7 +58,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setCurrentEpisode: (episode: Episode) => set({ currentEpisode: episode }),
   setDuration: (duration: number) => set({ duration: duration }),
   setCurrentAudioUrl: (url: string) => set({ currentAudioUrl: url }),
-  volume: 0.5, // 默认最大音量 (0-1范围)
+  volume: 1, // 默认最大音量 (0-1范围)
   setVolume: (volume: number) => {
     const audio = get().audioRef;
     if (audio) {

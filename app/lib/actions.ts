@@ -14,6 +14,8 @@ export type RegisterState = {
     isAgree?: string[];
   };
   message?: string | null;
+  success?: boolean;
+  status?: number;
 };
 
 export type LoginState = {
@@ -95,7 +97,13 @@ export async function userRegister(
     // 注册成功后，重定向到 /auth/signup-success 页面
     // 更新成功后，刷新缓存并重定向到 /auth/login 页面
     // revalidatePath("/auth/signup");
-    redirect("/auth/register-success");
+    // redirect("/auth/register-success");
+    return {
+      errors: data.errors,
+      message: data.message,
+      success: data.success,
+      status: data.status,
+    };
   } else {
     return new Promise((resolve) => {
       resolve({
@@ -332,6 +340,44 @@ export async function deleteEpisode(
     !delSubtitleZhResult ||
     !res.ok
   ) {
+    return {
+      message: "",
+      status: 500,
+    };
+  }
+  return {
+    message: data.message,
+    status: data.status,
+  };
+}
+
+export type UserDelState = {
+  message?: string;
+  status: number;
+};
+// 删除用户
+export async function deleteUser(
+  id: string,
+  avatarFileName: string,
+): Promise<UserDelState> {
+  let delAvatarResult = null;
+  if (!avatarFileName) {
+    // 删除OSS中用户头像
+    delAvatarResult = await deleteObject(avatarFileName);
+  }
+  const res = await fetch(`${baseUrl}/api/user/delete`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userid: id }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return {
+      message: "",
+      status: 500,
+    };
+  }
+  if (avatarFileName && !delAvatarResult) {
     return {
       message: "",
       status: 500,

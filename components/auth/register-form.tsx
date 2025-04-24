@@ -124,7 +124,15 @@ const privacyPolicyContent = `
 `;
 
 // 定义注册表单组件
-export default function Form({ onSuccess }: { onSuccess?: () => void }) {
+export default function Form({
+  onSuccess,
+  onShowPrompt,
+  onLogin,
+}: {
+  onSuccess?: () => void;
+  onShowPrompt?: () => void;
+  onLogin?: () => void;
+}) {
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false); // 定义状态变量 isCaptchaVerified，用于存储验证码是否验证通过
   const [phone, setPhone] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
   const [captchaError, setCaptchaError] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
@@ -200,8 +208,10 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
     formData: FormData,
   ) => {
     const result = await userRegister(initialState, formData);
+    console.log("注册情况：", result.message);
     if (!result.errors || Object.keys(result.errors).length === 0) {
       onSuccess?.();
+      onShowPrompt?.();
     }
     return result;
   };
@@ -471,6 +481,7 @@ export default function Form({ onSuccess }: { onSuccess?: () => void }) {
             type="button"
             onClick={() => {
               onSuccess?.();
+              onLogin?.();
             }}
             className="text-cyan-700"
           >

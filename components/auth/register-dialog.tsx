@@ -4,8 +4,14 @@ import RegisterForm from "./register-form";
 
 export default function RegisterDialog({
   onRegisterDialogClose,
+  onShowLoginDialog,
+  onShowRegisterPromptBox,
 }: {
+  // 关闭注册对话框时调用
   onRegisterDialogClose: () => void;
+  // 注册成功后调用
+  onShowRegisterPromptBox: () => void;
+  onShowLoginDialog: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +37,11 @@ export default function RegisterDialog({
         ref={dialogRef}
         className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
       >
-        <RegisterForm onSuccess={onRegisterDialogClose} />
+        <RegisterForm
+          onSuccess={onRegisterDialogClose}
+          onLogin={onShowLoginDialog}
+          onShowPrompt={onShowRegisterPromptBox}
+        />
       </div>
     </div>
   );

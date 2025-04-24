@@ -12,10 +12,11 @@ export async function POST(request: Request) {
     });
 
     if (userExists) {
-      return NextResponse.json(
-        { success: false, message: "手机号已存在" },
-        { status: 400 },
-      );
+      return NextResponse.json({
+        success: false,
+        message: "手机号已存在",
+        status: 400,
+      });
     }
 
     // 对密码进行哈希处理
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // 创建新用户
-    const newUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
         phone,
         password: hashedPassword, // 存储哈希后的密码
@@ -33,15 +34,18 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(
-      { success: true, message: "用户注册成功", data: newUser },
-      { status: 201 },
-    );
+    return NextResponse.json({
+      errors: null,
+      success: true,
+      message: "用户注册成功",
+      status: 200,
+    });
   } catch (error) {
     console.error("用户注册时出错:", error);
-    return NextResponse.json(
-      { success: false, message: "服务器内部错误" },
-      { status: 500 },
-    );
+    return NextResponse.json({
+      success: false,
+      message: "服务器内部错误",
+      status: 500,
+    });
   }
 }
