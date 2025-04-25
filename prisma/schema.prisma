@@ -11,12 +11,13 @@ model User {
   userid             String               @id @default(cuid())
   phone              String               @unique @db.VarChar(15)
   password           String               @db.VarChar(255)
-  role               String?              @default("users") @db.VarChar(50)
+  role               String?              @default("USER") @db.VarChar(50)
   languagePreference String?              @default("zh-CN") @db.VarChar(50)
   createAt           DateTime?            @default(now()) @db.Timestamptz(6)
   updateAt           DateTime?            @updatedAt @db.Timestamptz(6)
   isOnline           Boolean?             @default(false)
   lastActiveAt       DateTime?            @db.Timestamptz(6)
+  isCommentAllowed   Boolean?             @default(true)
   achievements       achievements[]
   comments           comments[]
   discussion_threads discussion_threads[]
@@ -104,6 +105,7 @@ model episode {
   updateAt           DateTime?            @db.Timestamptz(6)
   status             String?              @default("unpublished") @db.VarChar(50)
   isExclusive        Boolean?             @default(false)
+  isCommentEnabled   Boolean?             @default(true)
   comments           comments[]
   discussion_threads discussion_threads[]
   category           category?            @relation(fields: [categoryid], references: [categoryid], onUpdate: NoAction)

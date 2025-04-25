@@ -11,6 +11,7 @@ export interface User {
   updateAt: Date;
   isOnline: boolean;
   lastActiveAt?: Date; // 最后登录日期
+  isCommentAllowed: boolean;
   userProfile: UserProfile;
 }
 

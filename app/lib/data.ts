@@ -20,6 +20,22 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 /**
+ * 根据userid获取用户
+ * @param id
+ */
+export async function fetchUserById(id: string): Promise<User> {
+  const res = await fetch(`${baseUrl}/api/user/detail?id=${id}`, {
+    method: "GET",
+    headers: {},
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch user");
+  }
+  return await res.json();
+}
+
+/**
  * 在线用户数和用户列表
  */
 interface OnlineUsersData {

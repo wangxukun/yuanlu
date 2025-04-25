@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
         createAt: true,
         status: true,
         isExclusive: true,
+        isCommentEnabled: true,
         category: {
           select: {
             categoryid: true,

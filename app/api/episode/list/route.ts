@@ -21,6 +21,7 @@ export async function GET() {
         createAt: true,
         status: true,
         isExclusive: true,
+        isCommentEnabled: true,
         category: {
           select: {
             // 明确选择需要字段

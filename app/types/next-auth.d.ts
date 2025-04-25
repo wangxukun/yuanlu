@@ -1,4 +1,5 @@
 import "next-auth";
+// import { DefaultSession } from 'next-auth';
 
 // 示例中的类型声明作用分解
 declare module "next-auth" {
