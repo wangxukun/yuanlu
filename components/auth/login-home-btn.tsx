@@ -50,7 +50,11 @@ export default function LoginHomeBtn() {
         />
       )}
       {showRegisterSuccessBox && (
-        <PromptBox title="注册成功" message="提示将在3秒后关闭" />
+        <PromptBox
+          onClosePromptBox={() => setShowRegisterSuccessBox(false)}
+          title="注册成功"
+          message="提示将在3秒后关闭"
+        />
       )}
     </>
   );

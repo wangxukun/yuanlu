@@ -1,22 +1,21 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useDialogStore } from "@/store/dialog-store";
 
 export default function PromptBox({
+  onClosePromptBox,
   title,
   message,
 }: {
+  onClosePromptBox: () => void;
   title: string;
   message: string;
 }) {
-  const { showRegisterSuccessPrompt, setShowRegisterSuccessPrompt } =
-    useDialogStore();
   useEffect(() => {
     setTimeout(() => {
-      setShowRegisterSuccessPrompt(false);
+      onClosePromptBox();
     }, 3000);
-  }, [showRegisterSuccessPrompt]);
+  }, [onClosePromptBox]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
