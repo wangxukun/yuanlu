@@ -1,4 +1,4 @@
-import { AuthOptions, Session } from "next-auth";
+import { AuthOptions, NextAuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -93,6 +93,6 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
-};
+} satisfies NextAuthOptions;
 
 export type AuthOptionsType = typeof authOptions;
