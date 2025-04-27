@@ -19,8 +19,15 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials) return null;
 
+        type UserFromPrisma = {
+          userid: string;
+          phone: string;
+          password: string;
+          role: string | null;
+        };
+
         // 查找用户
-        const user = await prisma.user.findUnique({
+        const user = (await prisma.user.findUnique({
           where: { phone: credentials.phone },
           select: {
             userid: true,
@@ -28,7 +35,7 @@ export const authOptions: AuthOptions = {
             password: true,
             role: true,
           },
-        });
+        })) as UserFromPrisma | null;
 
         if (!user) return null;
 
@@ -42,7 +49,7 @@ export const authOptions: AuthOptions = {
         return {
           id: user.userid,
           phone: user.phone,
-          role: user.role || "user",
+          role: user.role || "USER",
         };
       },
     }),

@@ -1,14 +1,15 @@
 "use client";
 import LoginForm from "@/components/auth/login-form";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function LoginDialog({
-  onLoginDialogClose,
-  onShowRegisterDialog,
+  onCloseLoginDialog,
+  onOpenRegisterDialog,
 }: {
-  onLoginDialogClose: () => void;
-  onShowRegisterDialog: () => void;
+  onCloseLoginDialog?: () => void;
+  onOpenRegisterDialog?: () => void;
 }) {
+  const [onShowLoginDialog] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function LoginDialog({
         dialogRef.current &&
         !dialogRef.current.contains(event.target as Node)
       ) {
-        onLoginDialogClose();
+        onCloseLoginDialog?.();
       }
     }
 
@@ -25,14 +26,14 @@ export default function LoginDialog({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onLoginDialogClose]);
+  }, [onShowLoginDialog]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div ref={dialogRef} className="bg-white rounded-lg p-6 w-full max-w-md">
         <LoginForm
-          onSuccess={onLoginDialogClose}
-          onRegister={onShowRegisterDialog}
+          onOpenRegisterDialog={onOpenRegisterDialog}
+          onCloseLoginDialog={onCloseLoginDialog}
         />
       </div>
     </div>

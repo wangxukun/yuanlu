@@ -8,8 +8,8 @@ import clsx from "clsx";
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
 const links = [
-  { name: "节目", href: "/episodes", icon: RectangleStackIcon },
-  { name: "频道", href: "/podcasts", icon: TvIcon },
+  { name: "节目", href: "/library/episodes", icon: RectangleStackIcon },
+  { name: "频道", href: "/library/podcasts", icon: TvIcon },
 ];
 
 export default function NavLinksLogined() {

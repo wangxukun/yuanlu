@@ -8,11 +8,11 @@ import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 
 export default function Form({
-  onSuccess,
-  onRegister,
+  onOpenRegisterDialog,
+  onCloseLoginDialog,
 }: {
-  onSuccess?: () => void;
-  onRegister?: () => void;
+  onOpenRegisterDialog?: () => void;
+  onCloseLoginDialog?: () => void;
 }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +37,7 @@ export default function Form({
     if (result?.error) {
       alert(result.error);
     } else {
-      onSuccess?.(); // 登录成功处理函数：关闭对话框
+      onCloseLoginDialog?.(); // 登录成功处理函数：关闭对话框
       // router.push("/dashboard");
     }
   };
@@ -118,8 +118,8 @@ export default function Form({
             <button
               type="button"
               onClick={() => {
-                onRegister?.();
-                onSuccess?.();
+                onOpenRegisterDialog?.();
+                onCloseLoginDialog?.();
               }}
               className="text-cyan-700"
             >

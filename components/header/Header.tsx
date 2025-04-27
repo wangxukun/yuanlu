@@ -42,8 +42,8 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* 右侧登录按钮 */}
-          <div className="ml-auto">
+          {/* 右侧登录按钮（仅移动端显示） */}
+          <div className="ml-auto sm:hidden">
             <LoginHomeBtn />
           </div>
         </div>

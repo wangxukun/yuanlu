@@ -3,15 +3,13 @@ import { useEffect, useRef } from "react";
 import RegisterForm from "./register-form";
 
 export default function RegisterDialog({
-  onRegisterDialogClose,
-  onShowLoginDialog,
-  onShowRegisterPromptBox,
+  onCloseRegisterDialog,
+  onOpenRegisterSuccessBox,
+  onOpenLoginDialog,
 }: {
-  // 关闭注册对话框时调用
-  onRegisterDialogClose: () => void;
-  // 注册成功后调用
-  onShowRegisterPromptBox: () => void;
-  onShowLoginDialog: () => void;
+  onCloseRegisterDialog?: () => void;
+  onOpenRegisterSuccessBox?: () => void;
+  onOpenLoginDialog?: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -21,7 +19,7 @@ export default function RegisterDialog({
         dialogRef.current &&
         !dialogRef.current.contains(event.target as Node)
       ) {
-        onRegisterDialogClose();
+        onCloseRegisterDialog?.();
       }
     }
 
@@ -29,7 +27,7 @@ export default function RegisterDialog({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onRegisterDialogClose]);
+  }, [onCloseRegisterDialog]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -38,9 +36,9 @@ export default function RegisterDialog({
         className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
       >
         <RegisterForm
-          onSuccess={onRegisterDialogClose}
-          onLogin={onShowLoginDialog}
-          onShowPrompt={onShowRegisterPromptBox}
+          onCloseRegisterDialog={onCloseRegisterDialog}
+          onOpenRegisterSuccessBox={onOpenRegisterSuccessBox}
+          onOpenLoginDialog={onOpenLoginDialog}
         />
       </div>
     </div>

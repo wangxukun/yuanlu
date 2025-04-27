@@ -124,14 +124,14 @@ const privacyPolicyContent = `
 `;
 
 // 定义注册表单组件
-export default function Form({
-  onSuccess,
-  onShowPrompt,
-  onLogin,
+export default function RegisterForm({
+  onCloseRegisterDialog,
+  onOpenRegisterSuccessBox,
+  onOpenLoginDialog,
 }: {
-  onSuccess?: () => void;
-  onShowPrompt?: () => void;
-  onLogin?: () => void;
+  onCloseRegisterDialog?: () => void;
+  onOpenRegisterSuccessBox?: () => void;
+  onOpenLoginDialog?: () => void;
 }) {
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false); // 定义状态变量 isCaptchaVerified，用于存储验证码是否验证通过
   const [phone, setPhone] = useState(""); // 定义状态变量 phone，用于存储用户输入的手机号
@@ -210,8 +210,8 @@ export default function Form({
     const result = await userRegister(initialState, formData);
     console.log("注册情况：", result.message);
     if (!result.errors || Object.keys(result.errors).length === 0) {
-      onSuccess?.();
-      onShowPrompt?.();
+      onCloseRegisterDialog?.();
+      onOpenRegisterSuccessBox?.();
     }
     return result;
   };
@@ -312,7 +312,7 @@ export default function Form({
               <input
                 ref={phoneInputRef} // 绑定引用
                 className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
-                id="phone"
+                id="login-phone"
                 type="text"
                 name="phone"
                 placeholder="请输入手机号"
@@ -404,7 +404,7 @@ export default function Form({
             <div className="relative">
               <input
                 className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
-                id="password"
+                id="login-password"
                 type="password"
                 name="password"
                 placeholder="8-16位，数字、英文、符号至少两种"
@@ -480,8 +480,9 @@ export default function Form({
           <button
             type="button"
             onClick={() => {
-              onSuccess?.();
-              onLogin?.();
+              console.log("onOpenLoginDialog", onOpenLoginDialog);
+              onCloseRegisterDialog?.();
+              onOpenLoginDialog?.();
             }}
             className="text-cyan-700"
           >

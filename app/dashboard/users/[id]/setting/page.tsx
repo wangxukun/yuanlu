@@ -1,10 +1,13 @@
 import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import React from "react";
+import UserPermissionInfo from "@/components/dashboard/users/user-permission-info";
+import { fetchUserById } from "@/app/lib/data";
 import UserPermissionForm from "@/components/dashboard/users/user-permission-form";
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const id = params.id;
+  const user = await fetchUserById(id);
   return (
     <div className="inline-block w-full align-middle">
       <Breadcrumbs
@@ -17,7 +20,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           },
         ]}
       />
-      <UserPermissionForm userid={id} />
+      <UserPermissionInfo user={user} />
+      <UserPermissionForm user={user} />
     </div>
   );
 }
