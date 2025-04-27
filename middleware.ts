@@ -26,6 +26,10 @@ const ROUTE_CONFIG = {
       "/notifications",
     ],
   },
+  premium: {
+    redirectPath: "/dashboard",
+    allowedRoutes: ["/dashboard", "/admin/users", "/admin/analytics"],
+  },
 } as const;
 
 export async function middleware(request: NextRequest) {

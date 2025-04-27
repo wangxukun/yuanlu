@@ -36,6 +36,12 @@ export default function LoginHomeBtn() {
           登录
         </span>
       </button>
+      {/*<button*/}
+      {/*  className="sm:bg-purple-700 sm:w-[140px] h-7 text-white flex items-center space-x-2 px-4 hover:drop-shadow-md rounded-lg transition-colors"*/}
+      {/*  onClick={() => setShowRegisterSuccessPrompt(true)}*/}
+      {/*>*/}
+      {/*  Prompt*/}
+      {/*</button>*/}
       {showLoginDialog && (
         <LoginDialog
           onCloseLoginDialog={() => setShowLoginDialog(false)}
