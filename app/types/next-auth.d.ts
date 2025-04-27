@@ -1,4 +1,5 @@
 import "next-auth";
+import { DefaultSession } from "next-auth";
 
 // 示例中的类型声明作用分解
 declare module "next-auth" {
@@ -13,7 +14,7 @@ declare module "next-auth" {
     // ↓ 扩展 Session 类型
     user: {
       phone: string; // → 使 session.users.phone 类型合法化
-      id: string; // → 使 session.users.userid 类型合法化
+      userid: string; // → 使 session.users.userid 类型合法化
       role: string; // → 使 session.users.role 类型合法化
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
   }

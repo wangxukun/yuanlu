@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       data: {
         phone,
         password: hashedPassword, // 存储哈希后的密码
-        role: "user",
+        role: "USER",
         languagePreference: "zh-CN",
         createAt: new Date(),
       },

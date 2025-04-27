@@ -1,3 +1,6 @@
+/**
+ * @description 手机平板端菜单
+ */
 import { useSession } from "next-auth/react";
 import MenusLinks from "@/components/main/menus-links";
 import MenusLinksLogined from "@/components/main/menus-links-logined";

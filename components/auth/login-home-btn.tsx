@@ -1,19 +1,18 @@
 "use client";
 // 新建客户端组件
 import { useSession, signOut } from "next-auth/react";
-// import { redirect } from "next/navigation";
 import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
-import { useState } from "react";
 import LoginDialog from "@/components/auth/login-dialog";
 import RegisterDialog from "@/components/auth/register-dialog";
 import PromptBox from "@/components/auth/prompt-box";
+import { useState } from "react";
 
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
+
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [showRegisterSuccessPrompt, setShowRegisterSuccessPrompt] =
-    useState(false);
 
   if (session) {
     return (
@@ -30,7 +29,6 @@ export default function LoginHomeBtn() {
     <>
       <button
         className="sm:bg-purple-700 sm:w-[140px] h-7 text-white flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
-        // onClick={() => redirect("/auth/login")}
         onClick={() => setShowLoginDialog(true)}
       >
         <UserIcon className="hidden sm:block sm:w-3 h-3" />
@@ -46,20 +44,20 @@ export default function LoginHomeBtn() {
       {/*</button>*/}
       {showLoginDialog && (
         <LoginDialog
-          onLoginDialogClose={() => setShowLoginDialog(false)}
-          onShowRegisterDialog={() => setShowRegisterDialog(true)}
+          onCloseLoginDialog={() => setShowLoginDialog(false)}
+          onOpenRegisterDialog={() => setShowRegisterDialog(true)}
         />
       )}
       {showRegisterDialog && (
         <RegisterDialog
-          onRegisterDialogClose={() => setShowRegisterDialog(false)}
-          onShowLoginDialog={() => setShowLoginDialog(true)}
-          onShowRegisterPromptBox={() => setShowRegisterSuccessPrompt(true)}
+          onCloseRegisterDialog={() => setShowRegisterDialog(false)}
+          onOpenRegisterSuccessBox={() => setShowRegisterSuccessBox(true)}
+          onOpenLoginDialog={() => setShowLoginDialog(true)}
         />
       )}
-      {showRegisterSuccessPrompt && (
+      {showRegisterSuccessBox && (
         <PromptBox
-          onPromptBoxClose={() => setShowRegisterSuccessPrompt(false)}
+          onClosePromptBox={() => setShowRegisterSuccessBox(false)}
           title="注册成功"
           message="提示将在3秒后关闭"
         />

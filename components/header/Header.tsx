@@ -8,8 +8,10 @@ import Link from "next/link";
 import AcmeLogo from "@/components/acme-logo";
 import { EqualsIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Menus from "@/components/main/menus";
+import { useSession } from "next-auth/react";
 
 export default function Header() {
+  const { data: session } = useSession();
   // 移动端菜单开关状态
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // 菜单开关状态切换
@@ -42,8 +44,8 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* 右侧登录按钮 */}
-          <div className="ml-auto">
+          {/* 右侧登录按钮（仅移动端显示） */}
+          <div className="ml-auto sm:hidden">
             <LoginHomeBtn />
           </div>
         </div>
@@ -88,8 +90,13 @@ export default function Header() {
             <div className="flex items-center">
               <SoundControls />
             </div>
-            <div className="flex flex-row items-center justify-end">
+            <div className="flex flex-row items-center justify-start">
               <div className="hidden h-auto w-full grow rounded-md bg-gray-50 md:block"></div>
+              {session?.user.role === "ADMIN" && (
+                <Link href="/dashboard" className="flex-1 flex">
+                  <div className="w-20 text-xs text-gray-600">控制台</div>
+                </Link>
+              )}
               {/* 登录按钮 */}
               <LoginHomeBtn />
             </div>

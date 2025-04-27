@@ -4,6 +4,7 @@ import {
   IdentificationIcon,
   PencilIcon,
   PlusIcon,
+  ShieldCheckIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -181,10 +182,10 @@ export function ReadUserBtn({ id }: { id: string }) {
 export function UpdateUserBtn({ id }: { id: string }) {
   return (
     <Link
-      href={`/dashboard/users/${id}/edit`}
+      href={`/dashboard/users/${id}/setting`}
       className="rounded-md border p-2 hover:bg-gray-100"
     >
-      <PencilIcon className="w-5" />
+      <ShieldCheckIcon className="w-5" />
     </Link>
   );
 }

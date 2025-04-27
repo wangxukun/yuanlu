@@ -1,4 +1,4 @@
-import { AuthOptions, Session } from "next-auth";
+import { AuthOptions, NextAuthOptions, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -19,8 +19,15 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials) return null;
 
+        type UserFromPrisma = {
+          userid: string;
+          phone: string;
+          password: string;
+          role: string | null;
+        };
+
         // 查找用户
-        const user = await prisma.user.findUnique({
+        const user = (await prisma.user.findUnique({
           where: { phone: credentials.phone },
           select: {
             userid: true,
@@ -28,7 +35,7 @@ export const authOptions: AuthOptions = {
             password: true,
             role: true,
           },
-        });
+        })) as UserFromPrisma | null;
 
         if (!user) return null;
 
@@ -42,7 +49,7 @@ export const authOptions: AuthOptions = {
         return {
           id: user.userid,
           phone: user.phone,
-          role: user.role || "user",
+          role: user.role || "USER",
         };
       },
     }),
@@ -86,6 +93,6 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
-};
+} satisfies NextAuthOptions;
 
 export type AuthOptionsType = typeof authOptions;

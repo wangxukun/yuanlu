@@ -168,7 +168,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
       {/* 第二行：单集简介 */}
       <div className="flex flex-col">
-        <h2 className="text-lg font-bold text-slate-500 mb-4">剧集简介</h2>
+        <h2 className="text-base font-medium text-slate-500 mb-4">剧集简介</h2>
         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
           {episode.description}
         </p>

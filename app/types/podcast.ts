@@ -15,6 +15,7 @@ export interface Episode {
   publishAt: string;
   status: string;
   isExclusive: boolean;
+  isCommentEnabled: boolean;
   category: Podcast;
 }
 

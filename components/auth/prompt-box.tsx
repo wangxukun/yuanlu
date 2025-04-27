@@ -3,19 +3,19 @@
 import React, { useEffect } from "react";
 
 export default function PromptBox({
-  onPromptBoxClose,
+  onClosePromptBox,
   title,
   message,
 }: {
-  onPromptBoxClose: () => void;
+  onClosePromptBox: () => void;
   title: string;
   message: string;
 }) {
   useEffect(() => {
     setTimeout(() => {
-      onPromptBoxClose();
+      onClosePromptBox();
     }, 3000);
-  }, []);
+  }, [onClosePromptBox]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

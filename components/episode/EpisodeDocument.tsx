@@ -3,6 +3,10 @@ import React, { useState, useEffect } from "react";
 import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
 import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
+import { useSession } from "next-auth/react";
+import LoginDialog from "@/components/auth/login-dialog";
+import RegisterDialog from "@/components/auth/register-dialog";
+import PromptBox from "@/components/auth/prompt-box";
 
 interface Subtitles {
   id: number;
@@ -24,6 +28,9 @@ export default function EpisodeDocument({
   const [error, setError] = useState<string | null>(null);
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
 
   // 获取播放器状态
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -32,6 +39,7 @@ export default function EpisodeDocument({
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const audioRef = usePlayerStore((state) => state.audioRef);
   const play = usePlayerStore((state) => state.play);
+  const { data: session, status } = useSession();
 
   // 处理字幕点击事件
   const handleSubtitleClick = (subtitle: Subtitles) => {
@@ -51,7 +59,16 @@ export default function EpisodeDocument({
 
   useEffect(() => {
     try {
-      setSubtitles(subtitle);
+      // 如果用户已登录，则显示全部字幕，否则只显示前15个字幕
+      if (status === "authenticated" && session) {
+        setSubtitles(subtitle);
+      } else {
+        if (subtitle.length > 15) {
+          setSubtitles(subtitle.slice(0, 15));
+        } else {
+          setSubtitles(subtitle);
+        }
+      }
       setError(null);
     } catch (err) {
       console.error("Failed to fetch subtitles:", err);
@@ -59,7 +76,7 @@ export default function EpisodeDocument({
     } finally {
       setLoading(false);
     }
-  }, [subtitle]); // 修复依赖项为 subtitle 而不是 subtitles
+  }, [subtitle, session]); // 修复依赖项为 subtitle 而不是 subtitles
 
   // 监听播放时间变化，更新高亮字幕
   useEffect(() => {
@@ -67,7 +84,6 @@ export default function EpisodeDocument({
       setActiveSubtitleId(null);
       return;
     }
-
     // 将当前时间转换为秒数
     const currentSeconds = currentTime;
 
@@ -90,12 +106,6 @@ export default function EpisodeDocument({
     const [hours, minutes, seconds] = hms.split(":").map(Number);
     return hours * 3600 + minutes * 60 + seconds + Number(ms) / 1000;
   };
-
-  // 格式化时间显示 (HH:MM:SS)
-
-  // const formatTime = (timeStr: string): string => {
-  //   return timeStr.split(",")[0]; // 去掉毫秒部分
-  // };
 
   if (loading) {
     return (
@@ -158,7 +168,7 @@ export default function EpisodeDocument({
   return (
     <div className="w-full max-w-[1200px] rounded-lg overflow-hidden">
       <div className="flex justify-between py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-slate-500">剧集字幕</h3>
+        <h3 className="text-base font-medium text-slate-500">剧集文稿</h3>
         {/* 新增翻译切换按钮 */}
         <button
           onClick={() => setShowTranslation(!showTranslation)}
@@ -210,10 +220,43 @@ export default function EpisodeDocument({
                   {subtitle.textZh}
                 </p>
               )}
-            </div>{" "}
+            </div>
           </div>
         ))}
+        {status === "unauthenticated" && (
+          <div className="flex justify-center py-4">
+            <button
+              className="text-base font-medium text-slate-500"
+              onClick={() => setShowLoginDialog(true)}
+            >
+              全部文稿
+            </button>
+          </div>
+        )}
       </div>
+      {showLoginDialog && (
+        <LoginDialog
+          onCloseLoginDialog={() => setShowLoginDialog(false)}
+          onOpenRegisterDialog={() => {
+            setShowLoginDialog(false);
+            setShowRegisterDialog(true);
+          }}
+        />
+      )}
+      {showRegisterDialog && (
+        <RegisterDialog
+          onCloseRegisterDialog={() => setShowRegisterDialog(false)}
+          onOpenRegisterSuccessBox={() => setShowRegisterSuccessBox(true)}
+          onOpenLoginDialog={() => setShowLoginDialog(true)}
+        />
+      )}
+      {showRegisterSuccessBox && (
+        <PromptBox
+          onClosePromptBox={() => setShowRegisterSuccessBox(false)}
+          title="注册成功"
+          message="提示将在3秒后关闭"
+        />
+      )}
     </div>
   );
 }

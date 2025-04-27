@@ -5,12 +5,13 @@ export interface User {
   userid: string; // 用户唯一标识
   phone: string; // 手机号码
   password: string; // 密码
-  role: "user" | "admin"; // 用户角色，普通用户或管理员
+  role: "USER" | "ADMIN" | "PREMIUM"; // 用户角色，普通用户或管理员
   languagePreference: "zh-CN" | "en-US"; // 用户语言选择，默认为中文
   createAt: Date; // 注册日期
   updateAt: Date;
   isOnline: boolean;
   lastActiveAt?: Date; // 最后登录日期
+  isCommentAllowed: boolean;
   userProfile: UserProfile;
 }
 
