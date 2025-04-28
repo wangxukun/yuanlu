@@ -4,21 +4,21 @@ import prisma from "@/app/lib/prisma";
 export async function DELETE(request: NextRequest) {
   try {
     // 解析请求体获取 categoryid
-    const { categoryid } = await request.json();
+    const { podcastid } = await request.json();
 
     // 验证参数有效性
-    if (!categoryid || isNaN(categoryid)) {
-      console.error("Invalid category ID", categoryid);
+    if (!podcastid) {
+      console.error("Invalid podcast ID", podcastid);
       return NextResponse.json(
-        { error: "Invalid category ID" },
+        { error: "Invalid podcast ID" },
         { status: 400 },
       );
     }
 
     // 执行删除操作
-    const deletedPodcast = await prisma.category.deleteMany({
+    const deletedPodcast = await prisma.podcast.deleteMany({
       where: {
-        categoryid: categoryid,
+        podcastid: podcastid,
       },
     });
 

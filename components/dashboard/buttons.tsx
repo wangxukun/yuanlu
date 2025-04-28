@@ -59,7 +59,7 @@ export function CreatePodcastBtn() {
 }
 
 // 更新播客按钮
-export function UpdatePodcastBtn({ id }: { id: number }) {
+export function UpdatePodcastBtn({ id }: { id: string }) {
   return (
     <Link
       href={`/dashboard/podcasts/${id}/edit`}
@@ -71,7 +71,7 @@ export function UpdatePodcastBtn({ id }: { id: number }) {
 }
 
 interface DeletePodcastProps {
-  id: number;
+  id: string;
   coverFileName: string;
 }
 // 删除播客按钮

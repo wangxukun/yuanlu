@@ -7,7 +7,7 @@ import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { usePlayerStore } from "@/store/player-store";
 import { Podcast } from "@/app/types/podcast";
 
-export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
+export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
   // 状态管理：收藏状态
   const [isCollected, setIsCollected] = useState(false);
 
@@ -97,7 +97,7 @@ export default function ProgramSummarize({ podcast }: { podcast: Podcast }) {
             href="#"
             className="text-xl font-bold text-purple-700 hover:underline"
           >
-            {podcast.from}
+            {podcast.platform}
           </Link>
           {/* 节目信息（集数和发布者） */}
           <div className="text-sm text-gray-500">

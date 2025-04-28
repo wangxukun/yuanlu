@@ -1,5 +1,5 @@
 import { generateSignatureUrl } from "@/app/lib/oss";
-import { Episode, EpisodeTableData } from "@/app/types/podcast";
+import { Episode, Podcast } from "@/app/types/podcast";
 import axios from "axios";
 import { User } from "@/app/types/user";
 
@@ -66,15 +66,15 @@ export async function fetchOnlineUsers(): Promise<OnlineUsersData> {
   };
 }
 
-interface Podcast {
-  categoryid: number;
-  title: string;
-  description: string;
-  coverUrl: string;
-  coverFileName?: string;
-  from: string;
-  episode: Array<Episode>;
-}
+// interface Podcast {
+//   categoryid: number;
+//   title: string;
+//   description: string;
+//   coverUrl: string;
+//   coverFileName?: string;
+//   from: string;
+//   episode: Array<Episode>;
+// }
 
 /**
  * 获取播客列表
@@ -145,7 +145,7 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
 /**
  * 获取episode列表
  */
-export async function fetchEpisodes(): Promise<EpisodeTableData[]> {
+export async function fetchEpisodes(): Promise<Episode[]> {
   const res = await fetch(`${baseUrl}/api/episode/list`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const stringifyField = (field: FormDataEntryValue | null) =>
       field instanceof File ? field.name : String(field || "");
 
-    const podcastid = Number(stringifyField(formData.get("podcastid")));
+    const podcastid = stringifyField(formData.get("podcastid"));
     const episodeTitle = stringifyField(formData.get("episodeTitle"));
     const coverUrl = stringifyField(formData.get("coverUrl"));
     const coverFileName = stringifyField(formData.get("coverFileName"));
@@ -40,9 +40,10 @@ export async function POST(request: NextRequest) {
     const description = stringifyField(formData.get("description"));
     const publishStatus = stringifyField(formData.get("publishStatus"));
     const isExclusive = stringifyField(formData.get("isExclusive")) === "true";
+
     // 检查是否缺少参数
     if (
-      isNaN(podcastid) ||
+      !podcastid ||
       !episodeTitle ||
       !coverUrl ||
       !coverFileName ||
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     const episode = await prisma.episode.create({
       data: {
         title: episodeTitle,
-        categoryid: podcastid,
+        podcastid: podcastid,
         isExclusive: isExclusive,
         coverUrl: coverUrl,
         coverFileName: coverFileName,

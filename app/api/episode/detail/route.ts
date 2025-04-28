@@ -34,14 +34,14 @@ export async function GET(req: NextRequest) {
         status: true,
         isExclusive: true,
         isCommentEnabled: true,
-        category: {
+        podcast: {
           select: {
-            categoryid: true,
+            podcastid: true,
             title: true,
             coverUrl: true,
             coverFileName: true,
             description: true,
-            from: true,
+            platform: true,
           },
         },
       },

@@ -4,15 +4,7 @@ import {
   DeletePodcastBtn,
   UpdatePodcastBtn,
 } from "@/components/dashboard/buttons";
-
-interface Podcast {
-  categoryid: number;
-  title: string;
-  description: string;
-  coverUrl?: string;
-  coverFileName?: string;
-  from: string;
-}
+import { Podcast } from "@/app/types/podcast";
 
 export default async function PodCastsTable() {
   const podcasts = ((await fetchPodcasts()) as Podcast[]) || [];
@@ -24,7 +16,7 @@ export default async function PodCastsTable() {
           <div className="md:hidden">
             {podcasts?.map((podcast) => (
               <div
-                key={podcast.categoryid}
+                key={podcast.podcastid}
                 className="mb-2 w-full rounded-md bg-white p-4"
               >
                 <div className="flex items-center justify-between border-b pb-4">
@@ -32,7 +24,7 @@ export default async function PodCastsTable() {
                     <div className="mb-2 flex items-center">
                       {podcast.title}
                     </div>
-                    <p className="text-sm text-gray-500">{podcast.from}</p>
+                    <p className="text-sm text-gray-500">{podcast.platform}</p>
                   </div>
                   <div className="h-8 w-28">按钮在此处</div>
                 </div>
@@ -73,7 +65,7 @@ export default async function PodCastsTable() {
             <tbody className="bg-white">
               {podcasts?.map((podcast) => (
                 <tr
-                  key={podcast.categoryid}
+                  key={podcast.podcastid}
                   className="w-full border-b py-3 text-sm last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
                 >
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
@@ -94,7 +86,7 @@ export default async function PodCastsTable() {
                     {podcast.title}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {podcast.from}
+                    {podcast.platform}
                   </td>
                   <td className="px-3 py-3 align-middle">
                     <div className="line-clamp-2 break-words max-w-xs">
@@ -105,9 +97,9 @@ export default async function PodCastsTable() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <div className="flex justify-end gap-3">
-                      <UpdatePodcastBtn id={podcast.categoryid} />
+                      <UpdatePodcastBtn id={podcast.podcastid} />
                       <DeletePodcastBtn
-                        id={podcast.categoryid}
+                        id={podcast.podcastid}
                         coverFileName={podcast.coverFileName || ""}
                       />
                     </div>

@@ -4,7 +4,7 @@ import prisma from "@/app/lib/prisma";
 export async function GET() {
   try {
     // 获取所有分类数据（添加take限制防止全表扫描）
-    const categories = await prisma.episode.findMany({
+    const podcasts = await prisma.episode.findMany({
       select: {
         // 明确选择需要字段
         episodeid: true,
@@ -22,16 +22,16 @@ export async function GET() {
         status: true,
         isExclusive: true,
         isCommentEnabled: true,
-        category: {
+        podcast: {
           select: {
             // 明确选择需要字段
-            categoryid: true,
+            podcastid: true,
             title: true,
           },
         },
       },
     });
-    return NextResponse.json(categories);
+    return NextResponse.json(podcasts);
   } catch (error) {
     // 确保异常时也释放连接
     await prisma.$disconnect();

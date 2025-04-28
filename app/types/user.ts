@@ -68,7 +68,7 @@ export interface UpdatePasswordRequest {
 
 // 用户忘记密码请求参数
 export interface ForgotPasswordRequest {
-  email: string; // 用户邮箱
+  phone: string; // 用户手机号
 }
 
 // 用户重置密码请求参数
@@ -78,7 +78,7 @@ export interface ResetPasswordRequest {
 }
 
 // 用户角色类型
-export type UserRole = "user" | "admin";
+export type UserRole = "USER" | "ADMIN" | "PREMIUM";
 
 // 用户分页查询参数
 export interface UserPaginationParams {
