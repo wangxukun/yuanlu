@@ -3,15 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-interface Podcast {
-  categoryid: number;
-  title: string;
-  description: string;
-  coverUrl: string;
-  coverFileName?: string;
-  from: string;
-}
+import { Podcast } from "@/app/types/podcast";
 
 interface ListProps {
   title: string;
@@ -24,9 +16,9 @@ export default function List({ title, items }: ListProps) {
   const showMoreLink = items.length > 8;
 
   // 处理卡片点击
-  const handleItemClick = (id: number) => {
+  const handleItemClick = (id: string) => {
     const encodedId = encodeURIComponent(id);
-    router.push(`/category/${encodedId}`);
+    router.push(`/podcast/${encodedId}`);
   };
 
   // 处理更多链接点击
@@ -71,7 +63,7 @@ export default function List({ title, items }: ListProps) {
           <div
             key={index}
             role="button"
-            onClick={() => handleItemClick(item.categoryid)}
+            onClick={() => handleItemClick(item.podcastid)}
             className="group relative bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
           >
             {/* 图片容器 */}
@@ -103,7 +95,7 @@ export default function List({ title, items }: ListProps) {
               <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
                 {item.title}
               </h3>
-              <p className="text-sm text-gray-500">{item.from}</p>
+              <p className="text-sm text-gray-500">{item.platform}</p>
             </div>
           </div>
         ))}

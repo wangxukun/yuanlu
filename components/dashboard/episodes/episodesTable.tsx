@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { fetchEpisodes } from "@/app/lib/data";
-import { EpisodeTableData } from "@/app/types/podcast";
+import { Episode } from "@/app/types/podcast";
 import {
   DeleteEpisodeBtn,
   UpdateEpisodeBtn,
@@ -9,7 +9,7 @@ import EpisodeStatus from "@/components/dashboard/episodes/status";
 import IsExclusive from "@/components/dashboard/episodes/IsExclusive";
 
 export default async function EpisodesTable() {
-  const episodes = ((await fetchEpisodes()) as EpisodeTableData[]) || [];
+  const episodes = ((await fetchEpisodes()) as Episode[]) || [];
 
   return (
     <div className="mt-6 flow-root">
@@ -27,13 +27,13 @@ export default async function EpisodesTable() {
                       {episode.title}
                     </div>
                     <p className="text-sm text-gray-500">
-                      {episode.category.title}
+                      {episode.podcast.title}
                     </p>
                   </div>
                   <div className="h-8 w-28">按钮在此处</div>
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
-                  <div>{episode.category.categoryid}</div>
+                  <div>{episode.podcast.podcastid}</div>
                   <div className="flex justify-end gap-2">
                     <Image
                       src={episode.coverUrl || "/static/images/1.png"}
@@ -96,7 +96,7 @@ export default async function EpisodesTable() {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {episode.category.title}
+                    {episode.podcast.title}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {episode.title}

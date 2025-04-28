@@ -32,7 +32,7 @@ export type PodcastState = {
     description: string;
     cover: string;
     coverFileName: string;
-    form: string;
+    platform: string;
   };
   message?: string | null;
 };
@@ -172,7 +172,7 @@ export async function login(
   }
   // 注册成功后，重定向到 /auth/signup-success 页面
   // 更新成功后，刷新缓存并重定向到 /auth/login 页面
-  revalidatePath("/auth/login");
+  // revalidatePath("/auth/login");
   redirect("/");
 }
 
@@ -196,7 +196,7 @@ export async function createPodcast(
             description: "",
             cover: "请上传封面图片", // 使用已定义的 cover 字段
             coverFileName: "",
-            form: "",
+            platform: "",
           },
           message: "缺少必要文件",
         });
@@ -218,7 +218,7 @@ export async function createPodcast(
         description: formData.get("description"),
         coverUrl, // 使用OSS返回的URL
         coverFileName: uniqueFilename, // 存储在OSS中的文件名
-        from: formData.get("from"),
+        platform: formData.get("platform"),
       }),
     });
     // const data = await res.json();
@@ -238,7 +238,7 @@ export async function createPodcast(
           description: "",
           cover: "",
           coverFileName: "",
-          form: "",
+          platform: "",
         },
         // 在podcasts页面中，通过message判断是否需要重定向
         message: "redirect:/dashboard/podcasts/create-success", // 添加特殊标识
@@ -253,7 +253,7 @@ export async function createPodcast(
           description: "",
           cover: "上传封面失败", // 使用已定义的 cover 字段
           coverFileName: "",
-          form: "",
+          platform: "",
         },
         message: "创建过程中发生错误",
       });
@@ -266,7 +266,7 @@ export async function createPodcast(
       description: "",
       cover: "",
       coverFileName: "",
-      form: "",
+      platform: "",
     },
     message: "未知错误",
   };
@@ -278,7 +278,7 @@ export type PodcastDelState = {
 };
 // 删除播客
 export async function deletePodcast(
-  id: number,
+  id: string,
   coverFileName: string,
 ): Promise<PodcastDelState> {
   // 删除OSS中封面图片
@@ -287,7 +287,7 @@ export async function deletePodcast(
   const res = await fetch(`${baseUrl}/api/podcast/delete`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ categoryid: id }),
+    body: JSON.stringify({ podcastid: id }),
   });
   const data = await res.json();
   console.log("删除OSS中封面图片", result);

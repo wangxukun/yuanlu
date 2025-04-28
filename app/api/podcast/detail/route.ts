@@ -2,27 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  const id = Number(req.nextUrl.searchParams.get("id"));
+  const id = req.nextUrl.searchParams.get("id");
   console.log("[GET /api/podcast/detail]", id);
 
   // 验证参数有效性
-  if (!id || isNaN(id)) {
-    console.error("Invalid category ID", id);
-    return NextResponse.json({ error: "Invalid category ID", status: 400 });
+  if (!id) {
+    console.error("Invalid podcast ID", id);
+    return NextResponse.json({ error: "Invalid podcast ID", status: 400 });
   }
   try {
-    const podcast = await prisma.category.findFirst({
+    const podcast = await prisma.podcast.findFirst({
       where: {
-        categoryid: id,
+        podcastid: id,
       },
       select: {
         // 明确选择需要字段
-        categoryid: true,
+        podcastid: true,
         title: true,
         coverUrl: true,
         coverFileName: true,
         description: true,
-        from: true,
+        platform: true,
         episode: {
           select: {
             episodeid: true,

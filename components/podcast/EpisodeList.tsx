@@ -6,11 +6,7 @@ import Link from "next/link";
 import { Episode } from "@/app/types/podcast";
 import { formatTime } from "@/app/lib/tools";
 
-interface ProgramListProps {
-  episodes: Episode[];
-}
-
-export default function ProgramList({ episodes }: ProgramListProps) {
+export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   // 收藏状态
   // const [isCollected, setIsCollected] = useState(false);

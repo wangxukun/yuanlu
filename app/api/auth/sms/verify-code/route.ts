@@ -17,12 +17,12 @@ export async function POST(request: Request) {
     const table_sms_code = await prisma.sms_code.findFirst({
       where: {
         phone,
-        createdAt: {
+        createAt: {
           gte: new Date(Date.now() - 5 * 60 * 1000), // 5 分钟内有效
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createAt: "desc",
       },
     });
 

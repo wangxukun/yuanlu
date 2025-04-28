@@ -5,6 +5,6 @@ export type onlineUser = {
 };
 
 export type PodcastField = {
-  categoryid: number;
+  podcastid: string;
   title: string;
 };

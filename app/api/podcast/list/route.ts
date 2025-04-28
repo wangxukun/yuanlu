@@ -4,15 +4,15 @@ import prisma from "@/app/lib/prisma";
 export async function GET() {
   try {
     // 获取所有分类数据（添加take限制防止全表扫描）
-    const categories = await prisma.category.findMany({
+    const categories = await prisma.podcast.findMany({
       select: {
         // 明确选择需要字段
-        categoryid: true,
+        podcastid: true,
         title: true,
         coverUrl: true,
         coverFileName: true,
         description: true,
-        from: true,
+        platform: true,
       },
     });
     return NextResponse.json(categories);

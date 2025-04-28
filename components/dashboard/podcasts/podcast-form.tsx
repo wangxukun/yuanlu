@@ -16,7 +16,7 @@ export default function PodcastForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [podcastName, setPodcastName] = useState("");
   const [description, setDescription] = useState("");
-  const [from, setFrom] = useState("");
+  const [platform, setPlatform] = useState("");
 
   const initialState: PodcastState = {
     errors: {
@@ -24,7 +24,7 @@ export default function PodcastForm() {
       description: "",
       cover: "",
       coverFileName: "",
-      form: "",
+      platform: "",
     },
     message: null,
   };
@@ -86,19 +86,19 @@ export default function PodcastForm() {
 
         {/* 发布平台 */}
         <div className="mb-4">
-          <label htmlFor="from" className="mb-2 block text-sm font-medium">
+          <label htmlFor="platform" className="mb-2 block text-sm font-medium">
             发布平台
           </label>
           <div className="relative mt-2 rounded-md">
             <div className="relative">
               <input
-                id="from"
-                name="from"
+                id="platform"
+                name="platform"
                 type="text"
                 placeholder="发布平台"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
                 required
               />
               <LanguageIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />

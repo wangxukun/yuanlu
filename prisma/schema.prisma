@@ -22,7 +22,8 @@ model User {
   comments           comments[]
   discussion_threads discussion_threads[]
   episode            episode[]
-  favorites          favorites[]
+  episode_favorites  episode_favorites[]
+  podcast_favorites  podcast_favorites[]
   learning_paths     learning_paths[]
   listening_history  listening_history[]
   notifications      notifications[]
@@ -51,37 +52,39 @@ model advertisements {
   endAt     DateTime? @db.Timestamptz(6)
 }
 
-model category {
-  categoryid       Int        @id @default(autoincrement())
-  title            String     @unique @db.VarChar(255)
-  coverUrl         String     @default("default_cover_url") @db.VarChar(255)
-  coverFileName    String?    @db.VarChar(255)
-  from             String?    @db.VarChar(255)
-  description      String?
-  parentCategoryid Int?
-  category         category?  @relation("categoryTocategory", fields: [parentCategoryid], references: [categoryid], onUpdate: NoAction)
-  otherCategory    category[] @relation("categoryTocategory")
-  episode          episode[]
+model podcast {
+  podcastid         String              @id @default(cuid())
+  title             String              @unique @db.VarChar(255)
+  coverUrl          String              @default("default_cover_url") @db.VarChar(255)
+  coverFileName     String?             @db.VarChar(255)
+  platform          String?             @db.VarChar(255)
+  description       String?
+  parentPodcastid   String?
+  podcast           podcast?            @relation("podcastTopodcast", fields: [parentPodcastid], references: [podcastid], onUpdate: NoAction)
+  otherPodcast      podcast[]           @relation("podcastTopodcast")
+  episode           episode[]
+  podcast_favorites podcast_favorites[]
+  podcast_tags      podcast_tags[]
 }
 
 model comments {
   commentid   Int       @id @default(autoincrement())
   userid      String?
-  podcastid   String?
+  episodeid   String?
   commentText String?
   commentAt   DateTime? @default(now()) @db.Timestamptz(6)
-  episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode     episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model discussion_threads {
   threadid      Int       @id @default(autoincrement())
-  podcastid     String?
+  episodeid     String?
   userid        String?
   threadTitle   String    @db.VarChar(255)
   threadContent String?
   postAt        DateTime? @default(now()) @db.Timestamptz(6)
-  episode       episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode       episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User          User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -98,7 +101,7 @@ model episode {
   subtitleZhUrl      String?              @db.VarChar(255)
   subtitleZhFileName String?              @db.VarChar(255)
   duration           Int                  @default(0)
-  categoryid         Int?
+  podcastid          String?
   uploaderid         String?
   publishAt          DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
   createAt           DateTime?            @default(now()) @db.Timestamptz(6)
@@ -108,23 +111,64 @@ model episode {
   isCommentEnabled   Boolean?             @default(true)
   comments           comments[]
   discussion_threads discussion_threads[]
-  category           category?            @relation(fields: [categoryid], references: [categoryid], onUpdate: NoAction)
+  podcast            podcast?             @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
   User               User?                @relation(fields: [uploaderid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-  favorites          favorites[]
+  episode_favorites  episode_favorites[]
   listening_history  listening_history[]
   quizzes            quizzes[]
   ratings            ratings[]
   speech_recognition speech_recognition[]
-  subtitles          subtitles[]
+  episode_tags       episode_tags[]
 }
 
-model favorites {
+model episode_favorites {
+  favoriteid   Int       @id @default(autoincrement())
+  userid       String?
+  episodeid    String?
+  favoriteDate DateTime? @default(now()) @db.Timestamptz(6)
+  episode      episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, episodeid]) // 防止重复收藏
+}
+
+model podcast_favorites {
   favoriteid   Int       @id @default(autoincrement())
   userid       String?
   podcastid    String?
-  favoritedate DateTime? @default(now()) @db.Timestamptz(6)
-  episode      episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  favoriteDate DateTime? @default(now()) @db.Timestamptz(6)
+  podcast      podcast?  @relation(fields: [podcastid], references: [podcastid], onDelete: Cascade, onUpdate: NoAction)
   User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, podcastid]) // 防止重复收藏
+}
+
+model tag {
+  tagid        String         @id @default(cuid())
+  name         String         @unique @db.VarChar(50)
+  createAt     DateTime       @default(now()) @db.Timestamptz(6)
+  podcast_tags podcast_tags[]
+  episode_tags episode_tags[]
+}
+
+model podcast_tags {
+  id        Int     @id @default(autoincrement())
+  podcastid String
+  tagid     String
+  podcast   podcast @relation(fields: [podcastid], references: [podcastid])
+  tag       tag     @relation(fields: [tagid], references: [tagid])
+
+  @@unique([podcastid, tagid])
+}
+
+model episode_tags {
+  id        Int     @id @default(autoincrement())
+  episodeid String
+  tagid     String
+  episode   episode @relation(fields: [episodeid], references: [episodeid])
+  tag       tag     @relation(fields: [tagid], references: [tagid])
+
+  @@unique([episodeid, tagid])
 }
 
 model learning_paths {
@@ -138,9 +182,9 @@ model learning_paths {
 model listening_history {
   historyid Int       @id @default(autoincrement())
   userid    String?
-  podcastid String?
+  episodeid String?
   listenAt  DateTime? @default(now()) @db.Timestamptz(6)
-  episode   episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode   episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User      User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -155,32 +199,32 @@ model notifications {
 
 model quizzes {
   quizid        Int      @id @default(autoincrement())
-  podcastid     String?
+  episodeid     String?
   question      String
   options       Json?
   correctAnswer String   @db.VarChar(255)
-  episode       episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode       episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model ratings {
   ratingid    Int       @id @default(autoincrement())
   userid      String?
-  podcastid   String?
-  ratingvalue Int?
+  episodeid   String?
+  ratingValue Int?
   ratingDate  DateTime? @default(now()) @db.Timestamptz(6)
-  episode     episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode     episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model speech_recognition {
   recognitionid   Int       @id @default(autoincrement())
   userid          String?
-  podcastid       String?
-  speechtext      String?
-  accuracyscore   Float?
+  episodeid       String?
+  speechText      String?
+  accuracyScore   Float?
   recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
-  episode         episode?  @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  episode         episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -199,16 +243,6 @@ model subscriptions {
   startDate        DateTime? @default(now()) @db.Timestamptz(6)
   endDate          DateTime? @db.Timestamptz(6)
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model subtitles {
-  subtitleid Int      @id @default(autoincrement())
-  podcastid  String?
-  en         String?
-  zh         String?
-  startTime  String?  @db.VarChar(10)
-  endTime    String?  @db.VarChar(10)
-  episode    episode? @relation(fields: [podcastid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model user_profile {
@@ -236,12 +270,12 @@ model captcha {
   code      String
   answer    String
   expiresAt DateTime @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  createAt  DateTime @default(now()) @db.Timestamptz(3)
 }
 
 model sms_code {
-  id        Int      @id @default(autoincrement())
-  phone     String   @db.VarChar(15)
-  code      String   @db.VarChar(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id       Int      @id @default(autoincrement())
+  phone    String   @db.VarChar(15)
+  code     String   @db.VarChar(6)
+  createAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 }

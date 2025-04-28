@@ -83,9 +83,9 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
           {/* 新增分类标签 */}
           <div className="flex items-center space-x-2 mb-4">
-            <p className="text-sm text-gray-500">{episode.category.from}</p>
+            <p className="text-sm text-gray-500">{episode.podcast.platform}</p>
             <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-              {episode.category.title}
+              {episode.podcast.title}
             </span>
           </div>
 

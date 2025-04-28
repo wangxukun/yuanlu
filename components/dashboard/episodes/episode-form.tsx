@@ -220,7 +220,7 @@ export default function EpisodeForm({
                 选择一个播客
               </option>
               {podcasts.map((podcast) => (
-                <option key={podcast.categoryid} value={podcast.categoryid}>
+                <option key={podcast.podcastid} value={podcast.podcastid}>
                   {podcast.title}
                 </option>
               ))}

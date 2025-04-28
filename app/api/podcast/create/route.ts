@@ -4,23 +4,23 @@ import prisma from "@/app/lib/prisma";
 export async function POST(request: Request) {
   try {
     // 从请求体中获取数据
-    const { podcastName, from, description, coverUrl, coverFileName } =
+    const { podcastName, platform, description, coverUrl, coverFileName } =
       await request.json();
-    console.log(podcastName, from, description, coverUrl, coverFileName);
+    console.log(podcastName, platform, description, coverUrl, coverFileName);
     // 检查是否缺少参数
-    if (!podcastName || !from || !description || !coverUrl) {
+    if (!podcastName || !platform || !description || !coverUrl) {
       return NextResponse.json(
         { success: false, message: "缺少参数" },
         { status: 400 },
       );
     }
 
-    const podcastNameExists = await prisma.category.findFirst({
+    const podcastNameExists = await prisma.podcast.findFirst({
       where: {
         title: podcastName,
       },
       select: {
-        categoryid: true,
+        podcastid: true,
       }, // 仅查询必要的字段
     });
     if (podcastNameExists) {
@@ -30,10 +30,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const podcast = await prisma.category.create({
+    const podcast = await prisma.podcast.create({
       data: {
         title: podcastName,
-        from,
+        platform: platform,
         description,
         coverFileName,
         coverUrl,
