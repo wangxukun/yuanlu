@@ -64,7 +64,7 @@ model podcast {
   otherPodcast      podcast[]           @relation("podcastTopodcast")
   episode           episode[]
   podcast_favorites podcast_favorites[]
-  podcast_tags      podcast_tags[]
+  tags              podcast_tags[]
 }
 
 model comments {
@@ -118,7 +118,7 @@ model episode {
   quizzes            quizzes[]
   ratings            ratings[]
   speech_recognition speech_recognition[]
-  episode_tags       episode_tags[]
+  tags               episode_tags[]
 }
 
 model episode_favorites {
@@ -143,32 +143,74 @@ model podcast_favorites {
   @@unique([userid, podcastid]) // 防止重复收藏
 }
 
+enum tag_type {
+  PODCAST
+  EPISODE
+  UNIVERSAL
+}
+
+model tag_group {
+  groupid       String          @id @default(cuid())
+  name          String          @unique @db.VarChar(50)
+  description   String?
+  coverUrl      String          @default("default_tag_group_cover_url") @db.VarChar(255)
+  coverFileName String?         @db.VarChar(255)
+  sortOrder     Int?            @default(0) // 分组排序权重
+  allowedTypes  tag_type[] // 该分组允许包含的标签类型
+  tags          tag[]
+  createAt      DateTime        @default(now())
+  updateAt      DateTime        @updatedAt
+  tagLinks      tag_group_tag[]
+}
+
 model tag {
-  tagid        String         @id @default(cuid())
-  name         String         @unique @db.VarChar(50)
-  createAt     DateTime       @default(now()) @db.Timestamptz(6)
-  podcast_tags podcast_tags[]
-  episode_tags episode_tags[]
+  tagid         String          @id @default(cuid())
+  name          String          @unique @db.VarChar(50)
+  description   String?
+  type          tag_type
+  group         tag_group?      @relation(fields: [tagGroupid], references: [groupid])
+  tagGroupid    String?         @map("tag_groupid")
+  podcasts      podcast_tags[]
+  episodes      episode_tags[]
+  coverUrl      String          @default("default_tag_cover_url") @db.VarChar(255)
+  coverFileName String?         @db.VarChar(255)
+  isFeatured    Boolean         @default(false) // 是否推荐标签
+  groupLinks    tag_group_tag[]
+
+  @@index([tagGroupid])
+}
+
+// tag_group 与 tag 的多对多关系,用于实现tag_group中的标签权重排序
+model tag_group_tag {
+  tagid      String
+  groupid    String
+  sortWeight Int?      @default(0)
+  tag        tag       @relation(fields: [tagid], references: [tagid])
+  group      tag_group @relation(fields: [groupid], references: [groupid])
+
+  @@id([tagid, groupid])
+  @@index([sortWeight])
 }
 
 model podcast_tags {
-  id        Int     @id @default(autoincrement())
   podcastid String
   tagid     String
-  podcast   podcast @relation(fields: [podcastid], references: [podcastid])
-  tag       tag     @relation(fields: [tagid], references: [tagid])
+  podcast   podcast   @relation(fields: [podcastid], references: [podcastid])
+  tag       tag       @relation(fields: [tagid], references: [tagid])
+  createAt  DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@unique([podcastid, tagid])
+  @@id([podcastid, tagid])
+  @@index([tagid])
 }
 
 model episode_tags {
-  id        Int     @id @default(autoincrement())
   episodeid String
   tagid     String
-  episode   episode @relation(fields: [episodeid], references: [episodeid])
-  tag       tag     @relation(fields: [tagid], references: [tagid])
+  episode   episode   @relation(fields: [episodeid], references: [episodeid])
+  tag       tag       @relation(fields: [tagid], references: [tagid])
+  createAt  DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@unique([episodeid, tagid])
+  @@id([episodeid, tagid])
 }
 
 model learning_paths {

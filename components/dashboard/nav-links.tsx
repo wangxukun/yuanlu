@@ -4,6 +4,7 @@ import {
   UserGroupIcon,
   HomeIcon,
   DocumentDuplicateIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,6 +25,8 @@ const links = [
     icon: DocumentDuplicateIcon,
   },
   { name: "用户管理", href: "/dashboard/users", icon: UserGroupIcon },
+  { name: "标签分组", href: "/dashboard/tag-groups", icon: TagIcon },
+  { name: "标签管理", href: "/dashboard/tags", icon: TagIcon },
 ];
 
 /**

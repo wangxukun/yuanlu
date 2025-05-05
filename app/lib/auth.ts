@@ -47,7 +47,8 @@ export const authOptions: AuthOptions = {
         if (!isValid) return null;
         // 返回用户信息
         return {
-          id: user.userid,
+          id: user.userid, // 必须要有，否则会报错
+          userid: user.userid,
           phone: user.phone,
           role: user.role || "USER",
         };
@@ -57,7 +58,7 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }: { token: JWT; user: User }) {
       if (user) {
-        token.id = user.id;
+        token.userid = user.userid;
         token.phone = user.phone;
         token.role = user.role;
       }
@@ -67,7 +68,7 @@ export const authOptions: AuthOptions = {
       session.user = {
         ...session.user,
         phone: token.phone,
-        userid: token.id,
+        userid: token.userid,
         role: token.role,
       };
       return session;
@@ -77,14 +78,14 @@ export const authOptions: AuthOptions = {
     async signIn({ user }: { user: User }) {
       // 用户登录时标记为在线
       await prisma.user.update({
-        where: { userid: user.id },
+        where: { userid: user.userid },
         data: { isOnline: true, lastActiveAt: new Date() },
       });
     },
     async signOut({ token }: { token: JWT }) {
       // 用户退出时标记为离线
       await prisma.user.update({
-        where: { userid: token.id },
+        where: { userid: token.userid },
         data: { isOnline: false },
       });
     },

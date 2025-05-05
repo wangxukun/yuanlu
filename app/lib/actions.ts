@@ -230,7 +230,7 @@ export async function createPodcast(
       });
     }
     if (res.ok) {
-      revalidatePath("/dashboard/podcasts/categories/create");
+      revalidatePath("/dashboard/podcasts/categories/batch-create");
       // 先返回成功状态再执行重定向
       return {
         errors: {
@@ -241,7 +241,7 @@ export async function createPodcast(
           platform: "",
         },
         // 在podcasts页面中，通过message判断是否需要重定向
-        message: "redirect:/dashboard/podcasts/create-success", // 添加特殊标识
+        message: "redirect:/dashboard/podcasts/batch-create-success", // 添加特殊标识
       };
     }
   } catch (error) {
@@ -361,7 +361,7 @@ export async function deleteUser(
   avatarFileName: string,
 ): Promise<UserDelState> {
   let delAvatarResult = null;
-  if (!avatarFileName) {
+  if (avatarFileName) {
     // 删除OSS中用户头像
     delAvatarResult = await deleteObject(avatarFileName);
   }
@@ -386,5 +386,24 @@ export async function deleteUser(
   return {
     message: data.message,
     status: data.status,
+  };
+}
+
+// 删除封面
+export async function deleteOSSFile(fileName: string) {
+  let delFileResult = null;
+  // 删除OSS中文件
+  delFileResult = await deleteObject(fileName);
+  if (!delFileResult) {
+    return {
+      message: "删除失败",
+      status: 500,
+      success: false,
+    };
+  }
+  return {
+    message: "删除成功",
+    status: 200,
+    success: true,
   };
 }

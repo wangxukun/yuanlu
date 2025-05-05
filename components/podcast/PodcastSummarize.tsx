@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { usePlayerStore } from "@/store/player-store";
 import { Podcast } from "@/app/types/podcast";
+import { PodcastFavoriteBtn } from "@/components/FavoriteBtn";
 
 export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
-  // 状态管理：收藏状态
-  const [isCollected, setIsCollected] = useState(false);
+  const { data: session } = useSession();
 
   const audioRef = usePlayerStore((state) => state.audioRef);
   const currentEpisode = usePlayerStore((state) => state.currentEpisode);
@@ -29,11 +30,14 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
   })[0];
 
   // useEffect(() => {
-  //   if (audioRef) {
-  //     console.log("可以控制 Header 中的 audio：", audioRef);
-  //     // 示例操作：audioRef.play();
+  //   if (isCollected) {
+  //     await insertPodcastFavorite(podcast.podcastid, session.user.userid);
+  //     console.log("收藏成功");
+  //   } else {
+  //     await deletePodcastFavorite(podcast.podcastid, session.user.userid);
+  //     console.log("取消收藏成功");
   //   }
-  // }, [audioRef]);
+  // }, [isCollected]);
 
   // 当 currentAudioUrl 发生变化时，更新音频源并播放
   useEffect(() => {
@@ -73,6 +77,10 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
       }
     }
   };
+
+  // const handleCollected = () => {
+  //   setIsCollected(!isCollected);
+  // };
 
   return (
     // 最外层容器
@@ -132,30 +140,12 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
                 : "恢复"}
           </button>
           {/*操作按钮组*/}
-          <button
-            onClick={() => setIsCollected(!isCollected)} // 点击切换收藏状态
-            className={`flex items-center text-sm px-2 py-1 rounded-lg transition-colors ${
-              isCollected
-                ? "bg-red-100 text-red-600 hover:bg-red-200" // 已收藏状态样式
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200" // 未收藏状态样式
-            }`}
-          >
-            {/* 收藏图标 */}
-            <svg
-              className="w-4 h-4 mr-1"
-              fill={isCollected ? "currentColor" : "none"} // 动态填充状态
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-            收藏
-          </button>
+          {session?.user && (
+            <PodcastFavoriteBtn
+              podcastid={podcast.podcastid}
+              userid={session.user.userid}
+            />
+          )}
         </div>
       </div>
     </div>
