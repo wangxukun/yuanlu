@@ -6,7 +6,7 @@ declare module "next-auth" {
   interface User {
     // ↓ 扩展 NextAuth 原生 User 类型
     phone: string; // → 允许用户对象携带 phone 字段
-    id: string; // → 允许用户对象携带 userid 字段
+    userid: string; // → 允许用户对象携带 userid 字段
     role: string; // → 允许用户对象携带 role 字段
   }
 
@@ -22,7 +22,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
+    userid: string;
     phone: string;
     role: string;
   }

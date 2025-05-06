@@ -1,10 +1,37 @@
 import { generateSignatureUrl } from "@/app/lib/oss";
-import { Episode, Podcast } from "@/app/types/podcast";
+import { Episode, Podcast, Tag, TagGroup } from "@/app/types/podcast";
 import axios from "axios";
 import { User } from "@/app/types/user";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+/**
+ * 获取标签组列表
+ */
+export async function fetchTagGroups(): Promise<TagGroup[]> {
+  const res = await fetch(`${baseUrl}/api/tag-group/list`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch tag groups");
+  }
+  return await res.json();
+}
+
+/**
+ * 获取标签列表
+ */
+export async function fetchTags(): Promise<Tag[]> {
+  const res = await fetch(`${baseUrl}/api/tag/list`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch tags");
+  }
+  return await res.json();
+}
 /**
  * 获取用户列表
  */
@@ -256,6 +283,10 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
     .filter(Boolean) as SubtitleItem[];
 };
 
+/**
+ * 合并字幕
+ * @param episode
+ */
 export async function mergeSubtitles(episode: Episode) {
   const subtitleEn =
     (await fetchSubtitles(episode.subtitleEnUrl as string)) || null;

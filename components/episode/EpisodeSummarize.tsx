@@ -3,13 +3,15 @@
 import Image from "next/image";
 import { Episode } from "@/app/types/podcast";
 import { formatTime } from "@/app/lib/tools";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { usePlayerStore } from "@/store/player-store";
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { EpisodeFavoriteBtn } from "@/components/FavoriteBtn";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
-  // 状态管理：收藏状态
-  const [isCollected, setIsCollected] = useState(false);
+  const { data: session } = useSession();
+
   const audioRef = usePlayerStore((state) => state.audioRef);
   const currentEpisode = usePlayerStore((state) => state.currentEpisode);
   const setCurrentEpisode = usePlayerStore((state) => state.setCurrentEpisode);
@@ -117,31 +119,13 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
                   ? "暂停"
                   : "恢复"}
             </button>
-            {/* 收藏按钮 */}
-            <button
-              onClick={() => setIsCollected(!isCollected)} // 点击切换收藏状态
-              className={`flex items-center text-sm px-2 py-1 rounded-lg transition-colors ${
-                isCollected
-                  ? "bg-red-100 text-red-600 hover:bg-red-200" // 已收藏状态样式
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200" // 未收藏状态样式
-              }`}
-            >
-              {/* 收藏图标 */}
-              <svg
-                className="w-4 h-4 mr-1"
-                fill={isCollected ? "currentColor" : "none"} // 动态填充状态
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              收藏
-            </button>
+            {/*收藏按钮*/}
+            {session?.user && (
+              <EpisodeFavoriteBtn
+                episodeid={episode.episodeid}
+                userid={session.user.userid}
+              />
+            )}
             {/* 文档下载链接 */}
             <a
               href="#"

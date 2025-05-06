@@ -11,6 +11,7 @@ import Link from "next/link";
 import {
   deleteEpisode,
   deletePodcast,
+  deleteOSSFile,
   deleteUser,
   EpisodeDelState,
   PodcastDelState,
@@ -19,15 +20,26 @@ import {
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { redirect } from "next/navigation";
 
-/** 管理播客类别按钮 */
-export function PodcastsBtn() {
+export function CreateTagBtn() {
   return (
     <Link
-      href="/dashboard/podcasts/categories"
+      href="/dashboard/tags/create"
       className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
     >
-      <span className="hidden md:block">管理播客类别</span>{" "}
-      <PencilIcon className="h-5 md:ml-4" />
+      <span className="hidden md:block">创建标签</span>{" "}
+      <PlusIcon className="h-5 md:ml-4" />
+    </Link>
+  );
+}
+
+export function CreateTagGroupBtn() {
+  return (
+    <Link
+      href="/dashboard/tag-groups/create"
+      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    >
+      <span className="hidden md:block">创建标签组</span>{" "}
+      <PlusIcon className="h-5 md:ml-4" />
     </Link>
   );
 }
@@ -285,5 +297,32 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
         </div>
       )}
     </>
+  );
+}
+
+// 删除封面按钮
+export function DeleteCoverBtn({
+  coverFileName,
+  OnHideCover,
+}: {
+  coverFileName: string;
+  OnHideCover: () => void;
+}) {
+  const handleDelete = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const { success } = await deleteOSSFile(coverFileName);
+    if (success) {
+      OnHideCover();
+    }
+  };
+  // 处理 重定向
+  return (
+    <button
+      onClick={handleDelete}
+      className="rounded-md border p-2 hover:bg-gray-100"
+    >
+      <span className="sr-only">删除</span>
+      <TrashIcon className="w-5" />
+    </button>
   );
 }

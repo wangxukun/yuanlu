@@ -54,7 +54,6 @@ export default function EpisodeForm({
         setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-
       // 将文件进行上传
       try {
         const formData = new FormData();

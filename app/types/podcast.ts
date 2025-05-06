@@ -1,4 +1,5 @@
 import { User } from "@/app/types/user";
+import { TagType } from "@/app/types/tag";
 
 export interface Episode {
   episodeid: string;
@@ -34,25 +35,52 @@ export interface Podcast {
   podcastTags: PodcastTags[];
   podcastFavorites: PodcastFavorites[];
 }
+
+export interface TagGroup {
+  groupid: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  sortOrder: number;
+  allowedTypes: TagType[];
+  tags: Tag[];
+  createAt: string;
+  updateAt: string;
+  tagLinks: TagGroupTag[];
+}
+export interface TagGroupTag {
+  tagid: string;
+  groupid: string;
+  sortWeight: number;
+  tag: Tag;
+  group: TagGroup;
+}
 export interface Tag {
   tagid: string;
   name: string;
-  createAt: string;
+  type: string;
+  isFeatured: boolean;
+  coverUrl: string;
+  coverFileName: string;
+  tagGroupid: string;
+  description: string;
+  groupLinks: TagGroupTag[];
+  group: TagGroup;
 }
 export interface PodcastTags {
-  id: number;
   podcastid: string;
   tagid: string;
   podcast: Podcast;
   tag: Tag;
+  createAt: string;
 }
 
 export interface EpisodeTags {
-  id: number;
   episodeid: string;
   tagid: string;
   episode: Episode;
   tag: Tag;
+  createAt: string;
 }
 
 export interface PodcastFavorites {

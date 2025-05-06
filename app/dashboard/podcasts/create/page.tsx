@@ -9,7 +9,7 @@ export default function Page() {
           { label: "播客管理", href: "/dashboard/podcasts" },
           {
             label: "创建播客",
-            href: "/dashboard/podcasts/create",
+            href: "/dashboard/podcasts/batch-create",
             active: true,
           },
         ]}
