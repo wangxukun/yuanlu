@@ -23,6 +23,9 @@ export async function TagGroupsTable() {
                   描述
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
+                  标签数
+                </th>
+                <th scope="col" className="px-3 py-5 font-medium">
                   允许的标签类型
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
@@ -42,6 +45,9 @@ export async function TagGroupsTable() {
                   <td className="whitespace-nowrap px-3 py-3">{group.name}</td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {group.description}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {group.tagLinks.length}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {group.allowedTypes.map((type) => (

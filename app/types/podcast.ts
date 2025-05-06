@@ -43,14 +43,14 @@ export interface TagGroup {
   imageUrl: string;
   sortOrder: number;
   allowedTypes: TagType[];
-  tag: Tag[];
+  tags: Tag[];
   createAt: string;
   updateAt: string;
   tagLinks: TagGroupTag[];
 }
 export interface TagGroupTag {
   tagid: string;
-  groupId: string;
+  groupid: string;
   sortWeight: number;
   tag: Tag;
   group: TagGroup;
@@ -65,6 +65,7 @@ export interface Tag {
   tagGroupid: string;
   description: string;
   groupLinks: TagGroupTag[];
+  group: TagGroup;
 }
 export interface PodcastTags {
   podcastid: string;

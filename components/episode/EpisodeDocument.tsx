@@ -190,7 +190,7 @@ export default function EpisodeDocument({
           <span>{showTranslation ? "隐藏翻译" : "显示翻译"}</span>
         </button>
       </div>
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 select-none">
         {subtitles.map((subtitle) => (
           <div
             key={subtitle.id}

@@ -239,7 +239,7 @@ export default function TagForm({ tagGroups }: { tagGroups: TagGroup[] }) {
 
         {/* 是否推荐 */}
         <fieldset>
-          <legend className="mb-2 block text-sm font-medium">付费订阅</legend>
+          <legend className="mb-2 block text-sm font-medium">推荐标签</legend>
           <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3">
             <div className="flex gap-4">
               <div className="flex items-center">
@@ -249,7 +249,7 @@ export default function TagForm({ tagGroups }: { tagGroups: TagGroup[] }) {
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                  className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2 accent-pink-500"
                 />
                 <label
                   htmlFor="isFeatured"

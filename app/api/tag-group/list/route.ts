@@ -6,6 +6,9 @@ export async function GET() {
   try {
     // 获取所有标签数据（添加take限制防止全表扫描）
     const tagGroups = await prisma.tag_group.findMany({
+      include: {
+        tagLinks: true,
+      },
       orderBy: [
         {
           sortOrder: "asc",

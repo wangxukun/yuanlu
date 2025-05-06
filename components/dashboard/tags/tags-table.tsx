@@ -10,14 +10,14 @@ export async function TagsTable() {
           <table className="hidden min-w-full text-gray-900 md:table">
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr>
-                <th scope="col" className="px-7 py-5 ">
-                  标签ID
-                </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   标签名称
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   分类
+                </th>
+                <th scope="col" className="px-7 py-5 font-medium">
+                  所属标签组
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   描述
@@ -33,9 +33,16 @@ export async function TagsTable() {
                   key={tag.tagid}
                   className="w-full border-b py-3 text-sm last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
                 >
-                  <td className="whitespace-nowrap px-3 py-3">{tag.tagid}</td>
                   <td className="whitespace-nowrap px-3 py-3">{tag.name}</td>
                   <td className="whitespace-nowrap px-3 py-3">{tag.type}</td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {tag.groupLinks.length > 0 &&
+                      tag.groupLinks.map((g_t) => (
+                        <span key={g_t.tagid} className="px-2">
+                          {g_t.group.name}
+                        </span>
+                      ))}
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {tag.description}
                   </td>

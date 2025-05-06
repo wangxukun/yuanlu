@@ -18,17 +18,8 @@ const ROUTE_CONFIG = {
     ],
   },
   PREMIUM: {
-    redirectPath: "/dashboard",
-    allowedRoutes: [
-      "/dashboard",
-      "/library/episodes",
-      "/library/podcasts",
-      "/notifications",
-    ],
-  },
-  premium: {
-    redirectPath: "/dashboard",
-    allowedRoutes: ["/dashboard", "/admin/users", "/admin/analytics"],
+    redirectPath: "/",
+    allowedRoutes: ["/library/episodes", "/library/podcasts", "/notifications"],
   },
 } as const;
 

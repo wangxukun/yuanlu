@@ -5,6 +5,13 @@ export async function GET() {
   try {
     // 获取所有标签数据（添加take限制防止全表扫描）
     const tags = await prisma.tag.findMany({
+      include: {
+        groupLinks: {
+          include: {
+            group: true,
+          },
+        },
+      },
       orderBy: [
         {
           type: "desc",
