@@ -12,7 +12,7 @@ import clsx from "clsx";
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
 const links = [
-  { name: "主页", href: "/", icon: HomeIcon },
+  { name: "主页", href: "/home", icon: HomeIcon },
   {
     name: "浏览",
     href: "/browse",
@@ -42,7 +42,7 @@ export default function MenusLinks({
             href={link.href}
             onClick={onLinkClick}
             className={clsx(
-              "flex ml-6 mr-6 h-[35] grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
+              "flex ml-6 mr-6 h-10 grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
               {
                 "bg-gray-200 text-gray-600": pathname === link.href,
               },

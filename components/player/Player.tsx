@@ -161,24 +161,24 @@ export default function Player() {
     group-hover/player:[--thumb-size:8px]
     /* Webkit 浏览器 */
     [&::-webkit-slider-thumb]:appearance-none
-    [&::-webkit-slider-thumb]:h-[var(--thumb-size)]
-    [&::-webkit-slider-thumb]:w-[var(--thumb-size)]
+    [&::-webkit-slider-thumb]:h-(--thumb-size)
+    [&::-webkit-slider-thumb]:w-(--thumb-size)
     [&::-webkit-slider-thumb]:rounded-full
     [&::-webkit-slider-thumb]:bg-black
     [&::-webkit-slider-thumb]:transition-all
     [&::-webkit-slider-thumb]:duration-200
     /* Firefox 浏览器 */
     [&::-moz-range-thumb]:appearance-none
-    [&::-moz-range-thumb]:h-[var(--thumb-size)]
-    [&::-moz-range-thumb]:w-[var(--thumb-size)]
+    [&::-moz-range-thumb]:h-(--thumb-size)
+    [&::-moz-range-thumb]:w-(--thumb-size)
     [&::-moz-range-thumb]:rounded-full
     [&::-moz-range-thumb]:bg-black
     [&::-moz-range-thumb]:transition-all
     [&::-moz-range-thumb]:duration-200
     /* Edge 浏览器 */
     [&::-ms-thumb]:appearance-none
-    [&::-ms-thumb]:h-[var(--thumb-size)]
-    [&::-ms-thumb]:w-[var(--thumb-size)]
+    [&::-ms-thumb]:h-(--thumb-size)
+    [&::-ms-thumb]:w-(--thumb-size)
     [&::-ms-thumb]:rounded-full
     [&::-ms-thumb]:bg-black
     [&::-ms-thumb]:transition-all

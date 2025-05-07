@@ -47,8 +47,8 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const handlePlay = () => {
     const audioUrl = episode.audioUrl;
     if (audioRef) {
-      // 如果当前音频 URL 已经是目标音频，则直接播放或暂停
-      if (currentAudioUrl === audioUrl) {
+      // 如果当前音频已经是目标音频，则直接播放或暂停
+      if (currentEpisode?.episodeid === episode?.episodeid) {
         if (isPlaying) {
           pause();
         } else {
@@ -67,7 +67,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     <div className="flex flex-col justify-start w-full max-w-[1200px]">
       <div className="flex items-center space-x-6 mb-8">
         {/* 修改为16:9比例的图片容器 */}
-        <div className="relative w-48 aspect-square rounded-lg overflow-hidden flex-shrink-0">
+        <div className="relative w-48 aspect-square rounded-lg overflow-hidden shrink-0">
           <Image
             src={episode.coverUrl}
             alt={episode.title}
@@ -86,7 +86,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
           {/* 新增分类标签 */}
           <div className="flex items-center space-x-2 mb-4">
             <p className="text-sm text-gray-500">{episode.podcast.platform}</p>
-            <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+            <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-sm">
               {episode.podcast.title}
             </span>
           </div>

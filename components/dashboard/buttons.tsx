@@ -249,7 +249,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
       {/* 删除按钮 */}
       <button
         onClick={openModal}
-        className="flex items-center rounded-md border border-red-500 bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        className="flex items-center rounded-md border border-red-500 bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
       >
         <span className="sr-only">delete</span>
         <TrashIcon className="h-5 w-5" />
@@ -274,7 +274,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
             <div className="flex justify-end space-x-4">
               <button
                 onClick={closeModal}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 取消
               </button>
@@ -287,7 +287,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 >
                   确认删除
                 </button>
