@@ -67,6 +67,10 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
     }
   };
 
+  // const handleCollected = () => {
+  //   setIsCollected(!isCollected);
+  // };
+
   return (
     // 最外层容器
     <div className="flex flex-row p-6">
