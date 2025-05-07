@@ -89,8 +89,9 @@ jobs:
         # 1. `cd /var/www/yuanlu/`: 切换到应用程序目录。
         # 2. `git pull`: 拉取最新的代码。
         # 3. `npm install`: 安装依赖。
-        # 4. `npm run build`: 构建项目。
-        # 5. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
+        # 4. `npx prisma generate`: 生成 Prisma 客户端。
+        # 5. `npm run build`: 构建项目。
+        # 6. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
 
   # CD job for deployment to production environment
   deploy-prod:
@@ -126,7 +127,7 @@ jobs:
       - name: Deploy to Production Server
         run: |
           echo "Deploying to production server..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout master && npm install && npm run build && pm2 restart all"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout master && npm install && npx prisma generate && npm run build && pm2 restart all"
         env:
           B_ECS_HOST: ${{ secrets.B_ECS_HOST }}
           B_SSH_USERNAME: ${{ secrets.B_SSH_USERNAME }}
@@ -134,5 +135,6 @@ jobs:
         # 1. `cd /path/to/your/app`: 切换到应用程序目录。
         # 2. `git pull`: 拉取最新的代码。
         # 3. `npm install`: 安装依赖。
-        # 4. `npm run build`: 构建项目。
-        # 5. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
+        # 4. `npx prisma generate`: 生成Prisma客户端。
+        # 5. `npm run build`: 构建项目。
+        # 6. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
