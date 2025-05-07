@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       !coverFileName ||
       !audioUrl ||
       !audioFileName ||
-      !duration ||
+      duration! ||
       !publishDate ||
       !description ||
       !publishStatus

@@ -39,7 +39,7 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
           <div className="group/item border-b border-gray-300 p-2 hover:bg-zinc-200 rounded-lg last:border-b-0">
             <div className="flex items-center space-x-4">
               {/* 节目图片 */}
-              <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={episode.coverUrl}
                   alt={episode.title}
@@ -49,7 +49,7 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
                 />
                 {/* 播放图标 */}
                 <div className="absolute bottom-5 left-5 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                  <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm">
+                  <div className="bg-black/50 rounded-full p-2 backdrop-blur-xs">
                     <svg
                       className="w-6 h-6 text-white"
                       viewBox="0 0 24 24"

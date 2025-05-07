@@ -21,7 +21,7 @@ export default function Header() {
       {/* 移动端浏览器下Header */}
       <div
         className={`sm:hidden fixed w-full top-0 h-[48px] bg-white transition-shadow duration-500 ${
-          isMenuOpen ? "" : "shadow-sm" // 动态控制阴影
+          isMenuOpen ? "" : "shadow-xs" // 动态控制阴影
         } z-50`}
       >
         <div className="flex items-center justify-between h-full px-4">
@@ -71,7 +71,7 @@ export default function Header() {
         </div>
       </div>
       {/* 桌面浏览器下Header */}
-      <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-sm border-b bg-gray-50 z-50">
+      <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b bg-gray-50 z-50">
         <div className="flex items-center justify-between h-full w-full">
           {/* 左侧播放、回退、前进按钮 */}
           <div className="flex-[30%] min-w-0 flex items-center">

@@ -21,7 +21,7 @@ export default function SoundControls() {
         value={volume}
         onChange={handleVolumeChange}
         className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer
-              [&::-webkit-slider-container]:bg-gradient-to-r
+              [&::-webkit-slider-container]:bg-linear-to-r
               [&::-webkit-slider-container]:from-blue-200
               [&::-webkit-slider-container]:to-transparent"
       />

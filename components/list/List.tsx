@@ -78,7 +78,7 @@ export default function List({ title, items }: ListProps) {
 
               {/* 播放图标 */}
               <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm">
+                <div className="bg-black/50 rounded-full p-2 backdrop-blur-xs">
                   <svg
                     className="w-6 h-6 text-white"
                     viewBox="0 0 24 24"

@@ -13,12 +13,9 @@ export default async function Home() {
     podcasts = [];
   }
   return (
-    <div className="flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+    <div className="flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-(family-name:--font-geist-sans)">
       <main className="flex flex-col gap-8 row-start-2 items-center justify-items-center sm:items-start">
-        <List title="热门节目" items={podcasts} />
-        <List title="会员专享" items={podcasts} />
         <List title="最近更新" items={podcasts} />
-        <List title="最近收听" items={podcasts} />
       </main>
     </div>
   );

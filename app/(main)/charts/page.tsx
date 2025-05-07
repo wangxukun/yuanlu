@@ -1,5 +1,5 @@
 "use client";
 
 export default function Charts() {
-  return <h1>Charts</h1>;
+  return <button className="btn btn-primary">Button</button>;
 }

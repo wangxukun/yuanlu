@@ -119,7 +119,7 @@ export default function EpisodeDocument({
     return (
       <div className="bg-red-50 border-l-4 border-red-500 p-4">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg
               className="h-5 w-5 text-red-500"
               viewBox="0 0 20 20"
@@ -144,7 +144,7 @@ export default function EpisodeDocument({
     return (
       <div className="bg-gray-50 border-l-4 border-gray-500 p-4">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg
               className="h-5 w-5 text-gray-500"
               viewBox="0 0 20 20"

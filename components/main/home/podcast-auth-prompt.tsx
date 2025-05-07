@@ -10,7 +10,7 @@ export default function PodcastAuthPrompt() {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-500 to-purple-700 flex flex-col items-center justify-start p-12">
+    <div className="min-h-screen bg-linear-to-r from-purple-500 to-purple-700 flex flex-col items-center justify-start p-12">
       <div className="text-center space-y-6 justify-center">
         {/* 标题 */}
         <h1 className="text-4xl font-bold text-white">跟上您的节目</h1>

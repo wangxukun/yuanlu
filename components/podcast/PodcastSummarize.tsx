@@ -29,16 +29,6 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
     return new Date(b.publishAt).getTime() - new Date(a.publishAt).getTime();
   })[0];
 
-  // useEffect(() => {
-  //   if (isCollected) {
-  //     await insertPodcastFavorite(podcast.podcastid, session.user.userid);
-  //     console.log("收藏成功");
-  //   } else {
-  //     await deletePodcastFavorite(podcast.podcastid, session.user.userid);
-  //     console.log("取消收藏成功");
-  //   }
-  // }, [isCollected]);
-
   // 当 currentAudioUrl 发生变化时，更新音频源并播放
   useEffect(() => {
     if (currentAudioUrl && audioRef && audioRef.src !== currentAudioUrl) {
@@ -60,10 +50,9 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
   }, [currentAudioUrl]);
 
   const handlePlay = () => {
-    const audioUrl = lastEpisode.audioUrl;
     if (audioRef) {
-      // 如果当前音频 URL 已经是目标音频，则直接播放或暂停
-      if (currentAudioUrl === audioUrl) {
+      // 如果当前音频已经是目标音频，则直接播放或暂停
+      if (currentEpisode?.episodeid === lastEpisode?.episodeid) {
         if (isPlaying) {
           pause();
         } else {
@@ -71,16 +60,12 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
         }
       } else {
         // 否则，设置新的音频 URL 并播放
-        setCurrentAudioUrl(audioUrl);
+        setCurrentAudioUrl(lastEpisode.audioUrl);
         setCurrentEpisode(lastEpisode);
         setDuration(lastEpisode.duration);
       }
     }
   };
-
-  // const handleCollected = () => {
-  //   setIsCollected(!isCollected);
-  // };
 
   return (
     // 最外层容器

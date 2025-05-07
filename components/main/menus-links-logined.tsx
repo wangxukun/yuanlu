@@ -29,7 +29,7 @@ export default function MenusLinksLogined({
             href={link.href}
             onClick={onLinkClick}
             className={clsx(
-              "flex ml-6 mr-6 h-[35] grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
+              "flex ml-6 mr-6 h-10 grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
               {
                 "bg-gray-200 text-gray-600": pathname === link.href,
               },
