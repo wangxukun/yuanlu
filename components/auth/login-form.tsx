@@ -111,7 +111,7 @@ export default function Form({
             aria-atomic="true"
           ></div>
           <div className="flex justify-end text-sm">
-            <Link href="/auth/signup">
+            <Link href="/">
               <span className="text-cyan-700">忘记密码</span>
             </Link>
             <span className="text-gray-500 pl-1 pr-1"> | </span>
@@ -121,7 +121,7 @@ export default function Form({
                 onOpenRegisterDialog?.();
                 onCloseLoginDialog?.();
               }}
-              className="text-cyan-700"
+              className="text-cyan-700 hover:cursor-pointer"
             >
               没有账号
             </button>
