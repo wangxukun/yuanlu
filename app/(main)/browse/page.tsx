@@ -7,6 +7,7 @@ export default async function Home() {
   let podcasts: Podcast[] = [];
   try {
     podcasts = await fetchPodcasts();
+    console.log("Fetched podcasts:", podcasts);
   } catch (error) {
     console.error("Failed to fetch podcasts:", error);
     // 可以选择返回空数组或者默认数据
