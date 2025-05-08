@@ -1,16 +1,16 @@
 /**
  * @description 手机平板端菜单
  */
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import MenusLinks from "@/components/main/menus-links";
 import MenusLinksLogined from "@/components/main/menus-links-logined";
 
 export default function Menus({ onLinkClick }: { onLinkClick: () => void }) {
-  const { data: session } = useSession();
-  if (!session) {
-    // redirect("/auth/login");
-    console.log("session", session);
-  }
+  // const { data: session } = useSession();
+  // if (!session) {
+  //   // redirect("/auth/login");
+  //   console.log("session", session);
+  // }
   return (
     <aside className="block w-full h-screen flex-col justify-between">
       <div className="flex grow justify-between flex-col space-x-0 space-y-2">

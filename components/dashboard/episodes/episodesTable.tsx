@@ -103,10 +103,7 @@ export default async function EpisodesTable() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <audio controls>
-                      <source
-                        src={episode.audioUrl || "/static/images/1.png"}
-                        type="audio/mpeg"
-                      />
+                      <source src={episode.audioUrl} type="audio/mpeg" />
                       Your browser does not support the audio element.
                     </audio>
                   </td>
