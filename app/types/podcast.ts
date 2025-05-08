@@ -20,7 +20,7 @@ export interface Episode {
   isExclusive: boolean;
   isCommentEnabled: boolean;
   podcast: Podcast;
-  episodeTags: EpisodeTags[];
+  tags: EpisodeTags[];
   episodeFavorites: EpisodeFavorites[];
 }
 
@@ -32,7 +32,7 @@ export interface Podcast {
   platform: string;
   description: string;
   episode: Episode[];
-  podcastTags: PodcastTags[];
+  tags: PodcastTags[];
   podcastFavorites: PodcastFavorites[];
 }
 
@@ -40,7 +40,8 @@ export interface TagGroup {
   groupid: string;
   name: string;
   description: string;
-  imageUrl: string;
+  coverUrl: string;
+  coverFileName: string;
   sortOrder: number;
   allowedTypes: TagType[];
   tags: Tag[];
@@ -58,7 +59,7 @@ export interface TagGroupTag {
 export interface Tag {
   tagid: string;
   name: string;
-  type: string;
+  type: TagType;
   isFeatured: boolean;
   coverUrl: string;
   coverFileName: string;
