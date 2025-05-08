@@ -93,16 +93,6 @@ export async function fetchOnlineUsers(): Promise<OnlineUsersData> {
   };
 }
 
-// interface Podcast {
-//   categoryid: number;
-//   title: string;
-//   description: string;
-//   coverUrl: string;
-//   coverFileName?: string;
-//   from: string;
-//   episode: Array<Episode>;
-// }
-
 /**
  * 获取播客列表
  * @returns {Promise<Podcast[]>} 返回播客列表，每个播客包含未 episodes 数组
