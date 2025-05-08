@@ -378,7 +378,7 @@ export default function RegisterForm({
               <button
                 onClick={sendVerificationCode}
                 disabled={countdown > 0}
-                className="absolute right-3 top-1/2 h-[18px] w-110 -translate-y-1/2 text-sm text-cyan-700 peer-focus:text-gray-900 z-10"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-cyan-700 hover:cursor-pointer hover:text-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {countdown ? `${countdown}秒后重试` : "获取验证码"}
               </button>
@@ -484,7 +484,7 @@ export default function RegisterForm({
               onCloseRegisterDialog?.();
               onOpenLoginDialog?.();
             }}
-            className="text-cyan-700"
+            className="text-cyan-700 hover:cursor-pointer"
           >
             立即登录
           </button>
