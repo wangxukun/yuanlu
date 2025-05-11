@@ -1,6 +1,8 @@
 // /types/users.ts
 
 // 用户查询响应数据
+import { DateTime } from "@auth/core/providers/kakao";
+
 export interface User {
   userid: string; // 用户唯一标识
   phone: string; // 手机号码
@@ -24,6 +26,14 @@ export interface UserProfile {
   bio: string;
   learnLevel: string;
   user: User;
+}
+
+export interface VerificationCode {
+  id: number;
+  email: string;
+  code: string;
+  expiresAt: DateTime;
+  createdAt: DateTime;
 }
 
 // 用户登录请求参数

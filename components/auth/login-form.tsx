@@ -1,3 +1,4 @@
+// 冗余文件
 "use client";
 import Link from "next/link";
 import { PhoneIcon, KeyIcon } from "@heroicons/react/24/outline";
