@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import SignInForm from "@/components/auth/sign-in-form";
-import SignUpForm from "@/components/auth/sign-up-form";
+import { useAuthStore } from "@/store/auth-store";
+import { validateEmail } from "@/app/lib/tools";
 
 // 主表单组件
 const EmailCheckForm = () => {
+  const setCheckedEmail = useAuthStore((state) => state.setCheckedEmail);
   const [email, setEmail] = useState("");
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -38,39 +37,31 @@ const EmailCheckForm = () => {
     }
 
     setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
     const exists = await checkUserExists();
+    setCheckedEmail(email);
     setLoading(false);
+    const emailCheckBox = document.getElementById("email_check_modal_box");
+    if (emailCheckBox) {
+      emailCheckBox.close();
+    }
     console.log("EMAIL是否已存在：", exists);
     if (exists) {
-      setShowSignIn(true);
+      const signUpBox = document.getElementById("sign_in_modal_box");
+      if (signUpBox) {
+        signUpBox.showModal();
+      }
     } else {
-      setShowSignUp(true);
+      const signUpBox = document.getElementById("sign_up_modal_box");
+      if (signUpBox) {
+        signUpBox.showModal();
+      }
     }
-  };
-
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   if (session) {
     router.push("/dashboard");
     return null;
-  }
-
-  if (showSignIn) {
-    return <SignInForm email={email} onBack={() => setShowSignIn(false)} />;
-  }
-
-  if (showSignUp) {
-    return (
-      <SignUpForm
-        email={email}
-        onBack={() => {
-          setShowSignUp(false);
-          setError("");
-        }}
-      />
-    );
   }
 
   return (
@@ -85,8 +76,9 @@ const EmailCheckForm = () => {
               <legend className="fieldset-legend">邮箱地址</legend>
               <input
                 type="email"
-                className="input w-full"
+                className="input validator w-full"
                 value={email}
+                required
                 placeholder="your@email.com"
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -99,10 +91,14 @@ const EmailCheckForm = () => {
           <div className="card-actions w-full mt-8">
             <button
               type="submit"
-              className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
+              className="btn btn-primary w-full"
               disabled={loading}
             >
-              继续
+              {loading ? (
+                <span className="loading loading-spinner text-primary loading-sm"></span>
+              ) : (
+                "继续"
+              )}
             </button>
           </div>
         </form>

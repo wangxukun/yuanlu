@@ -1,16 +1,24 @@
+"use client";
+
 import { useState } from "react";
+import { useAuthStore } from "@/store/auth-store";
 // 使用电子邮箱登录或注册表单
-export default function SignInForm({
-  email,
-  onBack,
-}: {
-  email: string;
-  onBack: () => void;
-}) {
+export default function SignInForm() {
   // 登录表单组件
+  const checkedEmail = useAuthStore((state) => state.checkedEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const onBack = () => {
+    const emailCheckBox = document.getElementById("email_check_modal_box");
+    if (emailCheckBox) {
+      setError("");
+      setPassword("");
+      document.getElementById("sign_in_modal_box")?.close();
+      emailCheckBox.showModal();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +27,7 @@ export default function SignInForm({
     try {
       // 这里添加实际的登录逻辑
       // 例如使用 signIn('credentials', { email, password })
-      console.log("执行登录", { email, password });
+      console.log("执行登录", { checkedEmail, password });
       await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
     } catch (err) {
       console.error(err);
@@ -30,51 +38,55 @@ export default function SignInForm({
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl max-w-md mx-auto p-6">
+    <div className="card bg-base-100 max-w-md mx-auto p-6">
       <div className="card-body">
-        <button
-          onClick={onBack}
-          className="btn btn-ghost btn-sm self-start mb-4"
-        >
-          ← 返回
-        </button>
         <h2 className="card-title text-2xl mb-4">欢迎回来</h2>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">邮箱地址</span>
-            </label>
-            <input
-              type="email"
-              className="input input-bordered"
-              value={email}
-              readOnly
-            />
+          <div className="form-control w-full">
+            {/* 邮箱显示 */}
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">邮箱地址</legend>
+              <input
+                type="email"
+                className="input w-full"
+                value={checkedEmail}
+                placeholder="your@email.com"
+                readOnly
+              />
+            </fieldset>
+
+            {/* 密码输入 */}
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">密码</legend>
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {error && (
+                <p className="label table-text-alt text-error">{error}</p>
+              )}
+            </fieldset>
           </div>
 
-          <div className="form-control mt-4">
-            <label className="label">
-              <span className="label-text">密码</span>
-            </label>
-            <input
-              type="password"
-              className="input input-bordered"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <div className="card-actions mt-8 justify-end">
+            <button
+              onClick={onBack}
+              className="btn btn-accent btn-outline btn-md self-start"
+            >
+              返回
+            </button>
+            <button
+              type="submit"
+              className={`btn btn-primary${loading ? "loading" : ""}`}
+              disabled={loading}
+            >
+              注册
+            </button>
           </div>
-
-          {error && <p className="text-error mt-2">{error}</p>}
-
-          <button
-            type="submit"
-            className={`btn btn-primary w-full mt-6 ${loading ? "loading" : ""}`}
-            disabled={loading}
-          >
-            登录
-          </button>
         </form>
       </div>
     </div>

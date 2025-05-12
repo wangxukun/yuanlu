@@ -1,16 +1,15 @@
+"use client";
 // 注册表单组件
 import { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/auth-store";
+import { validatePassword } from "@/app/lib/tools";
 
-export default function SignUpForm({
-  email,
-  onBack,
-}: {
-  email: string;
-  onBack: () => void;
-}) {
+export default function SignUpForm() {
+  const checkedEmail = useAuthStore((state) => state.checkedEmail);
   const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [verificationCodeError, setVerificationCodeError] = useState("");
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -23,15 +22,29 @@ export default function SignUpForm({
     }
   }, [countdown]);
 
+  const onBack = () => {
+    const emailCheckBox = document.getElementById("email_check_modal_box");
+    if (emailCheckBox) {
+      setPassword("");
+      setPasswordError("");
+      setVerificationCode("");
+      setVerificationCodeError("");
+      setCodeSent(false);
+      document.getElementById("sign_up_modal_box")?.close();
+      emailCheckBox.showModal();
+    }
+  };
+
   // 发送验证码
   const handleSendCode = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      setError("");
+      setVerificationCodeError("");
+      setPasswordError("");
       const response = await fetch("/api/auth/send-verification-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: checkedEmail }),
       });
 
       const data = await response.json();
@@ -42,30 +55,39 @@ export default function SignUpForm({
       setCountdown(60); // 60秒倒计时
     } catch (err) {
       console.log(err);
-      setError("验证码发送失败，请重试");
+      setVerificationCodeError("验证码发送失败，请重试");
     }
   };
 
   // 提交注册
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePassword(password)) {
+      setPasswordError("密码必须在8-16位之间，由数字、英文、符号中的两种");
+      return;
+    } else {
+      setPasswordError("");
+    }
     setLoading(true);
     try {
       // 验证验证码
       const verifyResponse = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: verificationCode }),
+        body: JSON.stringify({ email: checkedEmail, code: verificationCode }),
       });
       const verifyData = await verifyResponse.json();
       console.log("Verify:", verifyData.message);
-      if (verifyData.success === false) throw new Error(verifyData.message);
+      if (verifyData.success === false) {
+        setVerificationCodeError(verifyData.message);
+        return;
+      }
 
       // 创建用户
       const createResponse = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: checkedEmail, password }),
       });
       const createData = await createResponse.json();
 
@@ -73,10 +95,9 @@ export default function SignUpForm({
 
       // 注册成功后关闭对话框
       const modal = document.getElementById(
-        "login_modal_box",
+        "sign-up-modal_box",
       ) as HTMLDialogElement;
       if (modal) {
-        onBack(); // 回到登录页面
         modal.close(); // 关闭对话框
       }
 
@@ -97,7 +118,7 @@ export default function SignUpForm({
       // 注册成功后自动登录或跳转
       // window.location.href = '/';
     } catch (err) {
-      setError(err.message || "注册失败，请检查信息");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -116,7 +137,7 @@ export default function SignUpForm({
               <input
                 type="email"
                 className="input w-full"
-                value={email}
+                value={checkedEmail}
                 placeholder="your@email.com"
                 readOnly
               />
@@ -132,6 +153,11 @@ export default function SignUpForm({
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              {passwordError && (
+                <p className="label table-text-alt text-error">
+                  {passwordError}
+                </p>
+              )}
             </fieldset>
           </div>
           <fieldset className="fieldset">
@@ -158,10 +184,12 @@ export default function SignUpForm({
                 {countdown > 0 ? `${countdown}秒后重发` : "获取验证码"}
               </button>
             </div>
-            {codeSent && !error && (
+            {codeSent && !verificationCodeError && (
               <p className="label-text-alt text-success">验证码已发送至邮箱</p>
             )}
-            {error && <p className="text-error mt-2">{error}</p>}
+            {verificationCodeError && (
+              <p className="text-error mt-2">{verificationCodeError}</p>
+            )}
           </fieldset>
           <div className="card-actions mt-8 justify-end">
             <button

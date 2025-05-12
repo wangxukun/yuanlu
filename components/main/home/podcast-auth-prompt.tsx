@@ -1,8 +1,8 @@
 "use client";
 import PodcastIcon from "@/components/icons/PodcastIcon";
-import LoginDialog from "@/components/auth/login-dialog";
-import RegisterDialog from "@/components/auth/register-dialog";
-import PromptBox from "@/components/auth/prompt-box";
+import LoginDialog from "@/components/auth/backup/login-dialog";
+import RegisterDialog from "@/components/auth/backup/register-dialog";
+import PromptBox from "@/components/auth/backup/prompt-box";
 import { useState } from "react";
 
 export default function PodcastAuthPrompt() {

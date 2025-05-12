@@ -8,7 +8,9 @@ import AuthProvider from "@/app/AuthProvider";
 import "@/app/lib/sessionCleaner";
 import SideNav from "@/components/main/sidenav";
 import PlayControlBar from "@/components/controls/PlayControlBar";
-import EmailCheckForm from "@/components/auth/email-check-form";
+import EmailCheckDialog from "@/components/auth/email-check-dialog";
+import SignInDialog from "@/components/auth/sign-in-dialog";
+import SignUpDialog from "@/components/auth/sign-up-dialog";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -34,18 +36,9 @@ export default function RootLayout({
               {/* 顶部导航栏 */}
               <Header />
               {/* ✅ 全局模态登录框 */}
-              <dialog id="login_modal_box" className="modal">
-                <div className="modal-box">
-                  <form method="dialog" className="mb-4">
-                    <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                      ✕
-                    </button>
-                  </form>
-                  {/*<h3 className="font-bold text-lg">欢迎登录</h3>*/}
-                  <EmailCheckForm />
-                  {/* 例如放置 <LoginDialog /> */}
-                </div>
-              </dialog>
+              <EmailCheckDialog />
+              <SignInDialog />
+              <SignUpDialog />
               {/* 主体内容区域 */}
               <main className="flex-1 bg-gray-50 overflow-y-auto">
                 <div className="w-full min-h-[calc(100vh-8rem)]">
