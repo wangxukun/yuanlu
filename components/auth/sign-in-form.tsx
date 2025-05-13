@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
+import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
+
+const SIGNIN_ERROR_URL = "/error";
 // 使用电子邮箱登录或注册表单
 export default function SignInForm() {
   // 登录表单组件
@@ -27,11 +32,25 @@ export default function SignInForm() {
     try {
       // 这里添加实际的登录逻辑
       // 例如使用 signIn('credentials', { email, password })
-      console.log("执行登录", { checkedEmail, password });
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
-    } catch (err) {
-      console.error(err);
-      setError("登录失败，请检查密码");
+      // console.log("执行登录", { checkedEmail, password });
+      // await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
+      await signIn("credentials", {
+        redirect: false,
+        email: checkedEmail,
+        password,
+      });
+    } catch (error) {
+      // Signin can fail for a number of reasons, such as the user
+      // not existing, or the user not having the correct role.
+      // In some cases, you may want to redirect to a custom error
+      if (error instanceof AuthError) {
+        return redirect(`${SIGNIN_ERROR_URL}?error=${error.type}`);
+      }
+      // Otherwise if a redirects happens Next.js can handle it
+      // so you can just re-thrown the error and let Next.js handle it.
+      // Docs:
+      // https://nextjs.org/docs/app/api-reference/functions/redirect#server-component
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -84,7 +103,7 @@ export default function SignInForm() {
               className={`btn btn-primary${loading ? "loading" : ""}`}
               disabled={loading}
             >
-              注册
+              登录
             </button>
           </div>
         </form>

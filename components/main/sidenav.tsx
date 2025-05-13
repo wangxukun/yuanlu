@@ -3,13 +3,10 @@
 import Link from "next/link";
 import NavLinks from "@/components/main/nav-links";
 import AcmeLogo from "@/components/acme-logo";
-// import { getServerSession } from "next-auth"; // 服务端组件获取会话
 import { useSession } from "next-auth/react"; // 客户端组件获取会话
-// import { authOptions } from "@/app/lib/auth";
 import NavLinksLogined from "@/components/main/nav-links-logined";
 
 export default function SideNav() {
-  // const session = await getServerSession(authOptions);
   const { data: session, status } = useSession();
 
   return (
@@ -27,7 +24,8 @@ export default function SideNav() {
         {status === "authenticated" && session && (
           <div className="flex flex-col space-y-2 pt-5">
             <span className="hidden pl-7 text-xs md:block">
-              {session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2")}
+              {/*{session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2")}*/}
+              {session.user?.email}
               的资料库
             </span>
             <NavLinksLogined />
