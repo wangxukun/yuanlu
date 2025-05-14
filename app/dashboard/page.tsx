@@ -39,7 +39,7 @@ export default async function Page() {
           </p>
           <h2 className="text-lg font-bold text-slate-500">
             欢迎，
-            {session.user?.email}
+            {session.user?.email?.split("@")[0]}
           </h2>
         </div>
       </div>

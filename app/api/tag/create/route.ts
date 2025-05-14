@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
 import { isTagType } from "@/app/types/tag";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   // 用户认证检查
   if (!session?.user?.userid) {
     return NextResponse.json({

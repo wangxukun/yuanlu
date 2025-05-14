@@ -24,8 +24,7 @@ export default function SideNav() {
         {status === "authenticated" && session && (
           <div className="flex flex-col space-y-2 pt-5">
             <span className="hidden pl-7 text-xs md:block">
-              {/*{session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2")}*/}
-              {session.user?.email}
+              {session.user?.email?.split("@")[0]}
               的资料库
             </span>
             <NavLinksLogined />

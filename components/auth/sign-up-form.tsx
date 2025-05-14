@@ -23,14 +23,18 @@ export default function SignUpForm() {
   }, [countdown]);
 
   const onBack = () => {
-    const emailCheckBox = document.getElementById("email_check_modal_box");
+    const emailCheckBox = document.getElementById(
+      "email_check_modal_box",
+    ) as HTMLDialogElement;
     if (emailCheckBox) {
       setPassword("");
       setPasswordError("");
       setVerificationCode("");
       setVerificationCodeError("");
       setCodeSent(false);
-      document.getElementById("sign_up_modal_box")?.close();
+      (
+        document.getElementById("sign_up_modal_box") as HTMLDialogElement
+      )?.close();
       emailCheckBox.showModal();
     }
   };
@@ -95,7 +99,7 @@ export default function SignUpForm() {
 
       // 注册成功后关闭对话框
       const modal = document.getElementById(
-        "sign-up-modal_box",
+        "sign_up_modal_box",
       ) as HTMLDialogElement;
       if (modal) {
         modal.close(); // 关闭对话框
@@ -193,17 +197,17 @@ export default function SignUpForm() {
           </fieldset>
           <div className="card-actions mt-8 justify-end">
             <button
-              onClick={onBack}
-              className="btn btn-accent btn-outline btn-md self-start"
-            >
-              返回
-            </button>
-            <button
               type="submit"
               className={`btn btn-primary${loading ? "loading" : ""}`}
               disabled={loading}
             >
               注册
+            </button>
+            <button
+              onClick={onBack}
+              className="btn btn-accent btn-outline btn-md self-start"
+            >
+              返回
             </button>
           </div>
         </form>

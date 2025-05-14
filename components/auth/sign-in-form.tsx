@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
 import { AuthError } from "next-auth";
@@ -15,12 +15,26 @@ export default function SignInForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const onBack = () => {
-    const emailCheckBox = document.getElementById("email_check_modal_box");
+  // 创建对密码输入框的引用
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  // 在组件挂载时设置焦点
+  useEffect(() => {
+    if (passwordInputRef.current) {
+      passwordInputRef.current.focus();
+    }
+  }, []);
+
+  const onBack = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailCheckBox = document.getElementById(
+      "email_check_modal_box",
+    ) as HTMLDialogElement;
     if (emailCheckBox) {
       setError("");
       setPassword("");
-      document.getElementById("sign_in_modal_box")?.close();
+      (
+        document.getElementById("sign_in_modal_box") as HTMLDialogElement
+      ).close();
       emailCheckBox.showModal();
     }
   };
@@ -28,17 +42,19 @@ export default function SignInForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       // 这里添加实际的登录逻辑
-      // 例如使用 signIn('credentials', { email, password })
-      // console.log("执行登录", { checkedEmail, password });
       // await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
-      await signIn("credentials", {
+      const result = await signIn("credentials", {
         redirect: false,
         email: checkedEmail,
         password,
       });
+      if (result.ok) {
+        (
+          document.getElementById("sign_in_modal_box") as HTMLDialogElement
+        ).close();
+      }
     } catch (error) {
       // Signin can fail for a number of reasons, such as the user
       // not existing, or the user not having the correct role.
@@ -84,6 +100,7 @@ export default function SignInForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                ref={passwordInputRef}
               />
               {error && (
                 <p className="label table-text-alt text-error">{error}</p>
@@ -93,17 +110,17 @@ export default function SignInForm() {
 
           <div className="card-actions mt-8 justify-end">
             <button
-              onClick={onBack}
-              className="btn btn-accent btn-outline btn-md self-start"
-            >
-              返回
-            </button>
-            <button
               type="submit"
               className={`btn btn-primary${loading ? "loading" : ""}`}
               disabled={loading}
             >
               登录
+            </button>
+            <button
+              onClick={onBack}
+              className="btn btn-accent btn-outline btn-md self-start"
+            >
+              返回
             </button>
           </div>
         </form>

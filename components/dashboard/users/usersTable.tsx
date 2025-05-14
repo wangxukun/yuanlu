@@ -21,7 +21,7 @@ export default async function UsersTable() {
               >
                 <div className="flex items-center justify-between border-b pb-4">
                   <div>
-                    <div className="mb-2 flex items-center">{user.phone}</div>
+                    <div className="mb-2 flex items-center">{user.email}</div>
                     <p className="text-sm text-gray-500">{user.role}</p>
                   </div>
                   <div className="h-8 w-28">按钮在此处</div>
@@ -64,7 +64,7 @@ export default async function UsersTable() {
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex items-center gap-3">
                       {/* 添加relative容器和样式调整 */}
-                      {user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2")}
+                      {user.email}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">{user.role}</td>

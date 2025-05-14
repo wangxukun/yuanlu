@@ -50,7 +50,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
           <div className="pl-4">
             <p className="text-sm text-slate-400 py-4">
               确定用户
-              <span className="text-red-400">{user.phone}</span>
+              <span className="text-red-400">{user.email}</span>
               的角色，并设置用户是否允许评论。
             </p>
 

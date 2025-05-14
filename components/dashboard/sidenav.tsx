@@ -8,7 +8,7 @@ import { auth } from "@/auth";
 export default async function SideNav() {
   const session = await auth();
   if (!session?.user) {
-    redirect("/auth/login");
+    redirect("/");
   }
 
   return (
@@ -23,7 +23,7 @@ export default async function SideNav() {
         <div className="text-xs font-bold">
           欢迎，
           {/*{session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2") || ""}*/}
-          {session.user?.email}
+          {session.user?.email?.split("@")[0]}
         </div>
       </Link>
       <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">

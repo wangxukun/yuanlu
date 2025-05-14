@@ -1,6 +1,5 @@
 "use client";
-// components/EmailCheckForm.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
@@ -14,6 +13,12 @@ const EmailCheckForm = () => {
   const [error, setError] = useState("");
   const router = useRouter();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session) {
+      router.push("/");
+    }
+  }, []);
 
   const checkUserExists = async () => {
     try {
@@ -41,28 +46,29 @@ const EmailCheckForm = () => {
     const exists = await checkUserExists();
     setCheckedEmail(email);
     setLoading(false);
-    const emailCheckBox = document.getElementById("email_check_modal_box");
+    const emailCheckBox = document.getElementById(
+      "email_check_modal_box",
+    ) as HTMLDialogElement;
     if (emailCheckBox) {
       emailCheckBox.close();
     }
     console.log("EMAIL是否已存在：", exists);
     if (exists) {
-      const signUpBox = document.getElementById("sign_in_modal_box");
+      const signUpBox = document.getElementById(
+        "sign_in_modal_box",
+      ) as HTMLDialogElement;
       if (signUpBox) {
         signUpBox.showModal();
       }
     } else {
-      const signUpBox = document.getElementById("sign_up_modal_box");
+      const signUpBox = document.getElementById(
+        "sign_up_modal_box",
+      ) as HTMLDialogElement;
       if (signUpBox) {
         signUpBox.showModal();
       }
     }
   };
-
-  if (session) {
-    router.push("/dashboard");
-    return null;
-  }
 
   return (
     <div className="card bg-base-100 max-w-md mx-auto p-6">

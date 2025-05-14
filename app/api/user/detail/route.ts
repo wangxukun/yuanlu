@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       select: {
         // 明确选择需要字段
         userid: true,
-        phone: true,
+        email: true,
         password: true,
         role: true,
         languagePreference: true,
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         isOnline: true,
         lastActiveAt: true,
         isCommentAllowed: true,
+        emailVerified: true,
       },
     });
     return NextResponse.json(user);

@@ -49,12 +49,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!isValid) return null;
 
           // return JSON object with the user data
-          return user;
+          return {
+            id: user.userid,
+            userid: user.userid,
+            email: user.email,
+            role: user.role || "USER",
+          } as User;
         } catch (error) {
           if (error instanceof ZodError) {
             // Return `null` to indicate that the credentials are invalid
             return null;
           }
+          return null;
         }
       },
     }),
@@ -86,12 +92,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         data: { isOnline: true, lastActiveAt: new Date() },
       });
     },
-    async signOut({ token }: { token: JWT }) {
+    async signOut(message: { session?: Session; token?: JWT | null }) {
       // 用户退出时标记为离线
-      await prisma.user.update({
-        where: { userid: token.userid },
-        data: { isOnline: false },
-      });
+      if (message.token?.userid) {
+        await prisma.user.update({
+          where: { userid: message.token.userid },
+          data: { isOnline: false },
+        });
+      }
     },
   },
   secret: process.env.NEXTAUTH_SECRET, // 在.env中配置
