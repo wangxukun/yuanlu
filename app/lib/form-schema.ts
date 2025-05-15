@@ -47,7 +47,7 @@ export const signInSchema = z.object({
     .string()
     .min(1, { message: "密码不能为空" })
     .refine(validatePassword, {
-      message: "密码必须为8-16位，且包含数字、字母、符号中的至少两种",
+      message: "密码必须为8~16位，且包含数字、字母、符号中的至少两种",
     }),
 });
 

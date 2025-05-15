@@ -230,7 +230,7 @@ export async function createPodcast(
       });
     }
     if (res.ok) {
-      revalidatePath("/dashboard/podcasts/categories/batch-create");
+      revalidatePath("/dashboard/podcasts/create");
       // 先返回成功状态再执行重定向
       return {
         errors: {
@@ -241,7 +241,7 @@ export async function createPodcast(
           platform: "",
         },
         // 在podcasts页面中，通过message判断是否需要重定向
-        message: "redirect:/dashboard/podcasts/batch-create-success", // 添加特殊标识
+        message: "redirect:/dashboard/podcasts/create-success", // 添加特殊标识
       };
     }
   } catch (error) {

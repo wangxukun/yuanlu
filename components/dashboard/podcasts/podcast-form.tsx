@@ -11,12 +11,20 @@ import {
 } from "@heroicons/react/24/outline";
 import { createPodcast, PodcastState } from "@/app/lib/actions";
 import { redirect } from "next/navigation";
+import { TagSelector } from "@/components/dashboard/tags/tag-selector";
+
+const allTags = [
+  { id: "1", name: "初学者推荐", type: "UNIVERSAL" },
+  { id: "2", name: "科技英语", type: "EPISODE" },
+  { id: "3", name: "访谈类", type: "PODCAST" },
+];
 
 export default function PodcastForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [podcastName, setPodcastName] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const initialState: PodcastState = {
     errors: {
@@ -38,6 +46,9 @@ export default function PodcastForm() {
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const image = e.target.files?.[0];
     if (image) {
+      if (image.size > 1024 * 1024 * 1) {
+        return alert("图片大小不能超过1MB");
+      }
       const reader = new FileReader();
       reader.onload = () => {
         setPreviewUrl(reader.result as string);
@@ -136,6 +147,13 @@ export default function PodcastForm() {
             )}
           </div>
         </div>
+
+        <TagSelector
+          availableTags={allTags}
+          selectedTagIds={selectedTags}
+          onChange={setSelectedTags}
+          allowTypes={["EPISODE", "UNIVERSAL"]} // 可根据上下文切换
+        />
 
         {/* 播客描述 */}
         <div className="mb-4">

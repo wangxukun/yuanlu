@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
+  console.log("POST /api/podcast/create");
   try {
     // 从请求体中获取数据
     const { podcastName, platform, description, coverUrl, coverFileName } =

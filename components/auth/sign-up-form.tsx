@@ -2,7 +2,7 @@
 // 注册表单组件
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { validatePassword } from "@/app/lib/tools";
+import { signInSchema, SignInFormValues } from "@/app/lib/form-schema";
 
 export default function SignUpForm() {
   const checkedEmail = useAuthStore((state) => state.checkedEmail);
@@ -13,6 +13,10 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [formValues, setFormValues] = useState<SignInFormValues>({
+    email: "",
+    password: "",
+  });
 
   // 验证码倒计时效果
   useEffect(() => {
@@ -66,12 +70,21 @@ export default function SignUpForm() {
   // 提交注册
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validatePassword(password)) {
-      setPasswordError("密码必须在8-16位之间，由数字、英文、符号中的两种");
-      return;
-    } else {
-      setPasswordError("");
+    // 验证密码
+    try {
+      const result = signInSchema.safeParse({
+        email: checkedEmail,
+        password,
+      });
+      if (!result.success) {
+        const error = result.error.errors[0];
+        setPasswordError(error.message);
+        return;
+      }
+    } catch (err) {
+      console.log(err);
     }
+
     setLoading(true);
     try {
       // 验证验证码
@@ -154,7 +167,10 @@ export default function SignUpForm() {
                 type="password"
                 className="input input-bordered w-full"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setFormValues({ ...formValues, password: e.target.value });
+                }}
                 required
               />
               {passwordError && (

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
-import { validateEmail } from "@/app/lib/tools";
+import { signInSchema, SignInFormValues } from "@/app/lib/form-schema";
 
 // 主表单组件
 const EmailCheckForm = () => {
@@ -11,6 +11,10 @@ const EmailCheckForm = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [setFormValues] = useState<SignInFormValues>({
+    email: "",
+    password: "",
+  });
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -36,7 +40,18 @@ const EmailCheckForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(email)) {
+    // 使用 SignInFormValues 的 email 验证规则
+    try {
+      // 使用 SignInFormValues 的 email 验证规则,设置一个可以匹配的password
+      const result = signInSchema.safeParse({ email, password: "1111xxxx" });
+      console.log("EMAIL验证结果：", result);
+      if (!result.success) {
+        const error = result.error.errors[0];
+        setError(error.message);
+        return;
+      }
+    } catch (err) {
+      console.error("邮箱验证失败：", err);
       setError("请输入有效的邮箱地址");
       return;
     }
@@ -86,7 +101,10 @@ const EmailCheckForm = () => {
                 value={email}
                 required
                 placeholder="your@email.com"
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setFormValues((prev) => ({ ...prev, email: e.target.value }));
+                }}
               />
               {error && (
                 <p className="label table-text-alt text-error">{error}</p>
