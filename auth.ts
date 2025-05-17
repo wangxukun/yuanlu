@@ -112,4 +112,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
+  // 配置trustedHosts，允许NextAuth.js访问的域名
+  trustedHosts: [process.env.NEXTAUTH_URL!],
 });
