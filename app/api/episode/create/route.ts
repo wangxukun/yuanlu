@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   // 用户认证检查
   if (!session?.user?.userid) {
     return NextResponse.json({
@@ -40,6 +39,7 @@ export async function POST(request: NextRequest) {
     const description = stringifyField(formData.get("description"));
     const publishStatus = stringifyField(formData.get("publishStatus"));
     const isExclusive = stringifyField(formData.get("isExclusive")) === "true";
+    const tags = formData.getAll("tags").map((tag) => tag.toString());
 
     // 检查是否缺少参数
     if (
@@ -49,10 +49,11 @@ export async function POST(request: NextRequest) {
       !coverFileName ||
       !audioUrl ||
       !audioFileName ||
-      duration! ||
+      !duration ||
       !publishDate ||
       !description ||
-      !publishStatus
+      !publishStatus ||
+      !tags
     ) {
       return NextResponse.json({
         success: false,
@@ -79,6 +80,15 @@ export async function POST(request: NextRequest) {
         duration: duration,
         status: publishStatus,
         uploaderid: session?.user.userid,
+        tags: {
+          create: tags.map((tagId: string) => ({
+            tag: {
+              connect: {
+                tagid: tagId,
+              },
+            },
+          })),
+        },
       },
     });
     if (!episode) {

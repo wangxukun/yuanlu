@@ -1,3 +1,4 @@
+// 冗余文件
 "use client";
 
 import { PhoneIcon, EnvelopeIcon, KeyIcon } from "@heroicons/react/24/outline"; // 导入 Heroicons 图标组件

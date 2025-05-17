@@ -43,7 +43,8 @@ export async function fetchUsers(): Promise<User[]> {
   if (!res.ok) {
     throw new Error("Failed to fetch users");
   }
-  return await res.json();
+  const data = await res.json();
+  return data;
 }
 
 /**

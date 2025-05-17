@@ -9,15 +9,16 @@ datasource db {
 
 model User {
   userid             String               @id @default(cuid())
-  phone              String               @unique @db.VarChar(15)
+  email              String               @unique @db.VarChar(255)
   password           String               @db.VarChar(255)
   role               String?              @default("USER") @db.VarChar(50)
   languagePreference String?              @default("zh-CN") @db.VarChar(50)
-  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
-  updateAt           DateTime?            @updatedAt @db.Timestamptz(6)
-  isOnline           Boolean?             @default(false)
+  createAt           DateTime             @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime             @updatedAt @db.Timestamptz(6)
+  isOnline           Boolean              @default(false)
   lastActiveAt       DateTime?            @db.Timestamptz(6)
-  isCommentAllowed   Boolean?             @default(true)
+  isCommentAllowed   Boolean              @default(true)
+  emailVerified      DateTime?            @db.Timestamptz(6)
   achievements       achievements[]
   comments           comments[]
   discussion_threads discussion_threads[]
@@ -33,6 +34,16 @@ model User {
   subscriptions      subscriptions[]
   user_profile       user_profile?
   vocabulary         vocabulary[]
+}
+
+model user_profile {
+  userid         String  @id
+  nickname       String? @db.VarChar(255)
+  avatarUrl      String? @default("default_avatar_url") @db.VarChar(255)
+  avatarFileName String? @db.VarChar(255)
+  bio            String?
+  learnLevel     String? @db.VarChar(50)
+  User           User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model achievements {
@@ -287,17 +298,6 @@ model subscriptions {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model user_profile {
-  userid         String  @id
-  nickname       String? @db.VarChar(255)
-  avatarUrl      String? @default("default_avatar_url") @db.VarChar(255)
-  avatarFileName String? @db.VarChar(255)
-  email          String? @db.VarChar(255)
-  bio            String?
-  learnLevel     String? @db.VarChar(50)
-  User           User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-}
-
 model vocabulary {
   vocabularyid Int       @id @default(autoincrement())
   userid       String?
@@ -320,4 +320,13 @@ model sms_code {
   phone    String   @db.VarChar(15)
   code     String   @db.VarChar(6)
   createAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+}
+
+// 电子邮件验证
+model verification_code {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

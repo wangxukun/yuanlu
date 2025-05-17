@@ -1,18 +1,18 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import React from "react";
-import { authOptions } from "@/app/lib/auth";
 import CardWrapper from "@/components/dashboard/cards";
 import { lusitana } from "@/components/fonts";
 import prisma from "@/app/lib/prisma";
+import { auth } from "@/auth";
 
 export default async function Page() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session) {
     redirect("/auth/login");
   }
 
+  console.log("session", session);
   // 更新活动时间
   try {
     await prisma.user.update({
@@ -39,8 +39,7 @@ export default async function Page() {
           </p>
           <h2 className="text-lg font-bold text-slate-500">
             欢迎，
-            {session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2") ||
-              ""}
+            {session.user?.email?.split("@")[0]}
           </h2>
         </div>
       </div>

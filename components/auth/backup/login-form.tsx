@@ -1,3 +1,4 @@
+// 冗余文件
 "use client";
 import Link from "next/link";
 import { PhoneIcon, KeyIcon } from "@heroicons/react/24/outline";
@@ -111,7 +112,7 @@ export default function Form({
             aria-atomic="true"
           ></div>
           <div className="flex justify-end text-sm">
-            <Link href="/">
+            <Link href="/public">
               <span className="text-cyan-700">忘记密码</span>
             </Link>
             <span className="text-gray-500 pl-1 pr-1"> | </span>

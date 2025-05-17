@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
@@ -13,7 +13,10 @@ import {
   CheckIcon,
 } from "@heroicons/react/24/outline";
 import { PodcastField } from "@/app/lib/definitions";
+import { TagSelector } from "@/components/dashboard/tags/tag-selector";
+import { Tag } from "@/app/types/podcast";
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function EpisodeForm({
   podcasts,
 }: {
@@ -43,7 +46,29 @@ export default function EpisodeForm({
   const [publishStatus, setPublishStatus] = useState("paid");
   const [isExclusive, setIsExclusive] = useState(false);
   const [publishDate, setPublishDate] = useState<string>("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const router = useRouter();
+
+  // 使用 useEffect 获取标签数据
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/tag/list`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) {
+          throw new Error("Failed to fetch tags");
+        }
+        const data = await res.json();
+        setTags(data);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   // 异步封面文件上传
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +203,11 @@ export default function EpisodeForm({
     formData.append("description", description);
     formData.append("publishStatus", publishStatus);
     formData.append("isExclusive", isExclusive.toString());
+    // 将 selectedTags 添加到 FormData 中
+    selectedTags.forEach((tagId) => {
+      formData.append("tags", tagId);
+    });
+    console.log("FormData:", Array.from(formData.entries())); // 打印 FormData
 
     try {
       const response = await fetch("/api/episode/create", {
@@ -497,6 +527,13 @@ export default function EpisodeForm({
             </div>
           </div>
         </div>
+        <TagSelector
+          availableTags={tags}
+          selectedTagIds={selectedTags}
+          onChange={setSelectedTags}
+          allowTypes={["EPISODE", "UNIVERSAL"]}
+          maxSelected={5}
+        />
       </div>
       <div className="mt-6 flex justify-end gap-4">
         <Link
