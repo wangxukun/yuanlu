@@ -19,6 +19,15 @@ export default auth((req) => {
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
   const isPremiumRoute = premiumRoutes.includes(nextUrl.pathname);
 
+  const host = req.headers.get("host");
+  // 可接受的主机名列表
+  const trustedHosts = [process.env.NEXTAUTH_URL];
+  if (host && trustedHosts.includes(host)) {
+    return NextResponse.next();
+  }
+  console.error(`[auth][error] UntrustedHost: ${host}`);
+  return new NextResponse("Untrusted host");
+
   // 根路由重定向
   if (pathname === "/") {
     return NextResponse.redirect(new URL("/browse", nextUrl));
