@@ -5,6 +5,7 @@ import { signInSchema } from "@/app/lib/form-schema";
 import prisma from "@/app/lib/prisma";
 import bcrypt from "bcryptjs";
 import { JWT } from "next-auth/jwt";
+import { AdapterSession } from "@auth/core/adapters";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -92,9 +93,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         data: { isOnline: true, lastActiveAt: new Date() },
       });
     },
-    async signOut(message: { session?: Session; token?: JWT | null }) {
+    async signOut(
+      message:
+        | { session: AdapterSession | null | undefined | void }
+        | { token: JWT | null },
+    ) {
       // 用户退出时标记为离线
-      if (message.token?.userid) {
+      // if (message.token?.userid) {
+      if ("token" in message && message.token?.userid) {
         await prisma.user.update({
           where: { userid: message.token.userid },
           data: { isOnline: false },

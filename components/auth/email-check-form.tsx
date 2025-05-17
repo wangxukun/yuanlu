@@ -11,7 +11,7 @@ const EmailCheckForm = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [setFormValues] = useState<SignInFormValues>({
+  const [formValues, setFormValues] = useState<SignInFormValues>({
     email: "",
     password: "",
   });
@@ -45,6 +45,7 @@ const EmailCheckForm = () => {
       // 使用 SignInFormValues 的 email 验证规则,设置一个可以匹配的password
       const result = signInSchema.safeParse({ email, password: "1111xxxx" });
       console.log("EMAIL验证结果：", result);
+      console.log("FormValues: ", formValues);
       if (!result.success) {
         const error = result.error.errors[0];
         setError(error.message);

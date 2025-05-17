@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const description = stringifyField(formData.get("description"));
     const publishStatus = stringifyField(formData.get("publishStatus"));
     const isExclusive = stringifyField(formData.get("isExclusive")) === "true";
+    const tags = formData.getAll("tags").map((tag) => tag.toString());
 
     // 检查是否缺少参数
     if (
@@ -48,10 +49,11 @@ export async function POST(request: NextRequest) {
       !coverFileName ||
       !audioUrl ||
       !audioFileName ||
-      duration! ||
+      !duration ||
       !publishDate ||
       !description ||
-      !publishStatus
+      !publishStatus ||
+      !tags
     ) {
       return NextResponse.json({
         success: false,
@@ -78,6 +80,15 @@ export async function POST(request: NextRequest) {
         duration: duration,
         status: publishStatus,
         uploaderid: session?.user.userid,
+        tags: {
+          create: tags.map((tagId: string) => ({
+            tag: {
+              connect: {
+                tagid: tagId,
+              },
+            },
+          })),
+        },
       },
     });
     if (!episode) {

@@ -1,4 +1,3 @@
-import { lusitana } from "@/components/fonts";
 import { CreatePodcastBtn } from "@/components/dashboard/buttons";
 import Search from "@/components/search";
 import React, { Suspense } from "react";
@@ -8,7 +7,11 @@ export default function Page() {
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
-        <h1 className={`${lusitana.className} text-2xl`}>播客管理</h1>
+        <div className="breadcrumbs text-xl">
+          <ul>
+            <li>播客管理</li>
+          </ul>
+        </div>
       </div>
       <Suspense>
         <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
