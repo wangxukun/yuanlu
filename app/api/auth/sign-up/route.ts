@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { phone, password } = await request.json();
+    const { email, password } = await request.json();
 
-    // 检查手机号是否已存在
+    // 检查email是否已存在
     const userExists = await prisma.user.findFirst({
-      where: { phone },
+      where: { email },
     });
 
     if (userExists) {
       return NextResponse.json({
         success: false,
-        message: "手机号已存在",
+        message: "电子邮箱已被注册",
         status: 400,
       });
     }
@@ -26,11 +26,8 @@ export async function POST(request: Request) {
     // 创建新用户
     await prisma.user.create({
       data: {
-        phone,
+        email,
         password: hashedPassword, // 存储哈希后的密码
-        role: "USER",
-        languagePreference: "zh-CN",
-        createAt: new Date(),
       },
     });
 

@@ -1,3 +1,4 @@
+// 冗余文件
 "use client";
 import { useEffect, useRef } from "react";
 import RegisterForm from "./register-form";

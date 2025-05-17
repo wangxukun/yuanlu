@@ -1,9 +1,8 @@
 // /types/users.ts
 
-// 用户查询响应数据
 export interface User {
   userid: string; // 用户唯一标识
-  phone: string; // 手机号码
+  email: string; // 电子邮箱
   password: string; // 密码
   role: "USER" | "ADMIN" | "PREMIUM"; // 用户角色，普通用户或管理员
   languagePreference: "zh-CN" | "en-US"; // 用户语言选择，默认为中文
@@ -12,6 +11,7 @@ export interface User {
   isOnline: boolean;
   lastActiveAt?: Date; // 最后登录日期
   isCommentAllowed: boolean;
+  emailVerified: Date;
   userProfile: UserProfile;
 }
 
@@ -20,10 +20,17 @@ export interface UserProfile {
   nickName: string;
   avatarUrl: string;
   avatarFileName: string;
-  email: string;
   bio: string;
   learnLevel: string;
   user: User;
+}
+
+export interface VerificationCode {
+  id: number;
+  email: string;
+  code: string;
+  expiresAt: Date;
+  createdAt: Date;
 }
 
 // 用户登录请求参数

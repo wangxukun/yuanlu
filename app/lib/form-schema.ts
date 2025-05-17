@@ -17,3 +17,39 @@ export const registerFormSchema = z.object({
     message: "必须同意用户协议和隐私政策",
   }),
 });
+
+// 密码验证函数（复用之前的实现）
+const validatePassword = (password: string): boolean => {
+  if (password.length < 8 || password.length > 16) return false;
+
+  let hasNumber = false;
+  let hasLetter = false;
+  let hasSymbol = false;
+
+  for (const char of password) {
+    if (/[0-9]/.test(char)) hasNumber = true;
+    else if (/[a-zA-Z]/.test(char)) hasLetter = true;
+    else hasSymbol = true;
+
+    if (hasNumber && hasLetter && hasSymbol) break;
+  }
+
+  return (hasNumber ? 1 : 0) + (hasLetter ? 1 : 0) + (hasSymbol ? 1 : 0) >= 2;
+};
+
+// 登录表单验证 Schema
+export const signInSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "邮箱不能为空" })
+    .email({ message: "请输入有效的邮箱地址" }),
+  password: z
+    .string()
+    .min(1, { message: "密码不能为空" })
+    .refine(validatePassword, {
+      message: "密码必须为8~16位，且包含数字、字母、符号中的至少两种",
+    }),
+});
+
+// 导出类型
+export type SignInFormValues = z.infer<typeof signInSchema>;

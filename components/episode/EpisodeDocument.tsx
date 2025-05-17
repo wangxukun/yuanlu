@@ -4,9 +4,9 @@ import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
 import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
-import LoginDialog from "@/components/auth/login-dialog";
-import RegisterDialog from "@/components/auth/register-dialog";
-import PromptBox from "@/components/auth/prompt-box";
+import LoginDialog from "@/components/auth/backup/login-dialog";
+import RegisterDialog from "@/components/auth/backup/register-dialog";
+import PromptBox from "@/components/auth/backup/prompt-box";
 
 interface Subtitles {
   id: number;
