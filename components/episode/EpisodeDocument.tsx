@@ -4,9 +4,6 @@ import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
 import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
-import LoginDialog from "@/components/auth/backup/login-dialog";
-import RegisterDialog from "@/components/auth/backup/register-dialog";
-import PromptBox from "@/components/auth/backup/prompt-box";
 
 interface Subtitles {
   id: number;
@@ -28,9 +25,9 @@ export default function EpisodeDocument({
   const [error, setError] = useState<string | null>(null);
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
+  // const [showLoginDialog, setShowLoginDialog] = useState(false);
+  // const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  // const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
 
   // 获取播放器状态
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -227,36 +224,36 @@ export default function EpisodeDocument({
           <div className="flex justify-center py-4">
             <button
               className="text-base font-medium text-slate-500"
-              onClick={() => setShowLoginDialog(true)}
+              // onClick={() => setShowLoginDialog(true)}
             >
               全部文稿
             </button>
           </div>
         )}
       </div>
-      {showLoginDialog && (
-        <LoginDialog
-          onCloseLoginDialog={() => setShowLoginDialog(false)}
-          onOpenRegisterDialog={() => {
-            setShowLoginDialog(false);
-            setShowRegisterDialog(true);
-          }}
-        />
-      )}
-      {showRegisterDialog && (
-        <RegisterDialog
-          onCloseRegisterDialog={() => setShowRegisterDialog(false)}
-          onOpenRegisterSuccessBox={() => setShowRegisterSuccessBox(true)}
-          onOpenLoginDialog={() => setShowLoginDialog(true)}
-        />
-      )}
-      {showRegisterSuccessBox && (
-        <PromptBox
-          onClosePromptBox={() => setShowRegisterSuccessBox(false)}
-          title="注册成功"
-          message="提示将在3秒后关闭"
-        />
-      )}
+      {/*{showLoginDialog && (*/}
+      {/*  <LoginDialog*/}
+      {/*    onCloseLoginDialog={() => setShowLoginDialog(false)}*/}
+      {/*    onOpenRegisterDialog={() => {*/}
+      {/*      setShowLoginDialog(false);*/}
+      {/*      setShowRegisterDialog(true);*/}
+      {/*    }}*/}
+      {/*  />*/}
+      {/*)}*/}
+      {/*{showRegisterDialog && (*/}
+      {/*  <RegisterDialog*/}
+      {/*    onCloseRegisterDialog={() => setShowRegisterDialog(false)}*/}
+      {/*    onOpenRegisterSuccessBox={() => setShowRegisterSuccessBox(true)}*/}
+      {/*    onOpenLoginDialog={() => setShowLoginDialog(true)}*/}
+      {/*  />*/}
+      {/*)}*/}
+      {/*{showRegisterSuccessBox && (*/}
+      {/*  <PromptBox*/}
+      {/*    onClosePromptBox={() => setShowRegisterSuccessBox(false)}*/}
+      {/*    title="注册成功"*/}
+      {/*    message="提示将在3秒后关闭"*/}
+      {/*  />*/}
+      {/*)}*/}
     </div>
   );
 }
