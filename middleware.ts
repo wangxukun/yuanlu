@@ -32,14 +32,6 @@ export default auth((req) => {
     return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
   }
 
-  // 允许认证路由（如登录/注册）
-  // if (isUserRoute) {
-  //     if (isLoggedIn) {
-  //         return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-  //     }
-  //     return;
-  // }
-
   // 角色检查
   if (isLoggedIn) {
     const role = req.auth?.user?.role;
