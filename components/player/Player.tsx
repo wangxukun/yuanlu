@@ -16,8 +16,6 @@ export default function Player() {
   const duration = usePlayerStore((state) => state.duration);
   const setDuration = usePlayerStore((state) => state.setDuration);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
-  // const [bufferedPercent,setBufferedPercent] = useState(0);
-  // const [showHoverIcon, setShowHoverIcon] = useState(false);
 
   useEffect(() => {
     if (audioRef.current) {

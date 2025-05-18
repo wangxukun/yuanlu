@@ -15,6 +15,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // 删除 episode_tags 表中的记录
+    await prisma.episode_tags.deleteMany({
+      where: {
+        episodeid: episodeid,
+      },
+    });
+
     // 删除 episode_tags 表中的关联记录
     await prisma.episode_tags.deleteMany({
       where: {

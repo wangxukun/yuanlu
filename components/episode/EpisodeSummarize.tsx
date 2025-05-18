@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { usePlayerStore } from "@/store/player-store";
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { EpisodeFavoriteBtn } from "@/components/FavoriteBtn";
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const { data: session } = useSession();
@@ -101,8 +102,8 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
           <div className="flex text-sm space-x-1 justify-start">
             {/* 播放节目按钮 */}
             <button
-              className="sm:bg-purple-700 sm:w-[80px] h-7 text-white flex items-center justify-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
               onClick={handlePlay}
+              className="btn btn-sm bg-[#622069] text-white border-[#591660]"
             >
               {isPlaying &&
               currentEpisode &&
@@ -127,23 +128,8 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               />
             )}
             {/* 文档下载链接 */}
-            <a
-              href="#"
-              className="flex items-center px-2 py-1 bg-gray-100 text-xs text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+            <a href="#" role="button" className="btn btn-sm">
+              <ArrowDownTrayIcon className="w-4 h-4" />
               下载文稿
             </a>
           </div>
