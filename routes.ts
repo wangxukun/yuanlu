@@ -2,7 +2,13 @@
 export const apiAuthPrefix = "/api";
 export const DEFAULT_LOGIN_REDIRECT = "/home";
 
-export const publicRoutes = ["/home", "/browse", "/charts"];
+export const publicRoutes = [
+  "/home",
+  "/browse",
+  "/charts",
+  "/podcast/:id",
+  "/episode/:id",
+];
 
 export const userRoutes = ["/library/podcasts", "/library/episodes"];
 

@@ -24,7 +24,7 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
       <div className="flex justify-end mb-2">
         <button
           onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
+          className="btn btn-ghost btn-sm"
         >
           {sortOrder === "asc" ? "最新优先" : "最早优先"}
         </button>
@@ -70,7 +70,7 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-500 line-clamp-3">
+                  <span className="text-xs text-gray-500 line-clamp-3">
                     {episode.description}
                   </span>
                 </div>
