@@ -3,6 +3,7 @@ import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import eslintConfigPrettier from "eslint-config-prettier";
+import next from "@next/eslint-plugin-next";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -25,6 +26,7 @@ export default [
   {
     plugins: {
       react: pluginReact,
+      "@next/next": next,
     },
     settings: {
       react: {
@@ -32,6 +34,7 @@ export default [
       },
     },
     rules: {
+      "@next/next/no-html-link-for-pages": "error", // 或其他级别（'warn' / 'off'）
       ...pluginReact.configs["jsx-runtime"].rules, // 继承推荐规则
       "react/react-in-jsx-scope": "off", // 关闭旧规则
       "react/jsx-uses-react": "off", // 关闭旧规则
