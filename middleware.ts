@@ -19,15 +19,6 @@ export default auth((req) => {
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
   const isPremiumRoute = premiumRoutes.includes(nextUrl.pathname);
 
-  const host = req.headers.get("host");
-  // 可接受的主机名列表
-  const trustedHosts = [process.env.NEXTAUTH_URL];
-  if (host && trustedHosts.includes(host)) {
-    return NextResponse.next();
-  }
-  console.error(`[auth][error] UntrustedHost: ${host}`);
-  return new NextResponse("Untrusted host");
-
   // 根路由重定向
   if (pathname === "/") {
     return NextResponse.redirect(new URL("/browse", nextUrl));
@@ -40,14 +31,6 @@ export default auth((req) => {
   if (!isLoggedIn && !isPublicRoute) {
     return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
   }
-
-  // 允许认证路由（如登录/注册）
-  // if (isUserRoute) {
-  //     if (isLoggedIn) {
-  //         return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-  //     }
-  //     return;
-  // }
 
   // 角色检查
   if (isLoggedIn) {

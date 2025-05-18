@@ -8,6 +8,7 @@ import { JWT } from "next-auth/jwt";
 import { AdapterSession } from "@auth/core/adapters";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
