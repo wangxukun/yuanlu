@@ -27,7 +27,11 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   // 当 currentAudioUrl 发生变化时，更新音频源并播放
   useEffect(() => {
-    if (currentAudioUrl && audioRef && audioRef.src !== currentAudioUrl) {
+    if (!audioRef) {
+      console.log("audioRef is null");
+      return;
+    }
+    if (currentAudioUrl && audioRef.src !== currentAudioUrl) {
       const audioElement = audioRef;
       try {
         console.log("currentAudioUrl值改变，重头开始播放");
@@ -39,6 +43,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
         audioElement.load();
         // 播放新的音频
         play();
+        console.log("已经PLAY");
       } catch (error) {
         console.error("Error while switching audio source:", error);
       }
@@ -50,6 +55,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     if (audioRef) {
       // 如果当前音频已经是目标音频，则直接播放或暂停
       if (currentEpisode?.episodeid === episode?.episodeid) {
+        console.log("handlePlay", 11111);
         if (isPlaying) {
           pause();
         } else {
@@ -60,6 +66,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
         setCurrentAudioUrl(audioUrl);
         setCurrentEpisode(episode);
         setDuration(episode.duration);
+        audioRef.src = "";
       }
     }
   };

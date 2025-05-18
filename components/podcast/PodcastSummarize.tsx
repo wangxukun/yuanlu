@@ -63,6 +63,7 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
         setCurrentAudioUrl(lastEpisode.audioUrl);
         setCurrentEpisode(lastEpisode);
         setDuration(lastEpisode.duration);
+        audioRef.src = "";
       }
     }
   };

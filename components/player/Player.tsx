@@ -16,6 +16,24 @@ export default function Player() {
   const duration = usePlayerStore((state) => state.duration);
   const setDuration = usePlayerStore((state) => state.setDuration);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const pause = usePlayerStore((state) => state.pause);
+  const setCurrentEpisode = usePlayerStore((state) => state.setCurrentEpisode);
+  const setCurrentAudioUrl = usePlayerStore(
+    (state) => state.setCurrentAudioUrl,
+  );
+
+  // 在 useEffect 中添加结束事件处理
+  useEffect(() => {
+    const audio = audioRef.current;
+    const handleEnded = () => {
+      pause(); // 调用 store 中的 pause 方法
+      setCurrentTime(0); // 重置播放进度
+      setCurrentEpisode(null); // 清除当前剧集
+      setCurrentAudioUrl(""); // 清除音频 URL
+    };
+    audio?.addEventListener("ended", handleEnded);
+    return () => audio?.removeEventListener("ended", handleEnded);
+  }, [pause, setCurrentTime, setCurrentEpisode, setCurrentAudioUrl]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -204,6 +222,7 @@ export default function Player() {
       {/*{currentEpisode && (*/}
       <audio
         ref={audioRef}
+        onEnded={() => setCurrentTime(0)}
         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
         onLoadedData={(e) => {
           setCurrentTime(0);
