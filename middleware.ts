@@ -14,10 +14,18 @@ export default auth((req) => {
   const { pathname } = nextUrl;
   const isLoggedIn = !!req.auth;
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  // const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isPublicRoute = publicRoutes.some((route) => {
+    if (route.includes(":id")) {
+      return pathname.startsWith(route.split(":id")[0]);
+    }
+    return route === pathname;
+  });
   const isUserRoute = userRoutes.includes(nextUrl.pathname);
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
   const isPremiumRoute = premiumRoutes.includes(nextUrl.pathname);
+
+  console.log("nextUrl", pathname);
 
   // 根路由重定向
   if (pathname === "/") {

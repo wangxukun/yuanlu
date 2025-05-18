@@ -4,6 +4,7 @@ import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
 import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
+import { LanguageIcon } from "@heroicons/react/24/outline";
 
 interface Subtitles {
   id: number;
@@ -25,9 +26,6 @@ export default function EpisodeDocument({
   const [error, setError] = useState<string | null>(null);
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
-  // const [showLoginDialog, setShowLoginDialog] = useState(false);
-  // const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  // const [showRegisterSuccessBox, setShowRegisterSuccessBox] = useState(false);
 
   // 获取播放器状态
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -169,21 +167,9 @@ export default function EpisodeDocument({
         {/* 新增翻译切换按钮 */}
         <button
           onClick={() => setShowTranslation(!showTranslation)}
-          className="flex items-center space-x-2 px-4 py-1 text-xs text-slate-500 font-bold bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="btn btn-sm"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h3M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-            />
-          </svg>
+          <LanguageIcon className="h-4 w-4" />
           <span>{showTranslation ? "隐藏翻译" : "显示翻译"}</span>
         </button>
       </div>
@@ -223,37 +209,20 @@ export default function EpisodeDocument({
         {status === "unauthenticated" && (
           <div className="flex justify-center py-4">
             <button
-              className="text-base font-medium text-slate-500"
-              // onClick={() => setShowLoginDialog(true)}
+              className="btn btn-ghost"
+              onClick={() =>
+                (
+                  document.getElementById(
+                    "email_check_modal_box",
+                  ) as HTMLDialogElement
+                )?.showModal()
+              }
             >
               全部文稿
             </button>
           </div>
         )}
       </div>
-      {/*{showLoginDialog && (*/}
-      {/*  <LoginDialog*/}
-      {/*    onCloseLoginDialog={() => setShowLoginDialog(false)}*/}
-      {/*    onOpenRegisterDialog={() => {*/}
-      {/*      setShowLoginDialog(false);*/}
-      {/*      setShowRegisterDialog(true);*/}
-      {/*    }}*/}
-      {/*  />*/}
-      {/*)}*/}
-      {/*{showRegisterDialog && (*/}
-      {/*  <RegisterDialog*/}
-      {/*    onCloseRegisterDialog={() => setShowRegisterDialog(false)}*/}
-      {/*    onOpenRegisterSuccessBox={() => setShowRegisterSuccessBox(true)}*/}
-      {/*    onOpenLoginDialog={() => setShowLoginDialog(true)}*/}
-      {/*  />*/}
-      {/*)}*/}
-      {/*{showRegisterSuccessBox && (*/}
-      {/*  <PromptBox*/}
-      {/*    onClosePromptBox={() => setShowRegisterSuccessBox(false)}*/}
-      {/*    title="注册成功"*/}
-      {/*    message="提示将在3秒后关闭"*/}
-      {/*  />*/}
-      {/*)}*/}
     </div>
   );
 }
