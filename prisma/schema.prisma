@@ -70,6 +70,7 @@ model podcast {
   coverFileName     String?             @db.VarChar(255)
   platform          String?             @db.VarChar(255)
   description       String?
+  isEditorPick      Boolean?            @default(false)
   parentPodcastid   String?
   podcast           podcast?            @relation("podcastTopodcast", fields: [parentPodcastid], references: [podcastid], onUpdate: NoAction)
   otherPodcast      podcast[]           @relation("podcastTopodcast")

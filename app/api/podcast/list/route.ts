@@ -13,6 +13,7 @@ export async function GET() {
         coverFileName: true,
         description: true,
         platform: true,
+        isEditorPick: true,
       },
     });
     return NextResponse.json(categories);
