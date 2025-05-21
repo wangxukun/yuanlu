@@ -143,13 +143,19 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
         data.episode[i].audioFileName,
         3600 * 3,
       );
-      if (data.episode[i].subtitleEnUrl.length > 0) {
+      if (
+        data.episode[i].subtitleEnUrl &&
+        data.episode[i].subtitleEnUrl.length > 0
+      ) {
         data.episode[i].subtitleEnUrl = await generateSignatureUrl(
           data.episode[i].subtitleEnFileName,
           3600 * 3,
         );
       }
-      if (data.episode[i].subtitleZhUrl.length > 0) {
+      if (
+        data.episode[i].subtitleZhUrl &&
+        data.episode[i].subtitleZhUrl.length > 0
+      ) {
         data.episode[i].subtitleZhUrl = await generateSignatureUrl(
           data.episode[i].subtitleZhFileName,
           3600 * 3,
@@ -206,21 +212,21 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
   const data = await res.json();
   data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
   data.audioUrl = await generateSignatureUrl(data.audioFileName, 3600 * 3);
-  if (data.subtitleEnUrl.length > 0) {
+  if (data.subtitleEnUrl && data.subtitleEnUrl.length > 0) {
     data.subtitleEnUrl = await generateSignatureUrl(
       data.subtitleEnFileName,
       3600 * 3,
     );
   }
-  if (data.subtitleZhUrl.length > 0) {
+  if (data.subtitleZhUrl && data.subtitleZhUrl.length > 0) {
     data.subtitleZhUrl = await generateSignatureUrl(
       data.subtitleZhFileName,
       3600 * 3,
     );
   }
-  if (data.category) {
-    data.category.coverUrl = await generateSignatureUrl(
-      data.category.coverFileName,
+  if (data.podcast) {
+    data.podcast.coverUrl = await generateSignatureUrl(
+      data.podcast.coverFileName,
       3600 * 3,
     );
   }
@@ -232,7 +238,8 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
  * @param subtitleUrl
  */
 async function fetchSubtitles(subtitleUrl: string) {
-  if (subtitleUrl?.length === 0) {
+  if (subtitleUrl === null || subtitleUrl.length === 0) {
+    console.log("No subtitle URL provided: ", subtitleUrl?.length);
     return [];
   } else {
     try {

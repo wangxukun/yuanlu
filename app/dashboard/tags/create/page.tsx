@@ -1,7 +1,7 @@
 import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import React from "react";
 import TagForm from "@/components/dashboard/tags/tag-form";
-import { fetchTagGroups } from "@/app/lib/data";
+import { fetchTagGroups } from "@/app/lib/fetchSubtitles";
 
 export default async function page() {
   const tagGroups = await fetchTagGroups();

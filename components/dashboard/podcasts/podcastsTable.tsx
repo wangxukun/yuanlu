@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { fetchPodcasts } from "@/app/lib/data";
+import { fetchPodcasts } from "@/app/lib/fetchSubtitles";
 import {
   DeletePodcastBtn,
   UpdatePodcastBtn,

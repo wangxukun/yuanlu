@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
     const audioFileName = stringifyField(formData.get("audioFileName"));
     const duration = Number(stringifyField(formData.get("duration")));
     const publishDate = new Date(stringifyField(formData.get("publishDate")));
+    const subtitleEnUrl = stringifyField(formData.get("subtitleEnUrl"));
+    const subtitleEnFileName = stringifyField(
+      formData.get("subtitleEnFileName"),
+    );
+    const subtitleZhUrl = stringifyField(formData.get("subtitleZhUrl"));
+    const subtitleZhFileName = stringifyField(
+      formData.get("subtitleZhFileName"),
+    );
     const description = stringifyField(formData.get("description"));
     const publishStatus = stringifyField(formData.get("publishStatus"));
     const isExclusive = stringifyField(formData.get("isExclusive")) === "true";
@@ -65,6 +73,10 @@ export async function POST(request: NextRequest) {
         audioUrl: audioUrl,
         publishAt: publishDate,
         audioFileName: audioFileName,
+        subtitleEnUrl: subtitleEnUrl,
+        subtitleEnFileName: subtitleEnFileName,
+        subtitleZhUrl: subtitleZhUrl,
+        subtitleZhFileName: subtitleZhFileName,
         duration: duration,
         status: publishStatus,
         uploaderid: session?.user.userid,

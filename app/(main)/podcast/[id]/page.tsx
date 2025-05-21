@@ -1,5 +1,5 @@
 import EpisodeList from "@/components/podcast/EpisodeList";
-import { fetchPodcastById } from "@/app/lib/data";
+import { fetchPodcastById } from "@/app/lib/fetchSubtitles";
 import PodcastSummarize from "@/components/podcast/PodcastSummarize";
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {

@@ -1,7 +1,7 @@
 import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import React from "react";
 import UserPermissionInfo from "@/components/dashboard/users/user-permission-info";
-import { fetchUserById } from "@/app/lib/data";
+import { fetchUserById } from "@/app/lib/fetchSubtitles";
 import UserPermissionForm from "@/components/dashboard/users/user-permission-form";
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {

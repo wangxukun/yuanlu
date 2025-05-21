@@ -1,4 +1,4 @@
-import { fetchTagGroups } from "@/app/lib/data";
+import { fetchTagGroups } from "@/app/lib/fetchSubtitles";
 import { TagGroup } from "@/app/types/podcast";
 
 export async function TagGroupsTable() {
