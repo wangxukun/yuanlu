@@ -107,14 +107,15 @@ export async function fetchPodcasts(): Promise<Podcast[]> {
     throw new Error("Failed to fetch podcasts");
   }
   const data = await res.json();
-  if (data.length > 0) {
-    for (let i = 0; i < data.length; i++) {
-      data[i].coverUrl = await generateSignatureUrl(
-        data[i].coverFileName,
-        3600 * 3,
-      );
-    }
-  }
+  // 已在服务器端生成:/api/podcast/list
+  // if (data.length > 0) {
+  //   for (let i = 0; i < data.length; i++) {
+  //     data[i].coverUrl = await generateSignatureUrl(
+  //       data[i].coverFileName,
+  //       3600 * 3,
+  //     );
+  //   }
+  // }
   return data;
 }
 
@@ -237,7 +238,7 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
  * 获取字幕
  * @param subtitleUrl
  */
-async function fetchSubtitles(subtitleUrl: string) {
+async function data(subtitleUrl: string) {
   if (subtitleUrl === null || subtitleUrl.length === 0) {
     console.log("No subtitle URL provided: ", subtitleUrl?.length);
     return [];
@@ -286,10 +287,8 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
  * @param episode
  */
 export async function mergeSubtitles(episode: Episode) {
-  const subtitleEn =
-    (await fetchSubtitles(episode.subtitleEnUrl as string)) || null;
-  const subtitleZh =
-    (await fetchSubtitles(episode.subtitleZhUrl as string)) || null;
+  const subtitleEn = (await data(episode.subtitleEnUrl as string)) || null;
+  const subtitleZh = (await data(episode.subtitleZhUrl as string)) || null;
   if (subtitleEn === null) {
     return [];
   }

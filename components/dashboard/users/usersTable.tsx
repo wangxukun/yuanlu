@@ -1,4 +1,4 @@
-import { fetchUsers } from "@/app/lib/fetchSubtitles";
+import { fetchUsers } from "@/app/lib/data";
 import { User } from "@/app/types/user";
 import {
   DeleteUserBtn,

@@ -1,6 +1,6 @@
 // 在你的页面组件中
 import List from "@/components/list/List";
-import { fetchPodcasts } from "@/app/lib/fetchSubtitles";
+import { fetchPodcasts } from "@/app/lib/data";
 import { Podcast } from "@/app/types/podcast";
 
 export default async function Home() {
