@@ -59,3 +59,17 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 隐藏原生箭头 */
+.collapse-arrow .collapse-title:after {
+  display: none;
+}
+
+/* 调整标题区域交互 */
+.collapse-title {
+  pointer-events: none; /* 禁用标题区域点击 */
+}
+
+.collapse-title > * {
+  pointer-events: auto; /* 允许子元素交互 */
+}
