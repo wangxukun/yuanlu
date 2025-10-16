@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const podcastId = req.nextUrl.searchParams.get("podcastId");
+  console.log("[GET /api/episode/list-by-podcastid]", podcastId);
   try {
     // 获取所有分类数据（添加take限制防止全表扫描）
     const episodes = await prisma.episode.findMany({
+      where: {
+        podcastid: podcastId,
+      },
       select: {
         // 明确选择需要字段
         episodeid: true,
@@ -22,20 +27,20 @@ export async function GET() {
         status: true,
         isExclusive: true,
         isCommentEnabled: true,
-        podcast: {
-          select: {
-            // 明确选择需要字段
-            podcastid: true,
-            title: true,
-          },
-        },
+        // podcast: {
+        //   select: {
+        //     // 明确选择需要字段
+        //     podcastid: true,
+        //     title: true,
+        //   },
+        // },
       },
     });
     return NextResponse.json(episodes);
   } catch (error) {
     // 确保异常时也释放连接
     await prisma.$disconnect();
-    console.error("[GET /api/podcast/list]", error);
+    console.error("[GET /api/episode/list-by-podcastid]", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

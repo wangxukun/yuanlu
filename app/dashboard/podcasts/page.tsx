@@ -1,9 +1,20 @@
-import { CreatePodcastBtn } from "@/components/dashboard/buttons";
+"use client";
+import PodcastItem from "@/components/dashboard/podcasts/PodcastItem";
+import { Podcast } from "@/app/types/podcast";
+import React, { Suspense, useEffect, useState } from "react";
 import Search from "@/components/search";
-import React, { Suspense } from "react";
-import PodcastsTable from "@/components/dashboard/podcasts/podcastsTable";
+import { CreatePodcastBtn } from "@/components/dashboard/buttons";
 
-export default function Page() {
+export default function Home() {
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  useEffect(() => {
+    const fetchPodcasts = async () => {
+      const response = await fetch("/api/podcast/list");
+      const data = await response.json();
+      setPodcasts(data);
+    };
+    fetchPodcasts();
+  }, []);
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
@@ -18,13 +29,12 @@ export default function Page() {
           <Search placeholder="搜索播客资源..." />
           <CreatePodcastBtn />
         </div>
-
-        <PodcastsTable />
+        <div className="space-y-4">
+          {podcasts.map((podcast) => (
+            <PodcastItem key={podcast.podcastid} podcast={podcast} />
+          ))}
+        </div>
       </Suspense>
-
-      {/*<div className="mt-5 flex w-full justify-center">*/}
-      {/*    <Pagination totalPages={totalPages} />*/}
-      {/*</div>*/}
     </div>
   );
 }

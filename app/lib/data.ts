@@ -99,23 +99,32 @@ export async function fetchOnlineUsers(): Promise<OnlineUsersData> {
  * @returns {Promise<Podcast[]>} 返回播客列表，每个播客包含未 episodes 数组
  */
 export async function fetchPodcasts(): Promise<Podcast[]> {
-  const res = await fetch(`${baseUrl}/api/podcast/list`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch podcasts");
+  console.log("当前 NEXT_PHASE:", process.env.NEXT_PHASE);
+  // 在构建阶段跳过数据获取
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    console.log("构建阶段，跳过数据获取");
+    return [];
   }
-  const data = await res.json();
-  if (data.length > 0) {
-    for (let i = 0; i < data.length; i++) {
-      data[i].coverUrl = await generateSignatureUrl(
-        data[i].coverFileName,
-        3600 * 3,
-      );
+
+  console.log("开始获取播客列表"); // 这行也应该被看到
+  try {
+    console.log("准备请求URL:", `${baseUrl}/api/podcast/list`);
+    const res = await fetch(`${baseUrl}/api/podcast/list`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error(`获取播客失败: ${res.status} ${res.statusText}`);
+      throw new Error("Failed to fetch podcasts");
     }
+    const data = await res.json();
+    console.log("Fetched podcasts:", data);
+    return data;
+  } catch (error) {
+    console.error("获取播客列表失败:", error);
+    return [];
   }
-  return data;
 }
 
 /**
@@ -143,13 +152,19 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
         data.episode[i].audioFileName,
         3600 * 3,
       );
-      if (data.episode[i].subtitleEnUrl.length > 0) {
+      if (
+        data.episode[i].subtitleEnUrl &&
+        data.episode[i].subtitleEnUrl.length > 0
+      ) {
         data.episode[i].subtitleEnUrl = await generateSignatureUrl(
           data.episode[i].subtitleEnFileName,
           3600 * 3,
         );
       }
-      if (data.episode[i].subtitleZhUrl.length > 0) {
+      if (
+        data.episode[i].subtitleZhUrl &&
+        data.episode[i].subtitleZhUrl.length > 0
+      ) {
         data.episode[i].subtitleZhUrl = await generateSignatureUrl(
           data.episode[i].subtitleZhFileName,
           3600 * 3,
@@ -206,21 +221,21 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
   const data = await res.json();
   data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
   data.audioUrl = await generateSignatureUrl(data.audioFileName, 3600 * 3);
-  if (data.subtitleEnUrl.length > 0) {
+  if (data.subtitleEnUrl && data.subtitleEnUrl.length > 0) {
     data.subtitleEnUrl = await generateSignatureUrl(
       data.subtitleEnFileName,
       3600 * 3,
     );
   }
-  if (data.subtitleZhUrl.length > 0) {
+  if (data.subtitleZhUrl && data.subtitleZhUrl.length > 0) {
     data.subtitleZhUrl = await generateSignatureUrl(
       data.subtitleZhFileName,
       3600 * 3,
     );
   }
-  if (data.category) {
-    data.category.coverUrl = await generateSignatureUrl(
-      data.category.coverFileName,
+  if (data.podcast) {
+    data.podcast.coverUrl = await generateSignatureUrl(
+      data.podcast.coverFileName,
       3600 * 3,
     );
   }
@@ -231,8 +246,9 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
  * 获取字幕
  * @param subtitleUrl
  */
-async function fetchSubtitles(subtitleUrl: string) {
-  if (subtitleUrl?.length === 0) {
+async function data(subtitleUrl: string) {
+  if (subtitleUrl === null || subtitleUrl.length === 0) {
+    console.log("No subtitle URL provided: ", subtitleUrl?.length);
     return [];
   } else {
     try {
@@ -279,10 +295,8 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
  * @param episode
  */
 export async function mergeSubtitles(episode: Episode) {
-  const subtitleEn =
-    (await fetchSubtitles(episode.subtitleEnUrl as string)) || null;
-  const subtitleZh =
-    (await fetchSubtitles(episode.subtitleZhUrl as string)) || null;
+  const subtitleEn = (await data(episode.subtitleEnUrl as string)) || null;
+  const subtitleZh = (await data(episode.subtitleZhUrl as string)) || null;
   if (subtitleEn === null) {
     return [];
   }

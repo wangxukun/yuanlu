@@ -7,9 +7,9 @@
     "build": "next build",
     "test": "echo Test not enabled",
     "start": "next start",
-    "lint": "eslint --fix",
-    "prepare": "husky",
-    "crawler": "npm tsx app/crawler/index.ts"
+    "lint": "eslint --ext .ts,.tsx,.js,.jsx app/",
+    "commit": "npx git-cz",
+    "prepare": "husky"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^3.1.1",

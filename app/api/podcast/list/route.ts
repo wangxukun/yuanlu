@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { generateSignatureUrl } from "@/app/lib/oss";
 
 export async function GET() {
   try {
     // 获取所有分类数据（添加take限制防止全表扫描）
-    const categories = await prisma.podcast.findMany({
+    const podcasts = await prisma.podcast.findMany({
+      where: {
+        coverFileName: {
+          not: null,
+        },
+      },
       select: {
         // 明确选择需要字段
         podcastid: true,
@@ -13,9 +19,32 @@ export async function GET() {
         coverFileName: true,
         description: true,
         platform: true,
+        isEditorPick: true,
+        tags: {
+          select: {
+            tagid: true,
+            podcastid: true,
+            tag: {
+              select: {
+                tagid: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
-    return NextResponse.json(categories);
+    // 并行处理签名URL
+    const signedPodcasts = await Promise.all(
+      podcasts.map(async (podcast) => ({
+        ...podcast,
+        coverUrl: podcast.coverFileName
+          ? await generateSignatureUrl(podcast.coverFileName, 3600 * 3)
+          : null,
+      })),
+    );
+
+    return NextResponse.json(signedPodcasts);
   } catch (error) {
     // 确保异常时也释放连接
     await prisma.$disconnect();

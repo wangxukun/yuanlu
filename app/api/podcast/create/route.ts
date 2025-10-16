@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       coverUrl,
       coverFileName,
       tags,
+      isEditorPick,
     } = await request.json();
     console.log(
       podcastName,
@@ -20,9 +21,17 @@ export async function POST(request: Request) {
       coverUrl,
       coverFileName,
       tags,
+      isEditorPick,
     );
     // 检查是否缺少参数
-    if (!podcastName || !platform || !description || !coverUrl || !tags) {
+    if (
+      !podcastName ||
+      !platform ||
+      !description ||
+      !coverUrl ||
+      !tags ||
+      !isEditorPick
+    ) {
       return NextResponse.json(
         { success: false, message: "缺少参数" },
         { status: 400 },
@@ -51,6 +60,7 @@ export async function POST(request: Request) {
         description,
         coverFileName,
         coverUrl,
+        isEditorPick,
         tags: {
           create: tags.map((tagId: string) => ({
             tag: {

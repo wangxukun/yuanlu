@@ -29,12 +29,18 @@ export default function EpisodeForm({
     audioUrl?: string;
     audioFileName?: string;
     audioMessage?: string;
+    subtitleEnUrl?: string;
+    subtitleEnFileName?: string;
+    subtitleEnMessage?: string;
+    subtitleZhUrl?: string;
+    subtitleZhFileName?: string;
+    subtitleZhMessage?: string;
   }>();
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [podcastId, setPodcastId] = useState("");
   const [episodeTitle, setEpisodeTitle] = useState("");
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [publishStatus, setPublishStatus] = useState("paid");
@@ -98,17 +104,6 @@ export default function EpisodeForm({
   const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 创建临时音频对象获取时长
-      const audio = document.createElement("audio");
-      audio.src = URL.createObjectURL(file);
-
-      audio.onloadedmetadata = () => {
-        // 确保获取到有效时长
-        if (!isNaN(audio.duration) && audio.duration !== Infinity) {
-          setDuration(audio.duration);
-        }
-      };
-
       setAudioUrl(URL.createObjectURL(file));
       // 将文件进行上传
       try {
@@ -131,6 +126,58 @@ export default function EpisodeForm({
     }
   };
 
+  // 中英文字幕上传
+  const handleEnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 将文件进行上传
+      try {
+        const formData = new FormData();
+        formData.append("subtitle", file);
+        const response = await fetch("/api/podcast/upload-episode-subtitle", {
+          method: "POST",
+          body: formData,
+        } as RequestInit);
+        const { subtitleUrl, subtitleFileName, message } =
+          await response.json();
+        setUploadedFiles((prev) => ({
+          ...prev,
+          subtitleEnUrl: subtitleUrl,
+          subtitleEnFileName: subtitleFileName,
+          subtitleEnMessage: message,
+        }));
+      } catch (error) {
+        console.error("上传字幕文件失败", error);
+      }
+    }
+  };
+
+  // 中文字幕上传
+  const handleZhChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 将文件进行上传
+      try {
+        const formData = new FormData();
+        formData.append("subtitle", file);
+        const response = await fetch("/api/podcast/upload-episode-subtitle", {
+          method: "POST",
+          body: formData,
+        } as RequestInit);
+        const { subtitleUrl, subtitleFileName, message } =
+          await response.json();
+        setUploadedFiles((prev) => ({
+          ...prev,
+          subtitleZhUrl: subtitleUrl,
+          subtitleZhFileName: subtitleFileName,
+          subtitleZhMessage: message,
+        }));
+      } catch (error) {
+        console.error("上传字幕文件失败", error);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -141,8 +188,18 @@ export default function EpisodeForm({
     formData.append("coverFileName", uploadedFiles?.coverFileName || "");
     formData.append("audioUrl", uploadedFiles?.audioUrl || "");
     formData.append("audioFileName", uploadedFiles?.audioFileName || "");
-    formData.append("duration", duration.toString());
+    formData.append("duration", duration);
     formData.append("publishDate", publishDate);
+    formData.append("subtitleEnUrl", uploadedFiles?.subtitleEnUrl || "");
+    formData.append(
+      "subtitleEnFileName",
+      uploadedFiles?.subtitleEnFileName || "",
+    );
+    formData.append("subtitleZhUrl", uploadedFiles?.subtitleZhUrl || "");
+    formData.append(
+      "subtitleZhFileName",
+      uploadedFiles?.subtitleZhFileName || "",
+    );
     formData.append("description", description);
     formData.append("publishStatus", publishStatus);
     formData.append("isExclusive", isExclusive.toString());
@@ -159,7 +216,6 @@ export default function EpisodeForm({
       } as RequestInit);
 
       if (response.ok) {
-        console.log("response:", response);
         console.log("单集创建成功");
         await router.push("/dashboard/episodes/create-success");
       } else {
@@ -284,6 +340,28 @@ export default function EpisodeForm({
           <span>{uploadedFiles?.audioMessage}</span>
         </div>
 
+        {/* 音频时长 */}
+        <div className="mb-4">
+          <label htmlFor="duration" className="mb-2 block text-sm font-medium">
+            音频时长
+          </label>
+          <div className="relative mt-2 rounded-md">
+            <div className="relative">
+              <input
+                id="duration"
+                name="duration"
+                type="text"
+                placeholder="音频时长"
+                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                required
+              />
+              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+          </div>
+        </div>
+
         {/* 发布日期 */}
         <div className="mb-4">
           <label
@@ -306,6 +384,54 @@ export default function EpisodeForm({
               <ClockIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
           </div>
+        </div>
+
+        {/* 英文字幕 */}
+        <div className="mb-4">
+          <label
+            htmlFor="subtitleEn"
+            className="mb-2 block text-sm font-medium"
+          >
+            英文字幕
+          </label>
+          <div className="relative mt-2 rounded-md">
+            <div className="relative">
+              <input
+                id="subtitleEn"
+                name="subtitleEN"
+                type="file"
+                accept=".srt,.vtt"
+                className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                onChange={handleEnChange}
+              />
+              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+          </div>
+          <span>{uploadedFiles?.subtitleEnMessage}</span>
+        </div>
+
+        {/* 中文字幕 */}
+        <div className="mb-4">
+          <label
+            htmlFor="subtitleZh"
+            className="mb-2 block text-sm font-medium"
+          >
+            中文字幕
+          </label>
+          <div className="relative mt-2 rounded-md">
+            <div className="relative">
+              <input
+                id="subtitleZh"
+                name="subtitleZh"
+                type="file"
+                accept=".srt,.vtt"
+                className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                onChange={handleZhChange}
+              />
+              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+          </div>
+          <span>{uploadedFiles?.subtitleZhMessage}</span>
         </div>
 
         {/* 发布状态 */}
