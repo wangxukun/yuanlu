@@ -99,24 +99,32 @@ export async function fetchOnlineUsers(): Promise<OnlineUsersData> {
  * @returns {Promise<Podcast[]>} 返回播客列表，每个播客包含未 episodes 数组
  */
 export async function fetchPodcasts(): Promise<Podcast[]> {
-  const res = await fetch(`${baseUrl}/api/podcast/list`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch podcasts");
+  console.log("当前 NEXT_PHASE:", process.env.NEXT_PHASE);
+  // 在构建阶段跳过数据获取
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    console.log("构建阶段，跳过数据获取");
+    return [];
   }
-  const data = await res.json();
-  // 已在服务器端生成:/api/podcast/list
-  // if (data.length > 0) {
-  //   for (let i = 0; i < data.length; i++) {
-  //     data[i].coverUrl = await generateSignatureUrl(
-  //       data[i].coverFileName,
-  //       3600 * 3,
-  //     );
-  //   }
-  // }
-  return data;
+
+  console.log("开始获取播客列表"); // 这行也应该被看到
+  try {
+    console.log("准备请求URL:", `${baseUrl}/api/podcast/list`);
+    const res = await fetch(`${baseUrl}/api/podcast/list`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error(`获取播客失败: ${res.status} ${res.statusText}`);
+      throw new Error("Failed to fetch podcasts");
+    }
+    const data = await res.json();
+    console.log("Fetched podcasts:", data);
+    return data;
+  } catch (error) {
+    console.error("获取播客列表失败:", error);
+    return [];
+  }
 }
 
 /**

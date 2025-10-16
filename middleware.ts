@@ -26,6 +26,8 @@ export default auth((req) => {
   const isPremiumRoute = premiumRoutes.includes(nextUrl.pathname);
 
   console.log("nextUrl", pathname);
+  console.log("[middleware] nextUrl", pathname);
+  console.log("[middleware] ENV", process.env.NODE_ENV);
 
   // 根路由重定向
   if (pathname === "/") {
