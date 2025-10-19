@@ -2,13 +2,36 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
+  console.log("POST /api/podcast/create");
   try {
     // 从请求体中获取数据
-    const { podcastName, platform, description, coverUrl, coverFileName } =
-      await request.json();
-    console.log(podcastName, platform, description, coverUrl, coverFileName);
+    const {
+      podcastName,
+      platform,
+      description,
+      coverUrl,
+      coverFileName,
+      tags,
+      isEditorPick,
+    } = await request.json();
+    console.log(
+      podcastName,
+      platform,
+      description,
+      coverUrl,
+      coverFileName,
+      tags,
+      isEditorPick,
+    );
     // 检查是否缺少参数
-    if (!podcastName || !platform || !description || !coverUrl) {
+    if (
+      !podcastName ||
+      !platform ||
+      !description ||
+      !coverUrl ||
+      !tags ||
+      !isEditorPick
+    ) {
       return NextResponse.json(
         { success: false, message: "缺少参数" },
         { status: 400 },
@@ -37,6 +60,16 @@ export async function POST(request: Request) {
         description,
         coverFileName,
         coverUrl,
+        isEditorPick,
+        tags: {
+          create: tags.map((tagId: string) => ({
+            tag: {
+              connect: {
+                tagid: tagId,
+              },
+            },
+          })),
+        },
       },
     });
     if (!podcast) {

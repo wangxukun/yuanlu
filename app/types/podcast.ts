@@ -31,6 +31,7 @@ export interface Podcast {
   coverFileName: string;
   platform: string;
   description: string;
+  isEditorPick: boolean;
   episode: Episode[];
   tags: PodcastTags[];
   podcastFavorites: PodcastFavorites[];

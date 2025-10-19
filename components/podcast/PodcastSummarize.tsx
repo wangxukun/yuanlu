@@ -63,6 +63,7 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
         setCurrentAudioUrl(lastEpisode.audioUrl);
         setCurrentEpisode(lastEpisode);
         setDuration(lastEpisode.duration);
+        audioRef.src = "";
       }
     }
   };
@@ -110,8 +111,8 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
         <div className="flex text-sm space-x-1 justify-between">
           {/* 播放最新节目按钮 */}
           <button
-            className="sm:bg-purple-700 sm:w-[120px] h-7 text-white flex items-center justify-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
             onClick={handlePlay}
+            className="btn btn-sm bg-[#622069] text-white border-[#591660]"
           >
             {isPlaying &&
             currentEpisode &&
