@@ -1,64 +1,69 @@
+import { auth } from "@/auth";
+import {
+  DEFAULT_LOGIN_REDIRECT,
+  apiAuthPrefix,
+  publicRoutes,
+  userRoutes,
+  adminRoutes,
+  premiumRoutes,
+} from "./routes";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 
-// 在文件顶部添加
-const ROUTE_CONFIG = {
-  USER: {
-    redirectPath: "/",
-    allowedRoutes: ["/library/episodes", "/library/podcasts", "/notifications"],
-  },
-  ADMIN: {
-    redirectPath: "/dashboard",
-    allowedRoutes: [
-      "/dashboard",
-      "/library/episodes",
-      "/library/podcasts",
-      "/notifications",
-    ],
-  },
-  PREMIUM: {
-    redirectPath: "/",
-    allowedRoutes: ["/library/episodes", "/library/podcasts", "/notifications"],
-  },
-} as const;
-
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  // 获取 JWT Token
-  const token = await getToken({ req: request });
-
-  console.log("PathName: ", pathname);
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/browse", request.url));
-  }
-
-  // 如果用户未登录，重定向到登录页面
-  if (!token) {
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/library")) {
-      return NextResponse.redirect(new URL("/home", request.url));
+export default auth((req) => {
+  const { nextUrl } = req;
+  const { pathname } = nextUrl;
+  const isLoggedIn = !!req.auth;
+  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
+  // const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isPublicRoute = publicRoutes.some((route) => {
+    if (route.includes(":id")) {
+      return pathname.startsWith(route.split(":id")[0]);
     }
-    return NextResponse.next();
+    return route === pathname;
+  });
+  const isUserRoute = userRoutes.includes(nextUrl.pathname);
+  const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
+  const isPremiumRoute = premiumRoutes.includes(nextUrl.pathname);
+
+  console.log("nextUrl", pathname);
+  console.log("[middleware] nextUrl", pathname);
+  console.log("[middleware] ENV", process.env.NODE_ENV);
+
+  // 根路由重定向
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/browse", nextUrl));
+  }
+  // 允许API认证路由
+  if (isApiAuthRoute) {
+    return;
+  }
+  // 如果未登录且不是公开路由，重定向到登录
+  if (!isLoggedIn && !isPublicRoute) {
+    return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
   }
 
-  // 根据用户的角色进行路由拦截
-  const { role } = token as { role: keyof typeof ROUTE_CONFIG }; // 类型断言
-  const config = ROUTE_CONFIG[role] ?? ROUTE_CONFIG.USER; // 使用空值合并运算符
-
-  // 如果用户没有访问权限，重定向到默认页面(禁止访问未授权的页面)
-  if (!config.allowedRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL(config.redirectPath, request.url));
+  // 角色检查
+  if (isLoggedIn) {
+    const role = req.auth?.user?.role;
+    if (
+      isUserRoute &&
+      role !== "USER" &&
+      role !== "PREMIUM" &&
+      role !== "ADMIN"
+    ) {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    // ADMIN路由检查
+    if (isAdminRoute && role !== "ADMIN") {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    // PREMIUM路由检查
+    if (isPremiumRoute && role !== "PREMIUM" && role !== "ADMIN") {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
   }
+});
 
-  // 如果用户访问登录页面，重定向到默认页面
-  if (pathname == "/home") {
-    return NextResponse.redirect(new URL(config.redirectPath, request.url));
-  }
-  // 如果用户已登录，继续处理请求
-  return NextResponse.next();
-}
-
-// 配置需要拦截的路由
 export const config = {
-  matcher: ["/dashboard/:path*", "/", "/library/:path*", "/notifications"], // 只拦截 /dashboard 下的路由
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

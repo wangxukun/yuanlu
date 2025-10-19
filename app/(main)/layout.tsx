@@ -8,6 +8,9 @@ import AuthProvider from "@/app/AuthProvider";
 import "@/app/lib/sessionCleaner";
 import SideNav from "@/components/main/sidenav";
 import PlayControlBar from "@/components/controls/PlayControlBar";
+import EmailCheckDialog from "@/components/auth/email-check-dialog";
+import SignInDialog from "@/components/auth/sign-in-dialog";
+import SignUpDialog from "@/components/auth/sign-up-dialog";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -32,6 +35,10 @@ export default function RootLayout({
             <div className="relative flex flex-1 flex-col h-screen pt-[58px]">
               {/* 顶部导航栏 */}
               <Header />
+              {/* ✅ 全局模态登录框 */}
+              <EmailCheckDialog />
+              <SignInDialog />
+              <SignUpDialog />
               {/* 主体内容区域 */}
               <main className="flex-1 bg-gray-50 overflow-y-auto">
                 <div className="w-full min-h-[calc(100vh-8rem)]">

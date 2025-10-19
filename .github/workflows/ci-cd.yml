@@ -81,7 +81,7 @@ jobs:
       - name: Deploy to Development Server
         run: |
           echo "Deploying to development server..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout develop && npm install && npx prisma generate && npm run build && pm2 restart all"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout develop && npm install -dev && npx prisma generate && npm run build && pm2 restart all"
         env:
           A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
           A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
@@ -127,7 +127,7 @@ jobs:
       - name: Deploy to Production Server
         run: |
           echo "Deploying to production server..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout master && npm install && npx prisma generate && npm run build && pm2 restart all"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.B_SSH_USERNAME }}@${{ secrets.B_ECS_HOST }} "cd /var/www/yuanlu/ && git pull && git checkout master && npm install -dev && npx prisma generate && npm run build && pm2 restart all"
         env:
           B_ECS_HOST: ${{ secrets.B_ECS_HOST }}
           B_SSH_USERNAME: ${{ secrets.B_SSH_USERNAME }}

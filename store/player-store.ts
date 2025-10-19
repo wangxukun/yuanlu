@@ -28,7 +28,7 @@ interface PlayerState {
   // 设置当前播放时间的函数
   setCurrentTime: (time: number) => void;
   // 设置当前播放集数的函数
-  setCurrentEpisode: (episode: Episode) => void;
+  setCurrentEpisode: (episode: Episode | null) => void;
   // 设置音频总时长的函数
   setDuration: (duration: number) => void;
   // 设置当前播放音频的URL的函数
@@ -55,7 +55,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setAudioRef: (ref: HTMLAudioElement) => set({ audioRef: ref }),
   setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
   setCurrentTime: (time: number) => set({ currentTime: time }),
-  setCurrentEpisode: (episode: Episode) => set({ currentEpisode: episode }),
+  setCurrentEpisode: (episode: Episode | null) =>
+    set({ currentEpisode: episode }),
   setDuration: (duration: number) => set({ duration: duration }),
   setCurrentAudioUrl: (url: string) => set({ currentAudioUrl: url }),
   volume: 1, // 默认最大音量 (0-1范围)

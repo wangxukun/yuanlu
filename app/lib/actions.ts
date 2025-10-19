@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { registerFormSchema } from "@/app/lib/form-schema";
 import { deleteObject, uploadFile } from "@/app/lib/oss";
 
@@ -37,14 +36,8 @@ export type PodcastState = {
   message?: string | null;
 };
 
-export type EpisodeState = {
-  message?: string | null;
-  status: number;
-};
-
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
-const UserLogin = registerFormSchema.omit({ auth_code: true, isAgree: true });
 
 /**
  * 用户注册
@@ -131,52 +124,6 @@ export const isSmsVerified = async (phone: string, auth_code: string) => {
 };
 
 /**
- * 用户登录
- * @param prevState
- * @param formData
- */
-export async function login(
-  prevState: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
-  const rawFormData = {
-    phone: formData.get("phone"),
-    password: formData.get("password"),
-  };
-  const validatedFields = UserLogin.safeParse(rawFormData);
-  if (!validatedFields.success) {
-    return new Promise((resolve) => {
-      resolve({
-        errors: validatedFields.error.flatten().fieldErrors,
-        message: "用户登录失败",
-      });
-    });
-  }
-  const { phone, password } = validatedFields.data;
-  // 调用注册 API
-  const res = await fetch(`${baseUrl}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    return new Promise((resolve) => {
-      resolve({
-        errors: {
-          phone: [data.message || "登录失败"],
-        },
-        message: "用户登录失败",
-      });
-    });
-  }
-  // 注册成功后，重定向到 /auth/signup-success 页面
-  // 更新成功后，刷新缓存并重定向到 /auth/login 页面
-  // revalidatePath("/auth/login");
-  redirect("/");
-}
-
-/**
  * 创建播客
  * @param prevState
  * @param formData
@@ -219,6 +166,7 @@ export async function createPodcast(
         coverUrl, // 使用OSS返回的URL
         coverFileName: uniqueFilename, // 存储在OSS中的文件名
         platform: formData.get("platform"),
+        tags: formData.getAll("tags"),
       }),
     });
     // const data = await res.json();
@@ -230,7 +178,7 @@ export async function createPodcast(
       });
     }
     if (res.ok) {
-      revalidatePath("/dashboard/podcasts/categories/batch-create");
+      revalidatePath("/dashboard/podcasts/create");
       // 先返回成功状态再执行重定向
       return {
         errors: {
@@ -241,7 +189,7 @@ export async function createPodcast(
           platform: "",
         },
         // 在podcasts页面中，通过message判断是否需要重定向
-        message: "redirect:/dashboard/podcasts/batch-create-success", // 添加特殊标识
+        message: "redirect:/dashboard/podcasts/create-success", // 添加特殊标识
       };
     }
   } catch (error) {

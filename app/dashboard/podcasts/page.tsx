@@ -1,27 +1,40 @@
-import { lusitana } from "@/components/fonts";
-import { CreatePodcastBtn } from "@/components/dashboard/buttons";
+"use client";
+import PodcastItem from "@/components/dashboard/podcasts/PodcastItem";
+import { Podcast } from "@/app/types/podcast";
+import React, { Suspense, useEffect, useState } from "react";
 import Search from "@/components/search";
-import React, { Suspense } from "react";
-import PodcastsTable from "@/components/dashboard/podcasts/podcastsTable";
+import { CreatePodcastBtn } from "@/components/dashboard/buttons";
 
-export default function Page() {
+export default function Home() {
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  useEffect(() => {
+    const fetchPodcasts = async () => {
+      const response = await fetch("/api/podcast/list");
+      const data = await response.json();
+      setPodcasts(data);
+    };
+    fetchPodcasts();
+  }, []);
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
-        <h1 className={`${lusitana.className} text-2xl`}>播客管理</h1>
+        <div className="breadcrumbs text-xl">
+          <ul>
+            <li>播客管理</li>
+          </ul>
+        </div>
       </div>
       <Suspense>
         <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
           <Search placeholder="搜索播客资源..." />
           <CreatePodcastBtn />
         </div>
-
-        <PodcastsTable />
+        <div className="space-y-4">
+          {podcasts.map((podcast) => (
+            <PodcastItem key={podcast.podcastid} podcast={podcast} />
+          ))}
+        </div>
       </Suspense>
-
-      {/*<div className="mt-5 flex w-full justify-center">*/}
-      {/*    <Pagination totalPages={totalPages} />*/}
-      {/*</div>*/}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import Search from "@/components/search";
 import React, { Suspense } from "react";
 import UsersTable from "@/components/dashboard/users/usersTable";
 
-export default function Page() {
+export default async function Page() {
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
