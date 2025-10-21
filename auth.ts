@@ -1,5 +1,5 @@
 import NextAuth, { Session, User } from "next-auth";
-import Credentials from "@auth/core/providers/credentials";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { ZodError } from "zod";
 import { signInSchema } from "@/app/lib/form-schema";
 import prisma from "@/app/lib/prisma";
@@ -10,7 +10,7 @@ import { AdapterSession } from "@auth/core/adapters";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   providers: [
-    Credentials({
+    CredentialsProvider({
       credentials: {
         email: { label: "email", type: "email" },
         password: { label: "password", type: "password" },
