@@ -8,7 +8,16 @@ import next from "@next/eslint-plugin-next";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "**/public/static/images/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/public/static/images/**",
+      "postcss.config.mjs",
+      "tailwind.config.mjs",
+      "next.config.js",
+      "*.config.js",
+      "package-lock.json",
+    ],
   },
   // 基础文件匹配
   { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
