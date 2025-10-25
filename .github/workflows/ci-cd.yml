@@ -90,10 +90,10 @@ jobs:
             npm run build && 
             # 添加构建验证
             if [ -d '.next' ]; then
-              pm2 restart all" &&
-              echo "Deployment successful!"
+              pm2 restart all &&
+              echo 'Deployment successful!'
             else
-              echo "Build failed!" &&
+              echo 'Build failed!' &&
               exit 1
             fi
           "
@@ -151,10 +151,10 @@ jobs:
             npm run build && 
             # 添加构建验证
             if [ -d '.next' ]; then
-              pm2 restart all" &&
-              echo "Deployment successful!"
+              pm2 restart all &&
+              echo 'Deployment successful!'
             else
-              echo "Build failed!" &&
+              echo 'Build failed!' &&
               exit 1
             fi
           "
