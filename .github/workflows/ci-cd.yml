@@ -85,7 +85,7 @@ jobs:
             cd /var/www/yuanlu/ && 
             git pull && 
             git checkout develop && 
-            npm ci && 
+            npm install && 
             npx prisma generate && 
             npm run build && 
             # 添加构建验证
@@ -146,7 +146,7 @@ jobs:
             cd /var/www/yuanlu/ && 
             git pull && 
             git checkout master && 
-            npm ci && 
+            npm install && 
             npx prisma generate && 
             npm run build && 
             # 添加构建验证
