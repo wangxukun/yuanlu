@@ -1,5 +1,5 @@
 "use client";
 
 export default function Charts() {
-  return <h1>favorite episodes</h1>;
+  return <h1 className="text-base-content">favorite episodes</h1>;
 }

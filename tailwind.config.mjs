@@ -29,5 +29,12 @@ export default {
       "pastel",
       "fantasy",
     ],
+    darkTheme: "dark", // 默认暗色主题名称
+    base: true,
+    styled: true,
+    utils: true,
+    logs: true,
+    rtl: false,
   },
+  darkMode: ["selector", '[data-theme="dark"]'],
 };

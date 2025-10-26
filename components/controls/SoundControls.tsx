@@ -20,7 +20,7 @@ export default function SoundControls() {
         step="0.01"
         value={volume}
         onChange={handleVolumeChange}
-        className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer
+        className="w-20 h-1 bg-base-300 rounded-lg appearance-none cursor-pointer
               [&::-webkit-slider-container]:bg-linear-to-r
               [&::-webkit-slider-container]:from-blue-200
               [&::-webkit-slider-container]:to-transparent"
