@@ -31,12 +31,12 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
       </div>
 
       {/* 分割线 */}
-      <div className="border-t border-gray-300 mb-4"></div>
+      <div className="border-t border-base-300 mb-4"></div>
 
       {/* 节目列表 */}
       {sortedEpisodes.map((episode) => (
         <Link key={episode.episodeid} href={`/episode/${episode.episodeid}`}>
-          <div className="group/item border-b border-gray-300 p-2 hover:bg-zinc-200 rounded-lg last:border-b-0">
+          <div className="group/item border-b border-base-300 p-2 hover:bg-base-200 rounded-lg last:border-b-0">
             <div className="flex items-center space-x-4">
               {/* 节目图片 */}
               <div className="relative w-24 h-24 rounded-lg overflow-hidden shrink-0">
@@ -49,9 +49,9 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
                 />
                 {/* 播放图标 */}
                 <div className="absolute bottom-5 left-5 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                  <div className="bg-black/50 rounded-full p-2 backdrop-blur-xs">
+                  <div className="bg-base-content/50 rounded-full p-2 backdrop-blur-xs">
                     <svg
-                      className="w-6 h-6 text-white"
+                      className="w-6 h-6 text-base-100"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                     >
@@ -62,21 +62,21 @@ export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
               </div>
               {/* 节目信息 */}
               <div className="flex-1 text-sm max-w-[900px]">
-                <p className="text-gray-500 text-xs">
+                <p className="text-base-content/70 text-xs">
                   {episode.publishAt.split("T")[0]}
                 </p>
-                <div className="text-gray-600 hover:underline text-base font-bold transition-colors">
+                <div className="text-base-content hover:underline text-base font-bold transition-colors">
                   {episode.title}
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <span className="text-xs text-gray-500 line-clamp-3">
+                  <span className="text-xs text-base-content/70 line-clamp-3">
                     {episode.description}
                   </span>
                 </div>
               </div>
               <div className="flex flex-1 items-center justify-center">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-base-content/70">
                   {formatTime(episode.duration)}
                 </span>
               </div>

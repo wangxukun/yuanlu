@@ -10,12 +10,12 @@ export default function SideNav() {
   const { data: session, status } = useSession();
 
   return (
-    <aside className="hidden sm:block w-[260px] border-r border-gray-200 h-screen flex flex-col justify-between">
+    <aside className="hidden sm:block w-[260px] border-r border-base-300 h-screen flex flex-col justify-between">
       <Link
         className="mb-2 flex h-32 flex-col items-center justify-center gap-5 rounded-md p-4 md:h-40"
         href="/"
       >
-        <div className="w-32 text-gray-600 md:w-40">
+        <div className="w-32 text-base-content md:w-48">
           <AcmeLogo />
         </div>
       </Link>
@@ -23,14 +23,14 @@ export default function SideNav() {
         <NavLinks />
         {status === "authenticated" && session && (
           <div className="flex flex-col space-y-2 pt-5">
-            <span className="hidden pl-7 text-xs md:block">
-              {session.user?.email?.split("@")[0]}
+            <span className="hidden pl-7 text-xs md:block text-base-content">
+              {session.user?.email ? session.user.email.split("@")[0] : "用户"}
               的资料库
             </span>
             <NavLinksLogined />
           </div>
         )}
-        <div className="hidden h-auto w-full grow rounded-md bg-gray-150 md:block"></div>
+        <div className="hidden h-auto w-full grow rounded-md bg-base-200 md:block"></div>
       </div>
     </aside>
   );

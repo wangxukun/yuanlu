@@ -90,21 +90,23 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
       <div className="flex-row max-w-xl p-6 items-start justify-between mb-4">
         <div className="">
           {/* 节目标题 */}
-          <h1 className="text-2xl font-bold text-gray-800">{podcast.title}</h1>
+          <h1 className="text-2xl font-bold text-base-content">
+            {podcast.title}
+          </h1>
           <Link
             href="#"
-            className="text-xl font-bold text-purple-700 hover:underline"
+            className="text-xl font-bold text-primary hover:underline"
           >
             {podcast.platform}
           </Link>
           {/* 节目信息（集数和发布者） */}
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-base-content/70">
             <div className="pt-2 pb-10">共{podcast.episode.length}集</div>
           </div>
         </div>
         {/* 节目描述 */}
         <div className="mb-4">
-          <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-base-content/80 leading-relaxed whitespace-pre-line">
             {podcast.description}
           </p>
         </div>
@@ -112,14 +114,14 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
           {/* 播放最新节目按钮 */}
           <button
             onClick={handlePlay}
-            className="btn btn-sm bg-[#622069] text-white border-[#591660]"
+            className="btn btn-sm bg-primary text-primary-content border-primary"
           >
             {isPlaying &&
             currentEpisode &&
             currentEpisode.episodeid === lastEpisode.episodeid ? (
-              <PauseIcon className="h-4 w-4 text-white" />
+              <PauseIcon className="h-4 w-4" />
             ) : (
-              <PlayIcon className="h-4 w-4 text-white" />
+              <PlayIcon className="h-4 w-4" />
             )}
 
             {currentEpisode === null ||
@@ -133,7 +135,7 @@ export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
           {session?.user && (
             <PodcastFavoriteBtn
               podcastid={podcast.podcastid}
-              userid={session.user.userid}
+              userid={session.user["userid"] || ""}
             />
           )}
         </div>

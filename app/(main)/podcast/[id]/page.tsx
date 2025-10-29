@@ -7,7 +7,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const podcast = await fetchPodcastById(id);
 
   return (
-    <main>
+    <main className="bg-base-100">
       <div className="flex flex-col justify-center ...">
         <div className="w-full flex-col p-2 pt-4 justify-self-end">
           <PodcastSummarize podcast={podcast} />
