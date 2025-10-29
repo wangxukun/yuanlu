@@ -12,7 +12,7 @@ export default function SoundControls() {
 
   return (
     <div className="flex flex-row items-center justify-center gap-4">
-      <SpeakerWaveIcon className="h-3 w-3 text-slate-500" />
+      <SpeakerWaveIcon className="h-3 w-3 text-base-content" />
       <input
         type="range"
         min="0"

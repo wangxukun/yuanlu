@@ -28,9 +28,15 @@ export default function ThemeSwitcher() {
       aria-label="切换主题"
     >
       {theme === "dark" ? (
-        <SunIcon className="w-5 h-5 text-yellow-400" />
+        <>
+          <SunIcon className="w-5 h-5 text-yellow-400" />
+          {/*<span className="text-secondary-foreground dark:text-muted-foreground">浅色</span>*/}
+        </>
       ) : (
-        <MoonIcon className="w-5 h-5 text-gray-700" />
+        <>
+          <MoonIcon className="w-5 h-5 text-indigo-800" />
+          {/*<span className="text-secondary-foreground dark:text-muted-foreground">深色</span>*/}
+        </>
       )}
     </button>
   );

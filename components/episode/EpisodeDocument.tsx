@@ -105,18 +105,18 @@ export default function EpisodeDocument({
   if (loading) {
     return (
       <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4">
+      <div className="bg-error/10 border-l-4 border-error p-4">
         <div className="flex">
           <div className="shrink-0">
             <svg
-              className="h-5 w-5 text-red-500"
+              className="h-5 w-5 text-error"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -128,7 +128,7 @@ export default function EpisodeDocument({
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-error-content">{error}</p>
           </div>
         </div>
       </div>
@@ -137,11 +137,11 @@ export default function EpisodeDocument({
 
   if (subtitles.length === 0) {
     return (
-      <div className="bg-gray-50 border-l-4 border-gray-500 p-4">
+      <div className="bg-base-200 border-l-4 border-base-300 p-4">
         <div className="flex">
           <div className="shrink-0">
             <svg
-              className="h-5 w-5 text-gray-500"
+              className="h-5 w-5 text-base-content/50"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -153,7 +153,7 @@ export default function EpisodeDocument({
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-gray-700">本集没有字幕</p>
+            <p className="text-sm text-base-content">本集没有字幕</p>
           </div>
         </div>
       </div>
@@ -162,43 +162,43 @@ export default function EpisodeDocument({
 
   return (
     <div className="w-full max-w-[1200px] rounded-lg overflow-hidden">
-      <div className="flex justify-between py-4 border-b border-gray-200">
-        <h3 className="text-base font-medium text-slate-500">剧集文稿</h3>
+      <div className="flex justify-between py-4 border-b border-base-200">
+        <h3 className="text-base font-medium text-base-content/70">剧集文稿</h3>
         {/* 新增翻译切换按钮 */}
         <button
           onClick={() => setShowTranslation(!showTranslation)}
-          className="btn btn-sm"
+          className="btn btn-sm btn-ghost"
         >
           <LanguageIcon className="h-4 w-4" />
           <span>{showTranslation ? "隐藏翻译" : "显示翻译"}</span>
         </button>
       </div>
-      <div className="divide-y divide-gray-200 select-none">
+      <div className="divide-y divide-base-200 select-none">
         {subtitles.map((subtitle) => (
           <div
             key={subtitle.id}
             onClick={() => handleSubtitleClick(subtitle)}
             className={`group/item py-2 transition-colors duration-150 ${
               activeSubtitleId === subtitle.id
-                ? "" // 高亮样式
-                : "px-7" // 默认悬停样式
+                ? "bg-primary/10" // 高亮样式
+                : "px-7 hover:bg-base-200" // 默认悬停样式
             }`}
           >
             <div
-              className={`text-gray-800 hover:cursor-pointer leading-relaxed ${
+              className={`text-base-content hover:cursor-pointer leading-relaxed ${
                 activeSubtitleId === subtitle.id ? "font-medium" : ""
               }`}
             >
               <p className="flex items-center">
                 {activeSubtitleId === subtitle.id && (
-                  <SunIcon className="inline-block h-4 w-4 mr-3" />
+                  <SunIcon className="inline-block h-4 w-4 mr-3 text-primary" />
                 )}
                 {subtitle.textEn}
-                <ArrowUturnLeftIcon className="invisible group-hover/item:visible inline-block h-4 w-4 ml-2" />
+                <ArrowUturnLeftIcon className="invisible group-hover/item:visible inline-block h-4 w-4 ml-2 text-base-content/30" />
               </p>
               {showTranslation && (
                 <p
-                  className={`text-slate-500 text-xs ${activeSubtitleId === subtitle.id ? "px-7" : ""}`}
+                  className={`text-base-content/70 text-xs ${activeSubtitleId === subtitle.id ? "px-7" : ""}`}
                 >
                   {subtitle.textZh}
                 </p>
@@ -209,7 +209,7 @@ export default function EpisodeDocument({
         {status === "unauthenticated" && (
           <div className="flex justify-center py-4">
             <button
-              className="btn btn-ghost"
+              className="btn btn-outline btn-primary"
               onClick={() =>
                 (
                   document.getElementById(

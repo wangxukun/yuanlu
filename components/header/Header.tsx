@@ -30,12 +30,12 @@ export default function Header() {
           {/* 左侧菜单切换按钮 */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 hover:bg-base-200 rounded-lg"
+            className="p-2 rounded-lg bg-base-200 hover:bg-base-300"
           >
             {isMenuOpen ? (
-              <XMarkIcon className="w-7 h-7 text-primary" />
+              <XMarkIcon className="w-7 h-7 text-base-content" />
             ) : (
-              <EqualsIcon className="w-7 h-7 text-primary" />
+              <EqualsIcon className="w-7 h-7 text-base-content" />
             )}
           </button>
 
@@ -47,7 +47,7 @@ export default function Header() {
           </Link>
 
           {/* 右侧主题切换按钮和登录按钮（仅移动端显示） */}
-          <div className="ml-auto sm:hidden flex items-center">
+          <div className="ml-auto sm:hidden flex items-center space-x-2">
             <ThemeSwitcher />
             <LoginHomeBtn />
           </div>
@@ -66,7 +66,7 @@ export default function Header() {
         >
           <div className="bg-base-100 h-[calc(100vh-48px)]">
             {/* 菜单内容 */}
-            <div className="p-4">
+            <div className="p-4 border-t border-base-200">
               {/* 这里放置菜单项*/}
               <Menus onLinkClick={closeMenu} />
             </div>
@@ -74,7 +74,7 @@ export default function Header() {
         </div>
       </div>
       {/* 桌面浏览器下Header */}
-      <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b bg-base-100 z-50">
+      <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b border-base-300 bg-base-100 z-50">
         <div className="flex items-center justify-between h-full w-full">
           {/* 左侧播放、回退、前进按钮 */}
           <div className="flex-[30%] min-w-0 flex items-center">
@@ -98,7 +98,9 @@ export default function Header() {
               {status === "authenticated" &&
                 (session as Session).user.role === "ADMIN" && (
                   <Link href="/dashboard" className="flex-1 flex">
-                    <div className="w-20 text-xs text-base-content">控制台</div>
+                    <div className="w-20 text-xs text-base-content bg-base-200 hover:bg-base-300 px-2 py-1 rounded-lg transition-colors">
+                      控制台
+                    </div>
                   </Link>
                 )}
               {/* 登录按钮 */}
