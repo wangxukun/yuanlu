@@ -29,16 +29,16 @@ export default function List({ title, items }: ListProps) {
   };
 
   return (
-    <div className="bg-gray-50 rounded-xl p-6 w-full max-w-7xl">
+    <div className="bg-base-100 rounded-xl p-6 w-full max-w-7xl">
       {/* 标题行 */}
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-lg font-bold text-slate-500">{title}</h2>
+        <h2 className="text-lg font-bold text-base-content">{title}</h2>
 
         {showMoreLink && (
           <a
             href={`/series/${encodeURIComponent(title)}`}
             onClick={handleMoreClick}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center space-x-2 text-base-content hover:text-primary transition-colors"
           >
             <span className="text-sm font-medium">更多</span>
             <svg
@@ -64,7 +64,7 @@ export default function List({ title, items }: ListProps) {
             key={index}
             role="button"
             onClick={() => handleItemClick(item.podcastid)}
-            className="group relative bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+            className="group relative bg-base-100 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer border border-base-200"
           >
             {/* 图片容器 */}
             <div className="relative h-48 w-48 mb-4 rounded-md overflow-hidden">
@@ -92,10 +92,10 @@ export default function List({ title, items }: ListProps) {
 
             {/* 内容区块 */}
             <div className="space-y-2">
-              <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
+              <h3 className="text-base font-semibold text-base-content line-clamp-2">
                 {item.title}
               </h3>
-              <p className="text-sm text-gray-500">{item.platform}</p>
+              <p className="text-sm text-base-content/70">{item.platform}</p>
             </div>
           </div>
         ))}

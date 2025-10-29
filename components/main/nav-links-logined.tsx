@@ -40,7 +40,7 @@ export default function NavLinksLogined() {
             className={clsx(
               "flex ml-6 mr-6 h-10 grow items-center justify-center gap-2 rounded-md p-3 text-sm font-medium md:flex-none md:justify-start md:p-2 md:px-3",
               {
-                "bg-gray-200 text-gray-600": pathname === link.href,
+                "bg-base-200 text-base-content": pathname === link.href,
               },
             )}
           >

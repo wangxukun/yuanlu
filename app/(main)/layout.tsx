@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import React from "react";
 import { lusitana } from "@/components/fonts";
-import "../globals.css";
+import "@/app/globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import AuthProvider from "@/app/AuthProvider";
@@ -11,6 +11,7 @@ import PlayControlBar from "@/components/controls/PlayControlBar";
 import EmailCheckDialog from "@/components/auth/email-check-dialog";
 import SignInDialog from "@/components/auth/sign-in-dialog";
 import SignUpDialog from "@/components/auth/sign-up-dialog";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -23,36 +24,44 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthProvider>
-      <html lang="en">
-        <body
-          className={`${lusitana.className} antialiased flex flex-col bg-gray-100 h-full`}
-        >
-          <div className="flex">
-            {/* 左侧导航栏 */}
-            <SideNav />
-            {/* 右侧内容区域 */}
-            <div className="relative flex flex-1 flex-col h-screen pt-[58px]">
-              {/* 顶部导航栏 */}
-              <Header />
-              {/* ✅ 全局模态登录框 */}
-              <EmailCheckDialog />
-              <SignInDialog />
-              <SignUpDialog />
-              {/* 主体内容区域 */}
-              <main className="flex-1 bg-gray-50 overflow-y-auto">
-                <div className="w-full min-h-[calc(100vh-8rem)]">
-                  {children}
-                </div>
-                {/* 底部页脚 */}
-                <Footer />
-              </main>
-              {/* 底部播放器控制栏 */}
-              <PlayControlBar />
+    <html lang="en">
+      <body
+        suppressHydrationWarning
+        className={`${lusitana.className} antialiased flex flex-col h-full`}
+      >
+        <AuthProvider>
+          <ThemeProvider
+            attribute="data-theme"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex">
+              {/* 左侧导航栏 */}
+              <SideNav />
+              {/* 右侧内容区域 */}
+              <div className="relative flex flex-1 flex-col h-screen pt-[58px]">
+                {/* 顶部导航栏 */}
+                <Header />
+                {/* ✅ 全局模态登录框 */}
+                <EmailCheckDialog />
+                <SignInDialog />
+                <SignUpDialog />
+                {/* 主体内容区域 */}
+                <main className="flex-1 bg-base-100 overflow-y-auto">
+                  <div className="w-full min-h-[calc(100vh-8rem)]">
+                    {children}
+                  </div>
+                  {/* 底部页脚 */}
+                  <Footer />
+                </main>
+                {/* 底部播放器控制栏 */}
+                <PlayControlBar />
+              </div>
             </div>
-          </div>
-        </body>
-      </html>
-    </AuthProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

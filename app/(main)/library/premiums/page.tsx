@@ -1,7 +1,7 @@
 export default function page() {
   return (
-    <div>
-      <h1>Premiums</h1>
+    <div className="bg-base-100 flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-(family-name:--font-geist-sans)">
+      <h1 className="text-base-content">你的订阅</h1>
     </div>
   );
 }

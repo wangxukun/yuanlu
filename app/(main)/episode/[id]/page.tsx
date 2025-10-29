@@ -12,7 +12,7 @@ export default async function EpisodePage({
   const subtitles = await mergeSubtitles(episode);
 
   return (
-    <div className="flex flex-col p-6 mt-0 w-full items-center justify-center mx-auto">
+    <div className="flex flex-col p-6 mt-0 w-full items-center justify-center mx-auto bg-base-100">
       <EpisodeSummarize episode={episode} />
       <EpisodeDocument subtitle={subtitles} episode={episode} />
     </div>
