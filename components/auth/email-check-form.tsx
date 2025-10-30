@@ -3,132 +3,127 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema, SignInFormValues } from "@/app/lib/form-schema";
+import { signInSchema } from "@/app/lib/form-schema";
 
-// 主表单组件
 const EmailCheckForm = () => {
   const setCheckedEmail = useAuthStore((state) => state.setCheckedEmail);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formValues, setFormValues] = useState<SignInFormValues>({
-    email: "",
-    password: "",
-  });
   const router = useRouter();
   const { data: session } = useSession();
 
+  // 👇 新增：ref 引用输入框
+  // const inputRef = useRef<HTMLInputElement>(null);
+
+  // 👇 组件渲染后自动聚焦
+  // useEffect(() => {
+  //   // 使用 setTimeout 确保 DaisyUI 动画已完成
+  //   const timer = setTimeout(() => {
+  //     inputRef.current?.focus();
+  //   }, 100);
+  //   return () => clearTimeout(timer);
+  // }, []);
+
   useEffect(() => {
-    if (session) {
-      router.push("/");
-    }
-  }, []);
+    if (session) router.push("/");
+  }, [session]);
 
   const checkUserExists = async () => {
     try {
-      const response = await fetch("/api/auth/check-user", {
+      const res = await fetch("/api/auth/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      return (await response.json()).exists;
+      return (await res.json()).exists;
     } catch (err) {
-      setError(`服务不可用，请稍后重试:${err}`);
+      setError(`服务不可用，请稍后重试: ${err}`);
       return false;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 使用 SignInFormValues 的 email 验证规则
     try {
-      // 使用 SignInFormValues 的 email 验证规则,设置一个可以匹配的password
-      const result = signInSchema.safeParse({ email, password: "1111xxxx" });
-      console.log("EMAIL验证结果：", result);
-      console.log("FormValues: ", formValues);
+      const result = signInSchema.safeParse({ email, password: "xxxx1111" });
       if (!result.success) {
-        const error = result.error.errors[0];
-        setError(error.message);
+        setError(result.error.errors[0].message);
         return;
       }
-    } catch (err) {
-      console.error("邮箱验证失败：", err);
+    } catch {
       setError("请输入有效的邮箱地址");
       return;
     }
 
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
+    await new Promise((r) => setTimeout(r, 800));
     const exists = await checkUserExists();
     setCheckedEmail(email);
     setLoading(false);
-    const emailCheckBox = document.getElementById(
+
+    const modal = document.getElementById(
       "email_check_modal_box",
     ) as HTMLDialogElement;
-    if (emailCheckBox) {
-      emailCheckBox.close();
-    }
-    console.log("EMAIL是否已存在：", exists);
-    if (exists) {
-      const signUpBox = document.getElementById(
-        "sign_in_modal_box",
-      ) as HTMLDialogElement;
-      if (signUpBox) {
-        signUpBox.showModal();
-      }
-    } else {
-      const signUpBox = document.getElementById(
-        "sign_up_modal_box",
-      ) as HTMLDialogElement;
-      if (signUpBox) {
-        signUpBox.showModal();
-      }
-    }
+    modal?.close();
+
+    const nextModal = document.getElementById(
+      exists ? "sign_in_modal_box" : "sign_up_modal_box",
+    ) as HTMLDialogElement;
+    nextModal?.showModal();
   };
 
   return (
-    <div className="card bg-base-100 max-w-md mx-auto p-6">
+    <div className="card">
       <div className="card-body">
-        <h2 className="card-title">继续输入邮箱地址</h2>
-        <p className="mb-6">已有账户可直接登录，新用户我们将帮助您创建账户</p>
+        <h2 className="card-title text-lg font-bold mb-2">请输入邮箱地址</h2>
+        <p className="text-sm text-base-content/70 mb-4">
+          已有账户可直接登录，新用户我们将帮助您创建账户。
+        </p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-control w-full">
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">邮箱地址</legend>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="form-control">
+            <label className="input w-full">
+              <svg
+                className="h-[1em] opacity-50 size-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25"
+                />
+              </svg>
+
               <input
+                // ref={inputRef} // 👈 绑定 ref
                 type="email"
-                className="input validator w-full"
-                value={email}
-                required
+                className="input input-bordered w-full grow focus:outline-none"
                 placeholder="your@email.com"
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setFormValues((prev) => ({ ...prev, email: e.target.value }));
-                }}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              {error && (
-                <p className="label table-text-alt text-error">{error}</p>
-              )}
-            </fieldset>
+            </label>
+            {error && <p className="text-error text-sm mt-1">{error}</p>}
           </div>
 
-          <div className="card-actions w-full mt-8">
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="loading loading-spinner text-primary loading-sm"></span>
-              ) : (
-                "继续"
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="btn btn-primary w-full"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner text-primary loading-sm"></span>
+            ) : (
+              "继续"
+            )}
+          </button>
         </form>
-
-        <p className="text-sm text-gray-500 mt-4">{/* 隐私声明保持不变 */}</p>
       </div>
     </div>
   );
