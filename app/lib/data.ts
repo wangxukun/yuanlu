@@ -106,9 +106,7 @@ export async function fetchPodcasts(): Promise<Podcast[]> {
     return [];
   }
 
-  console.log("开始获取播客列表"); // 这行也应该被看到
   try {
-    console.log("准备请求URL:", `${baseUrl}/api/podcast/list`);
     const res = await fetch(`${baseUrl}/api/podcast/list`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -119,7 +117,6 @@ export async function fetchPodcasts(): Promise<Podcast[]> {
       throw new Error("Failed to fetch podcasts");
     }
     const data = await res.json();
-    console.log("Fetched podcasts:", data);
     return data;
   } catch (error) {
     console.error("获取播客列表失败:", error);
