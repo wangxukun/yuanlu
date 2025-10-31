@@ -1,22 +1,30 @@
 "use client";
 import EmailCheckForm from "@/components/auth/email-check-form";
 import React, { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function EmailCheckDialog() {
   const [modalKey, setModalKey] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { data: session, status } = useSession();
 
   const handleClose = () => {
     setModalKey((prev) => prev + 1);
   };
 
   useEffect(() => {
+    // 如果已经登录，则不显示对话框
+    if (status === "authenticated") {
+      console.log(session?.user?.email + "已经登录");
+      return;
+    }
+
     const dialog = dialogRef.current;
     if (!dialog) return;
 
     const handleFocus = () => {
       // 增加延迟确保DOM完全更新后再设置焦点
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         const emailInput = dialog.querySelector(
           "input[type='email']",
         ) as HTMLInputElement;
@@ -25,6 +33,7 @@ export default function EmailCheckDialog() {
           emailInput.select(); // 选中所有文本，提升用户体验
         }
       }, 100);
+      return () => clearTimeout(timer); // 清理定时器
     };
 
     // 监听 showModal 后的聚焦
@@ -35,7 +44,11 @@ export default function EmailCheckDialog() {
 
     // 组件卸载时断开观察器
     return () => observer.disconnect();
-  }, []);
+  }, [status]);
+
+  if (status === "authenticated") {
+    return null;
+  }
 
   return (
     <dialog id="email_check_modal_box" className="modal" ref={dialogRef}>
