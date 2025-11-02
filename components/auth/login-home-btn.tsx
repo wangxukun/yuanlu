@@ -10,10 +10,10 @@ export default function LoginHomeBtn() {
     return (
       <button
         // className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
-        className="btn btn-outline btn-sm flex items-center gap-2"
+        className="btn btn-ghost sm:btn-primary flex items-center gap-2"
         onClick={() => signOut({ redirectTo: "/home" })}
       >
-        <UserCircleIcon className="w-5 h-5" />
+        <UserCircleIcon className="w-5 h-5 hidden sm:block" />
         <span className="text-sm font-medium text-gray-700">退出</span>
       </button>
     );
@@ -23,7 +23,7 @@ export default function LoginHomeBtn() {
     <>
       <button
         // className="bg-purple-700 w-[80px] h-7 text-white flex items-center justify-center space-x-1 px-3 py-1 hover:drop-shadow-md rounded-lg transition-colors"
-        className="btn btn-primary btn-sm flex items-center gap-1"
+        className="btn btn-ghost btn-sm flex items-center gap-1"
         onClick={() => {
           const modal = document.getElementById(
             "email_check_modal_box",
@@ -33,7 +33,7 @@ export default function LoginHomeBtn() {
           }
         }}
       >
-        <UserIcon className="w-4 h-4" />
+        <UserIcon className="w-4 h-4 hidden sm:block" />
         登录
       </button>
     </>

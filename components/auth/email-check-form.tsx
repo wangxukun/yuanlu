@@ -103,7 +103,7 @@ const EmailCheckForm = () => {
                 // ref={inputRef} // 👈 绑定 ref
                 type="email"
                 className="input input-bordered w-full grow focus:outline-none"
-                placeholder="your@email.com"
+                placeholder="你的邮箱地址"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
