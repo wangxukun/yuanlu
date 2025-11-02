@@ -50,7 +50,11 @@ export default function SignInForm() {
         email: checkedEmail,
         password,
       });
-      if (result.ok) {
+      if (result?.error) {
+        setError("密码错误，请重试");
+        return;
+      }
+      if (result?.ok) {
         (
           document.getElementById("sign_in_modal_box") as HTMLDialogElement
         ).close();
@@ -73,54 +77,59 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="card bg-base-100 max-w-md mx-auto p-6">
+    <div className="card">
       <div className="card-body">
-        <h2 className="card-title text-2xl mb-4">欢迎回来</h2>
+        <h2 className="card-title text-lg font-bold mb-2">欢迎回来</h2>
+        <p className="text-2xl text-base-content/70 mb-4">{checkedEmail}</p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-control w-full">
-            {/* 邮箱显示 */}
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">邮箱地址</legend>
-              <input
-                type="email"
-                className="input w-full"
-                value={checkedEmail}
-                placeholder="your@email.com"
-                readOnly
-              />
-            </fieldset>
-
-            {/* 密码输入 */}
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">密码</legend>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="form-control">
+            <label className="input w-full">
+              <svg
+                className="h-[1em] opacity-50 size-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
+                />
+              </svg>
               <input
                 type="password"
-                className="input input-bordered w-full"
+                className="input input-bordered w-full grow focus:outline-none"
+                placeholder="请输入密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 ref={passwordInputRef}
               />
-              {error && (
-                <p className="label table-text-alt text-error">{error}</p>
-              )}
-            </fieldset>
+            </label>
+            {error && <p className="text-error text-sm mt-1">{error}</p>}
           </div>
 
-          <div className="card-actions mt-8 justify-end">
-            <button
-              type="submit"
-              className={`btn btn-primary${loading ? "loading" : ""}`}
-              disabled={loading}
-            >
-              登录
-            </button>
+          <div className="flex gap-2">
             <button
               onClick={onBack}
-              className="btn btn-accent btn-outline btn-md self-start"
+              className="btn btn-outline flex-1"
+              type="button"
             >
               返回
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary flex-1"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                "登录"
+              )}
             </button>
           </div>
         </form>
