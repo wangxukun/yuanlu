@@ -44,8 +44,8 @@ export default function SignUpForm() {
   };
 
   // 发送验证码
-  const handleSendCode = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       setVerificationCodeError("");
       setPasswordError("");
@@ -142,88 +142,113 @@ export default function SignUpForm() {
   };
 
   return (
-    <div className="card bg-base-100 max-w-md mx-auto p-6">
+    <div className="card">
       <div className="card-body">
-        <h2 className="card-title text-2xl mb-4">创建账户</h2>
+        <h2 className="card-title text-lg font-bold mb-2">创建账户</h2>
+        <p className="text-2xl text-base-content/70 mb-4">{checkedEmail}</p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-control w-full">
-            {/* 邮箱显示 */}
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">邮箱地址</legend>
-              <input
-                type="email"
-                className="input w-full"
-                value={checkedEmail}
-                placeholder="your@email.com"
-                readOnly
-              />
-            </fieldset>
-
-            {/* 密码输入 */}
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">密码</legend>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 密码输入 */}
+          <div className="form-control">
+            <label className="input w-full">
+              <svg
+                className="h-[1em] opacity-50 size-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
+                />
+              </svg>
               <input
                 type="password"
-                className="input input-bordered w-full"
+                className="grow"
+                placeholder="请输入密码"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setFormValues({ ...formValues, password: e.target.value });
+                  if (passwordError) setPasswordError(""); // 清除错误信息
                 }}
                 required
               />
-              {passwordError && (
-                <p className="label table-text-alt text-error">
-                  {passwordError}
-                </p>
-              )}
-            </fieldset>
+            </label>
+            {passwordError && (
+              <p className="text-error text-sm mt-1">{passwordError}</p>
+            )}
           </div>
-          <fieldset className="fieldset">
-            {/* 验证码输入 */}
-            <legend className="fieldset-legend">验证码</legend>
-            <div className="flex gap-2 items-center">
+
+          {/* 验证码输入 */}
+          <div className="form-control flex justify-between">
+            <label className="input w-48">
+              <svg
+                className="h-[1em] opacity-50 size-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
               <input
                 type="text"
-                className="input input-bordered flex-1"
+                className="grow"
                 placeholder="6位数字验证码"
                 value={verificationCode}
-                onChange={(e) =>
+                onChange={(e) => {
                   setVerificationCode(
                     e.target.value.replace(/\D/g, "").slice(0, 6),
-                  )
-                }
+                  );
+                  if (verificationCodeError) setVerificationCodeError(""); // 清除错误信息
+                }}
                 required
               />
+            </label>
+            <div className="flex justify-between items-center mt-1">
               <button
                 onClick={handleSendCode}
-                className={`btn btn-md ${countdown > 0 ? "btn-disabled" : ""}`}
+                className={`btn btn-sm ${countdown > 0 ? "btn-disabled" : "btn-outline"}`}
                 disabled={countdown > 0}
               >
                 {countdown > 0 ? `${countdown}秒后重发` : "获取验证码"}
               </button>
+              {codeSent && !verificationCodeError && (
+                <span className="text-success text-sm">验证码已发送至邮箱</span>
+              )}
             </div>
-            {codeSent && !verificationCodeError && (
-              <p className="label-text-alt text-success">验证码已发送至邮箱</p>
-            )}
             {verificationCodeError && (
-              <p className="text-error mt-2">{verificationCodeError}</p>
+              <p className="text-error text-sm mt-1">{verificationCodeError}</p>
             )}
-          </fieldset>
-          <div className="card-actions mt-8 justify-end">
-            <button
-              type="submit"
-              className={`btn btn-primary${loading ? "loading" : ""}`}
-              disabled={loading}
-            >
-              注册
-            </button>
+          </div>
+
+          <div className="flex gap-2">
             <button
               onClick={onBack}
-              className="btn btn-accent btn-outline btn-md self-start"
+              className="btn btn-outline flex-1"
+              type="button"
             >
               返回
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary flex-1"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                "注册"
+              )}
             </button>
           </div>
         </form>

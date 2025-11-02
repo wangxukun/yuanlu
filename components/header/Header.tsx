@@ -5,12 +5,12 @@ import PlayControls from "@/components/controls/PlayControls";
 import SoundControls from "@/components/controls/SoundControls";
 import { useState } from "react";
 import Link from "next/link";
-import AcmeLogo from "@/components/acme-logo";
 import { EqualsIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Menus from "@/components/main/menus";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import ThemeSwitcher from "@/components/theme-switcher";
+import PhoneAcmeLogo from "@/components/phone-acme-logo";
 
 export default function Header() {
   const { data: session, status } = useSession();
@@ -42,7 +42,7 @@ export default function Header() {
           {/* 中间 Logo */}
           <Link href="/" className="flex-1 flex justify-center">
             <div className="w-32 text-base-content">
-              <AcmeLogo />
+              <PhoneAcmeLogo />
             </div>
           </Link>
 
@@ -73,6 +73,7 @@ export default function Header() {
           </div>
         </div>
       </div>
+
       {/* 桌面浏览器下Header */}
       <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b border-base-300 bg-base-100 z-50">
         <div className="flex items-center justify-between h-full w-full">
@@ -98,7 +99,7 @@ export default function Header() {
               {status === "authenticated" &&
                 (session as Session).user.role === "ADMIN" && (
                   <Link href="/dashboard" className="flex-1 flex">
-                    <div className="w-20 text-xs text-base-content bg-base-200 hover:bg-base-300 px-2 py-1 rounded-lg transition-colors">
+                    <div className="w-20 text-xs text-base-content px-2 py-1 rounded-lg transition-colors">
                       控制台
                     </div>
                   </Link>
