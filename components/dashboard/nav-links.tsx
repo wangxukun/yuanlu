@@ -15,12 +15,12 @@ import clsx from "clsx";
 const links = [
   { name: "信息概况", href: "/dashboard", icon: HomeIcon },
   {
-    name: "播客管理",
+    name: "合集管理",
     href: "/dashboard/podcasts",
     icon: DocumentDuplicateIcon,
   },
   {
-    name: "剧集管理",
+    name: "音频管理",
     href: "/dashboard/episodes",
     icon: DocumentDuplicateIcon,
   },
