@@ -1,42 +1,140 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
+// 音频文件信息接口
+interface FileInfo {
+  name: string;
+  type: string;
+  size: number;
+  lastModified: number;
+}
+
 export default function Page() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // 检查是否有存储的文件信息
-    const storedFileInfo = sessionStorage.getItem("uploadedAudioFileInfo");
-    if (storedFileInfo) {
-      const fileInfo = JSON.parse(storedFileInfo);
-      setFileName(fileInfo.name);
-      // 模拟上传过程
-      simulateUpload();
+    // 确保只在浏览器环境中运行
+    if (typeof window !== "undefined") {
+      // 检查是否已经上传成功
+      const uploadStatus = sessionStorage.getItem("uploadCompleted");
+      if (uploadStatus === "true") {
+        // 如果已经上传成功，则设置进度为100%并返回
+        setUploadProgress(100);
+        setIsUploading(false);
+        return;
+      }
+
+      // 检查是否有存储的文件信息
+      const storedFileInfo = sessionStorage.getItem("uploadedAudioFileInfo");
+      // 获取文件路径
+      const url = sessionStorage.getItem("uploadedAudioFileUrl");
+      if (storedFileInfo && url) {
+        // 解析文件信息
+        const fileInfo = JSON.parse(storedFileInfo);
+        setFileName(fileInfo.name);
+        setFileInfo(fileInfo);
+        setFileUrl(url);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // 当fileUrl和fileInfo都准备好后开始上传
+    if (fileUrl && fileInfo) {
+      uploadFile(fileUrl, fileInfo);
     }
 
     // 清理函数，组件卸载时释放创建的对象 URL
     return () => {
-      const fileUrl = sessionStorage.getItem("uploadedAudioFileUrl");
-      if (fileUrl) {
+      if (typeof window !== "undefined" && fileUrl) {
         URL.revokeObjectURL(fileUrl);
+        sessionStorage.removeItem("uploadedAudioFileInfo");
+        sessionStorage.removeItem("uploadedAudioFileUrl");
       }
     };
-  }, []);
+  }, [fileUrl, fileInfo]);
 
-  const simulateUpload = () => {
+  const uploadFile = async (fileUrl: string, fileInfo: FileInfo) => {
+    // 设置上传中
     setIsUploading(true);
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 10) + 1;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
+    // 设置上传进度为0
+    setUploadProgress(0);
+    try {
+      // 尝试访问 Blob URL
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        console.error("Blob URL 已失效，请重新选择文件上传");
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("uploadedAudioFileInfo");
+          sessionStorage.removeItem("uploadedAudioFileUrl");
+        }
+        setFileName("");
         setIsUploading(false);
+        return;
       }
-      setUploadProgress(progress);
-    }, 200);
+      const blob = await response.blob();
+      const file = new File([blob], fileInfo.name, { type: fileInfo.type });
+
+      // 模拟上传进度
+      const simulateUploadProgress = () => {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.floor(Math.random() * 10);
+          if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+          }
+          setUploadProgress(progress);
+        }, 200);
+      };
+
+      simulateUploadProgress();
+
+      // 等待模拟上传完成后再发送实际请求
+      setTimeout(async () => {
+        try {
+          // 创建FormData对象
+          const formData = new FormData();
+          formData.append("audio", file);
+          // 发送POST请求
+          const uploadResponse = await fetch(
+            "/api/podcast/upload-episode-audio",
+            {
+              method: "POST",
+              body: formData,
+            } as RequestInit,
+          );
+
+          if (uploadResponse.ok) {
+            // 获取响应数据
+            const { status, message } = await uploadResponse.json();
+            if (status === 200) {
+              // 标记上传完成
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("uploadCompleted", "true");
+              }
+              console.log(message);
+            } else {
+              throw new Error(`上传失败: ${message}`);
+            }
+          } else {
+            // 上传失败
+            throw new Error(`服务器返回错误：${uploadResponse.status}`);
+          }
+        } catch (error) {
+          console.error("上传音频文件失败", error);
+        } finally {
+          setIsUploading(false);
+        }
+      }, 2500); // 模拟上传时间
+    } catch (error) {
+      console.error("上传音频文件失败", error);
+      setIsUploading(false);
+    }
   };
 
   return (

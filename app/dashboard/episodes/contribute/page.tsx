@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
-  // const podcasts = await fetchPodcasts();
   const audioInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -32,8 +31,7 @@ export default function Page() {
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  console.log("选择的文件:", file);
-                  // 只存储文件基本信息到 sessionStorage
+                  // 存储文件基本信息到 sessionStorage
                   sessionStorage.setItem(
                     "uploadedAudioFileInfo",
                     JSON.stringify({
@@ -48,6 +46,7 @@ export default function Page() {
                   const fileUrl = URL.createObjectURL(file);
                   // 将文件 URL 存储到 sessionStorage
                   sessionStorage.setItem("uploadedAudioFileUrl", fileUrl);
+                  sessionStorage.setItem("uploadCompleted", "false");
 
                   // 跳转到创建页面
                   router.push("/dashboard/episodes/create");
