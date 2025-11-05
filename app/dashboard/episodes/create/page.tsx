@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { MusicalNoteIcon } from "@heroicons/react/24/outline";
+import { deleteFile } from "@/app/lib/actions";
 
 // 音频文件信息接口
 interface FileInfo {
@@ -22,6 +23,8 @@ export default function Page() {
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
+  const [uploadFileResponse, setUploadFileResponse] =
+    useState<UploadFileResponse | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [uploadedSize, setUploadedSize] = useState(0);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +117,8 @@ export default function Page() {
             if (xhr.status === 200) {
               try {
                 const response = JSON.parse(xhr.responseText);
+                setUploadFileResponse(response);
+                console.log("上传成功:", response);
                 resolve(response);
               } catch (e) {
                 console.error("解析响应失败:", e);
@@ -144,17 +149,15 @@ export default function Page() {
 
       // 执行上传
       const result = await uploadWithProgress();
+      setUploadFileResponse(result);
 
       // 处理上传结果
-      const { status, message, audioFileName, audioUrl } = result;
+      const { status, message } = result;
       if (status === 200) {
         // 标记上传完成
         if (typeof window !== "undefined") {
           sessionStorage.setItem("uploadCompleted", "true");
         }
-        console.log(message);
-        console.log("audioFileName:", audioFileName);
-        console.log("audioUrl:", audioUrl);
       } else {
         throw new Error(`上传失败: ${message}`);
       }
@@ -238,7 +241,34 @@ export default function Page() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    console.log("文件名:", file.name);
+                    // 更新文件名
+                    setFileName(file.name);
+                    // 创建一个 URL 对象用于传递文件数据
+                    const fileUrl = URL.createObjectURL(file);
+                    const newFileInfo: FileInfo = {
+                      name: file.name,
+                      type: file.type,
+                      size: file.size,
+                      lastModified: file.lastModified,
+                    };
+
+                    if (
+                      uploadFileResponse &&
+                      uploadFileResponse.audioFileName
+                    ) {
+                      // 删除原已上传文件
+                      deleteFile(uploadFileResponse.audioFileName).then(
+                        ({ status, message }) => {
+                          if (status === 200) {
+                            console.log(message);
+                            // 上传新文件
+                            uploadFile(fileUrl, newFileInfo);
+                          } else {
+                            console.error(message);
+                          }
+                        },
+                      );
+                    }
                   }
                 }}
               />
