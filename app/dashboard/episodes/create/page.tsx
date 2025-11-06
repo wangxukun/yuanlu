@@ -3,8 +3,15 @@
 import UploadAudio, {
   UploadFileResponse,
 } from "@/components/dashboard/episodes/uploadAudio";
+import UploadCover, {
+  UploadCoverResponse,
+} from "@/components/dashboard/episodes/uploadCover";
 export default function Page() {
-  const handleUploadComplete = (response: UploadFileResponse) => {
+  const handleUploadAudioComplete = (response: UploadFileResponse) => {
+    console.log("父组件接收到上传结果：", response);
+    // ✅ 这里可以进行后续操作，比如保存数据库、跳转页面等
+  };
+  const handleUploadCoverComplete = (response: UploadCoverResponse) => {
     console.log("父组件接收到上传结果：", response);
     // ✅ 这里可以进行后续操作，比如保存数据库、跳转页面等
   };
@@ -20,7 +27,8 @@ export default function Page() {
         </ul>
       </div>
       <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
-        <UploadAudio onUploadComplete={handleUploadComplete} />
+        <UploadAudio onUploadComplete={handleUploadAudioComplete} />
+        <UploadCover onUploadComplete={handleUploadCoverComplete} />
       </div>
     </div>
   );
