@@ -26,7 +26,7 @@ interface UploadCoverProps {
 export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [fileName, setFileName] = useState("");
+  // const [fileName, setFileName] = useState("");
   const [uploadCoverResponse, setUploadCoverResponse] =
     useState<UploadCoverResponse | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +79,7 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
     }
 
     // 清除状态
-    setFileName("");
+    // setFileName("");
     setUploadCoverResponse(null);
     setPreviewUrl("/static/images/episode-light.png");
   };
@@ -95,7 +95,7 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
       reader.readAsDataURL(file);
 
       // 设置文件信息
-      setFileName(file.name);
+      // setFileName(file.name);
 
       // 如果已有上传的文件，先删除旧文件
       if (uploadCoverResponse?.coverFileName) {
@@ -116,10 +116,8 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-6">上传封面图片</h2>
-
-      <div className="flex flex-col items-center">
+    <div className="p-4">
+      <div className="flex flex-row items-start bg-base-100">
         <div
           className="relative cursor-pointer group"
           onClick={() => {
@@ -128,7 +126,7 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
             }
           }}
         >
-          <div className="w-64 h-64 rounded-lg overflow-hidden border border-gray-300">
+          <div className="w-48 h-48 rounded-lg overflow-hidden border border-gray-300 relative">
             {previewUrl ? (
               <img
                 src={previewUrl}
@@ -140,37 +138,45 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
                 <PhotoIcon className="w-12 h-12 text-gray-400" />
               </div>
             )}
-          </div>
 
-          {!uploadCoverResponse && (
-            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-white text-sm font-medium">
-                点击上传封面
-              </span>
-            </div>
-          )}
+            {!uploadCoverResponse && (
+              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-sm font-medium">
+                  点击上传封面
+                </span>
+              </div>
+            )}
+
+            {uploadCoverResponse && (
+              <div className="absolute inset-0 flex flex-col justify-between">
+                <div></div> {/* 用于顶部对齐的空元素 */}
+                <div className="flex flex-row justify-around bg-gray-800">
+                  <button
+                    className="btn btn-xs btn-link text-neutral-content no-underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReplace();
+                    }}
+                  >
+                    更换封面
+                  </button>
+                  <button
+                    className="btn btn-xs btn-link text-neutral-content no-underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
+                  >
+                    删除封面
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
-        {uploadCoverResponse && (
-          <div className="mt-4 flex gap-2">
-            <button className="btn btn-sm btn-outline" onClick={handleReplace}>
-              更换封面
-            </button>
-            <button
-              className="btn btn-sm btn-outline btn-error"
-              onClick={handleDelete}
-            >
-              删除封面
-            </button>
-          </div>
-        )}
 
         {isUploading && (
           <div className="mt-2 text-sm text-gray-600">上传中...</div>
-        )}
-
-        {fileName && (
-          <div className="mt-2 text-sm text-gray-600">文件名: {fileName}</div>
         )}
       </div>
 

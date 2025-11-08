@@ -143,9 +143,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-6">上传音频文件</h2>
-
+    <div className="p-4">
       {fileName && fileInfo ? (
         <div className="flex gap-x-4 bg-base-100 p-4">
           <MusicalNoteIcon className="w-12 h-12 text-cyan-500 flex-none" />

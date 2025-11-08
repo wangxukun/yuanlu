@@ -6,6 +6,7 @@ import UploadAudio, {
 import UploadCover, {
   UploadCoverResponse,
 } from "@/components/dashboard/episodes/uploadCover";
+import React from "react";
 export default function Page() {
   const handleUploadAudioComplete = (response: UploadFileResponse) => {
     console.log("父组件接收到上传结果：", response);
@@ -26,9 +27,26 @@ export default function Page() {
           <li>发布音频</li>
         </ul>
       </div>
-      <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
+      <div className="rounded-lg bg-gray-50 p-2 md:pt-0 max-w-5xl mx-auto">
         <UploadAudio onUploadComplete={handleUploadAudioComplete} />
-        <UploadCover onUploadComplete={handleUploadCoverComplete} />
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>封面</span>
+          </div>
+          <UploadCover onUploadComplete={handleUploadCoverComplete} />
+        </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>标题</span>
+          </div>
+          <input
+            type="text"
+            className="input input-success flex-1 ml-4"
+            placeholder="请输入标题"
+          />
+        </div>
       </div>
     </div>
   );
