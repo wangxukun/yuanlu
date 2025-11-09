@@ -19,7 +19,7 @@ export interface UploadFileResponse {
 
 interface UploadAudioProps {
   /** 上传完成时触发，返回上传响应 */
-  onUploadComplete?: (response: UploadFileResponse) => void;
+  onUploadComplete?: (response: UploadFileResponse, duration: number) => void;
 }
 
 export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
@@ -31,6 +31,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
     useState<UploadFileResponse | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [uploadedSize, setUploadedSize] = useState(0);
+  const [fileDuration, setFileDuration] = useState(0);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
         setFileName(fileInfo.name);
         setFileInfo(fileInfo);
         setFileUrl(url);
+        setFileDuration(fileInfo.duration);
       }
     }
   }, []);
@@ -133,7 +135,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
           sessionStorage.setItem("uploadCompleted", "true");
         }
         // ✅ 通知父组件上传完成
-        onUploadComplete?.(result);
+        onUploadComplete?.(result, fileDuration);
       }
     } catch (error) {
       console.error("上传音频文件失败", error);

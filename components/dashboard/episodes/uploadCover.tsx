@@ -4,13 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { PhotoIcon } from "@heroicons/react/24/outline";
 import { deleteFile } from "@/app/lib/actions";
 
-export interface FileInfo {
-  name: string;
-  type: string;
-  size: number;
-  lastModified: number;
-}
-
 export interface UploadCoverResponse {
   status: number;
   message: string;
@@ -116,7 +109,7 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-6">
       <div className="flex flex-row items-start bg-base-100">
         <div
           className="relative cursor-pointer group"

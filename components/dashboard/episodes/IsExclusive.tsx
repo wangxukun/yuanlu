@@ -6,10 +6,7 @@ export default function IsExclusive({ isExclusive }: { isExclusive: boolean }) {
     <span
       className={clsx(
         "inline-flex items-center rounded-full px-2 py-1 text-xs",
-        {
-          "bg-red-100 text-red-500": isExclusive,
-          "bg-green-500 text-white": !isExclusive,
-        },
+        isExclusive ? "bg-red-100 text-red-500" : "bg-green-500 text-white",
       )}
     >
       {isExclusive ? (
