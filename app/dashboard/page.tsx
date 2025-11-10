@@ -12,6 +12,7 @@ export default async function Page() {
     redirect("/auth/login");
   }
 
+  console.log("session", session);
   // 更新活动时间
   try {
     await prisma.user.update({
