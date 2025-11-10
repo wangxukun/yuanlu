@@ -252,6 +252,21 @@ export async function deletePodcast(
   };
 }
 
+export async function deleteFile(fileName: string) {
+  const result = await deleteObject(fileName);
+  if (result && result.res && result.res.status === 204) {
+    return {
+      message: "删除成功",
+      status: 200,
+    };
+  } else {
+    return {
+      message: "删除失败",
+      status: 500,
+    };
+  }
+}
+
 export type EpisodeDelState = {
   message?: string;
   status: number;

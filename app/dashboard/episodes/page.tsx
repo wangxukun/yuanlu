@@ -1,5 +1,5 @@
 import Search from "@/components/search";
-import { CreateEpisodeBtn } from "@/components/dashboard/buttons";
+import { ContributeEpisodeBtn } from "@/components/dashboard/buttons";
 import React, { Suspense } from "react";
 import EpisodesTable from "@/components/dashboard/episodes/episodesTable";
 
@@ -9,14 +9,14 @@ export default function Page() {
       <div className="flex w-full items-center justify-between">
         <div className="breadcrumbs text-xl">
           <ul>
-            <li>剧集管理</li>
+            <li>音频管理</li>
           </ul>
         </div>
       </div>
       <Suspense>
         <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
           <Search placeholder="搜索播客资源..." />
-          <CreateEpisodeBtn />
+          <ContributeEpisodeBtn />
         </div>
 
         <EpisodesTable />

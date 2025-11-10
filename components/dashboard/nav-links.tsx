@@ -7,20 +7,20 @@ import {
   TagIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
+import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
+import { useEffect, useRef } from "react";
 
-// Map of links to display in the side navigation.
-// Depending on the size of the application, this would be stored in a database.
 const links = [
   { name: "信息概况", href: "/dashboard", icon: HomeIcon },
   {
-    name: "播客管理",
+    name: "合集管理",
     href: "/dashboard/podcasts",
     icon: DocumentDuplicateIcon,
   },
   {
-    name: "剧集管理",
+    name: "音频管理",
     href: "/dashboard/episodes",
     icon: DocumentDuplicateIcon,
   },
@@ -29,15 +29,55 @@ const links = [
   { name: "标签管理", href: "/dashboard/tags", icon: TagIcon },
 ];
 
-/**
- * Extracts the first three path segments from a given path.
- * @param path
- */
 const extractPathSegment = (path: string): string =>
   path.split("/").slice(0, 3).join("/");
 
 export default function NavLinks() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { needConfirm, setNeedConfirm } = useLeaveConfirm();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const pendingNavigation = useRef<string | null>(null);
+
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (needConfirm) {
+      e.preventDefault(); // 阻止 Link 默认行为
+      pendingNavigation.current = href;
+      dialogRef.current?.showModal();
+    }
+  };
+
+  const handleConfirm = () => {
+    const targetHref = pendingNavigation.current;
+    if (targetHref !== null) {
+      setNeedConfirm(false);
+      router.push(targetHref);
+      pendingNavigation.current = null; // 导航后重置
+    }
+    dialogRef.current?.close();
+  };
+
+  const handleCancel = () => {
+    dialogRef.current?.close();
+  };
+
+  // 确保对话框关闭时清理 pendingNavigation
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleClose = () => {
+      pendingNavigation.current = null;
+    };
+
+    dialog.addEventListener("close", handleClose);
+    return () => {
+      dialog.removeEventListener("close", handleClose);
+    };
+  }, []);
 
   return (
     <>
@@ -47,6 +87,7 @@ export default function NavLinks() {
           <Link
             key={link.name}
             href={link.href}
+            onClick={(e) => handleNavClick(e, link.href)}
             className={clsx(
               "flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3",
               {
@@ -60,6 +101,24 @@ export default function NavLinks() {
           </Link>
         );
       })}
+
+      <dialog ref={dialogRef} className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">确认离开</h3>
+          <p className="py-4">确定要离开当前页面吗？未保存的内容将会丢失。</p>
+          <div className="modal-action">
+            <button className="btn" onClick={handleCancel}>
+              取消
+            </button>
+            <button className="btn btn-primary" onClick={handleConfirm}>
+              确定
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={handleCancel}>关闭</button>
+        </form>
+      </dialog>
     </>
   );
 }

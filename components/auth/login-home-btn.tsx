@@ -10,7 +10,7 @@ export default function LoginHomeBtn() {
     return (
       <button
         // className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
-        className="btn btn-ghost sm:btn-primary flex items-center gap-2"
+        className="btn btn-ghost flex items-center gap-2"
         onClick={() => signOut({ redirectTo: "/home" })}
       >
         <UserCircleIcon className="w-5 h-5 hidden sm:block" />

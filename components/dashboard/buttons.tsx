@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowUpTrayIcon,
   IdentificationIcon,
   PencilIcon,
   PlusIcon,
@@ -44,15 +45,28 @@ export function CreateTagGroupBtn() {
   );
 }
 
-/** 发布剧集按钮 */
+/** 创建剧集按钮 */
 export function CreateEpisodeBtn() {
   return (
     <Link
       href="/dashboard/episodes/create"
       className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
     >
-      <span className="hidden md:block">发布播客剧集</span>{" "}
-      <PlusIcon className="h-5 md:ml-4" />
+      <span className="hidden md:block">创建剧集</span>{" "}
+      <ArrowUpTrayIcon className="h-5 md:ml-4" />
+    </Link>
+  );
+}
+
+/** 投稿 */
+export function ContributeEpisodeBtn() {
+  return (
+    <Link
+      href="/dashboard/episodes/contribute"
+      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    >
+      <span className="hidden md:block">投稿</span>{" "}
+      <ArrowUpTrayIcon className="h-5 md:ml-4" />
     </Link>
   );
 }
