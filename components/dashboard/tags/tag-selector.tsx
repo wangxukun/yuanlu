@@ -24,7 +24,7 @@ export const TagSelector: React.FC<Props> = ({
   allowTypes,
   maxSelected = Infinity,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
 
   const isAtLimit = selectedTagIds.length >= maxSelected;
 
@@ -56,9 +56,11 @@ export const TagSelector: React.FC<Props> = ({
     const tags = grouped[type];
     if (!tags.length) return null;
     return (
-      <div>
-        <h4 className="text-sm font-semibold text-gray-600 mt-4">{label}</h4>
-        <div className="flex flex-wrap gap-2 mt-2">
+      <div className="pt-4 pb-4 flex flex-row">
+        <div className="flex items-center justify-center mr-4">
+          <span>{label}</span>
+        </div>
+        <div className="flex items-center justify-center flex-wrap gap-2">
           {tags.map((tag) => {
             const selected = selectedTagIds.includes(tag.tagid);
             const disabled = !selected && isAtLimit;
@@ -86,21 +88,18 @@ export const TagSelector: React.FC<Props> = ({
   };
 
   return (
-    <div className="card card-border border-neutral border-[2px] w-full">
+    <div className="card card-border border-neutral flex-1">
       <div className="card-body">
-        <h3 className="text-md font-bold mb-2">标签选择</h3>
-
-        <input
-          type="text"
-          placeholder="搜索标签..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md mb-4 text-sm"
-        />
+        {/*<input*/}
+        {/*  type="text"*/}
+        {/*  placeholder="搜索标签..."*/}
+        {/*  value={search}*/}
+        {/*  onChange={(e) => setSearch(e.target.value)}*/}
+        {/*  className="input input-success w-full px-3 py-2 border rounded-md mb-4 text-sm"*/}
+        {/*/>*/}
 
         <div className="flex flex-wrap gap-2 mb-4 bg-white p-5 inset-shadow-xs">
           {selectedTagIds.length === 0 ? (
-            // <p className="text-gray-400 text-xs py-1">未选择任何标签</p>
             <span className="badge px-2 py-3 text-xs">未选择任何标签</span>
           ) : (
             selectedTagIds
@@ -118,15 +117,15 @@ export const TagSelector: React.FC<Props> = ({
           )}
         </div>
 
-        {renderTagGroup("UNIVERSAL", "通用标签")}
-        {renderTagGroup("PODCAST", "节目标签")}
-        {renderTagGroup("EPISODE", "单集标签")}
+        {renderTagGroup("UNIVERSAL", "通用标签:")}
+        {renderTagGroup("PODCAST", "节目标签:")}
+        {renderTagGroup("EPISODE", "单集标签:")}
 
-        {isAtLimit && (
-          <div className="mt-3 text-sm text-red-500">
-            最多只能选择 {maxSelected} 个标签
-          </div>
-        )}
+        {/*{isAtLimit && (*/}
+        {/*  <div className="mt-3 text-sm text-red-500">*/}
+        {/*    最多只能选择 {maxSelected} 个标签*/}
+        {/*  </div>*/}
+        {/*)}*/}
       </div>
     </div>
   );

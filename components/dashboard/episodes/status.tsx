@@ -6,10 +6,11 @@ export default function EpisodeStatus({ status }: { status: string }) {
     <span
       className={clsx(
         "inline-flex items-center rounded-full px-2 py-1 text-xs",
-        {
-          "bg-slate-100 text-slate-500": status === "pending",
-          "bg-green-500 text-white": status === "paid",
-        },
+        status === "pending"
+          ? "bg-slate-100 text-slate-500"
+          : status === "paid"
+            ? "bg-green-500 text-white"
+            : "",
       )}
     >
       {status === "pending" ? (
