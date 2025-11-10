@@ -19,7 +19,6 @@ interface UploadCoverProps {
 export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  // const [fileName, setFileName] = useState("");
   const [uploadCoverResponse, setUploadCoverResponse] =
     useState<UploadCoverResponse | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);

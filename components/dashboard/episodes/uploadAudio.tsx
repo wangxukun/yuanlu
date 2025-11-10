@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { MusicalNoteIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { deleteFile } from "@/app/lib/actions";
 
 export interface FileInfo {
@@ -23,26 +23,23 @@ interface UploadAudioProps {
 }
 
 export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [uploadFileResponse, setUploadFileResponse] =
     useState<UploadFileResponse | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [uploadedSize, setUploadedSize] = useState(0);
   const [fileDuration, setFileDuration] = useState(0);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
+  // 恢复上传状态
   useEffect(() => {
     if (typeof window !== "undefined") {
       const uploadStatus = sessionStorage.getItem("uploadCompleted");
       if (uploadStatus === "true") {
-        setUploadProgress(100);
         setIsUploading(false);
         return;
       }
-
       const storedFileInfo = sessionStorage.getItem("uploadedAudioFileInfo");
       const url = sessionStorage.getItem("uploadedAudioFileUrl");
       if (storedFileInfo && url) {
@@ -55,6 +52,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
     }
   }, []);
 
+  // 上传文件
   useEffect(() => {
     if (fileUrl && fileInfo) {
       uploadFile(fileUrl, fileInfo);
@@ -68,12 +66,11 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
     };
   }, [fileUrl, fileInfo]);
 
+  // MB 转换
   const bytesToMB = (bytes: number): number => bytes / (1024 * 1024);
 
   const uploadFile = async (fileUrl: string, fileInfo: FileInfo) => {
     setIsUploading(true);
-    setUploadProgress(0);
-    setUploadedSize(0);
     try {
       const response = await fetch(fileUrl);
       if (!response.ok) {
@@ -89,45 +86,32 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
       const blob = await response.blob();
       const file = new File([blob], fileInfo.name, { type: fileInfo.type });
 
-      const uploadWithProgress = (): Promise<UploadFileResponse> =>
-        new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append("audio", file);
 
-          xhr.upload.addEventListener("progress", (event) => {
-            if (event.lengthComputable) {
-              const progress = Math.round((event.loaded / event.total) * 100);
-              setUploadProgress(progress);
-              setUploadedSize(event.loaded);
-            }
-          });
+      const uploadResponse = await fetch("/api/podcast/upload-episode-audio", {
+        method: "POST",
+        body: formData,
+      } as RequestInit);
 
-          xhr.addEventListener("load", () => {
-            if (xhr.status === 200) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                setUploadFileResponse(response);
-                resolve(response);
-              } catch (e) {
-                console.error("解析响应失败:", e);
-                resolve({
-                  status: 500,
-                  message: "解析响应失败",
-                  audioFileName: "",
-                  audioUrl: "",
-                });
-              }
-            } else reject(new Error(`上传失败: ${xhr.statusText}`));
-          });
+      let result: UploadFileResponse;
+      if (uploadResponse.ok) {
+        try {
+          result = await uploadResponse.json();
+          setUploadFileResponse(result);
+        } catch (e) {
+          console.error("解析响应失败:", e);
+          result = {
+            status: 500,
+            message: "解析响应失败",
+            audioFileName: "",
+            audioUrl: "",
+          };
+        }
+      } else {
+        throw new Error(`上传失败: ${uploadResponse.statusText}`);
+      }
 
-          xhr.addEventListener("error", () => reject(new Error("网络错误")));
-
-          const formData = new FormData();
-          formData.append("audio", file);
-          xhr.open("POST", "/api/podcast/upload-episode-audio");
-          xhr.send(formData as XMLHttpRequestBodyInit);
-        });
-
-      const result = await uploadWithProgress();
       setUploadFileResponse(result);
 
       if (result.status === 200) {
@@ -139,6 +123,13 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
       }
     } catch (error) {
       console.error("上传音频文件失败", error);
+      // 显示错误给用户
+      setUploadFileResponse({
+        status: 500,
+        message: "上传失败: " + (error as Error).message,
+        audioFileName: "",
+        audioUrl: "",
+      });
     } finally {
       setIsUploading(false);
     }
@@ -151,31 +142,44 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
           <MusicalNoteIcon className="w-12 h-12 text-cyan-500 flex-none" />
           <div className="flex-1">
             <div className="flex justify-between">
-              <p className="text-sm mb-2">文件名: {fileName}</p>
+              <p className="text-sm">文件名: {fileName}</p>
               <button
-                className="btn btn-soft btn-info w-50 h-8 mb-2"
+                className="btn btn-soft btn-info w-50 h-8"
                 onClick={() => audioInputRef.current?.click()}
               >
                 更换音频
               </button>
             </div>
-
-            <div className="w-full bg-gray-500 rounded-full h-1 mb-2">
-              <div
-                className="bg-green-500 h-1 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
+            <div className="flex flex-row text-sm">
+              {isUploading ? (
+                <div className="flex">
+                  <span className="loading loading-dots loading-xs"></span>
+                  上传中...
+                </div>
+              ) : uploadFileResponse?.status !== 200 ? (
+                <div className="flex text-red-500">
+                  <span>上传失败: {uploadFileResponse?.message}</span>
+                </div>
+              ) : (
+                <div className="flex">
+                  <CheckCircleIcon className="w-4 h-4 text-green-500"></CheckCircleIcon>
+                  <span>上传完成</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-between text-xs text-accent-content">
-              <span>上传进度: {uploadProgress}%</span>
-              <span>{isUploading ? "上传中..." : "上传完成"}</span>
+            <div className="w-full bg-gray-500 rounded-full h-1 mb-2">
+              {isUploading && (
+                <div className="bg-blue-500 h-1 rounded-full transition-all duration-300"></div>
+              )}
+              {!isUploading && uploadFileResponse?.status === 200 && (
+                <div className="bg-green-500 h-1 rounded-full transition-all duration-300"></div>
+              )}
             </div>
 
             {isUploading && (
               <p className="text-sm text-gray-600 mt-1">
-                已上传: {bytesToMB(uploadedSize).toFixed(2)} MB /{" "}
-                {bytesToMB(fileInfo.size).toFixed(2)} MB
+                文件大小:{bytesToMB(fileInfo.size).toFixed(2)} MB
               </p>
             )}
           </div>
@@ -202,15 +206,15 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
                     ({ status, message }) => {
                       if (status === 200) {
                         console.log(message);
-                        uploadFile(fileUrl, newFileInfo);
                       } else {
                         console.error(message);
                       }
                     },
                   );
-                } else {
-                  uploadFile(fileUrl, newFileInfo);
                 }
+                // 存储文件信息，触发上传文件
+                setFileUrl(fileUrl);
+                setFileInfo(newFileInfo);
               }
             }}
           />
