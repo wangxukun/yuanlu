@@ -18,6 +18,10 @@ export default function SignUpForm() {
     password: "",
   });
 
+  // 新增：是否同意协议
+  const [agreed, setAgreed] = useState(false);
+  const [agreedError, setAgreedError] = useState("");
+
   // 验证码倒计时效果
   useEffect(() => {
     if (countdown > 0) {
@@ -70,6 +74,15 @@ export default function SignUpForm() {
   // 提交注册
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 新增：必须先同意协议
+    if (!agreed) {
+      setAgreedError("请先阅读并同意《用户协议》和《隐私政策》");
+      return;
+    } else {
+      setAgreedError("");
+    }
+
     // 验证密码
     try {
       const result = signInSchema.safeParse({
@@ -144,7 +157,7 @@ export default function SignUpForm() {
   return (
     <div className="card">
       <div className="card-body">
-        <h2 className="card-title text-lg font-bold mb-2">创建账户</h2>
+        <h2 className="card-title text-lg font-bold mb-2">创建你的账户</h2>
         <p className="text-2xl text-base-content/70 mb-4">{checkedEmail}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -231,6 +244,45 @@ export default function SignUpForm() {
             )}
           </div>
 
+          {/* 新增：协议复选框（daisyUI checkbox） */}
+          <div className="form-control">
+            <label className="label cursor-pointer gap-3">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  if (agreedError) setAgreedError("");
+                }}
+                aria-required
+              />
+              <span className="label-text text-sm">
+                我已阅读并同意{" "}
+                <a
+                  href="/auth/user-agreement"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link link-primary ml-1"
+                >
+                  《用户协议》
+                </a>{" "}
+                和{" "}
+                <a
+                  href="/auth/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link link-primary ml-1"
+                >
+                  《隐私政策》
+                </a>
+              </span>
+            </label>
+            {agreedError && (
+              <p className="text-error text-sm mt-1">{agreedError}</p>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={onBack}
@@ -242,7 +294,7 @@ export default function SignUpForm() {
             <button
               type="submit"
               className="btn btn-primary flex-1"
-              disabled={loading}
+              disabled={loading || !agreed}
             >
               {loading ? (
                 <span className="loading loading-spinner loading-sm"></span>

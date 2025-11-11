@@ -2,17 +2,21 @@
 // 新建客户端组件
 import { useSession, signOut } from "next-auth/react";
 import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
+import { useRouter } from "next/navigation";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   if (session) {
     return (
       <button
         // className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
         className="btn btn-ghost flex items-center gap-2"
-        onClick={() => signOut({ redirectTo: `${baseUrl}/home` })}
+        onClick={async () => {
+          await signOut({ redirect: false });
+          router.push("/browse");
+        }}
       >
         <UserCircleIcon className="w-5 h-5 hidden sm:block" />
         <span className="text-sm font-medium text-gray-700">退出</span>
