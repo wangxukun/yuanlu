@@ -8,6 +8,8 @@ export const publicRoutes = [
   "/charts",
   "/podcast/:id",
   "/episode/:id",
+  "/auth/user-agreement",
+  "/auth/privacy-policy",
 ];
 
 export const userRoutes = ["/library/podcasts", "/library/episodes"];
