@@ -14,6 +14,7 @@ import { CheckIcon, ClockIcon, PlusIcon } from "@heroicons/react/24/outline";
 import UploadSubtitles from "@/components/dashboard/episodes/uploadSubtitles";
 import { UploadedSubtitleFile } from "@/app/types/podcast";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
+import { deleteFile } from "@/app/lib/actions";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -56,30 +57,27 @@ export default function Page() {
     response: UploadFileResponse,
     audioDuration: number,
   ) => {
-    console.log("父组件接收到上传结果：", response);
-    console.log("音频时长：", audioDuration);
-    // ✅ 这里可以进行后续操作，比如保存数据库、跳转页面等
     setAudioFileName(response.audioFileName);
     setAudioUrl(response.audioUrl);
     setAudioDuration(audioDuration);
   };
   // 封面文件上传回调函数
   const handleUploadCoverComplete = (response: UploadCoverResponse) => {
-    console.log("父组件接收到上传结果：", response);
-    // ✅ 这里可以进行后续操作，比如保存数据库、跳转页面等
     setCoverFileName(response.coverFileName);
     setCoverUrl(response.coverUrl);
   };
   // 播客选择回调函数
   const handlePodcastSelect = (podcastId: string) => {
-    console.log("父组件接收到播客id：", podcastId);
     setPodcastId(podcastId);
   };
 
   // 音频字幕文件上传回调函数
   const handleSubtitlesUploadComplete = (response: UploadedSubtitleFile[]) => {
-    console.log("父组件接收到上传结果：", response);
-    // ✅ 这里可以进行后续操作，比如保存数据库、跳转页面等
+    // 清空字幕文件数据
+    setSubtitleEnFileName("");
+    setSubtitleZhFileName("");
+    setSubtitleEnUrl("");
+    setSubtitleZhUrl("");
     if (response.length > 0) {
       for (const file of response) {
         if (file.language === "英语") {
@@ -123,7 +121,6 @@ export default function Page() {
         }
         const data = await res.json();
         setPodcasts(data);
-        console.log("获取的播客数据：", data);
       } catch (error) {
         console.error("Error fetching podcasts:", error);
       }
@@ -131,6 +128,55 @@ export default function Page() {
     fetchTagsData();
     fetchPodcastData();
   }, []);
+
+  const handleCancel = async () => {
+    // 删除已上传的音频文件
+    if (audioFileName) {
+      try {
+        const result = await deleteFile(audioFileName);
+        console.log("删除音频文件结果:", result);
+      } catch (error) {
+        console.error("删除音频文件失败:", error);
+      }
+    }
+    // 删除已上传的封面文件
+    if (coverFileName) {
+      try {
+        const result = await deleteFile(coverFileName);
+        console.log("删除封面文件结果:", result);
+      } catch (error) {
+        console.error("删除封面文件失败:", error);
+      }
+    }
+    // 删除已上传的英文字幕文件
+    if (subtitleEnFileName) {
+      try {
+        const result = await deleteFile(subtitleEnFileName);
+        console.log("删除英文字幕文件结果:", result);
+      } catch (error) {
+        console.error("删除英文字幕文件失败:", error);
+      }
+    }
+    // 删除已上传的中文字幕文件
+    if (subtitleZhFileName) {
+      try {
+        const result = await deleteFile(subtitleZhFileName);
+        console.log("删除中文字幕文件结果:", result);
+      } catch (error) {
+        console.error("删除中文字幕文件失败:", error);
+      }
+    }
+    // 重置所有状态
+    setAudioFileName(undefined);
+    setAudioUrl(undefined);
+    setAudioDuration(0);
+    setCoverFileName(undefined);
+    setCoverUrl(undefined);
+    setSubtitleEnFileName(undefined);
+    setSubtitleEnUrl(undefined);
+    setSubtitleZhFileName(undefined);
+    setSubtitleZhUrl(undefined);
+  };
 
   return (
     <div className="inline-block w-full align-middle">
@@ -287,27 +333,53 @@ export default function Page() {
           </div>
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center m-6 ml-1.5">
+          <div className="flex items-center justify-center ml-1.5">
             <span>字幕设置</span>
           </div>
-          <div className="flex items-center ml-4">
-            <button
-              className="btn border-0"
-              onClick={() => {
-                const modal = document.getElementById("upload_subtitles_modal");
-                if (modal) {
-                  (modal as HTMLDialogElement).showModal();
-                }
-              }}
-            >
-              <PlusIcon className="size-[1.2em]" />
-              上传字幕
-            </button>
-          </div>
+          {subtitleEnFileName || subtitleZhFileName ? (
+            <div className="flex items-center bg-base-300 rounded pl-4 ml-4">
+              <div>
+                已上传{subtitleEnFileName ? "【英文】" : ""}
+                {subtitleZhFileName ? "【中文】" : ""}字幕
+              </div>
+              <button
+                className="btn btn-link"
+                onClick={() => {
+                  const modal = document.getElementById(
+                    "upload_subtitles_modal",
+                  );
+                  if (modal) {
+                    (modal as HTMLDialogElement).showModal();
+                  }
+                }}
+              >
+                修改
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center ml-4">
+              <button
+                className="btn border-0"
+                onClick={() => {
+                  const modal = document.getElementById(
+                    "upload_subtitles_modal",
+                  );
+                  if (modal) {
+                    (modal as HTMLDialogElement).showModal();
+                  }
+                }}
+              >
+                <PlusIcon className="size-[1.2em]" />
+                上传字幕
+              </button>
+            </div>
+          )}
           <UploadSubtitles onConfirm={handleSubtitlesUploadComplete} />
         </div>
         <div className="mt-6 flex justify-start gap-4">
-          <button className="btn btn-outline w-32">取消</button>
+          <button className="btn btn-outline w-32" onClick={handleCancel}>
+            清除上传内容
+          </button>
           <button
             className="btn btn-primary w-32"
             type="submit"

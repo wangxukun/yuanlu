@@ -26,7 +26,6 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
   const [enUploadCompleted, setEnUploadCompleted] = useState(false);
   const [zhUploadCompleted, setZhUploadCompleted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [hasUploadSuccess, setHasUploadSuccess] = useState(false);
   // 修改 uploadedFiles 状态，添加 response 字段用于保存上传返回数据
   const [uploadedFiles, setUploadedFiles] = useState<UploadedSubtitleFile[]>(
     [],
@@ -58,9 +57,11 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
       setZhUploadCompleted(false);
     }
 
-    // 如果没有上传任何文件了，禁用确定按钮
-    if (newFiles.length === 0) {
-      setHasUploadSuccess(false);
+    // 强制重置 select 元素
+    if (selectRef.current) {
+      // 触发一次 change 事件来刷新选项状态
+      const event = new Event("change", { bubbles: true });
+      selectRef.current.dispatchEvent(event);
     }
   };
 
@@ -70,33 +71,6 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
     if (onConfirm) {
       onConfirm(uploadedFiles);
     }
-  };
-
-  // 处理取消操作
-  const handleCancel = async () => {
-    // 如果有已上传的字幕文件，全部删除
-    if (uploadedFiles.length > 0) {
-      for (const file of uploadedFiles) {
-        try {
-          const { status, message } = await deleteFile(
-            file.response.subtitleFileName,
-          );
-          if (status === 200) {
-            console.log(`已删除文件: ${file.fileName}`, message);
-          } else {
-            console.error(`删除文件失败: ${file.fileName}`, message);
-          }
-        } catch (error) {
-          console.error(`删除文件时出错: ${file.fileName}`, error);
-        }
-      }
-    }
-
-    // 清空状态
-    setUploadedFiles([]);
-    setEnUploadCompleted(false);
-    setZhUploadCompleted(false);
-    setHasUploadSuccess(false);
   };
 
   // 上传字幕
@@ -138,9 +112,6 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
             setZhUploadCompleted(true);
           }
 
-          // 设置上传成功状态
-          setHasUploadSuccess(true);
-
           // 重置选择
           if (selectRef.current) {
             selectRef.current.value = "";
@@ -167,7 +138,7 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
             name="subtitle_language"
             defaultValue=""
             ref={selectRef}
-            className="w-80 h-10 z-100 text-base"
+            className="select w-80 h-10 z-100 text-base"
             onChange={(e) => {
               setSubtitleLanguage(e.target.value);
             }}
@@ -245,13 +216,13 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
             <button
               className="btn"
               disabled={isUploading}
-              onClick={handleCancel}
+              // onClick={handleCancel}
             >
               取消
             </button>
             <button
               className="btn"
-              disabled={isUploading || !hasUploadSuccess}
+              disabled={isUploading}
               onClick={handleConfirm}
             >
               确定
