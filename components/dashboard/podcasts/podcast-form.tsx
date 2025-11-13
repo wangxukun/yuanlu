@@ -8,20 +8,19 @@ import React, {
 } from "react";
 import Link from "next/link";
 import { Button } from "@/components/button";
-import {
-  PhotoIcon,
-  LanguageIcon,
-  MicrophoneIcon,
-  QueueListIcon,
-} from "@heroicons/react/24/outline";
+import { QueueListIcon } from "@heroicons/react/24/outline";
 import { createPodcast, PodcastState } from "@/app/lib/actions";
 import { redirect } from "next/navigation";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import { Tag } from "@/app/types/podcast";
+import UploadCover, {
+  UploadCoverResponse,
+} from "@/components/dashboard/episodes/uploadCover";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function PodcastForm() {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [coverFileName, setCoverFileName] = useState<string>(); // 封面文件名
+  const [coverUrl, setCoverUrl] = useState<string>(); // 封面文件url
   const [podcastName, setPodcastName] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState("");
@@ -81,19 +80,12 @@ export default function PodcastForm() {
     });
   };
 
-  // 封面文件上传
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const image = e.target.files?.[0];
-    if (image) {
-      if (image.size > 1024 * 1024 * 1) {
-        return alert("图片大小不能超过1MB");
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(image);
-    }
+  // 封面文件上传回调函数
+  const handleUploadCoverComplete = (response: UploadCoverResponse) => {
+    setCoverFileName(response.coverFileName);
+    setCoverUrl(response.coverUrl);
+    console.log("coverFileName:", coverFileName);
+    console.log("coverUrl:", coverUrl);
   };
 
   // 处理 重定向
@@ -108,83 +100,48 @@ export default function PodcastForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="rounded-md bg-gray-50 p-4 md:p-6">
+      <div className="rounded-md bg-base-200 p-4 md:p-6">
         {/* 播客名称 */}
-        <div className="mb-4">
-          <label
-            htmlFor="podcastName"
-            className="mb-2 block text-sm font-medium"
-          >
-            播客名称
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="podcastName"
-                name="podcastName"
-                type="text"
-                placeholder="播客名称"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={podcastName}
-                onChange={(e) => setPodcastName(e.target.value)}
-                required
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>标题</span>
           </div>
+          <input
+            id="podcastName"
+            name="podcastName"
+            value={podcastName}
+            onChange={(e) => setPodcastName(e.target.value)}
+            type="text"
+            className="input input-success flex-1 m-6"
+            placeholder="请输入标题"
+          />
         </div>
 
         {/* 发布平台 */}
-        <div className="mb-4">
-          <label htmlFor="platform" className="mb-2 block text-sm font-medium">
-            发布平台
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="platform"
-                name="platform"
-                type="text"
-                placeholder="发布平台"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                required
-              />
-              <LanguageIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>平台</span>
           </div>
+          <input
+            id="platform"
+            name="platform"
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            type="text"
+            className="input input-success flex-1 m-6"
+            placeholder="请输入发布平台"
+          />
         </div>
 
         {/* 封面图片 */}
-        <div className="mb-4">
-          <label htmlFor="cover" className="mb-2 block text-sm font-medium">
-            封面图片
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="cover"
-                name="cover"
-                type="file"
-                accept="image/*"
-                placeholder="封面图片"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleCoverChange}
-                required
-              />
-              <PhotoIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
-            {previewUrl && (
-              <div className="mt-2">
-                <img
-                  src={previewUrl}
-                  alt="封面预览"
-                  className="h-32 w-32 object-cover rounded-md"
-                />
-              </div>
-            )}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>封面</span>
           </div>
+          <UploadCover onUploadComplete={handleUploadCoverComplete} />
         </div>
 
         {/* 是否推荐 */}

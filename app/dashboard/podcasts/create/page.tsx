@@ -11,7 +11,7 @@ export default function Page() {
           <li>创建播客</li>
         </ul>
       </div>
-      <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
+      <div className="rounded-lg bg-base-200 text-sm p-2 md:pt-0 max-w-5xl mx-auto">
         <PodcastForm />
       </div>
     </div>

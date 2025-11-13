@@ -188,7 +188,7 @@ export default function Page() {
           <li>发布音频</li>
         </ul>
       </div>
-      <div className="rounded-lg bg-gray-50 text-sm p-2 md:pt-0 max-w-5xl mx-auto">
+      <div className="rounded-lg bg-base-200 text-sm p-2 md:pt-0 max-w-5xl mx-auto">
         <UploadAudio onUploadComplete={handleUploadAudioComplete} />
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4">
