@@ -6,9 +6,9 @@ export default function Page() {
       <div className="breadcrumbs text-xl">
         <ul>
           <li>
-            <a href="/dashboard/podcasts">播客管理</a>
+            <a href="/dashboard/podcasts">合集管理</a>
           </li>
-          <li>创建播客</li>
+          <li>创建合集</li>
         </ul>
       </div>
       <div className="rounded-lg bg-base-200 text-sm p-2 md:pt-0 max-w-5xl mx-auto">

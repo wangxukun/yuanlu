@@ -24,14 +24,7 @@ export async function POST(request: Request) {
       isEditorPick,
     );
     // 检查是否缺少参数
-    if (
-      !podcastName ||
-      !platform ||
-      !description ||
-      !coverUrl ||
-      !tags ||
-      !isEditorPick
-    ) {
+    if (!podcastName || !platform || !description || !coverUrl || !tags) {
       return NextResponse.json(
         { success: false, message: "缺少参数" },
         { status: 400 },

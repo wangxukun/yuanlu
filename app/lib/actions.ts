@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/app/lib/form-schema";
-import { deleteObject, uploadFile } from "@/app/lib/oss";
+import { deleteObject } from "@/app/lib/oss";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -29,7 +29,7 @@ export type PodcastState = {
   errors?: {
     podcastName: string;
     description: string;
-    cover: string;
+    coverUrl: string;
     coverFileName: string;
     platform: string;
   };
@@ -134,14 +134,15 @@ export async function createPodcast(
 ): Promise<PodcastState> {
   try {
     // 1. 获取封面文件
-    const coverFile = formData.get("cover") as File;
-    if (!coverFile) {
+    const coverFileName = formData.get("coverFileName");
+    const coverUrl = formData.get("coverUrl");
+    if (coverFileName === null || coverFileName === "") {
       return new Promise((resolve) => {
         resolve({
           errors: {
             podcastName: "",
             description: "",
-            cover: "请上传封面图片", // 使用已定义的 cover 字段
+            coverUrl: "请上传封面图片", // 使用已定义的 cover 字段
             coverFileName: "",
             platform: "",
           },
@@ -149,22 +150,15 @@ export async function createPodcast(
         });
       });
     }
-    // 生成唯一的文件名
-    const timestamp = Date.now();
-    // 2. 转换为Buffer并生成唯一文件名
-    const bytes = await coverFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uniqueFilename = `yuanlu/podcastes/covers/${timestamp}_${Math.random().toString(36).substring(2)}.${coverFile.name.split(".").pop()}`;
-    // 3. 上传到OSS
-    const { fileUrl: coverUrl } = await uploadFile(buffer, uniqueFilename);
     const res = await fetch(`${baseUrl}/api/podcast/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         podcastName: formData.get("podcastName"),
         description: formData.get("description"),
-        coverUrl, // 使用OSS返回的URL
-        coverFileName: uniqueFilename, // 存储在OSS中的文件名
+        coverUrl: coverUrl,
+        coverFileName: coverFileName,
+        isEditorPick: formData.get("isEditorPick") === "on",
         platform: formData.get("platform"),
         tags: formData.getAll("tags"),
       }),
@@ -184,7 +178,7 @@ export async function createPodcast(
         errors: {
           podcastName: "",
           description: "",
-          cover: "",
+          coverUrl: "",
           coverFileName: "",
           platform: "",
         },
@@ -199,7 +193,7 @@ export async function createPodcast(
         errors: {
           podcastName: "",
           description: "",
-          cover: "上传封面失败", // 使用已定义的 cover 字段
+          coverUrl: "上传封面失败", // 使用已定义的 cover 字段
           coverFileName: "",
           platform: "",
         },
@@ -212,7 +206,7 @@ export async function createPodcast(
     errors: {
       podcastName: "",
       description: "",
-      cover: "",
+      coverUrl: "",
       coverFileName: "",
       platform: "",
     },

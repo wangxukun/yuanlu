@@ -39,6 +39,8 @@ export default function Page() {
   const [podcastId, setPodcastId] = useState(""); // 播客id
   const { setNeedConfirm } = useLeaveConfirm();
 
+  const coverApi = "/api/podcast/upload-episode-cover";
+
   const handleClick = async () => {
     console.log("提交表单");
     console.log(audioDuration);
@@ -195,7 +197,10 @@ export default function Page() {
             <span className="text-red-500">*</span>
             <span>封面</span>
           </div>
-          <UploadCover onUploadComplete={handleUploadCoverComplete} />
+          <UploadCover
+            onUploadComplete={handleUploadCoverComplete}
+            coverApi={coverApi}
+          />
         </div>
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4">
