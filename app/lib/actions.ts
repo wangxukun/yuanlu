@@ -170,7 +170,6 @@ export async function createPodcast(
         tags: formData.getAll("tags"),
       }),
     });
-    // const data = await res.json();
     if (!res.ok) {
       return new Promise((resolve) => {
         resolve({
@@ -200,7 +199,7 @@ export async function createPodcast(
         errors: {
           podcastName: "",
           description: "",
-          coverUrl: "上传封面失败", // 使用已定义的 cover 字段
+          coverUrl: "",
           coverFileName: "",
           platform: "",
         },
@@ -256,9 +255,47 @@ export async function createEpisode(
         });
       });
     }
-    // TODO 创建剧集
-    return new Promise((resolve) => {
-      resolve({
+    const res = await fetch(`${baseUrl}/api/episode/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: formData.get("title"),
+        description: formData.get("description"),
+        audioDuration: formData.get("audioDuration"),
+        audioFileName: audioFileName,
+        coverFileName: coverFileName,
+        subtitleEnFileName: formData.get("subtitleEnFileName"),
+        subtitleZhFileName: formData.get("subtitleZhFileName"),
+        audioUrl: formData.get("audioUrl"),
+        coverUrl: formData.get("coverUrl"),
+        subtitleEnUrl: formData.get("subtitleEnUrl"),
+        subtitleZhUrl: formData.get("subtitleZhUrl"),
+        publishStatus: formData.get("publishStatus"),
+        isExclusive: formData.get("isExclusive") === "on",
+        publishDate: formData.get("publishDate"),
+        tags: formData.getAll("tags"),
+        podcastId: formData.get("podcastId"),
+      }),
+    });
+    if (!res.ok) {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "",
+            podcastId: "",
+            coverFileName: "",
+          },
+          message: "创建过程中发生错误",
+        });
+      });
+    }
+    const data = await res.json();
+    if (res.ok) {
+      console.log("创建剧集成功:", data);
+      revalidatePath("/dashboard/episodes/create");
+      return {
         errors: {
           title: "",
           description: "",
@@ -266,11 +303,12 @@ export async function createEpisode(
           podcastId: "",
           coverFileName: "",
         },
+        // 在episodes页面中，通过message判断是否需要重定向
         message: "redirect:/dashboard/episodes/create-success",
-      });
-    });
+      };
+    }
   } catch (error) {
-    console.error("创建播客失败:", error);
+    console.error("创建剧集失败:", error);
     return new Promise((resolve) => {
       resolve({
         errors: {
@@ -284,6 +322,17 @@ export async function createEpisode(
       });
     });
   }
+  // 添加默认返回（防御性编程）
+  return {
+    errors: {
+      title: "",
+      description: "",
+      audioFileName: "",
+      podcastId: "",
+      coverFileName: "",
+    },
+    message: "未知错误",
+  };
 }
 
 export type PodcastDelState = {

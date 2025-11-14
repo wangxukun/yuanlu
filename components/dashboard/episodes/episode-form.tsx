@@ -42,20 +42,6 @@ export default function EpisodeForm() {
 
   const coverApi = "/api/podcast/upload-episode-cover";
 
-  const handleClick = async () => {
-    console.log("提交表单");
-    console.log(audioDuration);
-    console.log(audioFileName);
-    console.log(coverFileName);
-    console.log(subtitleEnFileName);
-    console.log(subtitleZhFileName);
-    console.log(audioUrl);
-    console.log(coverFileName);
-    console.log(subtitleEnUrl);
-    console.log(subtitleZhUrl);
-    console.log(coverUrl);
-    console.log(podcastId);
-  };
   const handleUploadAudioComplete = (
     response: UploadFileResponse,
     audioDuration: number,
@@ -209,7 +195,7 @@ export default function EpisodeForm() {
 
   return (
     <>
-      <form action={action} className="space">
+      <form action={action} className="space-y-3">
         <UploadAudio onUploadComplete={handleUploadAudioComplete} />
         {/* 添加隐藏字段来传递音频信息 */}
         <input type="hidden" name="audioFileName" value={audioFileName} />
@@ -438,7 +424,6 @@ export default function EpisodeForm() {
             className="btn btn-primary w-32"
             disabled={isPending}
             type="submit"
-            onClick={handleClick}
           >
             {isPending ? "发布中..." : "立即发布"}
           </button>
