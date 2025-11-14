@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { auth } from "@/auth";
 
 export async function POST(request: Request) {
   console.log("POST /api/podcast/create");
-  const session = await auth();
-  // 用户认证检查
-  if (!session?.user?.userid) {
-    return NextResponse.json({
-      success: false,
-      message: "未认证用户",
-      status: 401,
-    });
-  }
 
   try {
     // 从请求体中获取数据
@@ -33,26 +23,8 @@ export async function POST(request: Request) {
       publishDate,
       tags,
       podcastId,
+      uploaderId,
     } = await request.json();
-    console.log(
-      "Create episode API receive data: ",
-      title,
-      description,
-      audioFileName,
-      audioUrl,
-      audioDuration,
-      coverFileName,
-      coverUrl,
-      subtitleEnFileName,
-      subtitleZhFileName,
-      subtitleEnUrl,
-      subtitleZhUrl,
-      publishStatus,
-      isExclusive,
-      publishDate,
-      tags,
-      podcastId,
-    );
     // 检查是否缺少参数
     if (
       !podcastId ||
@@ -65,12 +37,31 @@ export async function POST(request: Request) {
       !publishDate ||
       !description ||
       !publishStatus ||
-      !tags
+      !tags ||
+      !uploaderId
     ) {
       return NextResponse.json({
         success: false,
         message: "缺少参数",
         status: 400,
+        data: {
+          title: title,
+          description: description,
+          audioFileName: audioFileName,
+          audioUrl: audioUrl,
+          audioDuration: audioDuration,
+          coverFileName: coverFileName,
+          coverUrl: coverUrl,
+          subtitleEnFileName: subtitleEnFileName,
+          subtitleZhFileName: subtitleZhFileName,
+          subtitleEnUrl: subtitleEnUrl,
+          subtitleZhUrl: subtitleZhUrl,
+          publishStatus: publishStatus,
+          isExclusive: isExclusive,
+          publishDate: publishDate,
+          tags: tags,
+          podcastId: podcastId,
+        },
       });
     }
 
@@ -88,10 +79,10 @@ export async function POST(request: Request) {
         subtitleZhUrl: subtitleZhUrl,
         podcastid: podcastId,
         isExclusive: isExclusive,
-        publishAt: publishDate,
-        duration: audioDuration,
+        publishAt: new Date(publishDate),
+        duration: parseInt(audioDuration, 10),
         status: publishStatus,
-        uploaderid: session?.user.userid,
+        uploaderid: uploaderId,
         tags: {
           create: tags.map((tagId: string) => ({
             tag: {

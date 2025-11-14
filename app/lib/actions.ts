@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/app/lib/form-schema";
 import { deleteObject } from "@/app/lib/oss";
+import { auth } from "@/auth";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -225,6 +226,21 @@ export async function createEpisode(
   formData: FormData,
 ): Promise<EpisodeState> {
   try {
+    // 用户认证检查
+    const session = await auth();
+    if (!session?.user?.userid) {
+      return {
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        message: "未认证用户",
+      };
+    }
+
     const audioFileName = formData.get("audioFileName");
     if (audioFileName === null || audioFileName === "") {
       return new Promise((resolve) => {
@@ -275,6 +291,7 @@ export async function createEpisode(
         publishDate: formData.get("publishDate"),
         tags: formData.getAll("tags"),
         podcastId: formData.get("podcastId"),
+        uploaderId: session?.user?.userid,
       }),
     });
     if (!res.ok) {

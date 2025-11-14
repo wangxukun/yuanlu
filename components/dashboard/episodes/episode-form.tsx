@@ -69,6 +69,7 @@ export default function EpisodeForm() {
     setSubtitleZhUrl("");
     if (response.length > 0) {
       for (const file of response) {
+        console.log("字幕文件数据:", file);
         if (file.language === "英语") {
           setSubtitleEnFileName(file.response.subtitleFileName);
           setSubtitleEnUrl(file.response.subtitleUrl);
@@ -273,7 +274,7 @@ export default function EpisodeForm() {
               <div className="flex items-center">
                 <input
                   id="paid"
-                  name="status"
+                  name="publishStatus"
                   type="radio"
                   checked={publishStatus === "paid"}
                   value="paid"
@@ -396,21 +397,21 @@ export default function EpisodeForm() {
                 <PlusIcon className="size-[1.2em]" />
                 上传字幕
               </button>
-              {/* 添加隐藏字段来传递字幕信息 */}
-              <input
-                type="hidden"
-                name="subtitleEnFileName"
-                value={subtitleEnFileName}
-              />
-              <input
-                type="hidden"
-                name="subtitleZhFileName"
-                value={subtitleZhFileName}
-              />
-              <input type="hidden" name="subtitleEnUrl" value={subtitleEnUrl} />
-              <input type="hidden" name="subtitleZhUrl" value={subtitleZhUrl} />
             </div>
           )}
+          {/* 添加隐藏字段来传递字幕信息 */}
+          <input
+            type="hidden"
+            name="subtitleEnFileName"
+            value={subtitleEnFileName}
+          />
+          <input
+            type="hidden"
+            name="subtitleZhFileName"
+            value={subtitleZhFileName}
+          />
+          <input type="hidden" name="subtitleEnUrl" value={subtitleEnUrl} />
+          <input type="hidden" name="subtitleZhUrl" value={subtitleZhUrl} />
         </div>
         <div className="mt-6 flex justify-start gap-4">
           <button
