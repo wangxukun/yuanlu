@@ -36,6 +36,17 @@ export type PodcastState = {
   message?: string | null;
 };
 
+export type EpisodeState = {
+  errors?: {
+    title: string;
+    description: string;
+    audioFileName: string;
+    podcastId: string;
+    coverFileName: string;
+  };
+  message?: string | null;
+};
+
 // 表单校验（zod schema）
 const UserRegister = registerFormSchema;
 
@@ -62,10 +73,6 @@ export async function userRegister(
         message: "用户注册失败",
       });
     });
-    // return {
-    //   errors: validatedFields.error.flatten().fieldErrors,
-    //   message: "用户注册失败",
-    // };
   }
   const { phone, auth_code, password } = validatedFields.data;
   // 验证短信验证码
@@ -212,6 +219,71 @@ export async function createPodcast(
     },
     message: "未知错误",
   };
+}
+
+export async function createEpisode(
+  prevState: EpisodeState,
+  formData: FormData,
+): Promise<EpisodeState> {
+  try {
+    const audioFileName = formData.get("audioFileName");
+    if (audioFileName === null || audioFileName === "") {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "请上传音频文件",
+            podcastId: "",
+            coverFileName: "",
+          },
+          message: "缺少必要文件",
+        });
+      });
+    }
+    const coverFileName = formData.get("coverFileName");
+    if (coverFileName === null || coverFileName === "") {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "",
+            podcastId: "",
+            coverFileName: "请上传封面图片",
+          },
+          message: "缺少必要文件",
+        });
+      });
+    }
+    // TODO 创建剧集
+    return new Promise((resolve) => {
+      resolve({
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        message: "redirect:/dashboard/episodes/create-success",
+      });
+    });
+  } catch (error) {
+    console.error("创建播客失败:", error);
+    return new Promise((resolve) => {
+      resolve({
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        message: "创建过程中发生错误",
+      });
+    });
+  }
 }
 
 export type PodcastDelState = {
