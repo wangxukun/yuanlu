@@ -1,73 +1,88 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { auth } from "@/auth";
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-  // 用户认证检查
-  if (!session?.user?.userid) {
-    return NextResponse.json({
-      success: false,
-      message: "未认证用户",
-      status: 401,
-    });
-  }
+export async function POST(request: Request) {
+  console.log("POST /api/podcast/create");
 
   try {
     // 从请求体中获取数据
-    const formData = await request.formData();
-    // 显式转换所有字段为字符串
-    const stringifyField = (field: FormDataEntryValue | null) =>
-      field instanceof File ? field.name : String(field || "");
-
-    const podcastid = stringifyField(formData.get("podcastid"));
-    const episodeTitle = stringifyField(formData.get("episodeTitle"));
-    const coverUrl = stringifyField(formData.get("coverUrl"));
-    const coverFileName = stringifyField(formData.get("coverFileName"));
-    const audioUrl = stringifyField(formData.get("audioUrl"));
-    const audioFileName = stringifyField(formData.get("audioFileName"));
-    const duration = Number(stringifyField(formData.get("duration")));
-    const publishDate = new Date(stringifyField(formData.get("publishDate")));
-    const description = stringifyField(formData.get("description"));
-    const publishStatus = stringifyField(formData.get("publishStatus"));
-    const isExclusive = stringifyField(formData.get("isExclusive")) === "true";
-    const tags = formData.getAll("tags").map((tag) => tag.toString());
-
+    const {
+      title,
+      description,
+      audioFileName,
+      audioUrl,
+      audioDuration,
+      coverFileName,
+      coverUrl,
+      subtitleEnFileName,
+      subtitleZhFileName,
+      subtitleEnUrl,
+      subtitleZhUrl,
+      publishStatus,
+      isExclusive,
+      publishDate,
+      tags,
+      podcastId,
+      uploaderId,
+    } = await request.json();
     // 检查是否缺少参数
     if (
-      !podcastid ||
-      !episodeTitle ||
+      !podcastId ||
+      !title ||
       !coverUrl ||
       !coverFileName ||
       !audioUrl ||
       !audioFileName ||
-      !duration ||
+      !audioDuration ||
       !publishDate ||
       !description ||
       !publishStatus ||
-      !tags
+      !tags ||
+      !uploaderId
     ) {
       return NextResponse.json({
         success: false,
         message: "缺少参数",
         status: 400,
+        data: {
+          title: title,
+          description: description,
+          audioFileName: audioFileName,
+          audioUrl: audioUrl,
+          audioDuration: audioDuration,
+          coverFileName: coverFileName,
+          coverUrl: coverUrl,
+          subtitleEnFileName: subtitleEnFileName,
+          subtitleZhFileName: subtitleZhFileName,
+          subtitleEnUrl: subtitleEnUrl,
+          subtitleZhUrl: subtitleZhUrl,
+          publishStatus: publishStatus,
+          isExclusive: isExclusive,
+          publishDate: publishDate,
+          tags: tags,
+          podcastId: podcastId,
+        },
       });
     }
 
     const episode = await prisma.episode.create({
       data: {
-        title: episodeTitle,
-        podcastid: podcastid,
-        isExclusive: isExclusive,
-        coverUrl: coverUrl,
-        coverFileName: coverFileName,
+        title: title,
         description: description,
-        audioUrl: audioUrl,
-        publishAt: publishDate,
         audioFileName: audioFileName,
-        duration: duration,
+        audioUrl: audioUrl,
+        coverFileName: coverFileName,
+        coverUrl: coverUrl,
+        subtitleEnFileName: subtitleEnFileName,
+        subtitleZhFileName: subtitleZhFileName,
+        subtitleEnUrl: subtitleEnUrl,
+        subtitleZhUrl: subtitleZhUrl,
+        podcastid: podcastId,
+        isExclusive: isExclusive,
+        publishAt: new Date(publishDate),
+        duration: parseInt(audioDuration, 10),
         status: publishStatus,
-        uploaderid: session?.user.userid,
+        uploaderid: uploaderId,
         tags: {
           create: tags.map((tagId: string) => ({
             tag: {
@@ -82,18 +97,18 @@ export async function POST(request: NextRequest) {
     if (!episode) {
       return NextResponse.json({
         success: false,
-        message: "创建单集失败",
+        message: "创建剧集失败",
         status: 402,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: "播客创建成功",
+      message: "剧集创建成功",
       status: 201,
     });
   } catch (error) {
-    console.error("播客创建时出错:", error);
+    console.error("剧集创建时出错:", error);
 
     return NextResponse.json({
       success: false,

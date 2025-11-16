@@ -82,11 +82,13 @@ export const TagSelector: React.FC<Props> = ({
   };
 
   return (
-    <div className="card card-border border-neutral flex-1">
+    <div className="card card-border border-base-300 flex-1 m-6">
       <div className="card-body">
         <div className="flex flex-wrap gap-2 mb-4 bg-white p-5 inset-shadow-xs">
           {selectedTagIds.length === 0 ? (
-            <span className="badge px-2 py-3 text-xs">未选择任何标签</span>
+            <span className="badge text-neutral-content px-2 py-3 text-xs">
+              未选择任何标签
+            </span>
           ) : (
             selectedTagIds
               .map((id) => availableTags.find((tag) => tag.tagid === id))

@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/app/lib/form-schema";
-import { deleteObject, uploadFile } from "@/app/lib/oss";
+import { deleteObject } from "@/app/lib/oss";
+import { auth } from "@/auth";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -29,9 +30,20 @@ export type PodcastState = {
   errors?: {
     podcastName: string;
     description: string;
-    cover: string;
+    coverUrl: string;
     coverFileName: string;
     platform: string;
+  };
+  message?: string | null;
+};
+
+export type EpisodeState = {
+  errors?: {
+    title: string;
+    description: string;
+    audioFileName: string;
+    podcastId: string;
+    coverFileName: string;
   };
   message?: string | null;
 };
@@ -62,10 +74,6 @@ export async function userRegister(
         message: "用户注册失败",
       });
     });
-    // return {
-    //   errors: validatedFields.error.flatten().fieldErrors,
-    //   message: "用户注册失败",
-    // };
   }
   const { phone, auth_code, password } = validatedFields.data;
   // 验证短信验证码
@@ -134,14 +142,15 @@ export async function createPodcast(
 ): Promise<PodcastState> {
   try {
     // 1. 获取封面文件
-    const coverFile = formData.get("cover") as File;
-    if (!coverFile) {
+    const coverFileName = formData.get("coverFileName");
+    const coverUrl = formData.get("coverUrl");
+    if (coverFileName === null || coverFileName === "") {
       return new Promise((resolve) => {
         resolve({
           errors: {
             podcastName: "",
             description: "",
-            cover: "请上传封面图片", // 使用已定义的 cover 字段
+            coverUrl: "请上传封面图片", // 使用已定义的 cover 字段
             coverFileName: "",
             platform: "",
           },
@@ -149,27 +158,19 @@ export async function createPodcast(
         });
       });
     }
-    // 生成唯一的文件名
-    const timestamp = Date.now();
-    // 2. 转换为Buffer并生成唯一文件名
-    const bytes = await coverFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uniqueFilename = `yuanlu/podcastes/covers/${timestamp}_${Math.random().toString(36).substring(2)}.${coverFile.name.split(".").pop()}`;
-    // 3. 上传到OSS
-    const { fileUrl: coverUrl } = await uploadFile(buffer, uniqueFilename);
     const res = await fetch(`${baseUrl}/api/podcast/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         podcastName: formData.get("podcastName"),
         description: formData.get("description"),
-        coverUrl, // 使用OSS返回的URL
-        coverFileName: uniqueFilename, // 存储在OSS中的文件名
+        coverUrl: coverUrl,
+        coverFileName: coverFileName,
+        isEditorPick: formData.get("isEditorPick") === "on",
         platform: formData.get("platform"),
         tags: formData.getAll("tags"),
       }),
     });
-    // const data = await res.json();
     if (!res.ok) {
       return new Promise((resolve) => {
         resolve({
@@ -184,7 +185,7 @@ export async function createPodcast(
         errors: {
           podcastName: "",
           description: "",
-          cover: "",
+          coverUrl: "",
           coverFileName: "",
           platform: "",
         },
@@ -199,7 +200,7 @@ export async function createPodcast(
         errors: {
           podcastName: "",
           description: "",
-          cover: "上传封面失败", // 使用已定义的 cover 字段
+          coverUrl: "",
           coverFileName: "",
           platform: "",
         },
@@ -212,9 +213,147 @@ export async function createPodcast(
     errors: {
       podcastName: "",
       description: "",
-      cover: "",
+      coverUrl: "",
       coverFileName: "",
       platform: "",
+    },
+    message: "未知错误",
+  };
+}
+
+export async function createEpisode(
+  prevState: EpisodeState,
+  formData: FormData,
+): Promise<EpisodeState> {
+  try {
+    // 用户认证检查
+    const session = await auth();
+    if (!session?.user?.userid) {
+      return {
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        message: "未认证用户",
+      };
+    }
+
+    const subtitleEnFileName = formData.get("subtitleEnFileName");
+    const subtitleZhFileName = formData.get("subtitleZhFileName");
+    const subtitleEnUrl = formData.get("subtitleEnUrl");
+    const subtitleZhUrl = formData.get("subtitleZhUrl");
+
+    const audioFileName = formData.get("audioFileName");
+    if (audioFileName === null || audioFileName === "") {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "请上传音频文件",
+            podcastId: "",
+            coverFileName: "",
+          },
+          message: "缺少必要文件",
+        });
+      });
+    }
+    const coverFileName = formData.get("coverFileName");
+    if (coverFileName === null || coverFileName === "") {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "",
+            podcastId: "",
+            coverFileName: "请上传封面图片",
+          },
+          message: "缺少必要文件",
+        });
+      });
+    }
+    const res = await fetch(`${baseUrl}/api/episode/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: formData.get("title"),
+        description: formData.get("description"),
+        audioDuration: formData.get("audioDuration"),
+        audioFileName: audioFileName,
+        coverFileName: coverFileName,
+        subtitleEnFileName:
+          subtitleZhFileName === "" ? null : subtitleEnFileName,
+        subtitleZhFileName:
+          subtitleZhFileName === "" ? null : subtitleZhFileName,
+        subtitleEnUrl: subtitleEnUrl === "" ? null : subtitleEnUrl,
+        subtitleZhUrl: subtitleZhUrl === "" ? null : subtitleZhUrl,
+        audioUrl: formData.get("audioUrl"),
+        coverUrl: formData.get("coverUrl"),
+        publishStatus: formData.get("publishStatus"),
+        isExclusive: formData.get("isExclusive") === "on",
+        publishDate: formData.get("publishDate"),
+        tags: formData.getAll("tags"),
+        podcastId: formData.get("podcastId"),
+        uploaderId: session?.user?.userid,
+      }),
+    });
+    if (!res.ok) {
+      return new Promise((resolve) => {
+        resolve({
+          errors: {
+            title: "",
+            description: "",
+            audioFileName: "",
+            podcastId: "",
+            coverFileName: "",
+          },
+          message: "创建过程中发生错误",
+        });
+      });
+    }
+    const data = await res.json();
+    if (res.ok) {
+      console.log("创建剧集成功:", data);
+      revalidatePath("/dashboard/episodes/create");
+      return {
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        // 在episodes页面中，通过message判断是否需要重定向
+        message: "redirect:/dashboard/episodes/create-success",
+      };
+    }
+  } catch (error) {
+    console.error("创建剧集失败:", error);
+    return new Promise((resolve) => {
+      resolve({
+        errors: {
+          title: "",
+          description: "",
+          audioFileName: "",
+          podcastId: "",
+          coverFileName: "",
+        },
+        message: "创建过程中发生错误",
+      });
+    });
+  }
+  // 添加默认返回（防御性编程）
+  return {
+    errors: {
+      title: "",
+      description: "",
+      audioFileName: "",
+      podcastId: "",
+      coverFileName: "",
     },
     message: "未知错误",
   };

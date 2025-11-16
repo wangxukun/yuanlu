@@ -14,9 +14,13 @@ export interface UploadCoverResponse {
 interface UploadCoverProps {
   /** 上传完成时触发，返回上传响应 */
   onUploadComplete?: (response: UploadCoverResponse) => void;
+  coverApi: string;
 }
 
-export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
+export default function UploadCover({
+  onUploadComplete,
+  coverApi,
+}: UploadCoverProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadCoverResponse, setUploadCoverResponse] =
@@ -35,7 +39,7 @@ export default function UploadCover({ onUploadComplete }: UploadCoverProps) {
       const formData = new FormData();
       formData.append("cover", file);
 
-      const res = await fetch("/api/podcast/upload-episode-cover", {
+      const res = await fetch(coverApi, {
         method: "POST",
         body: formData,
       } as RequestInit);
