@@ -241,6 +241,11 @@ export async function createEpisode(
       };
     }
 
+    const subtitleEnFileName = formData.get("subtitleEnFileName");
+    const subtitleZhFileName = formData.get("subtitleZhFileName");
+    const subtitleEnUrl = formData.get("subtitleEnUrl");
+    const subtitleZhUrl = formData.get("subtitleZhUrl");
+
     const audioFileName = formData.get("audioFileName");
     if (audioFileName === null || audioFileName === "") {
       return new Promise((resolve) => {
@@ -280,12 +285,14 @@ export async function createEpisode(
         audioDuration: formData.get("audioDuration"),
         audioFileName: audioFileName,
         coverFileName: coverFileName,
-        subtitleEnFileName: formData.get("subtitleEnFileName"),
-        subtitleZhFileName: formData.get("subtitleZhFileName"),
+        subtitleEnFileName:
+          subtitleZhFileName === "" ? null : subtitleEnFileName,
+        subtitleZhFileName:
+          subtitleZhFileName === "" ? null : subtitleZhFileName,
+        subtitleEnUrl: subtitleEnUrl === "" ? null : subtitleEnUrl,
+        subtitleZhUrl: subtitleZhUrl === "" ? null : subtitleZhUrl,
         audioUrl: formData.get("audioUrl"),
         coverUrl: formData.get("coverUrl"),
-        subtitleEnUrl: formData.get("subtitleEnUrl"),
-        subtitleZhUrl: formData.get("subtitleZhUrl"),
         publishStatus: formData.get("publishStatus"),
         isExclusive: formData.get("isExclusive") === "on",
         publishDate: formData.get("publishDate"),
