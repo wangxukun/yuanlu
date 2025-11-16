@@ -151,6 +151,31 @@ export default function PodcastForm() {
           ))}
         </div>
 
+        {/* 是否推荐 */}
+        <fieldset>
+          <legend className="mb-2 block text-sm font-medium">编辑推荐</legend>
+          <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3 border-neutral border-[2px]">
+            <div className="flex gap-4">
+              <div className="flex items-center">
+                <input
+                  id="isExclusive"
+                  name="isExclusive"
+                  type="checkbox"
+                  checked={isEditorPick}
+                  onChange={(e) => setIsEditorPick(e.target.checked)}
+                  className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                />
+                <label
+                  htmlFor="isExclusive"
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                >
+                  {/* <CheckIcon className="h-4 w-4" />*/}推荐
+                </label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
         {/* 播客描述 */}
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4">
@@ -192,6 +217,13 @@ export default function PodcastForm() {
             </label>
           </div>
         </div>
+        <TagSelector
+          availableTags={tags}
+          selectedTagIds={selectedTags}
+          onChange={setSelectedTags}
+          allowTypes={["PODCAST", "UNIVERSAL"]} // 可根据上下文切换
+          maxSelected={5}
+        />
       </div>
 
       <div className="mt-6 flex justify-start gap-4">
