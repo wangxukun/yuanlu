@@ -1,33 +1,28 @@
 "use client";
 
-import React, {
-  startTransition,
-  useActionState,
-  useEffect,
-  useState,
-} from "react";
+import React, { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/button";
-import {
-  PhotoIcon,
-  LanguageIcon,
-  MicrophoneIcon,
-  QueueListIcon,
-} from "@heroicons/react/24/outline";
 import { createPodcast, PodcastState } from "@/app/lib/actions";
 import { redirect } from "next/navigation";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import { Tag } from "@/app/types/podcast";
+import UploadCover, {
+  UploadCoverResponse,
+} from "@/components/dashboard/episodes/uploadCover";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function PodcastForm() {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [coverFileName, setCoverFileName] = useState<string>(""); // 封面文件名
+  const [coverUrl, setCoverUrl] = useState<string>(""); // 封面文件url
   const [podcastName, setPodcastName] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [isEditorPick, setIsEditorPick] = useState(false);
+
+  const coverApi = "/api/podcast/upload-podcast-cover";
 
   // 使用 useEffect 获取标签数据
   useEffect(() => {
@@ -53,47 +48,27 @@ export default function PodcastForm() {
     errors: {
       podcastName: "",
       description: "",
-      cover: "",
+      coverUrl: "",
       coverFileName: "",
       platform: "",
     },
     message: null,
   };
 
-  const [state, formAction] = useActionState<PodcastState, FormData>(
-    createPodcast,
-    initialState,
+  /**
+   * state: 存储上一次action执行的返回值
+   * formAction: 创建的异步函数,传给 <form action={...}> 的函数
+   * isPending: 表示当前 action 是否正在执行
+   */
+  const [state, action, isPending] = useActionState<PodcastState, FormData>(
+    createPodcast, // 表单提交时自动执行的异步函数
+    initialState, // 初始状态
   );
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // 阻止默认表单提交行为
-    // 创建 FormData 对象
-    const formData = new FormData(e.currentTarget);
-    // 将 selectedTags 添加到 FormData 中
-    console.log("selectedTags:", selectedTags);
-    selectedTags.forEach((tagId) => {
-      formData.append("tags", tagId);
-    });
-    console.log("FormData:", Array.from(formData.entries())); // 打印 FormData
-    // 使用 startTransition 触发异步操作
-    startTransition(() => {
-      formAction(formData);
-    });
-  };
-
-  // 封面文件上传
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const image = e.target.files?.[0];
-    if (image) {
-      if (image.size > 1024 * 1024 * 1) {
-        return alert("图片大小不能超过1MB");
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(image);
-    }
+  // 封面文件上传回调函数
+  const handleUploadCoverComplete = (response: UploadCoverResponse) => {
+    setCoverFileName(response.coverFileName);
+    setCoverUrl(response.coverUrl);
   };
 
   // 处理 重定向
@@ -107,84 +82,73 @@ export default function PodcastForm() {
   }, [state]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="rounded-md bg-gray-50 p-4 md:p-6">
-        {/* 播客名称 */}
-        <div className="mb-4">
-          <label
-            htmlFor="podcastName"
-            className="mb-2 block text-sm font-medium"
-          >
-            播客名称
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="podcastName"
-                name="podcastName"
-                type="text"
-                placeholder="播客名称"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={podcastName}
-                onChange={(e) => setPodcastName(e.target.value)}
-                required
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+    <form action={action} className="space-y-3">
+      <div className="rounded-md bg-base-200 p-4 md:p-6">
+        {/* 封面图片 */}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>封面</span>
           </div>
+          <UploadCover
+            onUploadComplete={handleUploadCoverComplete}
+            coverApi={coverApi}
+          />
+          {/* 添加隐藏字段来传递封面信息 */}
+          <input type="hidden" name="coverFileName" value={coverFileName} />
+          <input type="hidden" name="coverUrl" value={coverUrl} />
+        </div>
+
+        {/* 播客名称 */}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>标题</span>
+          </div>
+          <input
+            id="podcastName"
+            name="podcastName"
+            value={podcastName}
+            onChange={(e) => setPodcastName(e.target.value)}
+            type="text"
+            className="input input-success flex-1 m-6"
+            placeholder="请输入标题"
+          />
         </div>
 
         {/* 发布平台 */}
-        <div className="mb-4">
-          <label htmlFor="platform" className="mb-2 block text-sm font-medium">
-            发布平台
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="platform"
-                name="platform"
-                type="text"
-                placeholder="发布平台"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                required
-              />
-              <LanguageIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>平台</span>
           </div>
+          <input
+            id="platform"
+            name="platform"
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            type="text"
+            className="input input-success flex-1 m-6"
+            placeholder="请输入发布平台"
+          />
         </div>
 
-        {/* 封面图片 */}
-        <div className="mb-4">
-          <label htmlFor="cover" className="mb-2 block text-sm font-medium">
-            封面图片
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="cover"
-                name="cover"
-                type="file"
-                accept="image/*"
-                placeholder="封面图片"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleCoverChange}
-                required
-              />
-              <PhotoIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
-            {previewUrl && (
-              <div className="mt-2">
-                <img
-                  src={previewUrl}
-                  alt="封面预览"
-                  className="h-32 w-32 object-cover rounded-md"
-                />
-              </div>
-            )}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>标签</span>
           </div>
+          <TagSelector
+            availableTags={tags}
+            selectedTagIds={selectedTags}
+            onChange={setSelectedTags}
+            allowTypes={["PODCAST", "UNIVERSAL"]}
+            maxSelected={5}
+          />
+          {/* 添加隐藏字段来传递标签 */}
+          {selectedTags.map((tagId) => (
+            <input key={tagId} type="hidden" name="tags" value={tagId} />
+          ))}
         </div>
 
         {/* 是否推荐 */}
@@ -213,28 +177,44 @@ export default function PodcastForm() {
         </fieldset>
 
         {/* 播客描述 */}
-        <div className="mb-4">
-          <label
-            htmlFor="description"
-            className="mb-2 block text-sm font-medium"
-          >
-            播客描述
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <textarea
-                rows={8}
-                cols={50}
-                id="description"
-                name="description"
-                placeholder="播客描述"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-              <QueueListIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4">
+            <span className="text-red-500">*</span>
+            <span>简介</span>
+          </div>
+          <textarea
+            rows={4}
+            cols={50}
+            id="description"
+            name="description"
+            placeholder="填写更全面的相关信息，让更多人能找到你的音频吧"
+            className="textarea textarea-success flex-1 m-6"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* 是否推荐 */}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center m-6 ml-1.5">
+            <span>推荐</span>
+          </div>
+          <div className="flex items-center ml-4">
+            <input
+              id="isEditorPick"
+              name="isEditorPick"
+              type="checkbox"
+              checked={isEditorPick}
+              onChange={(e) => setIsEditorPick(e.target.checked)}
+              className="checkbox checkbox-neutral"
+            />
+            <label
+              htmlFor="isEditorPick" // 修正拼写错误
+              className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+            >
+              是否推荐
+            </label>
           </div>
         </div>
         <TagSelector
@@ -245,16 +225,34 @@ export default function PodcastForm() {
           maxSelected={5}
         />
       </div>
-      <div className="mt-6 flex justify-end gap-4">
-        <Link
-          href="/dashboard/podcasts"
-          className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
-        >
+
+      <div className="mt-6 flex justify-start gap-4">
+        <Link href="/dashboard/podcasts" className="btn btn-outline w-32">
           取消
         </Link>
-        <Button type="submit">创建播客</Button>
+        <Button
+          className="btn btn-primary w-32"
+          disabled={isPending}
+          type="submit"
+        >
+          {isPending ? "提交中..." : "提交"}
+        </Button>
       </div>
-      {state.message && <p className="text-red-500">{state.message}</p>}
+
+      {/* 显示错误信息 */}
+      {state?.message &&
+        state.message !== "redirect:/dashboard/podcasts/create-success" && (
+          <p className="text-red-500">{state.message}</p>
+        )}
+      {state?.errors &&
+        Object.values(state.errors).map(
+          (error, index) =>
+            error && (
+              <p key={index} className="text-red-500">
+                {error}
+              </p>
+            ),
+        )}
     </form>
   );
 }
