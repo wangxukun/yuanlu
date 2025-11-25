@@ -9,14 +9,6 @@ export default function Page() {
 
   return (
     <div className="inline-block w-full align-middle">
-      <div className="breadcrumbs text-xl">
-        <ul>
-          <li>
-            <a href="/dashboard/episodes">音频管理</a>
-          </li>
-          <li>音频投稿</li>
-        </ul>
-      </div>
       <div className="hero bg-base-200 min-h-[80vh]">
         <div className="hero-content text-center">
           <div className="max-w-md">

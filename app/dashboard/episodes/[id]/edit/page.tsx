@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import EpisodeEditForm from "@/app/dashboard/episodes/[id]/edit/episode-edit-form";
 
 export const metadata: Metadata = {
-  title: "Edit Episode",
+  title: "Update Episode",
 };
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
@@ -23,15 +23,17 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: "剧集", href: "/dashboard/episodes" },
+          { label: "音频管理", href: "/dashboard/episodes" },
           {
-            label: "编辑剧集",
+            label: "修改音频",
             href: `/dashboard/episodes/${id}/edit`,
             active: true,
           },
         ]}
       />
-      <EpisodeEditForm episode={episode} />
+      <div className="rounded-lg bg-base-200 text-sm p-6 max-w-4xl mx-auto">
+        <EpisodeEditForm episode={episode} />
+      </div>
     </main>
   );
 }

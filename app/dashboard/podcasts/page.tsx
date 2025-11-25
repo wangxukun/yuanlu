@@ -17,15 +17,8 @@ export default function Home() {
   }, []);
   return (
     <div className="w-full">
-      <div className="flex w-full items-center justify-between">
-        <div className="breadcrumbs text-xl">
-          <ul>
-            <li>播客管理</li>
-          </ul>
-        </div>
-      </div>
       <Suspense>
-        <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
+        <div className="flex items-center justify-between gap-2">
           <Search placeholder="搜索播客资源..." />
           <CreatePodcastBtn />
         </div>

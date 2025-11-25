@@ -82,120 +82,119 @@ export default function PodcastForm() {
   }, [state]);
 
   return (
-    <form action={action} className="space-y-3">
-      <div className="rounded-md bg-base-200 p-4 md:p-6">
-        {/* 封面图片 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
-            <span className="text-red-500">*</span>
-            <span>封面</span>
-          </div>
-          <UploadCover
-            onUploadComplete={handleUploadCoverComplete}
-            coverApi={coverApi}
-          />
-          {/* 添加隐藏字段来传递封面信息 */}
-          <input type="hidden" name="coverFileName" value={coverFileName} />
-          <input type="hidden" name="coverUrl" value={coverUrl} />
+    <form action={action} className="space-y-2">
+      {/* 封面图片 */}
+      <div className="flex flex-row">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-red-500">*</span>
+          <span className="font-semibold">封面</span>
         </div>
+        <UploadCover
+          onUploadComplete={handleUploadCoverComplete}
+          coverApi={coverApi}
+        />
+        {/* 添加隐藏字段来传递封面信息 */}
+        <input type="hidden" name="coverFileName" value={coverFileName} />
+        <input type="hidden" name="coverUrl" value={coverUrl} />
+      </div>
 
-        {/* 播客名称 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
-            <span className="text-red-500">*</span>
-            <span>标题</span>
-          </div>
+      {/* 播客名称 */}
+      <div className="flex flex-row">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-red-500">*</span>
+          <span className="font-semibold">标题</span>
+        </div>
+        <input
+          id="podcastName"
+          name="podcastName"
+          value={podcastName}
+          onChange={(e) => setPodcastName(e.target.value)}
+          type="text"
+          className="input input-success flex-1 m-6"
+          placeholder="请输入标题"
+        />
+      </div>
+
+      {/* 发布平台 */}
+      <div className="flex flex-row">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-red-500">*</span>
+          <span className="font-semibold">平台</span>
+        </div>
+        <input
+          id="platform"
+          name="platform"
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          type="text"
+          className="input input-success flex-1 m-6"
+          placeholder="请输入发布平台"
+        />
+      </div>
+
+      {/* 标签 */}
+      <div className="flex flex-row">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-red-500">*</span>
+          <span className="font-semibold">标签</span>
+        </div>
+        <TagSelector
+          availableTags={tags}
+          selectedTagIds={selectedTags}
+          onChange={setSelectedTags}
+          allowTypes={["PODCAST", "UNIVERSAL"]}
+          maxSelected={5}
+        />
+        {/* 添加隐藏字段来传递标签 */}
+        {selectedTags.map((tagId) => (
+          <input key={tagId} type="hidden" name="tags" value={tagId} />
+        ))}
+      </div>
+
+      {/* 播客描述 */}
+      <div className="flex flex-row">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-red-500">*</span>
+          <span className="font-semibold">简介</span>
+        </div>
+        <textarea
+          rows={4}
+          cols={50}
+          id="description"
+          name="description"
+          placeholder="填写更全面的相关信息，让更多人能找到你的音频吧"
+          className="textarea textarea-success flex-1 m-6"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* 是否推荐 */}
+      <div className="flex flex-row">
+        <div className="flex items-center justify-center m-6 ml-3">
+          <span className="font-semibold">推荐</span>
+        </div>
+        <div className="flex items-center ml-4">
           <input
-            id="podcastName"
-            name="podcastName"
-            value={podcastName}
-            onChange={(e) => setPodcastName(e.target.value)}
-            type="text"
-            className="input input-success flex-1 m-6"
-            placeholder="请输入标题"
+            id="isEditorPick"
+            name="isEditorPick"
+            type="checkbox"
+            checked={isEditorPick}
+            onChange={(e) => setIsEditorPick(e.target.checked)}
+            className="checkbox checkbox-neutral"
           />
-        </div>
-
-        {/* 发布平台 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
-            <span className="text-red-500">*</span>
-            <span>平台</span>
-          </div>
-          <input
-            id="platform"
-            name="platform"
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-            type="text"
-            className="input input-success flex-1 m-6"
-            placeholder="请输入发布平台"
-          />
-        </div>
-
-        {/* 标签 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
-            <span className="text-red-500">*</span>
-            <span>标签</span>
-          </div>
-          <TagSelector
-            availableTags={tags}
-            selectedTagIds={selectedTags}
-            onChange={setSelectedTags}
-            allowTypes={["PODCAST", "UNIVERSAL"]}
-            maxSelected={5}
-          />
-          {/* 添加隐藏字段来传递标签 */}
-          {selectedTags.map((tagId) => (
-            <input key={tagId} type="hidden" name="tags" value={tagId} />
-          ))}
-        </div>
-
-        {/* 播客描述 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
-            <span className="text-red-500">*</span>
-            <span>简介</span>
-          </div>
-          <textarea
-            rows={4}
-            cols={50}
-            id="description"
-            name="description"
-            placeholder="填写更全面的相关信息，让更多人能找到你的音频吧"
-            className="textarea textarea-success flex-1 m-6"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
-        </div>
-
-        {/* 是否推荐 */}
-        <div className="flex flex-row">
-          <div className="flex items-center justify-center m-6 ml-1.5">
-            <span>推荐</span>
-          </div>
-          <div className="flex items-center ml-4">
-            <input
-              id="isEditorPick"
-              name="isEditorPick"
-              type="checkbox"
-              checked={isEditorPick}
-              onChange={(e) => setIsEditorPick(e.target.checked)}
-              className="checkbox checkbox-neutral"
-            />
-            <label
-              htmlFor="isEditorPick"
-              className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
-            >
-              是否推荐
-            </label>
-          </div>
+          <label
+            htmlFor="isEditorPick"
+            className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+          >
+            是否推荐
+          </label>
         </div>
       </div>
 
-      <div className="mt-6 flex justify-start gap-4">
+      <div className="divider"></div>
+      <div className="flex justify-start gap-4 pb-8 pt-4">
         <Link href="/dashboard/podcasts" className="btn btn-outline w-32">
           取消
         </Link>

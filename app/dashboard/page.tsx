@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import React from "react";
 import CardWrapper from "@/components/dashboard/cards";
-import { lusitana } from "@/components/fonts";
 import prisma from "@/app/lib/prisma";
 import { auth } from "@/auth";
 
@@ -25,9 +24,6 @@ export default async function Page() {
 
   return (
     <main>
-      <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        后台管理控制台
-      </h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <CardWrapper />
       </div>

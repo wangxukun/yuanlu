@@ -10,7 +10,12 @@ import React, { useActionState, useEffect, useState } from "react";
 import { Podcast, Tag } from "@/app/types/podcast";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
-import { CheckIcon, ClockIcon, PlusIcon } from "@heroicons/react/24/outline";
+import {
+  CheckIcon,
+  ClockIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import UploadSubtitles from "@/components/dashboard/episodes/uploadSubtitles";
 import { UploadedSubtitleFile } from "@/app/types/podcast";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
@@ -196,16 +201,24 @@ export default function EpisodeForm() {
 
   return (
     <>
-      <form action={action} className="space-y-3">
-        <UploadAudio onUploadComplete={handleUploadAudioComplete} />
+      <form action={action} className="space-y-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">音频文件</span>
+          </div>
+          <UploadAudio onUploadComplete={handleUploadAudioComplete} />
+        </div>
+        {/*<UploadAudio onUploadComplete={handleUploadAudioComplete}/>*/}
         {/* 添加隐藏字段来传递音频信息 */}
         <input type="hidden" name="audioFileName" value={audioFileName} />
         <input type="hidden" name="audioUrl" value={audioUrl} />
         <input type="hidden" name="audioDuration" value={audioDuration} />
+        {/* 封面图片 */}
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-red-500">*</span>
-            <span>封面</span>
+            <span className="font-semibold">封面</span>
           </div>
           <UploadCover
             onUploadComplete={handleUploadCoverComplete}
@@ -216,9 +229,9 @@ export default function EpisodeForm() {
           <input type="hidden" name="coverUrl" value={coverUrl} />
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-red-500">*</span>
-            <span>标题</span>
+            <span className="font-semibold">标题</span>
           </div>
           <input
             id="title"
@@ -226,14 +239,14 @@ export default function EpisodeForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             type="text"
-            className="input input-success flex-1 m-6"
+            className="input input-success flex-1 ml-6 mr-6"
             placeholder="请输入标题"
           />
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-red-500">*</span>
-            <span>标签</span>
+            <span className="font-semibold">标签</span>
           </div>
           <TagSelector
             availableTags={tags}
@@ -248,9 +261,9 @@ export default function EpisodeForm() {
           ))}
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-red-500">*</span>
-            <span>简介</span>
+            <span className="font-semibold">简介</span>
           </div>
           <textarea
             rows={4}
@@ -258,16 +271,16 @@ export default function EpisodeForm() {
             id="description"
             name="description"
             placeholder="填写更全面的相关信息，让更多人能找到你的音频吧"
-            className="textarea textarea-success flex-1 m-6"
+            className="textarea textarea-success flex-1 ml-6 mr-6"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
           />
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center justify-center mr-4 gap-2">
             <span className="text-red-500">*</span>
-            <span>发布状态</span>
+            <span className="font-semibold">发布状态</span>
           </div>
           <div className="rounded-md px-[14px] py-3">
             <div className="flex gap-4">
@@ -309,9 +322,9 @@ export default function EpisodeForm() {
           </div>
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center justify-center mr-4 gap-2">
             <span className="text-red-500">*</span>
-            <span>发布日期</span>
+            <span className="font-semibold">发布日期</span>
           </div>
           <input
             id="publishDate"
@@ -324,9 +337,9 @@ export default function EpisodeForm() {
           />
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center mr-4">
+          <div className="flex items-center justify-center mr-4 gap-2">
             <span className="text-red-500">*</span>
-            <span>加入合集</span>
+            <span className="font-semibold">加入合集</span>
           </div>
           <PodcastSelecter
             podcasts={podcasts}
@@ -336,8 +349,8 @@ export default function EpisodeForm() {
           <input type="hidden" name="podcastId" value={podcastId} />
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center m-6 ml-1.5">
-            <span>付费订阅</span>
+          <div className="flex items-center justify-center m-6 ml-3">
+            <span className="font-semibold">付费订阅</span>
           </div>
           <div className="flex items-center ml-4">
             <input
@@ -357,8 +370,8 @@ export default function EpisodeForm() {
           </div>
         </div>
         <div className="flex flex-row">
-          <div className="flex items-center justify-center ml-1.5">
-            <span>字幕设置</span>
+          <div className="flex items-center justify-center ml-3">
+            <span className="font-semibold">字幕设置</span>
           </div>
           {subtitleEnFileName || subtitleZhFileName ? (
             <div className="flex items-center bg-base-300 rounded pl-4 ml-4">
@@ -384,7 +397,7 @@ export default function EpisodeForm() {
             <div className="flex items-center ml-4">
               <button
                 type="button"
-                className="btn border-0"
+                className="btn btn-outline btn-sm gap-2"
                 onClick={() => {
                   const modal = document.getElementById(
                     "upload_subtitles_modal",
@@ -413,13 +426,16 @@ export default function EpisodeForm() {
           <input type="hidden" name="subtitleEnUrl" value={subtitleEnUrl} />
           <input type="hidden" name="subtitleZhUrl" value={subtitleZhUrl} />
         </div>
-        <div className="mt-6 flex justify-start gap-4">
+
+        <div className="divider"></div>
+        <div className="flex justify-start gap-4 pb-8 pt-4">
           <button
             type="button"
             className="btn btn-outline w-32"
             onClick={handleCancel}
           >
-            清除上传内容
+            <TrashIcon className="h-4 w-4" />
+            清除上传
           </button>
           <button
             className="btn btn-primary w-32"

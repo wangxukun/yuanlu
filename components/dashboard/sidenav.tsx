@@ -17,7 +17,7 @@ export default async function SideNav() {
         className="mb-2 flex h-32 flex-col items-center justify-center gap-5 rounded-md bg-gray-50 p-4 md:h-40"
         href="/"
       >
-        <div className="w-32 text-gray-600 md:w-40">
+        <div className="w-32 text-gray-600 md:w-48">
           <AcmeLogo />
         </div>
         <div className="text-xs font-bold">

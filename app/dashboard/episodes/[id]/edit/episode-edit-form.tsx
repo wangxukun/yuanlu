@@ -1,66 +1,42 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/button";
-import {
-  PhotoIcon,
-  MicrophoneIcon,
-  QueueListIcon,
-  ClockIcon,
-  CheckIcon,
-} from "@heroicons/react/24/outline";
-import { Episode, Tag } from "@/app/types/podcast";
+import React, { useActionState, useEffect, useState } from "react";
+import { Episode, Podcast, Tag } from "@/app/types/podcast";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
+import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
+import { CheckIcon, ClockIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
+import { createEpisode, EpisodeState } from "@/app/lib/actions";
+import { redirect } from "next/navigation";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 export default function EpisodeEditForm({ episode }: { episode: Episode }) {
-  const [uploadedFiles, setUploadedFiles] = useState<{
-    coverUrl?: string;
-    coverFileName?: string;
-    coverMessage?: string;
-    audioUrl?: string;
-    audioFileName?: string;
-    audioMessage?: string;
-    subtitleEnUrl?: string;
-    subtitleEnFileName?: string;
-    subtitleEnMessage?: string;
-    subtitleZhUrl?: string;
-    subtitleZhFileName?: string;
-    subtitleZhMessage?: string;
-  }>({
-    coverUrl: episode.coverUrl,
-    coverFileName: episode.coverFileName,
-    audioUrl: episode.audioUrl,
-    audioFileName: episode.audioFileName,
-    subtitleEnUrl: episode.subtitleEnUrl || undefined,
-    subtitleEnFileName: episode.subtitleEnFileName || undefined,
-    subtitleZhUrl: episode.subtitleZhUrl || undefined,
-    subtitleZhFileName: episode.subtitleZhFileName || undefined,
-  });
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(episode.coverUrl);
-  const [podcastId] = useState(episode.podcast.podcastid);
-  const [episodeTitle, setEpisodeTitle] = useState(episode.title);
-  const [duration, setDuration] = useState(episode.duration.toString());
-  const [description, setDescription] = useState(episode.description);
-  const [audioUrl, setAudioUrl] = useState(episode.audioUrl);
-  const [publishStatus, setPublishStatus] = useState(episode.status);
-  const [isExclusive, setIsExclusive] = useState(episode.isExclusive);
-  const [publishDate, setPublishDate] = useState(
-    new Date(episode.publishAt).toISOString().split("T")[0],
-  );
+  const [title, setTitle] = useState<string>(episode.title); // 标题
+  const [description, setDescription] = useState<string>(episode.description); // 描述
+  const [audioFileName] = useState<string>(episode.audioFileName!); // 音频文件名
+  const [audioUrl] = useState<string>(episode.audioUrl); // 音频文件url
+  const [publishStatus, setPublishStatus] = useState(episode.status); // 发布状态,已发布：paid，审核中：pending
+  const [isExclusive, setIsExclusive] = useState(episode.isExclusive); // 是否付费
+  const [publishDate, setPublishDate] = useState<string>(episode.publishAt); // 发布时间
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    episode.tags?.map((tag) => tag.tagid) || [],
-  );
-  const [tags, setTags] = useState<Tag[]>([]);
-  const router = useRouter();
+    (episode.tags || []).map((tag) => tag.tagid),
+  ); // 选中的标签
+  const [tags, setTags] = useState<Tag[]>([]); // 标签列表
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  const [podcastId, setPodcastId] = useState(episode.podcast.podcastid); // 播客id
+  const { setNeedConfirm } = useLeaveConfirm();
 
-  // 使用 useEffect 获取标签数据
+  // 播客选择回调函数
+  const handlePodcastSelect = (podcastId: string) => {
+    setPodcastId(podcastId);
+  };
+
+  // 使用 useEffect 获取标签数据、播客数据
   useEffect(() => {
-    const fetchData = async () => {
+    // 监听页面离开事件
+    setNeedConfirm(true);
+    const fetchTagsData = async () => {
       try {
         const res = await fetch(`${baseUrl}/api/tag/list`, {
           method: "GET",
@@ -75,386 +51,138 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
         console.error("Error fetching tags:", error);
       }
     };
-    fetchData();
+    const fetchPodcastData = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/podcast/list`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) {
+          throw new Error("Failed to fetch podcasts");
+        }
+        const data = await res.json();
+        setPodcasts(data);
+      } catch (error) {
+        console.error("Error fetching podcasts:", error);
+      }
+    };
+    fetchTagsData();
+    fetchPodcastData();
   }, []);
 
-  // 异步封面文件上传
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      // 将文件进行上传
-      try {
-        const formData = new FormData();
-        formData.append("cover", file);
-        const response = await fetch("/api/podcast/upload-episode-cover", {
-          method: "POST",
-          body: formData,
-        } as RequestInit);
-        const { coverUrl, coverFileName, message } = await response.json();
-        setUploadedFiles((prev) => ({
-          ...prev,
-          coverUrl,
-          coverFileName,
-          coverMessage: message,
-        }));
-      } catch (error) {
-        console.error("上传封面图片失败", error);
-      }
-    }
+  // 取消按钮点击事件处理函数
+  const handleCancel = async () => {
+    console.log("取消按钮点击事件处理函数");
   };
 
-  // 音频文件上传
-  const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAudioUrl(URL.createObjectURL(file));
-      // 将文件进行上传
-      try {
-        const formData = new FormData();
-        formData.append("audio", file);
-        const response = await fetch("/api/podcast/upload-episode-audio", {
-          method: "POST",
-          body: formData,
-        } as RequestInit);
-        const { audioUrl, audioFileName, message } = await response.json();
-        setUploadedFiles((prev) => ({
-          ...prev,
-          audioUrl,
-          audioFileName,
-          audioMessage: message,
-        }));
-      } catch (error) {
-        console.error("上传音频文件失败", error);
-      }
-    }
+  const initialState: EpisodeState = {
+    errors: {
+      title: "",
+      description: "",
+      audioFileName: "",
+      podcastId: "",
+      coverFileName: "",
+    },
+    message: null,
   };
 
-  // 中英文字幕上传
-  const handleEnChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // 将文件进行上传
-      try {
-        const formData = new FormData();
-        formData.append("subtitle", file);
-        const response = await fetch("/api/podcast/upload-episode-subtitle", {
-          method: "POST",
-          body: formData,
-        } as RequestInit);
-        const { subtitleUrl, subtitleFileName, message } =
-          await response.json();
-        setUploadedFiles((prev) => ({
-          ...prev,
-          subtitleEnUrl: subtitleUrl,
-          subtitleEnFileName: subtitleFileName,
-          subtitleEnMessage: message,
-        }));
-      } catch (error) {
-        console.error("上传字幕文件失败", error);
+  const [state, action, isPending] = useActionState<EpisodeState, FormData>(
+    createEpisode,
+    initialState,
+  );
+  // 处理 重定向
+  useEffect(() => {
+    if (state?.message?.startsWith("redirect:")) {
+      if (state.message != null) {
+        const redirectPath = state.message.split(":")[1];
+        redirect(redirectPath);
       }
     }
-  };
-
-  // 中文字幕上传
-  const handleZhChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // 将文件进行上传
-      try {
-        const formData = new FormData();
-        formData.append("subtitle", file);
-        const response = await fetch("/api/podcast/upload-episode-subtitle", {
-          method: "POST",
-          body: formData,
-        } as RequestInit);
-        const { subtitleUrl, subtitleFileName, message } =
-          await response.json();
-        setUploadedFiles((prev) => ({
-          ...prev,
-          subtitleZhUrl: subtitleUrl,
-          subtitleZhFileName: subtitleFileName,
-          subtitleZhMessage: message,
-        }));
-      } catch (error) {
-        console.error("上传字幕文件失败", error);
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("episodeid", episode.episodeid);
-    formData.append("podcastid", podcastId);
-    formData.append("episodeTitle", episodeTitle);
-    formData.append("coverUrl", uploadedFiles?.coverUrl || episode.coverUrl);
-    formData.append(
-      "coverFileName",
-      uploadedFiles?.coverFileName || episode.coverFileName || "",
-    );
-    formData.append("audioUrl", uploadedFiles?.audioUrl || episode.audioUrl);
-    formData.append(
-      "audioFileName",
-      uploadedFiles?.audioFileName || episode.audioFileName || "",
-    );
-    formData.append("duration", duration);
-    formData.append("publishDate", publishDate);
-    formData.append(
-      "subtitleEnUrl",
-      uploadedFiles?.subtitleEnUrl || episode.subtitleEnUrl || "",
-    );
-    formData.append(
-      "subtitleEnFileName",
-      uploadedFiles?.subtitleEnFileName || episode.subtitleEnFileName || "",
-    );
-    formData.append(
-      "subtitleZhUrl",
-      uploadedFiles?.subtitleZhUrl || episode.subtitleZhUrl || "",
-    );
-    formData.append(
-      "subtitleZhFileName",
-      uploadedFiles?.subtitleZhFileName || episode.subtitleZhFileName || "",
-    );
-    formData.append("description", description);
-    formData.append("publishStatus", publishStatus);
-    formData.append("isExclusive", isExclusive.toString());
-    // 将 selectedTags 添加到 FormData 中
-    selectedTags.forEach((tagId) => {
-      formData.append("tags", tagId);
-    });
-
-    try {
-      const response = await fetch("/api/episode/update", {
-        method: "PUT",
-        body: formData,
-      } as RequestInit);
-
-      if (response.ok) {
-        await router.push("/dashboard/episodes");
-      } else {
-        console.log("剧集更新失败");
-      }
-    } catch (error) {
-      console.error("剧集更新失败: ", error);
-    }
-  };
+  }, [state]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="rounded-md bg-gray-50 p-4 md:p-6">
-        {/* 剧集标题 */}
-        <div className="mb-4">
-          <label
-            htmlFor="episodeTitle"
-            className="mb-2 block text-sm font-medium"
-          >
-            剧集标题
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="episodeTitle"
-                name="episodeTitle"
-                type="text"
-                placeholder="剧集标题"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={episodeTitle}
-                onChange={(e) => setEpisodeTitle(e.target.value)}
-                required
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+    <>
+      <form action={action} className="space-y-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">音频文件</span>
+          </div>
+          <div className="w-full bg-base-200 p-4 rounded-lg mb-2 border border-base-300">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-base-content/70">
+                已上传: {audioFileName}
+              </span>
             </div>
+            <audio controls src={audioUrl} className="w-full" />
           </div>
         </div>
 
-        {/* 封面图片 */}
-        <div className="mb-4">
-          <label htmlFor="cover" className="mb-2 block text-sm font-medium">
-            封面图片
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="cover"
-                name="cover"
-                type="file"
-                accept="image/*"
-                placeholder="封面图片"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleCoverChange}
-              />
-              <PhotoIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
-            {previewUrl && (
-              <div className="mt-2">
-                <img
-                  src={previewUrl}
-                  alt="封面预览"
-                  className="h-32 w-32 object-cover rounded-md"
-                />
-              </div>
-            )}
-            <span>{uploadedFiles?.coverMessage}</span>
+        <div className="flex flex-row">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">标题</span>
           </div>
+          <input
+            id="title"
+            name="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            type="text"
+            className="input input-success flex-1 ml-6 mr-6"
+            placeholder="请输入标题"
+          />
         </div>
-
-        {/* 音频文件 */}
-        <div className="mb-4">
-          <label htmlFor="audio" className="mb-2 block text-sm font-medium">
-            上传音频文件
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="audio"
-                name="audio"
-                type="file"
-                accept="audio/*"
-                className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleAudioChange}
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">标签</span>
           </div>
-          {audioUrl && (
-            <div className="mt-2">
-              <audio controls src={audioUrl} className="w-full"></audio>
-            </div>
-          )}
-          <span>{uploadedFiles?.audioMessage}</span>
+          <TagSelector
+            availableTags={tags}
+            selectedTagIds={selectedTags}
+            onChange={setSelectedTags}
+            allowTypes={["EPISODE", "UNIVERSAL"]}
+            maxSelected={5}
+          />
+          {/* 添加隐藏字段来传递标签 */}
+          {selectedTags.map((tagId) => (
+            <input key={tagId} type="hidden" name="tags" value={tagId} />
+          ))}
         </div>
-
-        {/* 音频时长 */}
-        <div className="mb-4">
-          <label htmlFor="duration" className="mb-2 block text-sm font-medium">
-            音频时长 (秒)
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="duration"
-                name="duration"
-                type="text"
-                placeholder="音频时长"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                required
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">简介</span>
           </div>
+          <textarea
+            rows={4}
+            cols={50}
+            id="description"
+            name="description"
+            placeholder="填写更全面的相关信息，让更多人能找到你的音频吧"
+            className="textarea textarea-success flex-1 ml-6 mr-6"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+          />
         </div>
-
-        {/* 发布日期 */}
-        <div className="mb-4">
-          <label
-            htmlFor="publishDate"
-            className="mb-2 block text-sm font-medium"
-          >
-            发布日期
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="publishDate"
-                name="publishDate"
-                type="date"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={publishDate}
-                onChange={(e) => setPublishDate(e.target.value)}
-                required
-              />
-              <ClockIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4 gap-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">发布状态</span>
           </div>
-        </div>
-
-        {/* 英文字幕 */}
-        <div className="mb-4">
-          <label
-            htmlFor="subtitleEn"
-            className="mb-2 block text-sm font-medium"
-          >
-            英文字幕
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="subtitleEn"
-                name="subtitleEN"
-                type="file"
-                accept=".srt,.vtt"
-                className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleEnChange}
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
-          </div>
-          <span>{uploadedFiles?.subtitleEnMessage}</span>
-        </div>
-
-        {/* 中文字幕 */}
-        <div className="mb-4">
-          <label
-            htmlFor="subtitleZh"
-            className="mb-2 block text-sm font-medium"
-          >
-            中文字幕
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <input
-                id="subtitleZh"
-                name="subtitleZh"
-                type="file"
-                accept=".srt,.vtt"
-                className="peer block w-full rounded-md border py-2 border-gray-200 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                onChange={handleZhChange}
-              />
-              <MicrophoneIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
-          </div>
-          <span>{uploadedFiles?.subtitleZhMessage}</span>
-        </div>
-
-        {/* 发布状态 */}
-        <fieldset>
-          <legend className="mb-2 block text-sm font-medium">发布状态</legend>
-          <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3">
+          <div className="rounded-md px-[14px] py-3">
             <div className="flex gap-4">
               <div className="flex items-center">
                 <input
-                  id="pending"
-                  name="status"
-                  type="radio"
-                  checked={publishStatus === "pending"}
-                  value="pending"
-                  onChange={(e) => setPublishStatus(e.target.value)}
-                  className="text-white-600 h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
-                />
-                <label
-                  htmlFor="pending"
-                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
-                >
-                  待发布 <ClockIcon className="h-4 w-4" />
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
                   id="paid"
-                  name="status"
+                  name="publishStatus"
                   type="radio"
                   checked={publishStatus === "paid"}
                   value="paid"
                   onChange={(e) => setPublishStatus(e.target.value)}
-                  className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                  className="radio cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                 />
                 <label
                   htmlFor="paid"
@@ -463,79 +191,109 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
                   发布 <CheckIcon className="h-4 w-4" />
                 </label>
               </div>
-            </div>
-          </div>
-        </fieldset>
-
-        {/* 是否需要订阅 */}
-        <fieldset>
-          <legend className="mb-2 block text-sm font-medium">付费订阅</legend>
-          <div className="rounded-md border border-gray-200 bg-white px-[14px] py-3">
-            <div className="flex gap-4">
               <div className="flex items-center">
                 <input
-                  id="isExclusive"
-                  name="isExclusive"
-                  type="checkbox"
-                  checked={isExclusive}
-                  onChange={(e) => setIsExclusive(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                  id="pending"
+                  name="status"
+                  type="radio"
+                  checked={publishStatus === "pending"}
+                  value="pending"
+                  onChange={(e) => setPublishStatus(e.target.value)}
+                  className="radio text-white-600 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
                 />
                 <label
-                  htmlFor="isExclusive"
-                  className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                  htmlFor="pending"
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
                 >
-                  需要付费订阅
+                  待审核 <ClockIcon className="h-4 w-4" />
                 </label>
               </div>
             </div>
           </div>
-        </fieldset>
-
-        {/* 播客描述 */}
-        <div className="mb-4">
-          <label
-            htmlFor="description"
-            className="mb-2 block text-sm font-medium"
-          >
-            播客描述
-          </label>
-          <div className="relative mt-2 rounded-md">
-            <div className="relative">
-              <textarea
-                rows={4}
-                cols={50}
-                id="description"
-                name="description"
-                placeholder="播客描述"
-                className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-              <QueueListIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-            </div>
+        </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4 gap-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">发布日期</span>
+          </div>
+          <input
+            id="publishDate"
+            name="publishDate"
+            type="date"
+            className="input input-success w-80 m-6 ml-0"
+            value={publishDate}
+            onChange={(e) => setPublishDate(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4 gap-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">加入合集</span>
+          </div>
+          <PodcastSelecter
+            podcasts={podcasts}
+            onValueChange={handlePodcastSelect}
+          />
+          {/* 添加隐藏字段来传递集合id */}
+          <input type="hidden" name="podcastId" value={podcastId} />
+        </div>
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center m-6 ml-3">
+            <span className="font-semibold">付费订阅</span>
+          </div>
+          <div className="flex items-center ml-4">
+            <input
+              id="isExclusive"
+              name="isExclusive"
+              type="checkbox"
+              checked={isExclusive}
+              onChange={(e) => setIsExclusive(e.target.checked)}
+              className="checkbox checkbox-neutral"
+            />
+            <label
+              htmlFor="isExclusive"
+              className="ml-2 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+            >
+              付费订阅
+            </label>
           </div>
         </div>
 
-        <TagSelector
-          availableTags={tags}
-          selectedTagIds={selectedTags}
-          onChange={setSelectedTags}
-          allowTypes={["EPISODE", "UNIVERSAL"]}
-          maxSelected={5}
-        />
-      </div>
+        <div className="divider"></div>
+        <div className="flex justify-start gap-4 pb-8 pt-4">
+          <button
+            type="button"
+            className="btn btn-outline w-32"
+            onClick={handleCancel}
+          >
+            <TrashIcon className="h-4 w-4" />
+            取消修改
+          </button>
+          <button
+            className="btn btn-primary w-32"
+            disabled={isPending}
+            type="submit"
+          >
+            {isPending ? "更新中..." : "立即更新"}
+          </button>
+        </div>
 
-      <div className="mt-6 flex justify-end gap-4">
-        <Link
-          href="/dashboard/episodes"
-          className="flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
-        >
-          取消
-        </Link>
-        <Button type="submit">更新剧集</Button>
-      </div>
-    </form>
+        {/* 显示错误信息 */}
+        {state?.message &&
+          state.message !== "redirect:/dashboard/episodes/create-success" && (
+            <p className="text-red-500">{state.message}</p>
+          )}
+        {state?.errors &&
+          Object.values(state.errors).map(
+            (error, index) =>
+              error && (
+                <p key={index} className="text-red-500">
+                  {error}
+                </p>
+              ),
+          )}
+      </form>
+    </>
   );
 }
