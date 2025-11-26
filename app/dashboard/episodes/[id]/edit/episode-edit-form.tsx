@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useActionState, useEffect, useState } from "react";
-import { Episode, Podcast, Tag } from "@/app/types/podcast";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
 import { CheckIcon, ClockIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
-import { createEpisode, EpisodeState } from "@/app/lib/actions";
+import { createEpisode, EpisodeState } from "@/lib/actions";
 import { redirect } from "next/navigation";
+import { Tag } from "@/core/tag/tag.entity";
+import { Podcast } from "@/core/podcast/podcast.entity";
+import { Episode } from "@/core/episode/episode.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
-import { isTagType } from "@/app/types/tag";
+import prisma from "@/lib/prisma";
+import { isTagType } from "@/core/tag/tag.entity";
 import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {

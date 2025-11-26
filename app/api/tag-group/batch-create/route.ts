@@ -1,5 +1,5 @@
-import { TagType } from "@/app/types/tag";
-import prisma from "@/app/lib/prisma";
+import { TagType } from "@/core/tag/tag.entity";
+import prisma from "@/lib/prisma";
 
 const tagGroups = [
   {

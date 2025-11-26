@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import React from "react";
 import CardWrapper from "@/components/dashboard/cards";
-import prisma from "@/app/lib/prisma";
+import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
 export default async function Page() {

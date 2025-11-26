@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Episode } from "@/app/types/podcast";
-import { formatTime } from "@/app/lib/tools";
+import { formatTime } from "@/lib/tools";
+import { Episode } from "@/core/episode/episode.entity";
 
 export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");

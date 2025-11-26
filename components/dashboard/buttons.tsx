@@ -17,7 +17,7 @@ import {
   EpisodeDelState,
   PodcastDelState,
   UserDelState,
-} from "@/app/lib/actions";
+} from "@/lib/actions";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { redirect } from "next/navigation";
 

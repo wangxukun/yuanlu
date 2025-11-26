@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Episode, Status, Access } from "@/app/lib/types";
-import { MOCK_EPISODES } from "@/app/lib/constants";
+import { MOCK_EPISODES } from "@/lib/constants";
 import {
   PlayIcon,
   HeartIcon,
@@ -14,13 +13,18 @@ import {
   ChevronRightIcon,
 } from "./Icons";
 import ActionDropdown from "./ActionDropdown";
+import {
+  Access,
+  EpisodeManagementItem,
+  Status,
+} from "@/core/episode/dto/episode-management-item";
 
 const ITEMS_PER_PAGE = 10;
 
 const EpisodeTable: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [data] = useState<Episode[]>(MOCK_EPISODES);
+  const [data] = useState<EpisodeManagementItem[]>(MOCK_EPISODES);
 
   useEffect(() => {
     setIsClient(true);
@@ -40,8 +44,6 @@ const EpisodeTable: React.FC = () => {
         return "bg-emerald-100 text-emerald-800 border-emerald-200";
       case Status.REVIEWING:
         return "bg-amber-100 text-amber-800 border-amber-200";
-      case Status.DRAFT:
-        return "bg-slate-100 text-slate-800 border-slate-200";
       default:
         return "bg-slate-100 text-slate-800";
     }

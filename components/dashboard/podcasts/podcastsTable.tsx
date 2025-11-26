@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { fetchPodcasts } from "@/app/lib/data";
+import { fetchPodcasts } from "@/lib/data";
 import {
   DeletePodcastBtn,
   UpdatePodcastBtn,
 } from "@/components/dashboard/buttons";
-import { Podcast } from "@/app/types/podcast";
+import { Podcast } from "@/core/podcast/podcast.entity";
 
 export default async function PodCastsTable() {
   const podcasts = ((await fetchPodcasts()) as Podcast[]) || [];

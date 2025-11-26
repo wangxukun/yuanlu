@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema } from "@/app/lib/form-schema";
+import { signInSchema } from "@/lib/form-schema";
 
 const EmailCheckForm = () => {
   const setCheckedEmail = useAuthStore((state) => state.setCheckedEmail);

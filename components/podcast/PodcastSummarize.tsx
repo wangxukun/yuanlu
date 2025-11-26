@@ -6,8 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { usePlayerStore } from "@/store/player-store";
-import { Podcast } from "@/app/types/podcast";
 import { PodcastFavoriteBtn } from "@/components/FavoriteBtn";
+import { Podcast } from "@/core/podcast/podcast.entity";
 
 export default function PodcastSummarize({ podcast }: { podcast: Podcast }) {
   const { data: session } = useSession();

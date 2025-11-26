@@ -2,7 +2,7 @@
 import { usePlayerStore } from "@/store/player-store";
 import { useEffect, useRef } from "react";
 import { debounce } from "lodash";
-import { formatTime } from "@/app/lib/tools";
+import { formatTime } from "@/lib/tools";
 import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
 import PodcastIcon from "@/components/icons/PodcastIcon";
 import Image from "next/image";

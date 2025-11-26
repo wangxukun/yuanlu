@@ -1,7 +1,9 @@
-import { generateSignatureUrl } from "@/app/lib/oss";
-import { Episode, Podcast, Tag, TagGroup } from "@/app/types/podcast";
+import { generateSignatureUrl } from "@/lib/oss";
 import axios from "axios";
-import { User } from "@/app/types/user";
+import { Tag, TagGroup } from "@/core/tag/tag.entity";
+import { Podcast } from "@/core/podcast/podcast.entity";
+import { Episode } from "@/core/episode/episode.entity";
+import { User } from "@/core/user/user.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 

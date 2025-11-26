@@ -1,6 +1,6 @@
 // seedTags.ts
-import prisma from "@/app/lib/prisma";
-import { TagType } from "@/app/types/tag";
+import prisma from "@/lib/prisma";
+import { TagType } from "@/core/tag/tag.entity";
 
 export async function initializeTags() {
   const podcastTags = [

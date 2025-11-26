@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Podcast } from "@/app/types/podcast";
+import { Podcast } from "@/core/podcast/podcast.entity";
 
 interface PodcastSelecterProps {
   podcasts: Podcast[];

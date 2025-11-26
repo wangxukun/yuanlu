@@ -11,8 +11,9 @@ import {
   ClockIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
-import { Episode, Tag } from "@/app/types/podcast";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
+import { Episode } from "@/core/episode/episode.entity";
+import { Tag } from "@/core/tag/tag.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 

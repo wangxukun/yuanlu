@@ -5,7 +5,7 @@ import "@/app/globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import AuthProvider from "@/app/AuthProvider";
-import "@/app/lib/sessionCleaner";
+import "@/lib/sessionCleaner";
 import SideNav from "@/components/main/sidenav";
 import PlayControlBar from "@/components/controls/PlayControlBar";
 import EmailCheckDialog from "@/components/auth/email-check-dialog";

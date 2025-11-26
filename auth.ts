@@ -1,8 +1,8 @@
 import NextAuth, { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { ZodError } from "zod";
-import { signInSchema } from "@/app/lib/form-schema";
-import prisma from "@/app/lib/prisma";
+import { signInSchema } from "@/lib/form-schema";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { JWT } from "next-auth/jwt";
 import { AdapterSession } from "@auth/core/adapters";

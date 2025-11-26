@@ -1,10 +1,10 @@
-import { fetchUsers } from "@/app/lib/data";
-import { User } from "@/app/types/user";
+import { fetchUsers } from "@/lib/data";
 import {
   DeleteUserBtn,
   ReadUserBtn,
   UpdateUserBtn,
 } from "@/components/dashboard/buttons";
+import { User } from "@/core/user/user.entity";
 
 export default async function UsersTable() {
   const users = ((await fetchUsers()) as User[]) || [];

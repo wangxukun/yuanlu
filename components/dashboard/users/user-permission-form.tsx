@@ -1,8 +1,8 @@
 "use client";
-import { User } from "@/app/types/user";
 import React, { useState } from "react";
 import { CheckIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/button";
+import { User } from "@/core/user/user.entity";
 
 export default function UserPermissionForm({ user }: { user: User }) {
   const [isCommentAllowed, setIsCommentAllowed] = useState(

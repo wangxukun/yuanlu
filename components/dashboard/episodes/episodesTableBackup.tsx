@@ -1,12 +1,12 @@
 import Image from "next/image";
-import { fetchEpisodes } from "@/app/lib/data";
-import { Episode } from "@/app/types/podcast";
+import { fetchEpisodes } from "@/lib/data";
 import {
   DeleteEpisodeBtn,
   UpdateEpisodeBtn,
 } from "@/components/dashboard/buttons";
 import EpisodeStatus from "@/components/dashboard/episodes/status";
 import IsExclusive from "@/components/dashboard/episodes/IsExclusive";
+import { Episode } from "@/core/episode/episode.entity";
 
 export default async function EpisodesTableBackup() {
   const episodes = ((await fetchEpisodes()) as Episode[]) || [];

@@ -2,7 +2,7 @@
 // 注册表单组件
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema, SignInFormValues } from "@/app/lib/form-schema";
+import { signInSchema, SignInFormValues } from "@/lib/form-schema";
 
 export default function SignUpForm() {
   const checkedEmail = useAuthStore((state) => state.checkedEmail);

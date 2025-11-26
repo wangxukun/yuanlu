@@ -1,5 +1,5 @@
-import { fetchTags } from "@/app/lib/data";
-import { Tag } from "@/app/types/podcast";
+import { fetchTags } from "@/lib/data";
+import { Tag } from "@/core/tag/tag.entity";
 
 export async function TagsTable() {
   const tags = ((await fetchTags()) as Tag[]) || [];

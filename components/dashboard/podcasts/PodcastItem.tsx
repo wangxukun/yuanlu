@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Episode, Podcast } from "@/app/types/podcast";
 import Image from "next/image";
+import { Podcast } from "@/core/podcast/podcast.entity";
+import { Episode } from "@/core/episode/episode.entity";
 
 export default function PodcastItem({ podcast }: { podcast: Podcast }) {
   const [isOpen, setIsOpen] = useState(false);

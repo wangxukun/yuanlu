@@ -3,7 +3,7 @@
  * 上传文件到OSS并返回上传文件的URL
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getBucketAcl, uploadFile } from "@/app/lib/oss";
+import { getBucketAcl, uploadFile } from "@/lib/oss";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();

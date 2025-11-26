@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Tag } from "@/app/types/podcast";
+import { Tag } from "@/core/tag/tag.entity";
 
 type TagType = "PODCAST" | "EPISODE" | "UNIVERSAL";
 

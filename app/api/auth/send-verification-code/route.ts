@@ -1,6 +1,6 @@
 // /api/auth/send-verification-code.ts
-import prisma from "@/app/lib/prisma";
-import { generateRandomCode } from "@/app/lib/tools";
+import prisma from "@/lib/prisma";
+import { generateRandomCode } from "@/lib/tools";
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 

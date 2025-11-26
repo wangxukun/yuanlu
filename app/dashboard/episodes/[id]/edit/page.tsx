@@ -1,9 +1,9 @@
 import { Metadata } from "next";
-import { fetchEpisodeById } from "@/app/lib/data";
-import { Episode } from "@/app/types/podcast";
+import { fetchEpisodeById } from "@/lib/data";
 import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import { notFound } from "next/navigation";
 import EpisodeEditForm from "@/app/dashboard/episodes/[id]/edit/episode-edit-form";
+import { Episode } from "@/core/episode/episode.entity";
 
 export const metadata: Metadata = {
   title: "Update Episode",

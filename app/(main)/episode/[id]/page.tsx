@@ -1,4 +1,4 @@
-import { fetchEpisodeById, mergeSubtitles } from "@/app/lib/data";
+import { fetchEpisodeById, mergeSubtitles } from "@/lib/data";
 import EpisodeSummarize from "@/components/episode/EpisodeSummarize";
 import EpisodeDocument from "@/components/episode/EpisodeDocument";
 

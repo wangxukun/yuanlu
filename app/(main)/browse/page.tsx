@@ -1,9 +1,10 @@
 // 在你的页面组件中
 // 强制动态渲染页面
+import { Podcast } from "@/core/podcast/podcast.entity";
+
 export const dynamic = "force-dynamic";
 import List from "@/components/list/List";
-import { fetchPodcasts } from "@/app/lib/data";
-import { Podcast } from "@/app/types/podcast";
+import { fetchPodcasts } from "@/lib/data";
 
 export default async function Home() {
   let podcasts: Podcast[] = [];

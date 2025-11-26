@@ -12,9 +12,9 @@ import {
   ClockIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
-import { PodcastField } from "@/app/lib/definitions";
+import { PodcastField } from "@/lib/definitions";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
-import { Tag } from "@/app/types/podcast";
+import { Tag } from "@/core/tag/tag.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function EpisodeForm({

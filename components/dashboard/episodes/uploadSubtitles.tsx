@@ -2,7 +2,7 @@
 
 import { PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { useRef, useState } from "react";
-import { deleteFile } from "@/app/lib/actions";
+import { deleteFile } from "@/lib/actions";
 import {
   UploadSubtitlesResponse,
   UploadedSubtitleFile,

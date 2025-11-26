@@ -1,13 +1,16 @@
-import { Episode, Status, Access } from "./types";
+import {
+  Access,
+  EpisodeManagementItem,
+  Status,
+} from "@/core/episode/dto/episode-management-item";
 
-const generateMockData = (): Episode[] => {
-  const episodes: Episode[] = [];
+const generateMockData = (): EpisodeManagementItem[] => {
+  const episodes: EpisodeManagementItem[] = [];
   const statuses = [
     Status.PUBLISHED,
     Status.REVIEWING,
     Status.PUBLISHED,
     Status.PUBLISHED,
-    Status.DRAFT,
   ];
   const accesses = [Access.FREE, Access.MEMBER, Access.FREE];
 

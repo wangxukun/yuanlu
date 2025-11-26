@@ -11,8 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { DeleteCoverBtn } from "@/components/dashboard/buttons";
 import { useRouter } from "next/navigation";
-import { TagType } from "@/app/types/tag";
-import { TagGroup } from "@/app/types/podcast";
+import { TagType, TagGroup } from "@/core/tag/tag.entity";
 
 export default function TagForm({ tagGroups }: { tagGroups: TagGroup[] }) {
   const [uploadedFiles, setUploadedFiles] = useState<{

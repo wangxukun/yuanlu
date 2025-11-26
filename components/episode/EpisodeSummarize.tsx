@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { Episode } from "@/app/types/podcast";
-import { formatTime } from "@/app/lib/tools";
+import { formatTime } from "@/lib/tools";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { usePlayerStore } from "@/store/player-store";
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { EpisodeFavoriteBtn } from "@/components/FavoriteBtn";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { Episode } from "@/core/episode/episode.entity";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const { data: session } = useSession();

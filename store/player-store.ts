@@ -1,7 +1,7 @@
 // 导入create函数，用于创建 Zustand store
 import { create } from "zustand";
+import { Episode } from "@/core/episode/episode.entity";
 // 导入Episode类型，用于定义当前播放的集数
-import { Episode } from "@/app/types/podcast";
 
 // 定义PlayerState接口，描述播放器的状态和操作
 interface PlayerState {

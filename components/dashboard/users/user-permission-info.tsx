@@ -1,4 +1,4 @@
-import { User } from "@/app/types/user";
+import { User } from "@/core/user/user.entity";
 
 export default async function UserPermissionInfo({ user }: { user: User }) {
   return (

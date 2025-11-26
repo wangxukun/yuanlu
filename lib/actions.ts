@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { registerFormSchema } from "@/app/lib/form-schema";
-import { deleteObject } from "@/app/lib/oss";
+import { registerFormSchema } from "@/lib/form-schema";
+import { deleteObject } from "@/lib/oss";
 import { auth } from "@/auth";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";

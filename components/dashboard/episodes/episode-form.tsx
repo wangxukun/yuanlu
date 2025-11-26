@@ -7,7 +7,6 @@ import UploadCover, {
   UploadCoverResponse,
 } from "@/components/dashboard/episodes/uploadCover";
 import React, { useActionState, useEffect, useState } from "react";
-import { Podcast, Tag } from "@/app/types/podcast";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
 import {
@@ -19,8 +18,10 @@ import {
 import UploadSubtitles from "@/components/dashboard/episodes/uploadSubtitles";
 import { UploadedSubtitleFile } from "@/app/types/podcast";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
-import { createEpisode, deleteFile, EpisodeState } from "@/app/lib/actions";
+import { createEpisode, deleteFile, EpisodeState } from "@/lib/actions";
 import { redirect } from "next/navigation";
+import { Tag } from "@/core/tag/tag.entity";
+import { Podcast } from "@/core/podcast/podcast.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 

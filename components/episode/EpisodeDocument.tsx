@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Episode } from "@/app/types/podcast";
 import { usePlayerStore } from "@/store/player-store";
 import { ArrowUturnLeftIcon, SunIcon } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
 import { LanguageIcon } from "@heroicons/react/24/outline";
+import { Episode } from "@/core/episode/episode.entity";
 
 interface Subtitles {
   id: number;

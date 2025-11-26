@@ -3,13 +3,13 @@
 import React, { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/button";
-import { createPodcast, PodcastState } from "@/app/lib/actions";
+import { createPodcast, PodcastState } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
-import { Tag } from "@/app/types/podcast";
 import UploadCover, {
   UploadCoverResponse,
 } from "@/components/dashboard/episodes/uploadCover";
+import { Tag } from "@/core/tag/tag.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function PodcastForm() {

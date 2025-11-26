@@ -1,9 +1,9 @@
 "use client";
 import PodcastItem from "@/components/dashboard/podcasts/PodcastItem";
-import { Podcast } from "@/app/types/podcast";
 import React, { Suspense, useEffect, useState } from "react";
 import Search from "@/components/search";
 import { CreatePodcastBtn } from "@/components/dashboard/buttons";
+import { Podcast } from "@/core/podcast/podcast.entity";
 
 export default function Home() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);

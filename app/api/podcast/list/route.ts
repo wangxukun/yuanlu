@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
-import { generateSignatureUrl } from "@/app/lib/oss";
+import prisma from "@/lib/prisma";
+import { generateSignatureUrl } from "@/lib/oss";
 
 export async function GET() {
   try {
