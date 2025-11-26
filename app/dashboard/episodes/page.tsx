@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import PodcastTable from "@/components/dashboard/episodes/PodcastTable";
+import EpisodeTable from "@/components/dashboard/episodes/EpisodeTable";
 import { MicIcon } from "@/components/dashboard/episodes/Icons";
 import Link from "next/link";
 
@@ -81,7 +81,7 @@ const Page: React.FC = () => {
         </div>
 
         {/* Data Table */}
-        <PodcastTable />
+        <EpisodeTable />
       </div>
     </main>
   );

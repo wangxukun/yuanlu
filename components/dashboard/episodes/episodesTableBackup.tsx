@@ -8,7 +8,7 @@ import {
 import EpisodeStatus from "@/components/dashboard/episodes/status";
 import IsExclusive from "@/components/dashboard/episodes/IsExclusive";
 
-export default async function EpisodesTable() {
+export default async function EpisodesTableBackup() {
   const episodes = ((await fetchEpisodes()) as Episode[]) || [];
 
   return (

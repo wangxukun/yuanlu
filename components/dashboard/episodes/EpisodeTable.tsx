@@ -17,7 +17,7 @@ import ActionDropdown from "./ActionDropdown";
 
 const ITEMS_PER_PAGE = 10;
 
-const PodcastTable: React.FC = () => {
+const EpisodeTable: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [data] = useState<Episode[]>(MOCK_EPISODES);
@@ -268,4 +268,4 @@ const PodcastTable: React.FC = () => {
   );
 };
 
-export default PodcastTable;
+export default EpisodeTable;
