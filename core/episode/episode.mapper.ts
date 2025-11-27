@@ -1,3 +1,14 @@
+/**
+ * Mapper 层 = 只做不同视图输出类型的转换
+ *
+ * 例如：
+ * Episode → EpisodeManagementItem
+ * Episode → EpisodePlayItem
+ * Episode → EpisodeListItem
+ * Episode → EpisodeDetail
+ * 前端视图不同 → 输出对象不同
+ * 所有这类转换，都不应该放在 API Route 层。
+ */
 import { Episode } from "./episode.entity";
 import {
   Access,
@@ -23,7 +34,8 @@ export class EpisodeMapper {
         shares: 0,
         comments: 0,
       },
-      duration: e.duration.toString(),
+      // duration: e.duration.toString(),
+      duration: "6",
     };
   }
 

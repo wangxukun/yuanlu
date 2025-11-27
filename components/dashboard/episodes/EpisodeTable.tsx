@@ -21,10 +21,15 @@ import {
 
 const ITEMS_PER_PAGE = 10;
 
-const EpisodeTable: React.FC = () => {
+export default function EpisodeTable({
+  episodeManagementItems,
+}: {
+  episodeManagementItems: EpisodeManagementItem[];
+}) {
   const [isClient, setIsClient] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [data] = useState<EpisodeManagementItem[]>(MOCK_EPISODES);
+  console.log(episodeManagementItems);
 
   useEffect(() => {
     setIsClient(true);
@@ -268,6 +273,4 @@ const EpisodeTable: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default EpisodeTable;
+}

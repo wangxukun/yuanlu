@@ -1,3 +1,17 @@
+/**
+ * Repository层，只做数据库查询
+ * 不做业务逻辑
+ * 不做映射
+ * 不做计算
+ * 不做过滤
+ * 不做分页逻辑
+ * 不做权限逻辑
+ *
+ * 如果 API 直接用 Repository，那么：
+ *
+ * 未来你所有 API 都要重复写同样的逻辑
+ * = 重复代码 → 维护困难 → 极易出 Bug
+ */
 import prisma from "@/lib/prisma";
 import { Episode } from "@/core/episode/episode.entity";
 

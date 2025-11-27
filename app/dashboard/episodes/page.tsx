@@ -1,11 +1,12 @@
-"use client";
-
 import React from "react";
 import EpisodeTable from "@/components/dashboard/episodes/EpisodeTable";
 import { MicIcon } from "@/components/dashboard/episodes/Icons";
 import Link from "next/link";
 
-const Page: React.FC = () => {
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+export default async function Page() {
+  const result = await fetch(`${baseUrl}/api/episode/management-list`);
+  const episodeManagementItems = await result.json();
   return (
     <main className="flex-1 overflow-y-auto scroll-smooth">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -81,10 +82,8 @@ const Page: React.FC = () => {
         </div>
 
         {/* Data Table */}
-        <EpisodeTable />
+        <EpisodeTable episodeManagementItems={episodeManagementItems} />
       </div>
     </main>
   );
-};
-
-export default Page;
+}
