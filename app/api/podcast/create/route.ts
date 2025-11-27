@@ -14,15 +14,6 @@ export async function POST(request: Request) {
       tags,
       isEditorPick,
     } = await request.json();
-    console.log(
-      podcastName,
-      platform,
-      description,
-      coverUrl,
-      coverFileName,
-      tags,
-      isEditorPick,
-    );
     // 检查是否缺少参数
     if (!podcastName || !platform || !description || !coverUrl || !tags) {
       return NextResponse.json(

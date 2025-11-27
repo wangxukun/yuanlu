@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { fetchEpisodeById } from "@/lib/data";
-import Breadcrumbs from "@/components/dashboard/breadcrumbs";
 import { notFound } from "next/navigation";
 import EpisodeEditForm from "@/app/dashboard/episodes/[id]/edit/episode-edit-form";
 import { Episode } from "@/core/episode/episode.entity";
@@ -20,20 +19,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <main>
-      <Breadcrumbs
-        breadcrumbs={[
-          { label: "音频管理", href: "/dashboard/episodes" },
-          {
-            label: "修改音频",
-            href: `/dashboard/episodes/${id}/edit`,
-            active: true,
-          },
-        ]}
-      />
-      <div className="rounded-lg bg-base-200 text-sm p-6 max-w-4xl mx-auto">
-        <EpisodeEditForm episode={episode} />
-      </div>
-    </main>
+    <div className="rounded-lg bg-base-200 text-sm p-6 max-w-4xl mx-auto">
+      <EpisodeEditForm episode={episode} />
+    </div>
   );
 }

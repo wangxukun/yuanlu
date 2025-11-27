@@ -5,6 +5,11 @@ export function formatTime(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
+// 时间格式化工具函数
+export function formatDate(date: string) {
+  return new Date(date).toISOString().split("T")[0];
+}
+
 //  生成随机验证码
 export const generateRandomCode = (length: number) => {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");

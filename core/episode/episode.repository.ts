@@ -26,6 +26,7 @@ export const episodeRepository = {
         title: true,
         audioUrl: true,
         audioFileName: true,
+        duration: true,
         subtitleEnUrl: true,
         subtitleEnFileName: true,
         subtitleZhUrl: true,

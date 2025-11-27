@@ -17,10 +17,20 @@
  */
 import { episodeRepository } from "./episode.repository";
 import { EpisodeMapper } from "@/core/episode/episode.mapper";
+import { generateSignatureUrl } from "@/lib/oss";
 
 export const episodeService = {
   async getManagementList() {
     const episodes = await episodeRepository.findAll();
+    if (episodes.length > 0) {
+      for (const episode of episodes) {
+        // 获取封面图片的签名URL
+        episode.coverUrl = await generateSignatureUrl(
+          episode.coverFileName,
+          60 * 60 * 3,
+        );
+      }
+    }
     return episodes.map(EpisodeMapper.toManagementItem);
   },
 };

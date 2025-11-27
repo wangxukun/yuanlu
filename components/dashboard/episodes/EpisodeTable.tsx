@@ -18,6 +18,7 @@ import {
   EpisodeManagementItem,
   Status,
 } from "@/core/episode/dto/episode-management-item";
+import Link from "next/link";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,8 +29,9 @@ export default function EpisodeTable({
 }) {
   const [isClient, setIsClient] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [data] = useState<EpisodeManagementItem[]>(MOCK_EPISODES);
+  const [data] = useState<EpisodeManagementItem[]>(episodeManagementItems);
   console.log(episodeManagementItems);
+  console.log(MOCK_EPISODES);
 
   useEffect(() => {
     setIsClient(true);
@@ -106,7 +108,7 @@ export default function EpisodeTable({
                         <img
                           src={episode.coverUrl}
                           alt={episode.title}
-                          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-fill transform group-hover:scale-110 transition-transform duration-500"
                         />
                       </div>
                       <div className="min-w-0">
@@ -213,12 +215,13 @@ export default function EpisodeTable({
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
+                      <Link
+                        href={`/dashboard/episodes/${episode.id}/edit`}
                         className="p-2 text-slate-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors"
                         title="编辑"
                       >
                         <EditIcon size={18} />
-                      </button>
+                      </Link>
                       <ActionDropdown episodeId={episode.id} />
                     </div>
                   </td>

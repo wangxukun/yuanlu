@@ -43,6 +43,11 @@ export default function Header() {
               label: "创建音频",
               href: "/dashboard/episodes/create",
             });
+          } else if (pathSegments.includes("contribute")) {
+            breadcrumbs.push({
+              label: "投稿音频",
+              href: "/dashboard/episodes/contribute",
+            });
           } else if (pathSegments.length >= 3 && pathSegments[2]) {
             breadcrumbs.push({
               label: "编辑音频",
