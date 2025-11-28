@@ -3,17 +3,23 @@
 import React, { useActionState, useEffect, useState } from "react";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
-import { CheckIcon, ClockIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
 import { createEpisode, EpisodeState } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
-import { Episode } from "@/core/episode/episode.entity";
+import { formatDate } from "@/lib/tools";
+import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
+import Link from "next/link";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-export default function EpisodeEditForm({ episode }: { episode: Episode }) {
+export default function EpisodeEditForm({
+  episode,
+}: {
+  episode: EpisodeEditItem;
+}) {
   const [title, setTitle] = useState<string>(episode.title); // 标题
   const [description, setDescription] = useState<string>(episode.description); // 描述
   const [audioFileName] = useState<string>(episode.audioFileName!); // 音频文件名
@@ -22,12 +28,13 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
   const [isExclusive, setIsExclusive] = useState(episode.isExclusive); // 是否付费
   const [publishDate, setPublishDate] = useState<string>(episode.publishAt); // 发布时间
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    (episode.tags || []).map((tag) => tag.tagid),
+    (episode.tags || []).map((item) => item.tag.tagid),
   ); // 选中的标签
   const [tags, setTags] = useState<Tag[]>([]); // 标签列表
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
-  const [podcastId, setPodcastId] = useState(episode.podcast.podcastid); // 播客id
+  const [podcastId, setPodcastId] = useState(episode.podcastid); // 播客id
   const { setNeedConfirm } = useLeaveConfirm();
+  console.log("edit episode", episode);
 
   // 播客选择回调函数
   const handlePodcastSelect = (podcastId: string) => {
@@ -71,11 +78,6 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
     fetchTagsData();
     fetchPodcastData();
   }, []);
-
-  // 取消按钮点击事件处理函数
-  const handleCancel = async () => {
-    console.log("取消按钮点击事件处理函数");
-  };
 
   const initialState: EpisodeState = {
     errors: {
@@ -223,7 +225,7 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
             name="publishDate"
             type="date"
             className="input input-success w-80 m-6 ml-0"
-            value={publishDate}
+            value={formatDate(publishDate)}
             onChange={(e) => setPublishDate(e.target.value)}
             required
           />
@@ -234,6 +236,7 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
             <span className="font-semibold">加入合集</span>
           </div>
           <PodcastSelecter
+            currentPodcastId={podcastId}
             podcasts={podcasts}
             onValueChange={handlePodcastSelect}
           />
@@ -264,14 +267,9 @@ export default function EpisodeEditForm({ episode }: { episode: Episode }) {
 
         <div className="divider"></div>
         <div className="flex justify-start gap-4 pb-8 pt-4">
-          <button
-            type="button"
-            className="btn btn-outline w-32"
-            onClick={handleCancel}
-          >
-            <TrashIcon className="h-4 w-4" />
-            取消修改
-          </button>
+          <Link href="/dashboard/episodes" className="btn btn-outline w-32">
+            取消
+          </Link>
           <button
             className="btn btn-primary w-32"
             disabled={isPending}

@@ -343,6 +343,7 @@ export default function EpisodeForm() {
             <span className="font-semibold">加入合集</span>
           </div>
           <PodcastSelecter
+            currentPodcastId=""
             podcasts={podcasts}
             onValueChange={handlePodcastSelect}
           />

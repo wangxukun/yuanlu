@@ -1,8 +1,8 @@
 import { Metadata } from "next";
-import { fetchEpisodeById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import EpisodeEditForm from "@/app/dashboard/episodes/[id]/edit/episode-edit-form";
-import { Episode } from "@/core/episode/episode.entity";
+import { episodeService } from "@/core/episode/episode.service";
+import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 
 export const metadata: Metadata = {
   title: "Update Episode",
@@ -12,7 +12,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const id = params.id;
 
-  const episode: Episode = await fetchEpisodeById(id);
+  const episode: EpisodeEditItem = await episodeService.getEditItem(id);
 
   if (!episode) {
     notFound();

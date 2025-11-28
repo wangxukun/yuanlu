@@ -25,5 +25,5 @@ export interface Episode {
   isCommentEnabled: boolean;
   podcast: Podcast;
   tags: EpisodeTags[];
-  episodeFavorites: EpisodeFavorites[];
+  episode_favorites: EpisodeFavorites[];
 }

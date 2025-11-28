@@ -31,6 +31,7 @@ export const episodeRepository = {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        podcastid: true,
         publishAt: true,
         createAt: true,
         status: true,
@@ -48,11 +49,63 @@ export const episodeRepository = {
     return episodes as unknown as Episode[];
   },
 
-  async findById(id: string): Promise<Episode | null> {
+  async findById(id: string): Promise<Episode> {
     const episode = await prisma.episode.findUnique({
-      where: { episodeid: id },
+      where: {
+        episodeid: id,
+      },
+      select: {
+        // 明确选择需要字段
+        episodeid: true,
+        title: true,
+        description: true,
+        coverUrl: true,
+        coverFileName: true,
+        duration: true,
+        audioUrl: true,
+        audioFileName: true,
+        subtitleEnUrl: true,
+        subtitleEnFileName: true,
+        subtitleZhUrl: true,
+        subtitleZhFileName: true,
+        podcastid: true,
+        publishAt: true,
+        createAt: true,
+        status: true,
+        isExclusive: true,
+        isCommentEnabled: true,
+        uploaderid: true,
+        updateAt: true,
+        episode_favorites: {
+          select: {
+            userid: true,
+            favoriteid: true,
+            episodeid: true,
+          },
+        },
+        podcast: {
+          select: {
+            podcastid: true,
+            title: true,
+            coverUrl: true,
+            coverFileName: true,
+            description: true,
+            platform: true,
+          },
+        },
+        tags: {
+          select: {
+            tag: {
+              select: {
+                tagid: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
-    return episode as Episode | null;
+    return episode as unknown as Episode;
   },
 
   // async create(data: Omit<Episode, "episodeid" | "createdAt" | "updatedAt">) {

@@ -18,6 +18,7 @@ import {
 import { EpisodePlayItem } from "./dto/episode-play-item";
 import { EpisodeListItem } from "./dto/episode-list-item";
 import { formatDate, formatTime } from "@/lib/tools";
+import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 
 export class EpisodeMapper {
   static toManagementItem(e: Episode): EpisodeManagementItem {
@@ -37,6 +38,21 @@ export class EpisodeMapper {
         comments: 0,
       },
       duration: formatTime(e.duration),
+    };
+  }
+
+  static toEditItem(e: Episode): EpisodeEditItem {
+    return {
+      episodeid: e.episodeid,
+      title: e.title,
+      description: e.description,
+      audioFileName: e.audioFileName,
+      audioUrl: e.audioUrl,
+      podcastid: e.podcastid,
+      isExclusive: e.isExclusive,
+      publishAt: e.publishAt,
+      status: e.status,
+      tags: e.tags,
     };
   }
 

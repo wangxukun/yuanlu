@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        podcastid: true,
         publishAt: true,
         createAt: true,
         status: true,

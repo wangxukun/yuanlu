@@ -5,6 +5,7 @@ import "@/lib/sessionCleaner";
 import SideNav from "@/components/dashboard/sidenav";
 import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/dashboard/header/Header";
+import { lusitana } from "@/components/fonts";
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -13,7 +14,7 @@ export default function RootLayout({
   return (
     <AuthProvider>
       <html lang="en">
-        <body>
+        <body className={lusitana.className}>
           <LeaveConfirmProvider>
             <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
               <div className="w-full flex-none md:w-64">

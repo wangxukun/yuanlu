@@ -33,4 +33,13 @@ export const episodeService = {
     }
     return episodes.map(EpisodeMapper.toManagementItem);
   },
+
+  async getEditItem(id: string) {
+    const episode = await episodeRepository.findById(id);
+    episode.audioUrl = await generateSignatureUrl(
+      episode.audioFileName,
+      60 * 60 * 3,
+    );
+    return EpisodeMapper.toEditItem(episode);
+  },
 };
