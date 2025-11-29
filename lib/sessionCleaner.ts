@@ -1,3 +1,8 @@
+/**
+ * 定时任务
+ * 定时更新用户状态为离线
+ */
+
 import cron from "node-cron";
 import prisma from "@/lib/prisma";
 
@@ -13,7 +18,6 @@ cron.schedule("*/5 * * * *", async () => {
       data: { isOnline: false },
     });
     await prisma.$disconnect();
-    console.log("Updated inactive users to offline");
   } catch (err) {
     if (err instanceof Error && "code" in err && err.code === "P2025") {
       console.log("No inactive users found");

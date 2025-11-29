@@ -48,6 +48,7 @@ export default function EpisodeForm() {
 
   const coverApi = "/api/podcast/upload-episode-cover";
 
+  // 音频文件上传回调函数
   const handleUploadAudioComplete = (
     response: UploadFileResponse,
     audioDuration: number,
@@ -288,7 +289,7 @@ export default function EpisodeForm() {
               <div className="flex items-center">
                 <input
                   id="paid"
-                  name="publishStatus"
+                  name="status"
                   type="radio"
                   checked={publishStatus === "paid"}
                   value="paid"

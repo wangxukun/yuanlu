@@ -10,8 +10,18 @@
  * Mapper（对象转换）
  */
 import { episodeService } from "@/core/episode/episode.service";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  const list = await episodeService.getManagementList();
-  return Response.json(list);
+  try {
+    const list = await episodeService.getManagementList();
+    return NextResponse.json(list);
+  } catch (error) {
+    console.error("获取剧集列表时出错:", error);
+    return NextResponse.json({
+      success: false,
+      message: "服务器错误",
+      status: 500,
+    });
+  }
 }

@@ -18,6 +18,8 @@
 import { episodeRepository } from "./episode.repository";
 import { EpisodeMapper } from "@/core/episode/episode.mapper";
 import { generateSignatureUrl } from "@/lib/oss";
+import { Prisma } from "@prisma/client";
+import { EditEpisodeResponse } from "@/app/types/podcast";
 
 export const episodeService = {
   async getManagementList() {
@@ -41,5 +43,13 @@ export const episodeService = {
       60 * 60 * 3,
     );
     return EpisodeMapper.toEditItem(episode);
+  },
+
+  async update(
+    id: string,
+    data: Prisma.episodeUpdateInput,
+  ): Promise<EditEpisodeResponse> {
+    const updateEpisode = await episodeRepository.update(id, data);
+    return EpisodeMapper.toUpdateState(updateEpisode);
   },
 };

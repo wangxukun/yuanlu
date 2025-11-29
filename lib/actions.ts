@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/lib/form-schema";
 import { deleteObject } from "@/lib/oss";
 import { auth } from "@/auth";
+import { episodeService } from "@/core/episode/episode.service";
+import { Prisma } from "@prisma/client";
+import { EditEpisodeState } from "@/app/types/podcast";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -293,7 +296,7 @@ export async function createEpisode(
         subtitleZhUrl: subtitleZhUrl === "" ? null : subtitleZhUrl,
         audioUrl: formData.get("audioUrl"),
         coverUrl: formData.get("coverUrl"),
-        publishStatus: formData.get("publishStatus"),
+        publishStatus: formData.get("status"),
         isExclusive: formData.get("isExclusive") === "on",
         publishDate: formData.get("publishDate"),
         tags: formData.getAll("tags"),
@@ -508,4 +511,78 @@ export async function deleteOSSFile(fileName: string) {
     status: 200,
     success: true,
   };
+}
+/**
+ * Server Action: 更新 Episode（用于 Dashboard 编辑页面）
+ */
+export async function updateEpisodeAction(
+  prevState: EditEpisodeState,
+  id: string,
+  formData: FormData,
+): Promise<EditEpisodeState> {
+  try {
+    // 1. 从 formData 中取出字段
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const podcastid = formData.get("podcastid") as string;
+    const isExclusive = formData.get("isExclusive") === "on";
+    const publishAt = formData.get("publishDate") as string;
+    const status = formData.get("status") as string;
+    const tags = formData.getAll("tags") as string[];
+    const data: Prisma.episodeUpdateInput = {
+      title,
+      description,
+      isExclusive,
+      publishAt: new Date(publishAt),
+      status,
+      podcast: {
+        connect: {
+          podcastid: podcastid,
+        },
+      },
+      tags: {
+        deleteMany: {}, // 删除所有关联的标签
+        // 创建新的关联
+        create: tags.map((tagId: string) => ({
+          tag: {
+            connect: {
+              tagid: tagId,
+            },
+          },
+        })),
+      },
+    };
+    // 3. 调用 Service 层
+    const result = await episodeService.update(id, data);
+    if (!result.success) {
+      return {
+        ...prevState,
+        errors: {
+          title: "",
+          description: "",
+        },
+        status: result.status,
+        message: result.message,
+      };
+    }
+    console.log("更新成功", result);
+    return {
+      ...prevState,
+      errors: {
+        title: "",
+        description: "",
+      },
+      message: "redirect:/dashboard/episodes/update-info-success",
+    };
+  } catch (err) {
+    console.error("剧集信息更新失败", err);
+    return {
+      ...prevState,
+      errors: {
+        title: "",
+        description: "",
+      },
+      status: 500,
+    };
+  }
 }

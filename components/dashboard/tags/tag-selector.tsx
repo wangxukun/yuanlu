@@ -27,6 +27,7 @@ export const TagSelector: React.FC<Props> = ({
     if (selectedTagIds.includes(id)) {
       onChange(selectedTagIds.filter((tagId) => tagId !== id));
     } else if (!isAtLimit) {
+      // 如果未达到最大选择数量，则将新标签ID添加到已选列表中
       onChange([...selectedTagIds, id]);
     }
   };

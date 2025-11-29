@@ -19,6 +19,7 @@ import { EpisodePlayItem } from "./dto/episode-play-item";
 import { EpisodeListItem } from "./dto/episode-list-item";
 import { formatDate, formatTime } from "@/lib/tools";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
+import { EditEpisodeResponse, UpdateEpisodeResult } from "@/app/types/podcast";
 
 export class EpisodeMapper {
   static toManagementItem(e: Episode): EpisodeManagementItem {
@@ -73,6 +74,14 @@ export class EpisodeMapper {
       title: e.title,
       coverUrl: e.coverUrl,
       publishedAt: e.publishAt ? e.publishAt : null,
+    };
+  }
+
+  static toUpdateState(e: UpdateEpisodeResult): EditEpisodeResponse {
+    return {
+      success: e.title && e.description ? true : false,
+      message: e.title && e.description ? "更新成功" : "更新失败",
+      status: e.title && e.description ? 200 : 400,
     };
   }
 }

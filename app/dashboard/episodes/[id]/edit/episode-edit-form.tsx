@@ -4,14 +4,14 @@ import React, { useActionState, useEffect, useState } from "react";
 import { TagSelector } from "@/components/dashboard/tags/tag-selector";
 import PodcastSelecter from "@/components/dashboard/episodes/podcastSelecter";
 import { CheckIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
-import { createEpisode, EpisodeState } from "@/lib/actions";
+import { updateEpisodeAction } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
 import { formatDate } from "@/lib/tools";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 import Link from "next/link";
+import { EditEpisodeState } from "@/app/types/podcast";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -33,7 +33,6 @@ export default function EpisodeEditForm({
   const [tags, setTags] = useState<Tag[]>([]); // 标签列表
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [podcastId, setPodcastId] = useState(episode.podcastid); // 播客id
-  const { setNeedConfirm } = useLeaveConfirm();
   console.log("edit episode", episode);
 
   // 播客选择回调函数
@@ -44,7 +43,6 @@ export default function EpisodeEditForm({
   // 使用 useEffect 获取标签数据、播客数据
   useEffect(() => {
     // 监听页面离开事件
-    setNeedConfirm(true);
     const fetchTagsData = async () => {
       try {
         const res = await fetch(`${baseUrl}/api/tag/list`, {
@@ -79,21 +77,21 @@ export default function EpisodeEditForm({
     fetchPodcastData();
   }, []);
 
-  const initialState: EpisodeState = {
+  const initialState: EditEpisodeState = {
     errors: {
       title: "",
       description: "",
-      audioFileName: "",
-      podcastId: "",
-      coverFileName: "",
     },
     message: null,
   };
 
-  const [state, action, isPending] = useActionState<EpisodeState, FormData>(
-    createEpisode,
+  // 修改 useActionState 调用为：
+  const [state, action, isPending] = useActionState<EditEpisodeState, FormData>(
+    async (state: EditEpisodeState, formData: FormData) =>
+      updateEpisodeAction(state, episode.episodeid, formData),
     initialState,
   );
+
   // 处理 重定向
   useEffect(() => {
     if (state?.message?.startsWith("redirect:")) {
@@ -181,7 +179,7 @@ export default function EpisodeEditForm({
               <div className="flex items-center">
                 <input
                   id="paid"
-                  name="publishStatus"
+                  name="status"
                   type="radio"
                   checked={publishStatus === "paid"}
                   value="paid"

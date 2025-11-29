@@ -14,6 +14,7 @@
  */
 import prisma from "@/lib/prisma";
 import { Episode } from "@/core/episode/episode.entity";
+import { Prisma } from "@prisma/client";
 
 export const episodeRepository = {
   async findAll(): Promise<Episode[]> {
@@ -108,14 +109,32 @@ export const episodeRepository = {
     return episode as unknown as Episode;
   },
 
-  // async create(data: Omit<Episode, "episodeid" | "createdAt" | "updatedAt">) {
-  //     const result =  await prisma.episode.create({ data: data as any });
-  //     return result;
-  // },
-  //
-  // async update(id: string, data: Partial<Episode>) {
-  //     return prisma.episode.update({ where: { episodeid: id }, data: data as any });
-  // },
+  /**
+   * 创建剧集
+   * @param data
+   */
+  async create(data: Prisma.episodeCreateInput) {
+    return prisma.episode.create({
+      // 忽略 episodeid
+      omit: {
+        episodeid: true,
+      },
+      data,
+    });
+  },
+
+  async update(id: string, data: Prisma.episodeUpdateInput) {
+    return prisma.episode.update({
+      where: {
+        episodeid: id,
+      },
+      select: {
+        title: true,
+        description: true,
+      },
+      data,
+    });
+  },
 
   async delete(id: string) {
     return prisma.episode.delete({ where: { episodeid: id } });
