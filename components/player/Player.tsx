@@ -1,7 +1,7 @@
 "use client";
 import { usePlayerStore } from "@/store/player-store";
 import { useEffect, useRef } from "react";
-import { debounce } from "lodash";
+import { debounce, throttle } from "lodash";
 import { formatTime } from "@/lib/tools";
 import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
 import PodcastIcon from "@/components/icons/PodcastIcon";
@@ -94,6 +94,19 @@ export default function Player() {
     };
   }, []);
 
+  /**
+   * 刷新用户活动，60秒一次
+   * 把 throttledActiveUpdate 放到 useRef 中，让 throttle 永远只创建一次。
+   */
+  const throttledActiveUpdate = useRef(
+    throttle(() => {
+      fetch("/api/auth/update-activity", {
+        method: "POST",
+        keepalive: true,
+      });
+    }, 60000),
+  );
+
   return (
     <div className="group/player flex items-center w-full border border-base-300 bg-base-200 rounded-xl shadow-md overflow-hidden">
       {/* 封面区 */}
@@ -154,10 +167,23 @@ export default function Player() {
       <audio
         ref={audioRef}
         onEnded={() => setCurrentTime(0)}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          setCurrentTime(e.currentTarget.currentTime);
+          throttledActiveUpdate.current();
+        }}
         onLoadedData={(e) => {
           setCurrentTime(0);
           setDuration(e.currentTarget.duration);
+          fetch("/api/auth/update-activity", {
+            method: "POST",
+            keepalive: true,
+          });
+        }}
+        onPlay={() => {
+          fetch("/api/auth/update-activity", {
+            method: "POST",
+            keepalive: true,
+          });
         }}
         onError={(e) => console.error("音频错误:", e.currentTarget.error)}
       />

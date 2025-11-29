@@ -6,6 +6,7 @@ import SideNav from "@/components/dashboard/sidenav";
 import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/dashboard/header/Header";
 import { lusitana } from "@/components/fonts";
+
 export default function RootLayout({
   children,
 }: Readonly<{
