@@ -112,5 +112,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET, // 在.env中配置
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 设置会话过期时间为30天
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 设置会话过期时间为30天
   },
 });

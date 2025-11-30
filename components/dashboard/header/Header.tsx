@@ -48,9 +48,14 @@ export default function Header() {
               label: "投稿音频",
               href: "/dashboard/episodes/contribute",
             });
-          } else if (pathSegments.length >= 3 && pathSegments[2]) {
+          } else if (pathSegments.includes("edit")) {
             breadcrumbs.push({
               label: "编辑音频",
+              href: `/dashboard/episodes/${pathSegments[2]}`,
+            });
+          } else if (pathSegments.includes("subtitles")) {
+            breadcrumbs.push({
+              label: "字幕管理",
               href: `/dashboard/episodes/${pathSegments[2]}`,
             });
           }

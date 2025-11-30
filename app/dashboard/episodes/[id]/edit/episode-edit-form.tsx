@@ -279,7 +279,8 @@ export default function EpisodeEditForm({
 
         {/* 显示错误信息 */}
         {state?.message &&
-          state.message !== "redirect:/dashboard/episodes/create-success" && (
+          state.message !==
+            "redirect:/dashboard/episodes/update-info-success" && (
             <p className="text-red-500">{state.message}</p>
           )}
         {state?.errors &&

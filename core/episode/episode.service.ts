@@ -21,6 +21,9 @@ import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeResponse } from "@/app/types/podcast";
 
+/**
+ * 音频管理列表
+ */
 export const episodeService = {
   async getManagementList() {
     const episodes = await episodeRepository.findAll();
@@ -36,6 +39,10 @@ export const episodeService = {
     return episodes.map(EpisodeMapper.toManagementItem);
   },
 
+  /**
+   * 音频编辑填充数据
+   * @param id
+   */
   async getEditItem(id: string) {
     const episode = await episodeRepository.findById(id);
     episode.audioUrl = await generateSignatureUrl(
@@ -45,11 +52,69 @@ export const episodeService = {
     return EpisodeMapper.toEditItem(episode);
   },
 
+  /**
+   * 音频更新，更新除了音频文件、封面文件、字幕文件以外的所有字段
+   * @param id
+   * @param data
+   */
   async update(
     id: string,
     data: Prisma.episodeUpdateInput,
   ): Promise<EditEpisodeResponse> {
     const updateEpisode = await episodeRepository.update(id, data);
     return EpisodeMapper.toUpdateState(updateEpisode);
+  },
+
+  async getSubtitles(id: string) {
+    const episode = await episodeRepository.findById(id);
+    episode.coverUrl = await generateSignatureUrl(
+      episode.coverFileName,
+      60 * 60 * 3,
+    );
+    if (episode.subtitleEnFileName) {
+      episode.subtitleEnUrl = await generateSignatureUrl(
+        episode.subtitleEnFileName,
+        60 * 60 * 3,
+      );
+    }
+    if (episode.subtitleZhFileName) {
+      episode.subtitleZhUrl = await generateSignatureUrl(
+        episode.subtitleZhFileName,
+        60 * 60 * 3,
+      );
+    }
+    return EpisodeMapper.toSubtitles(episode);
+  },
+
+  /**
+   * 更新英文字幕
+   * @param id
+   * @param data
+   */
+  async updateSubtitleEn(
+    id: string,
+    data: Prisma.episodeUpdateInput,
+  ): Promise<EditEpisodeResponse> {
+    const updatedSubtitleEn = await episodeRepository.updateSubtitleEn(
+      id,
+      data,
+    );
+    return EpisodeMapper.toUpdateSubtitleEnState(updatedSubtitleEn);
+  },
+
+  /**
+   * 更新中文字幕
+   * @param id
+   * @param data
+   */
+  async updateSubtitleZh(
+    id: string,
+    data: Prisma.episodeUpdateInput,
+  ): Promise<EditEpisodeResponse> {
+    const updatedSubtitleZh = await episodeRepository.updateSubtitleZh(
+      id,
+      data,
+    );
+    return EpisodeMapper.toUpdateSubtitleZhState(updatedSubtitleZh);
   },
 };

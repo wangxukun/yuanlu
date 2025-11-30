@@ -33,6 +33,26 @@ export default auth((req) => {
   if (pathname === "/") {
     return NextResponse.redirect(new URL("/browse", nextUrl));
   }
+
+  // 如果用户已登录但 token 已过期，则重定向到登录页面
+  if (isLoggedIn) {
+    // 检查JWT是否真的过期
+    const tokenExp = req.auth?.expires;
+    if (tokenExp) {
+      const expiryDate = new Date(tokenExp);
+      const now = new Date();
+      // 如果token已过期, 则重定向到登录页面
+      if (now > expiryDate) {
+        const response = NextResponse.redirect(
+          new URL(DEFAULT_LOGIN_REDIRECT, nextUrl),
+        );
+        // 清除认证cookie
+        response.cookies.delete("authjs.session-token");
+        return response;
+      }
+    }
+  }
+
   // 允许API认证路由
   if (isApiAuthRoute) {
     return;

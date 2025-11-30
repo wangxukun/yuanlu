@@ -136,6 +136,42 @@ export const episodeRepository = {
     });
   },
 
+  // 更新英文字幕
+  async updateSubtitleEn(id: string, data: Prisma.episodeUpdateInput) {
+    const { subtitleEnUrl, subtitleEnFileName } = data;
+    return prisma.episode.update({
+      where: {
+        episodeid: id,
+      },
+      select: {
+        subtitleEnUrl: true,
+        subtitleEnFileName: true,
+      },
+      data: {
+        subtitleEnUrl,
+        subtitleEnFileName,
+      },
+    });
+  },
+
+  // 更新中文字幕
+  async updateSubtitleZh(id: string, data: Prisma.episodeUpdateInput) {
+    const { subtitleZhUrl, subtitleZhFileName } = data;
+    return prisma.episode.update({
+      where: {
+        episodeid: id,
+      },
+      select: {
+        subtitleZhUrl: true,
+        subtitleZhFileName: true,
+      },
+      data: {
+        subtitleZhUrl,
+        subtitleZhFileName,
+      },
+    });
+  },
+
   async delete(id: string) {
     return prisma.episode.delete({ where: { episodeid: id } });
   },

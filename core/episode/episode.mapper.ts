@@ -19,9 +19,19 @@ import { EpisodePlayItem } from "./dto/episode-play-item";
 import { EpisodeListItem } from "./dto/episode-list-item";
 import { formatDate, formatTime } from "@/lib/tools";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
-import { EditEpisodeResponse, UpdateEpisodeResult } from "@/app/types/podcast";
+import {
+  EditEpisodeResponse,
+  UpdateEpisodeResult,
+  UpdateEpisodeSubtitleEnResult,
+  UpdateEpisodeSubtitleZhResult,
+} from "@/app/types/podcast";
+import { EpisodeSubtitles } from "@/core/episode/dto/episode-subtitles";
 
 export class EpisodeMapper {
+  /**
+   * 返回数据映射管理视图用数据
+   * @param e
+   */
   static toManagementItem(e: Episode): EpisodeManagementItem {
     console.log("EpisodeMapper.toManagementItem", e);
     return {
@@ -42,6 +52,10 @@ export class EpisodeMapper {
     };
   }
 
+  /**
+   * 返回数据映射编辑视图用数据
+   * @param e
+   */
   static toEditItem(e: Episode): EpisodeEditItem {
     return {
       episodeid: e.episodeid,
@@ -68,6 +82,10 @@ export class EpisodeMapper {
     };
   }
 
+  /**
+   * 返回数据映射列表视图用数据
+   * @param e
+   */
   static toListItem(e: Episode): EpisodeListItem {
     return {
       id: e.episodeid,
@@ -77,11 +95,63 @@ export class EpisodeMapper {
     };
   }
 
+  /**
+   * episode更新返回状态
+   * @param e
+   */
   static toUpdateState(e: UpdateEpisodeResult): EditEpisodeResponse {
+    // 从Prisma Client返回的对象提取实际值
+    const title = "title" in e ? e.title : null;
+    const description = "description" in e ? e.description : null;
     return {
-      success: e.title && e.description ? true : false,
-      message: e.title && e.description ? "更新成功" : "更新失败",
-      status: e.title && e.description ? 200 : 400,
+      success: title && description ? true : false,
+      message: title && description ? "更新成功" : "更新失败",
+      status: title && description ? 200 : 400,
+    };
+  }
+
+  /**
+   * 返回数据映射字幕相关信息
+   * @param e
+   */
+  static toSubtitles(e: Episode): EpisodeSubtitles {
+    return {
+      episodeId: e.episodeid,
+      title: e.title,
+      coverUrl: e.coverUrl,
+      coverFileName: e.coverFileName,
+      subtitleEnUrl: e.subtitleEnUrl,
+      subtitleEnFileName: e.subtitleEnFileName,
+      subtitleZhUrl: e.subtitleZhUrl,
+      subtitleZhFileName: e.subtitleZhFileName,
+    };
+  }
+
+  static toUpdateSubtitleEnState(
+    e: UpdateEpisodeSubtitleEnResult,
+  ): EditEpisodeResponse {
+    // 从Prisma Client返回的对象提取实际值
+    const subtitleEnUrl = "subtitleEnUrl" in e ? e.subtitleEnUrl : null;
+    const subtitleEnFileName =
+      "subtitleEnFileName" in e ? e.subtitleEnFileName : null;
+    return {
+      success: !!subtitleEnUrl && !!subtitleEnFileName,
+      message: subtitleEnUrl && subtitleEnFileName ? "更新成功" : "更新失败",
+      status: subtitleEnUrl && subtitleEnFileName ? 200 : 400,
+    };
+  }
+
+  static toUpdateSubtitleZhState(
+    e: UpdateEpisodeSubtitleZhResult,
+  ): EditEpisodeResponse {
+    // 从Prisma Client返回的对象提取实际值
+    const subtitleZhUrl = "subtitleZhUrl" in e ? e.subtitleZhUrl : null;
+    const subtitleZhFileName =
+      "subtitleZhFileName" in e ? e.subtitleZhFileName : null;
+    return {
+      success: !!subtitleZhUrl && !!subtitleZhFileName,
+      message: subtitleZhUrl && subtitleZhFileName ? "更新成功" : "更新失败",
+      status: subtitleZhUrl && subtitleZhFileName ? 200 : 400,
     };
   }
 }

@@ -47,3 +47,13 @@ export interface EditEpisodeResponse {
 export type UpdateEpisodeResult = Awaited<
   ReturnType<(typeof episodeRepository)["update"]>
 >;
+
+// 提取episodeRepository updateSubtitleEn函数的返回类型
+export type UpdateEpisodeSubtitleEnResult = Awaited<
+  ReturnType<(typeof episodeRepository)["updateSubtitleEn"]>
+>;
+
+// 提取episodeRepository updateSubtitleZh函数的返回类型
+export type UpdateEpisodeSubtitleZhResult = Awaited<
+  ReturnType<(typeof episodeRepository)["updateSubtitleZh"]>
+>;
