@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       });
     }
 
+    console.log("API剧集创建成功:", episode);
     return NextResponse.json({
       success: true,
       message: "剧集创建成功",

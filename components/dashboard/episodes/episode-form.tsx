@@ -306,7 +306,7 @@ export default function EpisodeForm() {
               <div className="flex items-center">
                 <input
                   id="pending"
-                  name="status"
+                  name="publishStatus"
                   type="radio"
                   checked={publishStatus === "pending"}
                   value="pending"

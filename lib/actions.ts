@@ -297,7 +297,7 @@ export async function createEpisode(
         subtitleZhUrl: subtitleZhUrl === "" ? null : subtitleZhUrl,
         audioUrl: formData.get("audioUrl"),
         coverUrl: formData.get("coverUrl"),
-        publishStatus: formData.get("status"),
+        publishStatus: formData.get("publishStatus"),
         isExclusive: formData.get("isExclusive") === "on",
         publishDate: formData.get("publishDate"),
         tags: formData.getAll("tags"),
