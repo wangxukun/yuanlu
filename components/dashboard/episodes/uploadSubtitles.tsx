@@ -21,6 +21,11 @@ const truncateFileName = (fileName: string, maxLength: number = 40) => {
   return fileName.substring(0, maxLength) + "...";
 };
 
+/**
+ * 上传字幕，投稿创建音频页面使用的组件
+ * @param onConfirm
+ * @constructor
+ */
 export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
   const [subtitleLanguage, setSubtitleLanguage] = useState("");
   const [enUploadCompleted, setEnUploadCompleted] = useState(false);

@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useActionState } from "react";
 import { deleteEnSubtitle, deleteZhSubtitle } from "@/lib/actions";
-import { SubtitleManagementState } from "@/lib/types";
+import { ActionState } from "@/lib/types";
 
 interface Props {
   episodeId: string;
@@ -11,16 +11,23 @@ interface Props {
   language: "en" | "zh";
 }
 
+/**
+ * 删除字幕，字幕管理页面使用
+ * @param episodeId
+ * @param fileName
+ * @param language
+ * @constructor
+ */
 export function SubtitleDeleteForm({ episodeId, fileName, language }: Props) {
-  const initialState: SubtitleManagementState = {
+  const initialState: ActionState = {
     success: false,
     message: "",
   };
 
-  const [state, action, isPending] = useActionState<
-    SubtitleManagementState,
-    FormData
-  >(language === "en" ? deleteEnSubtitle : deleteZhSubtitle, initialState);
+  const [state, action, isPending] = useActionState<ActionState, FormData>(
+    language === "en" ? deleteEnSubtitle : deleteZhSubtitle,
+    initialState,
+  );
 
   // 上传成功后刷新页面
   useEffect(() => {

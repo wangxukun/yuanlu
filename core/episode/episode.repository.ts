@@ -123,6 +123,11 @@ export const episodeRepository = {
     });
   },
 
+  /**
+   * 更新剧集
+   * @param id
+   * @param data
+   */
   async update(id: string, data: Prisma.episodeUpdateInput) {
     return prisma.episode.update({
       where: {

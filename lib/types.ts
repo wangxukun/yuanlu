@@ -28,7 +28,7 @@ export interface Episode {
   duration: string;
 }
 
-export type SubtitleManagementState = {
+export type ActionState = {
   success: boolean;
   message: string;
   error?: string;

@@ -20,6 +20,7 @@ import { EpisodeMapper } from "@/core/episode/episode.mapper";
 import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeResponse } from "@/app/types/podcast";
+import prisma from "@/lib/prisma";
 
 /**
  * 音频管理列表
@@ -116,5 +117,29 @@ export const episodeService = {
       data,
     );
     return EpisodeMapper.toUpdateSubtitleZhState(updatedSubtitleZh);
+  },
+
+  /**
+   * 删除episode
+   * @param id episode id
+   */
+  async delete(id: string) {
+    // 先删除episode_tags表中关联的标签数据
+    await prisma.episode_tags.deleteMany({
+      where: {
+        episodeid: id,
+      },
+    });
+    await episodeRepository.delete(id);
+    return EpisodeMapper.toDeleteState();
+  },
+
+  /**
+   * 获取episode的oss文件信息
+   * @param id episode id
+   */
+  async getEpisodeOSSFiles(id: string) {
+    const episode = await episodeRepository.findById(id);
+    return EpisodeMapper.toEpisodeOSSFiles(episode);
   },
 };

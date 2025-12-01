@@ -2,25 +2,31 @@
 
 import React, { useRef, useEffect, useActionState } from "react";
 import { uploadEnSubtitle, uploadZhSubtitle } from "@/lib/actions";
-import { SubtitleManagementState } from "@/lib/types";
+import { ActionState } from "@/lib/types";
 
 interface SubtitleUploadFormProps {
   episodeId: string;
   language: "en" | "zh";
 }
 
+/**
+ * 字幕上传，字幕管理页面使用
+ * @param episodeId
+ * @param language
+ * @constructor
+ */
 export function SubtitleUploadForm({
   episodeId,
   language,
 }: SubtitleUploadFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [state, formAction, isPending] = useActionState<
-    SubtitleManagementState,
-    FormData
-  >(language === "en" ? uploadEnSubtitle : uploadZhSubtitle, {
-    success: false,
-    message: "",
-  });
+  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
+    language === "en" ? uploadEnSubtitle : uploadZhSubtitle,
+    {
+      success: false,
+      message: "",
+    },
+  );
 
   // 上传成功后刷新页面
   useEffect(() => {

@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 import { episodeService } from "@/core/episode/episode.service";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeState } from "@/app/types/podcast";
-import { SubtitleManagementState } from "@/lib/types";
+import { ActionState } from "@/lib/types";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -495,7 +495,45 @@ export async function deleteUser(
   };
 }
 
-// 删除封面
+export async function deleteEpisodeById(id: string) {
+  const {
+    audioFileName,
+    coverFileName,
+    subtitleEnFileName,
+    subtitleZhFileName,
+  } = await episodeService.getEpisodeOSSFiles(id);
+
+  // 删除OSS中文件
+  const delCoverResult = await deleteObject(coverFileName);
+  const delAudioResult = await deleteObject(audioFileName);
+  const delSubtitleEnResult = await deleteObject(subtitleEnFileName);
+  const delSubtitleZhResult = await deleteObject(subtitleZhFileName);
+  // 删除数据库中数据
+  const { success } = await episodeService.delete(id);
+
+  if (
+    !delCoverResult ||
+    !delAudioResult ||
+    !delSubtitleEnResult ||
+    !delSubtitleZhResult ||
+    !success
+  ) {
+    return {
+      message: "删除稿件失败",
+      success: false,
+    };
+  }
+
+  return {
+    message: "redirect:/dashboard/episodes/",
+    success,
+  };
+}
+
+/**
+ * 删除OSS文件
+ * @param fileName
+ */
 export async function deleteOSSFile(fileName: string) {
   let delFileResult = null;
   // 删除OSS中文件
@@ -594,7 +632,7 @@ export async function updateEpisodeAction(
  * @param formData 删除英文字幕的表单数据
  */
 export async function deleteEnSubtitle(
-  prevState: SubtitleManagementState,
+  prevState: ActionState,
   formData: FormData,
 ) {
   const id = formData.get("episodeId") as string;
@@ -621,7 +659,7 @@ export async function deleteEnSubtitle(
  * @param formData 删除中文字幕的表单数据
  */
 export async function deleteZhSubtitle(
-  prevState: SubtitleManagementState,
+  prevState: ActionState,
   formData: FormData,
 ) {
   "use server";
@@ -649,7 +687,7 @@ export async function deleteZhSubtitle(
  * @param formData 上传字幕的表单数据
  */
 export async function uploadEnSubtitle(
-  prevState: SubtitleManagementState,
+  prevState: ActionState,
   formData: FormData,
 ) {
   "use server";
@@ -698,7 +736,7 @@ export async function uploadEnSubtitle(
  * @param formData 上传字幕的表单数据
  */
 export async function uploadZhSubtitle(
-  prevState: SubtitleManagementState,
+  prevState: ActionState,
   formData: FormData,
 ) {
   "use server";

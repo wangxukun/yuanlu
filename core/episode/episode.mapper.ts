@@ -26,6 +26,8 @@ import {
   UpdateEpisodeSubtitleZhResult,
 } from "@/app/types/podcast";
 import { EpisodeSubtitles } from "@/core/episode/dto/episode-subtitles";
+import { EpisodeOSSItem } from "@/core/episode/dto/episode-oss-item";
+import { ActionState } from "@/lib/types";
 
 export class EpisodeMapper {
   /**
@@ -152,6 +154,26 @@ export class EpisodeMapper {
       success: !!subtitleZhUrl && !!subtitleZhFileName,
       message: subtitleZhUrl && subtitleZhFileName ? "更新成功" : "更新失败",
       status: subtitleZhUrl && subtitleZhFileName ? 200 : 400,
+    };
+  }
+
+  /**
+   * episode删除返回状态
+   * @param e
+   */
+  static toDeleteState(): ActionState {
+    return {
+      success: true,
+      message: "删除成功",
+    };
+  }
+
+  static toEpisodeOSSFiles(e: Episode): EpisodeOSSItem {
+    return {
+      audioFileName: e.audioFileName,
+      coverFileName: e.coverFileName,
+      subtitleEnFileName: e.subtitleEnFileName,
+      subtitleZhFileName: e.subtitleZhFileName,
     };
   }
 }

@@ -6,6 +6,7 @@ import {
   ImageResultIcon,
 } from "./Icons";
 import Link from "next/link";
+import { EpisodeDeleteForm } from "@/components/dashboard/episodes/EpisodeDeleteForm";
 
 interface ActionDropdownProps {
   episodeId: string;
@@ -81,6 +82,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
             </svg>
             <span>删除稿件</span>
           </button>
+          <EpisodeDeleteForm id={episodeId} />
         </div>
       </div>
     </div>
