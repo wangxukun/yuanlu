@@ -3,54 +3,11 @@ import { notFound } from "next/navigation";
 import { episodeService } from "@/core/episode/episode.service";
 import { EpisodeSubtitles } from "@/core/episode/dto/episode-subtitles";
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
-import { deleteOSSFile } from "@/lib/actions";
+import { SubtitleDeleteForm } from "@/components/dashboard/episodes/SubtitleDeleteForm";
 
 export const metadata: Metadata = {
   title: "Management Subtitles",
 };
-
-// 删除英文字幕的 Server Action
-async function deleteEnSubtitle(formData: FormData) {
-  "use server";
-  const id = formData.get("episodeId") as string;
-  const fileName = formData.get("fileName") as string;
-  try {
-    // 从服务器删除文件
-    await deleteOSSFile(fileName);
-    // 更新数据库记录
-    const updateData: Prisma.episodeUpdateInput = {
-      subtitleEnUrl: null,
-      subtitleEnFileName: null,
-    };
-    await episodeService.updateSubtitleEn(id, updateData);
-    return { success: true };
-  } catch (error) {
-    console.error("删除英文字幕失败:", error);
-    return { success: false, error: "删除失败" };
-  }
-}
-
-// 删除中文字幕的 Server Action
-async function deleteZhSubtitle(formData: FormData) {
-  "use server";
-  const id = formData.get("episodeId") as string;
-  const fileName = formData.get("fileName") as string;
-  try {
-    // 从服务器删除文件
-    await deleteOSSFile(fileName);
-    // 更新数据库记录
-    const updateData: Prisma.episodeUpdateInput = {
-      subtitleZhUrl: null,
-      subtitleZhFileName: null,
-    };
-    await episodeService.updateSubtitleZh(id, updateData);
-    return { success: true };
-  } catch (error) {
-    console.error("删除中文字幕失败:", error);
-    return { success: false, error: "删除失败" };
-  }
-}
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -109,17 +66,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                         >
                           下载
                         </Link>
-                        <form action={deleteEnSubtitle}>
-                          <input type="hidden" name="episodeId" value={id} />
-                          <input
-                            type="hidden"
-                            name="fileName"
-                            value={episodeSubtitles.subtitleEnFileName || ""}
-                          />
-                          <button type="submit" className="btn btn-error">
-                            删除
-                          </button>
-                        </form>
+                        <SubtitleDeleteForm
+                          episodeId={id}
+                          fileName={episodeSubtitles.subtitleEnFileName || ""}
+                          language="en"
+                        />
                       </div>
                     </div>
                   </div>
@@ -134,6 +85,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                           No English Subtitle
                         </p>
                       </div>
+                      <div>// TODO: 添加上传功能</div>
                     </div>
                   </div>
                 )}
@@ -157,17 +109,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                         >
                           下载
                         </Link>
-                        <form action={deleteZhSubtitle}>
-                          <input type="hidden" name="episodeId" value={id} />
-                          <input
-                            type="hidden"
-                            name="fileName"
-                            value={episodeSubtitles.subtitleZhFileName || ""}
-                          />
-                          <button type="submit" className="btn btn-error">
-                            删除
-                          </button>
-                        </form>
+                        <SubtitleDeleteForm
+                          episodeId={id}
+                          fileName={episodeSubtitles.subtitleZhFileName || ""}
+                          language="zh"
+                        />
                       </div>
                     </div>
                   </div>
@@ -182,6 +128,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                           No Chinese Subtitle
                         </p>
                       </div>
+                      <div>// TODO: 添加上传功能</div>
                     </div>
                   </div>
                 )}

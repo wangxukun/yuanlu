@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { episodeService } from "@/core/episode/episode.service";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeState } from "@/app/types/podcast";
+import { SubtitleDeleteState } from "@/lib/types";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -584,5 +585,60 @@ export async function updateEpisodeAction(
       },
       status: 500,
     };
+  }
+}
+
+/**
+ * 删除英文字幕的 Server Action
+ * @param prevState 删除英文字幕的初始状态
+ * @param formData 删除英文字幕的表单数据
+ */
+export async function deleteEnSubtitle(
+  prevState: SubtitleDeleteState,
+  formData: FormData,
+) {
+  const id = formData.get("episodeId") as string;
+  const fileName = formData.get("fileName") as string;
+  try {
+    // 从服务器删除文件
+    await deleteOSSFile(fileName);
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleEnUrl: null,
+      subtitleEnFileName: null,
+    };
+    await episodeService.updateSubtitleEn(id, updateData);
+    return { success: true, message: "英文字幕删除成功" };
+  } catch (error) {
+    console.error("删除英文字幕失败:", error);
+    return { success: false, message: "英文字幕删除失败" };
+  }
+}
+
+/**
+ * 删除中文字幕的 Server Action
+ * @param prevState 删除中文字幕的初始状态
+ * @param formData 删除中文字幕的表单数据
+ */
+export async function deleteZhSubtitle(
+  prevState: SubtitleDeleteState,
+  formData: FormData,
+) {
+  "use server";
+  const id = formData.get("episodeId") as string;
+  const fileName = formData.get("fileName") as string;
+  try {
+    // 从服务器删除文件
+    await deleteOSSFile(fileName);
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleZhUrl: null,
+      subtitleZhFileName: null,
+    };
+    await episodeService.updateSubtitleZh(id, updateData);
+    return { success: true };
+  } catch (error) {
+    console.error("删除中文字幕失败:", error);
+    return { success: false, error: "删除失败" };
   }
 }

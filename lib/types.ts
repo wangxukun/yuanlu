@@ -27,3 +27,8 @@ export interface Episode {
   stats: Stats;
   duration: string;
 }
+
+export type SubtitleDeleteState = {
+  success: boolean;
+  message: string;
+};
