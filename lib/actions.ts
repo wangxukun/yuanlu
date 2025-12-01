@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/lib/form-schema";
-import { deleteObject } from "@/lib/oss";
+import { deleteObject, uploadFile } from "@/lib/oss";
 import { auth } from "@/auth";
 import { episodeService } from "@/core/episode/episode.service";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeState } from "@/app/types/podcast";
-import { SubtitleDeleteState } from "@/lib/types";
+import { SubtitleManagementState } from "@/lib/types";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -594,7 +594,7 @@ export async function updateEpisodeAction(
  * @param formData 删除英文字幕的表单数据
  */
 export async function deleteEnSubtitle(
-  prevState: SubtitleDeleteState,
+  prevState: SubtitleManagementState,
   formData: FormData,
 ) {
   const id = formData.get("episodeId") as string;
@@ -621,7 +621,7 @@ export async function deleteEnSubtitle(
  * @param formData 删除中文字幕的表单数据
  */
 export async function deleteZhSubtitle(
-  prevState: SubtitleDeleteState,
+  prevState: SubtitleManagementState,
   formData: FormData,
 ) {
   "use server";
@@ -640,5 +640,103 @@ export async function deleteZhSubtitle(
   } catch (error) {
     console.error("删除中文字幕失败:", error);
     return { success: false, error: "删除失败" };
+  }
+}
+
+/**
+ * 上传英文字幕的 Server Action
+ * @param prevState 上传字幕的初始状态
+ * @param formData 上传字幕的表单数据
+ */
+export async function uploadEnSubtitle(
+  prevState: SubtitleManagementState,
+  formData: FormData,
+) {
+  "use server";
+  const id = formData.get("episodeId") as string;
+  const file = formData.get("file") as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, message: "请选择文件" };
+  }
+
+  // 检查文件类型
+  if (!file.name.endsWith(".srt") && !file.name.endsWith(".vtt")) {
+    return { success: false, message: "请选择 .srt 或 .vtt 格式的字幕文件" };
+  }
+
+  try {
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const fileName = `yuanlu/podcastes/episodes/subtitles/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到OSS
+    const result = await uploadFile(buffer, fileName);
+
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleEnUrl: result.fileUrl,
+      subtitleEnFileName: result.fileName,
+    };
+
+    await episodeService.update(id, updateData);
+
+    return { success: true, message: "英文字幕上传成功" };
+  } catch (error) {
+    console.error("上传英文字幕失败:", error);
+    return { success: false, message: "英文字幕上传失败" };
+  }
+}
+
+/**
+ * 上传中文字幕的 Server Action
+ * @param prevState 上传字幕的初始状态
+ * @param formData 上传字幕的表单数据
+ */
+export async function uploadZhSubtitle(
+  prevState: SubtitleManagementState,
+  formData: FormData,
+) {
+  "use server";
+  const id = formData.get("episodeId") as string;
+  const file = formData.get("file") as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, message: "请选择文件" };
+  }
+
+  // 检查文件类型
+  if (!file.name.endsWith(".srt") && !file.name.endsWith(".vtt")) {
+    return { success: false, message: "请选择 .srt 或 .vtt 格式的字幕文件" };
+  }
+
+  try {
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const fileName = `yuanlu/podcastes/episodes/subtitles/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到OSS
+    const result = await uploadFile(buffer, fileName);
+
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleZhUrl: result.fileUrl,
+      subtitleZhFileName: result.fileName,
+    };
+
+    await episodeService.update(id, updateData);
+
+    return { success: true, message: "中文字幕上传成功" };
+  } catch (error) {
+    console.error("上传中文字幕失败:", error);
+    return { success: false, message: "中文字幕上传失败" };
   }
 }

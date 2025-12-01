@@ -28,7 +28,8 @@ export interface Episode {
   duration: string;
 }
 
-export type SubtitleDeleteState = {
+export type SubtitleManagementState = {
   success: boolean;
   message: string;
+  error?: string;
 };
