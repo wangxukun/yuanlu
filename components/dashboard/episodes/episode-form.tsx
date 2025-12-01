@@ -289,7 +289,7 @@ export default function EpisodeForm() {
               <div className="flex items-center">
                 <input
                   id="paid"
-                  name="status"
+                  name="publishStatus"
                   type="radio"
                   checked={publishStatus === "paid"}
                   value="paid"
