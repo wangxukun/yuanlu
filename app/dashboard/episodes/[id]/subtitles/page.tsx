@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { episodeService } from "@/core/episode/episode.service";
 import { EpisodeSubtitles } from "@/core/episode/dto/episode-subtitles";
 import Link from "next/link";
-// import { SubtitleDeleteForm } from "@/components/dashboard/episodes/SubtitleDeleteForm";
+import { SubtitleDeleteForm } from "@/components/dashboard/episodes/SubtitleDeleteForm";
+import { SubtitleUploadForm } from "@/components/dashboard/episodes/SubtitleUploadForm";
 
 export const metadata: Metadata = {
   title: "Management Subtitles",
@@ -66,11 +67,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                         >
                           下载
                         </Link>
-                        {/*<SubtitleDeleteForm*/}
-                        {/*  episodeId={id}*/}
-                        {/*  fileName={episodeSubtitles.subtitleEnFileName || ""}*/}
-                        {/*  language="en"*/}
-                        {/*/>*/}
+                        <SubtitleDeleteForm
+                          episodeId={id}
+                          fileName={episodeSubtitles.subtitleEnFileName || ""}
+                          language="en"
+                        />
                       </div>
                     </div>
                   </div>
@@ -85,10 +86,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                           No English Subtitle
                         </p>
                       </div>
-                      {/*<SubtitleUploadForm */}
-                      {/*  episodeId={id} */}
-                      {/*  language="en"*/}
-                      {/*/>*/}
+                      <SubtitleUploadForm episodeId={id} language="en" />
                     </div>
                   </div>
                 )}
@@ -112,11 +110,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                         >
                           下载
                         </Link>
-                        {/*<SubtitleDeleteForm*/}
-                        {/*  episodeId={id}*/}
-                        {/*  fileName={episodeSubtitles.subtitleZhFileName || ""}*/}
-                        {/*  language="zh"*/}
-                        {/*/>*/}
+                        <SubtitleDeleteForm
+                          episodeId={id}
+                          fileName={episodeSubtitles.subtitleZhFileName || ""}
+                          language="zh"
+                        />
                       </div>
                     </div>
                   </div>
@@ -131,10 +129,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                           No Chinese Subtitle
                         </p>
                       </div>
-                      {/*<SubtitleUploadForm */}
-                      {/*  episodeId={id} */}
-                      {/*  language="zh"*/}
-                      {/*/>*/}
+                      <SubtitleUploadForm episodeId={id} language="zh" />
                     </div>
                   </div>
                 )}

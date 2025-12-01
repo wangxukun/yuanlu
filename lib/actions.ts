@@ -636,10 +636,10 @@ export async function deleteZhSubtitle(
       subtitleZhFileName: null,
     };
     await episodeService.updateSubtitleZh(id, updateData);
-    return { success: true };
+    return { success: true, message: "中文字幕删除成功" };
   } catch (error) {
     console.error("删除中文字幕失败:", error);
-    return { success: false, error: "删除失败" };
+    return { success: false, message: "删除失败" };
   }
 }
 
@@ -654,7 +654,7 @@ export async function uploadEnSubtitle(
 ) {
   "use server";
   const id = formData.get("episodeId") as string;
-  const file = formData.get("file") as File;
+  const file = formData.get("subtitleFile") as File;
 
   if (!file || file.size === 0) {
     return { success: false, message: "请选择文件" };
@@ -703,7 +703,7 @@ export async function uploadZhSubtitle(
 ) {
   "use server";
   const id = formData.get("episodeId") as string;
-  const file = formData.get("file") as File;
+  const file = formData.get("subtitleFile") as File;
 
   if (!file || file.size === 0) {
     return { success: false, message: "请选择文件" };
