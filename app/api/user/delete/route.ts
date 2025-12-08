@@ -25,7 +25,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "redirect:/dashboard/users/delete-success" },
+      { message: "redirect:/admin/users/delete-success" },
       { status: 200 },
     );
   } catch (error) {

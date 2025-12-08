@@ -35,7 +35,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "redirect:/dashboard/podcasts/delete-success" },
+      { message: "redirect:/admin/podcasts/delete-success" },
       { status: 200 },
     );
   } catch (error) {

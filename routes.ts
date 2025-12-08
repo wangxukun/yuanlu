@@ -15,16 +15,16 @@ export const publicRoutes = [
 export const userRoutes = ["/library/podcasts", "/library/episodes"];
 
 export const adminRoutes = [
-  "/dashboard",
-  "/dashboard/podcasts",
-  "/dashboard/podcasts/create",
-  "/dashboard/episodes",
-  "/dashboard/episodes/create",
-  "/dashboard/users",
-  "/dashboard/tags",
-  "/dashboard/tags/create",
-  "/dashboard/tag-groups",
-  "/dashboard/tag-groups/create",
+  "/admin",
+  "/admin/podcasts",
+  "/admin/podcasts/create",
+  "/admin/episodes",
+  "/admin/episodes/create",
+  "/admin/users",
+  "/admin/tags",
+  "/admin/tags/create",
+  "/admin/tag-groups",
+  "/admin/tag-groups/create",
 ];
 
 export const premiumRoutes = ["/library/premiums"];

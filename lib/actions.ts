@@ -183,7 +183,7 @@ export async function createPodcast(
       });
     }
     if (res.ok) {
-      revalidatePath("/dashboard/podcasts/create");
+      revalidatePath("/admin/podcasts/create");
       // 先返回成功状态再执行重定向
       return {
         errors: {
@@ -194,7 +194,7 @@ export async function createPodcast(
           platform: "",
         },
         // 在podcasts页面中，通过message判断是否需要重定向
-        message: "redirect:/dashboard/podcasts/create-success", // 添加特殊标识
+        message: "redirect:/admin/podcasts/create-success", // 添加特殊标识
       };
     }
   } catch (error) {
@@ -322,7 +322,7 @@ export async function createEpisode(
     const data = await res.json();
     if (res.ok) {
       console.log("创建剧集成功:", data);
-      revalidatePath("/dashboard/episodes/create");
+      revalidatePath("/admin/episodes/create");
       return {
         errors: {
           title: "",
@@ -332,7 +332,7 @@ export async function createEpisode(
           coverFileName: "",
         },
         // 在episodes页面中，通过message判断是否需要重定向
-        message: "redirect:/dashboard/episodes/create-success",
+        message: "redirect:/admin/episodes/create-success",
       };
     }
   } catch (error) {
@@ -525,7 +525,7 @@ export async function deleteEpisodeById(id: string) {
   }
 
   return {
-    message: "redirect:/dashboard/episodes/",
+    message: "redirect:/admin/episodes/",
     success,
   };
 }
@@ -611,7 +611,7 @@ export async function updateEpisodeAction(
         title: "",
         description: "",
       },
-      message: "redirect:/dashboard/episodes/update-info-success",
+      message: "redirect:/admin/episodes/update-info-success",
     };
   } catch (err) {
     console.error("剧集信息更新失败", err);

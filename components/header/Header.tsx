@@ -98,7 +98,7 @@ export default function Header() {
               <ThemeSwitcher />
               {status === "authenticated" &&
                 (session as Session).user.role === "ADMIN" && (
-                  <Link href="/dashboard" className="flex-1 flex">
+                  <Link href="/admin" className="flex-1 flex">
                     <div className="w-20 text-xs text-base-content px-2 py-1 rounded-lg transition-colors">
                       控制台
                     </div>
