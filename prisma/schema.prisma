@@ -233,13 +233,40 @@ model learning_paths {
   User       User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 听播历史记录模型，用于追踪用户收听剧集的历史
+/// 
+/// 该模型记录用户对剧集的收听情况，包括收听时间、进度等信息。
+/// 支持断点续传功能，允许用户暂停后继续收听，同时确保
+/// 每个用户对每集只有一条记录。
+/// 
+/// 字段说明：
+/// - historyid: 历史记录唯一标识符，自动递增
+/// - userid: 关联的用户ID
+/// - episodeid: 关联的剧集ID
+/// - listenAt: 开始收听的时间，默认为当前时间
+/// - progressSeconds: 已收听的秒数，用于断点续传功能
+/// - isFinished: 标识是否已完成收听
+/// - episode: 关联的剧集对象
+/// - User: 关联的用户对象
+/// 
+/// 约束说明：
+/// - 在userid和episodeid上创建复合唯一索引，确保每个用户对每集只有一条记录
 model listening_history {
   historyid Int       @id @default(autoincrement())
   userid    String?
   episodeid String?
   listenAt  DateTime? @default(now()) @db.Timestamptz(6)
-  episode   episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
-  User      User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  // [新增] 精听必须具备的“断点续传”
+  progressSeconds Int     @default(0) // 听到第几秒
+  isFinished      Boolean @default(false) // 是否听完
+
+  episode episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User    User?    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  // 复合唯一索引：确保一个用户对一集只有一条最新的历史记录（或者你可以选择保留多条，看业务逻辑）
+  // 建议加上这个以方便 upsert 操作
+  @@unique([userid, episodeid])
 }
 
 model notifications {
@@ -251,13 +278,27 @@ model notifications {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+//  测验题
 model quizzes {
-  quizid        Int      @id @default(autoincrement())
-  episodeid     String?
-  question      String
-  options       Json?
-  correctAnswer String   @db.VarChar(255)
-  episode       episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  // 测验主键ID，自动递增
+  quizid Int @id @default(autoincrement())
+
+  // 关联的剧集ID，可为空
+  episodeid String?
+
+  // 测验问题文本
+  question String
+
+  // 测验选项，以JSON格式存储，可为空
+  options Json?
+
+  // 正确答案文本
+  correctAnswer String @db.VarChar(255)
+
+  // 与episode表的关联关系
+  // 当关联的episode被删除时，级联删除相关的quiz记录
+  // 更新操作不执行任何动作
+  episode episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -271,12 +312,32 @@ model ratings {
   User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 语音识别结果模型，用于存储用户语音识别的记录和评估
+/// 
+/// 该模型保存用户语音输入的识别结果及其准确度评分，
+/// 并关联到相应的剧集和原文内容，用于语言学习中的发音练习。
+/// 
+/// 字段说明：
+/// - recognitionid: 识别记录唯一标识符，自动递增
+/// - userid: 关联的用户ID
+/// - episodeid: 关联的剧集ID
+/// - speechText: 识别出的用户语音文本
+/// - accuracyScore: 语音识别准确度评分
+/// - targetText: 对应的原文内容
+/// - targetStartTime: 原文内容在音频中的起始时间（秒）
+/// - recognitionDate: 识别记录创建时间，默认为当前时间
+/// - episode: 关联的剧集对象
+/// - User: 关联的用户对象
 model speech_recognition {
-  recognitionid   Int       @id @default(autoincrement())
-  userid          String?
-  episodeid       String?
-  speechText      String?
-  accuracyScore   Float?
+  recognitionid Int     @id @default(autoincrement())
+  userid        String?
+  episodeid     String?
+  speechText    String?
+  accuracyScore Float?
+
+  // [新增] 关联原文内容
+  targetText      String?   // 原文里的话
+  targetStartTime Int?      // 原文开始的时间（秒）
   recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
   episode         episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
@@ -299,13 +360,46 @@ model subscriptions {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 词汇表模型，用于存储用户的词汇学习记录
+/// 
+/// 该模型包含用户的单词学习信息，支持与用户模型关联，当用户被删除时，
+/// 其所有词汇记录也会被级联删除。同时扩展了功能，增加了语境句子、翻译、
+/// 间隔重复算法等相关字段，以便更好地进行语言学习。
+/// 
+/// 字段说明：
+/// - vocabularyid: 词汇记录的唯一标识符，自动递增
+/// - userid: 关联的用户ID，可为空
+/// - word: 学习的单词，最大长度255个字符
+/// - definition: 单词的定义或解释，可为空
+/// - contextSentence: 单词所在的完整句子语境，有助于记忆
+/// - translation: 语境句子的中文翻译
+/// - episodeid: 关联的具体剧集ID
+/// - timestamp: 单词在音频中的位置（秒），便于跳转回听
+/// - proficiency: 词汇熟练度等级（0-5）
+/// - nextReviewAt: 根据间隔重复算法计算的下次复习时间
+/// - addedDate: 词汇添加日期，默认为当前时间
+/// - User: 关联的用户对象，建立与User模型的一对多关系
+/// 
+/// 索引说明：
+/// - 在userid和episodeid上创建复合索引，优化查询某一集所有生词的性能
 model vocabulary {
-  vocabularyid Int       @id @default(autoincrement())
-  userid       String?
-  word         String    @db.VarChar(255)
-  definition   String?
-  addedDate    DateTime? @default(now()) @db.Timestamptz(6)
-  User         User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  vocabularyid    Int       @id @default(autoincrement())
+  userid          String?
+  word            String    @db.VarChar(255)
+  definition      String?
+  // [新增] 只有单词没有语境是记不住的
+  contextSentence String?   @db.Text // 记录点击单词时的完整句子
+  translation     String?   @db.Text // 句子的中文翻译
+  episodeid       String? // 关联到具体哪一集
+  timestamp       Int? // 点击单词时的秒数，方便跳转回听
+  // [新增] 用于间隔重复复习算法 (Spaced Repetition System)
+  proficiency     Int       @default(0) // 熟练度 0-5
+  nextReviewAt    DateTime? @default(now()) @db.Timestamptz(6) // 下次复习时间
+  addedDate       DateTime? @default(now()) @db.Timestamptz(6)
+  User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  // 建议加上索引，方便查询某集的所有生词
+  @@index([userid, episodeid])
 }
 
 model captcha {
