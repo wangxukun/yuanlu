@@ -7,6 +7,7 @@ import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
 import PodcastIcon from "@/components/icons/PodcastIcon";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import { useSaveProgress } from "@/lib/hooks/useSaveProgress";
 
 export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null!);
@@ -29,11 +30,73 @@ export default function Player() {
       ? "/static/images/podcast-logo-dark.png"
       : "/static/images/podcast-logo-light.png";
 
+  // ----------------------------------------------------------------
+  // [新增] 自动保存播放进度
+  // ----------------------------------------------------------------
+  // 我们直接使用 Store 中的状态，当状态变化时，Hook 内部会自动决定何时保存
+  const { saveToBackend } = useSaveProgress({
+    // 确保 episodeid 存在，如果当前没有播放集数，传空字符串
+    // (Hook 内部有 currentTime > 0 的判断，所以空串通常不会导致错误请求)
+    episodeId: currentEpisode?.episodeid || "",
+    currentTime,
+    isPlaying,
+    duration,
+  });
+  // ----------------------------------------------------------------
+
+  // ----------------------------------------------------------------
+  // [新增功能] 切换剧集时，获取用户历史进度并恢复 (Resume Playback)
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    // 如果没有剧集ID，不需要获取
+    if (!currentEpisode?.episodeid) return;
+
+    const fetchEpisodeStatus = async () => {
+      try {
+        console.log(`正在获取剧集状态: ${currentEpisode.title}`);
+        const res = await fetch(`/api/episode/${currentEpisode.episodeid}`);
+
+        if (res.ok) {
+          const data = await res.json();
+          // 检查是否有服务端返回的历史进度
+          const savedProgress = data?.userState?.progressSeconds;
+
+          if (typeof savedProgress === "number" && savedProgress > 0) {
+            console.log(`恢复播放进度: ${savedProgress}s`);
+
+            // 1. 更新 Store 状态，让进度条 UI 立即跳过去
+            setCurrentTime(savedProgress);
+
+            // 2. 更新 Audio 元素 (如果已经加载了 DOM)
+            if (audioRef.current) {
+              audioRef.current.currentTime = savedProgress;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("无法同步播放进度:", error);
+      }
+    };
+
+    fetchEpisodeStatus();
+
+    // 依赖项：仅当 episodeid 变化时执行（即切歌时）
+  }, [currentEpisode?.episodeid, setCurrentTime]);
+
+  // ----------------------------------------------------------------
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleEnded = () => {
+      // 2. ✅ [新增] 在清空状态前，强制保存“已完成”状态
+      // 这里使用 audio.duration 确保进度拉满，传 true 表示 isFinished
+      if (currentEpisode?.episodeid) {
+        console.log("播放结束，标记为已完成");
+        saveToBackend(audio.duration, true);
+      }
+
       pause();
       setCurrentTime(0);
       setCurrentEpisode(null);
@@ -45,7 +108,14 @@ export default function Player() {
     return () => {
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [pause, setCurrentTime, setCurrentEpisode, setCurrentAudioUrl]);
+  }, [
+    pause,
+    setCurrentTime,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+    saveToBackend,
+    currentEpisode,
+  ]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -55,6 +125,9 @@ export default function Player() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // 注意：这里的 play/pause 逻辑可能会和上面的 currentTime 跳转产生竞态
+    // 但通常浏览器能处理好：先跳转再播放，或者播放中跳转
     if (isPlaying) {
       audio.play().catch((error) => {
         console.error("播放音频时出错:", error);
@@ -85,6 +158,8 @@ export default function Player() {
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration || 0);
+      // [可选优化] 如果 API 数据回来得比音频加载慢，或者反之，
+      // 这里可以再次确认一下 currentTime 是否需要修正，但目前的 useEffect 逻辑通常足够覆盖
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -172,7 +247,8 @@ export default function Player() {
           throttledActiveUpdate.current();
         }}
         onLoadedData={(e) => {
-          setCurrentTime(0);
+          // 这里不再强制归零，因为我们可能已经设置了 savedProgress
+          // setCurrentTime(0);
           setDuration(e.currentTarget.duration);
           fetch("/api/auth/update-activity", {
             method: "POST",

@@ -10,6 +10,7 @@ export default async function EpisodePage({
   const { id } = await params;
   const episode = await fetchEpisodeById(id);
   const subtitles = await mergeSubtitles(episode);
+  console.log("合并后的字幕：", subtitles);
 
   return (
     <div className="flex flex-col p-6 mt-0 w-full items-center justify-center mx-auto bg-base-100">
