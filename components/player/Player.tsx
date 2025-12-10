@@ -1,6 +1,6 @@
 "use client";
 import { usePlayerStore } from "@/store/player-store";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { debounce, throttle } from "lodash";
 import { formatTime } from "@/lib/tools";
 import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
@@ -30,81 +30,124 @@ export default function Player() {
       ? "/static/images/podcast-logo-dark.png"
       : "/static/images/podcast-logo-light.png";
 
-  // ----------------------------------------------------------------
-  // [新增] 自动保存播放进度
-  // ----------------------------------------------------------------
-  // 我们直接使用 Store 中的状态，当状态变化时，Hook 内部会自动决定何时保存
+  // [新增] 用于存储待恢复的进度 (信号枪)
+  // 只要它不为 null，就说明“正在等待跳转”，此时禁止 timeupdate 更新 UI
+  const resumeTimeRef = useRef<number | null>(null);
+
+  // 1. 调用 useSaveProgress
   const { saveToBackend } = useSaveProgress({
-    // 确保 episodeid 存在，如果当前没有播放集数，传空字符串
-    // (Hook 内部有 currentTime > 0 的判断，所以空串通常不会导致错误请求)
     episodeId: currentEpisode?.episodeid || "",
     currentTime,
     isPlaying,
     duration,
   });
-  // ----------------------------------------------------------------
+
+  // [新增] 核心函数：尝试执行进度恢复
+  const tryRestoreProgress = useCallback(() => {
+    const audio = audioRef.current;
+    const targetTime = resumeTimeRef.current;
+
+    // 只有当有目标时间，且音频元素存在，且元数据已加载(HAVE_METADATA=1)时才跳转
+    if (targetTime !== null && audio && audio.readyState >= 1) {
+      console.log(`[Player] 执行进度跳转: ${targetTime}s`);
+      audio.currentTime = targetTime;
+      setCurrentTime(targetTime);
+      resumeTimeRef.current = null; // 解除锁
+    }
+  }, [setCurrentTime]);
 
   // ----------------------------------------------------------------
-  // [新增功能] 切换剧集时，获取用户历史进度并恢复 (Resume Playback)
+  // [修改]：切歌时，获取历史进度并设置 resumeTimeRef
   // ----------------------------------------------------------------
   useEffect(() => {
-    // 如果没有剧集ID，不需要获取
     if (!currentEpisode?.episodeid) return;
+
+    // 切歌时先重置锁
+    resumeTimeRef.current = null;
 
     const fetchEpisodeStatus = async () => {
       try {
-        console.log(`正在获取剧集状态: ${currentEpisode.title}`);
         const res = await fetch(`/api/episode/${currentEpisode.episodeid}`);
-
         if (res.ok) {
           const data = await res.json();
-          // 检查是否有服务端返回的历史进度
           const savedProgress = data?.userState?.progressSeconds;
 
           if (typeof savedProgress === "number" && savedProgress > 0) {
-            console.log(`恢复播放进度: ${savedProgress}s`);
-
-            // 1. 更新 Store 状态，让进度条 UI 立即跳过去
-            setCurrentTime(savedProgress);
-
-            // 2. 更新 Audio 元素 (如果已经加载了 DOM)
-            if (audioRef.current) {
-              audioRef.current.currentTime = savedProgress;
-            }
+            console.log("[Player] 切歌正常");
+            console.log(`[Player] 获取到历史进度: ${savedProgress}s`);
+            // 设置锁，进入“恢复模式”
+            resumeTimeRef.current = savedProgress;
+            // 尝试跳转（防止音频已经加载完）
+            tryRestoreProgress();
+          } else {
+            console.log("[Player] 切歌不正常");
+            console.log("savedProgress:", savedProgress);
+            console.log("data:", data);
+            // 新的一集，清除锁并归零
+            resumeTimeRef.current = null;
+            setCurrentTime(0);
+            if (audioRef.current) audioRef.current.currentTime = 0;
           }
         }
       } catch (error) {
-        console.error("无法同步播放进度:", error);
+        console.error("无法获取历史进度:", error);
       }
     };
 
     fetchEpisodeStatus();
+  }, [currentEpisode?.episodeid, setCurrentTime, tryRestoreProgress]);
 
-    // 依赖项：仅当 episodeid 变化时执行（即切歌时）
-  }, [currentEpisode?.episodeid, setCurrentTime]);
+  // ... (AudioRef 设置逻辑不变)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) setAudioRef(audio);
+  }, [setAudioRef]);
 
-  // ----------------------------------------------------------------
+  // [修改] 播放控制与 TimeUpdate 锁逻辑
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
 
+    if (isPlaying) {
+      audio.play().catch((error) => {
+        console.error("播放音频时出错:", error);
+      });
+    } else {
+      audio.pause();
+    }
+
+    // [关键] 加锁的 updateTime
+    const updateTime = () => {
+      // 如果正在等待恢复（Ref有值），则忽略音频传来的 0s，防止 Store 被覆盖
+      if (resumeTimeRef.current !== null) return;
+
+      setCurrentTime(audio.currentTime);
+    };
+
+    audio.addEventListener("timeupdate", updateTime);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+    };
+  }, [isPlaying, setCurrentTime]);
+
+  // [修改] Ended逻辑
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleEnded = () => {
-      // 2. ✅ [新增] 在清空状态前，强制保存“已完成”状态
-      // 这里使用 audio.duration 确保进度拉满，传 true 表示 isFinished
       if (currentEpisode?.episodeid) {
-        console.log("播放结束，标记为已完成");
-        saveToBackend(audio.duration, true);
+        saveToBackend(audio.duration, true, true);
       }
-
       pause();
       setCurrentTime(0);
+      resumeTimeRef.current = null; // 清除锁
       setCurrentEpisode(null);
       setCurrentAudioUrl("");
     };
 
     audio.addEventListener("ended", handleEnded);
-
     return () => {
       audio.removeEventListener("ended", handleEnded);
     };
@@ -117,34 +160,13 @@ export default function Player() {
     currentEpisode,
   ]);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) setAudioRef(audio);
-  }, [setAudioRef]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    // 注意：这里的 play/pause 逻辑可能会和上面的 currentTime 跳转产生竞态
-    // 但通常浏览器能处理好：先跳转再播放，或者播放中跳转
-    if (isPlaying) {
-      audio.play().catch((error) => {
-        console.error("播放音频时出错:", error);
-      });
-    } else {
-      audio.pause();
-    }
-
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    audio.addEventListener("timeupdate", updateTime);
-  }, [isPlaying]);
-
   const handleProgressChange = (newTime: number) => {
     const audio = audioRef.current;
     if (audio) {
       audio.currentTime = newTime;
       setCurrentTime(newTime);
+      // 用户手动拖拽，清除恢复锁
+      resumeTimeRef.current = null;
     }
   };
 
@@ -152,27 +174,31 @@ export default function Player() {
     handleProgressChange(newTime);
   }, 300);
 
+  // [修改] 元数据加载逻辑：增加跳转尝试
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration || 0);
-      // [可选优化] 如果 API 数据回来得比音频加载慢，或者反之，
-      // 这里可以再次确认一下 currentTime 是否需要修正，但目前的 useEffect 逻辑通常足够覆盖
+      // 音频元数据加载完毕，尝试跳转
+      tryRestoreProgress();
+    };
+
+    // 增加 canplay 事件，双重保险
+    const handleCanPlay = () => {
+      tryRestoreProgress();
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("canplay", handleCanPlay);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("canplay", handleCanPlay);
     };
-  }, []);
+  }, [tryRestoreProgress, setDuration]);
 
-  /**
-   * 刷新用户活动，60秒一次
-   * 把 throttledActiveUpdate 放到 useRef 中，让 throttle 永远只创建一次。
-   */
   const throttledActiveUpdate = useRef(
     throttle(() => {
       fetch("/api/auth/update-activity", {
@@ -184,7 +210,7 @@ export default function Player() {
 
   return (
     <div className="group/player flex items-center w-full border border-base-300 bg-base-200 rounded-xl shadow-md overflow-hidden">
-      {/* 封面区 */}
+      {/* ... 封面区 ... */}
       <button className="relative flex bg-base-200 border-r border-base-300 hover:brightness-110 transition-all">
         <div className="invisible group-hover/player:visible absolute inset-0 flex items-center justify-center bg-black/30">
           <ArrowsPointingOutIcon className="w-6 h-6 text-white opacity-70" />
@@ -202,7 +228,7 @@ export default function Player() {
         )}
       </button>
 
-      {/* 内容区 */}
+      {/* ... 内容区 ... */}
       <div className="flex-1 flex flex-col justify-center px-2">
         {currentEpisode ? (
           <>
@@ -241,19 +267,18 @@ export default function Player() {
 
       <audio
         ref={audioRef}
-        onEnded={() => setCurrentTime(0)}
-        onTimeUpdate={(e) => {
-          setCurrentTime(e.currentTarget.currentTime);
-          throttledActiveUpdate.current();
-        }}
         onLoadedData={(e) => {
-          // 这里不再强制归零，因为我们可能已经设置了 savedProgress
-          // setCurrentTime(0);
           setDuration(e.currentTarget.duration);
           fetch("/api/auth/update-activity", {
             method: "POST",
             keepalive: true,
           });
+        }}
+        onEnded={() => setCurrentTime(0)}
+        onTimeUpdate={() => {
+          // [修改] 这里不再调用 setCurrentTime，只负责心跳
+          // 状态更新逻辑已移至 useEffect 中统一管理
+          throttledActiveUpdate.current();
         }}
         onPlay={() => {
           fetch("/api/auth/update-activity", {

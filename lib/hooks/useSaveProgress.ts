@@ -13,19 +13,26 @@ export function useSaveProgress({
   isPlaying,
   duration,
 }: UseSaveProgressProps) {
-  // 使用 useRef 记录上一次保存的时间点
+  // 记录上一次保存的时间点
   const lastSavedTimeRef = useRef<number>(0);
-  // 增加一个 ref 防止短时间内重复请求
+  // 防止并发请求的锁
   const isSavingRef = useRef<boolean>(false);
+  // 专门用于追踪当前时间的 Ref，供 cleanup 使用
+  const currentTimeRef = useRef<number>(currentTime);
 
-  // 定义核心保存函数
+  // 每次 render 后更新 ref
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  // 核心保存函数
+  // [修改点 1] 增加 force 参数
   const saveToBackend = useCallback(
-    async (time: number, finished: boolean) => {
-      // 防止重入：如果正在保存中，且不是强制完成状态，则跳过
-      if (isSavingRef.current && !finished) return;
+    async (time: number, finished: boolean, force: boolean = false) => {
+      // [修改点 2] 如果是强制保存(force=true)，则无视锁；否则才检查锁
+      if (!force && isSavingRef.current && !finished) return;
 
       try {
-        // 在发起请求前，立即更新 lastSavedTimeRef
         lastSavedTimeRef.current = time;
         isSavingRef.current = true;
 
@@ -40,7 +47,7 @@ export function useSaveProgress({
           credentials: "include",
         });
 
-        console.log(`进度已保存: ${time}s (Finished: ${finished})`);
+        console.log(`[${episodeId}] 进度已保存: ${time}s (force: ${force})`);
       } catch (error) {
         console.error("保存进度失败", error);
       } finally {
@@ -50,7 +57,20 @@ export function useSaveProgress({
     [episodeId],
   );
 
-  // 1. 逻辑：当播放暂停时，立即保存
+  // 1. 监听 episodeId 变化（切歌）
+  useEffect(() => {
+    return () => {
+      const lastTime = currentTimeRef.current;
+      // 只有当进度 > 0 且跟上次保存不同的时候才存
+      if (lastTime > 0 && Math.abs(lastTime - lastSavedTimeRef.current) > 2) {
+        console.log(`检测到切歌/卸载，强制保存上一集进度: ${lastTime}`);
+        // [修改点 3] 传入 true 开启强制模式，防止被正在进行的自动保存阻塞
+        saveToBackend(lastTime, false, true);
+      }
+    };
+  }, [episodeId, saveToBackend]);
+
+  // 2. 暂停时保存
   useEffect(() => {
     if (
       !isPlaying &&
@@ -61,7 +81,7 @@ export function useSaveProgress({
     }
   }, [isPlaying, currentTime, duration, saveToBackend]);
 
-  // 2. 逻辑：播放中，每隔 15 秒保存一次
+  // 3. 定时保存 (15s)
   useEffect(() => {
     if (!isPlaying) return;
     if (Math.abs(currentTime - lastSavedTimeRef.current) > 15) {
@@ -69,11 +89,11 @@ export function useSaveProgress({
     }
   }, [currentTime, isPlaying, saveToBackend]);
 
-  // 3. 逻辑：页面卸载前强制保存
+  // 4. 页面关闭前保存
   useEffect(() => {
     const handleBeforeUnload = () => {
       const payload = JSON.stringify({
-        progressSeconds: currentTime,
+        progressSeconds: currentTimeRef.current,
         isFinished: false,
       });
       fetch(`/api/episode/${episodeId}/progress`, {
@@ -89,8 +109,7 @@ export function useSaveProgress({
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [episodeId, currentTime]);
+  }, [episodeId]);
 
-  // ✅ [新增] 暴露方法给外部使用
   return { saveToBackend };
 }
