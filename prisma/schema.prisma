@@ -336,8 +336,8 @@ model speech_recognition {
   accuracyScore Float?
 
   // [新增] 关联原文内容
-  targetText      String?   // 原文里的话
-  targetStartTime Int?      // 原文开始的时间（秒）
+  targetText      String? // 原文里的话
+  targetStartTime Int? // 原文开始的时间（秒）
   recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
   episode         episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
@@ -360,45 +360,24 @@ model subscriptions {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-/// 词汇表模型，用于存储用户的词汇学习记录
-/// 
-/// 该模型包含用户的单词学习信息，支持与用户模型关联，当用户被删除时，
-/// 其所有词汇记录也会被级联删除。同时扩展了功能，增加了语境句子、翻译、
-/// 间隔重复算法等相关字段，以便更好地进行语言学习。
-/// 
-/// 字段说明：
-/// - vocabularyid: 词汇记录的唯一标识符，自动递增
-/// - userid: 关联的用户ID，可为空
-/// - word: 学习的单词，最大长度255个字符
-/// - definition: 单词的定义或解释，可为空
-/// - contextSentence: 单词所在的完整句子语境，有助于记忆
-/// - translation: 语境句子的中文翻译
-/// - episodeid: 关联的具体剧集ID
-/// - timestamp: 单词在音频中的位置（秒），便于跳转回听
-/// - proficiency: 词汇熟练度等级（0-5）
-/// - nextReviewAt: 根据间隔重复算法计算的下次复习时间
-/// - addedDate: 词汇添加日期，默认为当前时间
-/// - User: 关联的用户对象，建立与User模型的一对多关系
-/// 
-/// 索引说明：
-/// - 在userid和episodeid上创建复合索引，优化查询某一集所有生词的性能
 model vocabulary {
   vocabularyid    Int       @id @default(autoincrement())
   userid          String?
   word            String    @db.VarChar(255)
   definition      String?
-  // [新增] 只有单词没有语境是记不住的
-  contextSentence String?   @db.Text // 记录点击单词时的完整句子
-  translation     String?   @db.Text // 句子的中文翻译
-  episodeid       String? // 关联到具体哪一集
-  timestamp       Int? // 点击单词时的秒数，方便跳转回听
-  // [新增] 用于间隔重复复习算法 (Spaced Repetition System)
-  proficiency     Int       @default(0) // 熟练度 0-5
-  nextReviewAt    DateTime? @default(now()) @db.Timestamptz(6) // 下次复习时间
+  contextSentence String?   @db.Text
+  translation     String?   @db.Text
+  episodeid       String?
+  timestamp       Int?
+  speakUrl        String?   @db.VarChar(500) // 单词发音链接
+  dictUrl         String?   @db.VarChar(500) // 移动端 App 深度链接 (yddict://...)
+  webUrl          String?   @db.VarChar(500) // 桌面网页版查看链接 (https://m.youdao.com...)
+  mobileUrl       String?   @db.VarChar(500) // 移动端网页版查看链接 (http://mobile.youdao.com...)
+  proficiency     Int       @default(0)
+  nextReviewAt    DateTime? @default(now()) @db.Timestamptz(6)
   addedDate       DateTime? @default(now()) @db.Timestamptz(6)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 
-  // 建议加上索引，方便查询某集的所有生词
   @@index([userid, episodeid])
 }
 

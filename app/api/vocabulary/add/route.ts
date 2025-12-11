@@ -25,6 +25,10 @@ export async function POST(request: Request) {
       translation,
       episodeid,
       timestamp,
+      speakUrl,
+      dictUrl,
+      webUrl,
+      mobileUrl,
     } = body;
 
     if (!word || !episodeid) {
@@ -46,6 +50,10 @@ export async function POST(request: Request) {
         translation: translation || "",
         episodeid: episodeid,
         timestamp: Math.floor(timestamp || 0),
+        speakUrl: speakUrl || "",
+        dictUrl: dictUrl || "",
+        webUrl: webUrl || "",
+        mobileUrl: mobileUrl || "",
         proficiency: 0, // 初始熟练度
         addedDate: new Date(),
         nextReviewAt: new Date(), // 立即加入复习队列
