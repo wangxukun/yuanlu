@@ -1,19 +1,28 @@
 "use client";
 
 import {
+  BookOpenIcon, // 生词本图标
+  ClockIcon, // 历史记录图标
+  TvIcon, // 订阅/节目图标
+  HeartIcon, // 收藏图标
   GiftIcon,
-  RectangleStackIcon,
-  TvIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { useSession } from "next-auth/react"; // 客户端组件获取会话
+import { useSession } from "next-auth/react";
 
 const links = [
-  { name: "节目", href: "/library/podcasts", icon: TvIcon },
-  { name: "剧集", href: "/library/episodes", icon: RectangleStackIcon },
-  { name: "订阅", href: "/library/premiums", icon: GiftIcon },
+  // [新增] 英语学习最核心的功能
+  { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
+  // [新增] 方便回溯复习
+  { name: "收听历史", href: "/library/history", icon: ClockIcon },
+  // 原有的节目列表
+  { name: "我的订阅", href: "/library/podcasts", icon: TvIcon },
+  // 将“剧集”改为“收藏”，语意更明确
+  { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
+  // 这是一个特殊入口，可以保留或放入个人中心
+  { name: "会员订阅", href: "/library/premiums", icon: GiftIcon },
 ];
 
 export default function NavLinksLogined() {
@@ -23,7 +32,7 @@ export default function NavLinksLogined() {
   return (
     <div className="flex flex-col">
       {links.map((link) => {
-        //  隐藏非PREMIUM用户
+        // 权限控制逻辑保持不变
         if (
           "/library/premiums" === link.href &&
           session &&
@@ -41,10 +50,12 @@ export default function NavLinksLogined() {
               "flex ml-6 mr-6 h-10 grow items-center justify-center gap-2 rounded-md p-3 text-sm font-medium md:flex-none md:justify-start md:p-2 md:px-3",
               {
                 "bg-base-200 text-base-content": pathname === link.href,
+                "text-base-content/70 hover:bg-base-200/50 hover:text-base-content":
+                  pathname !== link.href,
               },
             )}
           >
-            <LinkIcon className="w-5 text-purple-500" />
+            <LinkIcon className="w-5 text-primary" />
             <p className="hidden md:block">{link.name}</p>
           </Link>
         );

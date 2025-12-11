@@ -1,15 +1,21 @@
 "use client";
 
-import { RectangleStackIcon, TvIcon } from "@heroicons/react/24/outline";
+import {
+  BookOpenIcon,
+  ClockIcon,
+  TvIcon,
+  HeartIcon,
+} from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
-// Map of links to display in the side navigation.
-// Depending on the size of the application, this would be stored in a database.
+// 保持与 Desktop NavLinksLogined 一致
 const links = [
-  { name: "节目", href: "/library/episodes", icon: RectangleStackIcon },
-  { name: "频道", href: "/library/podcasts", icon: TvIcon },
+  { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
+  { name: "收听历史", href: "/library/history", icon: ClockIcon },
+  { name: "我的订阅", href: "/library/podcasts", icon: TvIcon },
+  { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
 ];
 
 export default function MenusLinksLogined({
@@ -20,7 +26,7 @@ export default function MenusLinksLogined({
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col space-y-1">
       {links.map((link) => {
         const LinkIcon = link.icon;
         return (
@@ -29,13 +35,14 @@ export default function MenusLinksLogined({
             href={link.href}
             onClick={onLinkClick}
             className={clsx(
-              "flex ml-6 mr-6 h-10 grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
+              "flex mx-4 h-12 items-center gap-3 rounded-xl text-base font-medium px-4 transition-colors",
               {
-                "bg-gray-200 text-gray-600": pathname === link.href,
+                "bg-base-200 text-base-content": pathname === link.href,
+                "text-base-content/70": pathname !== link.href,
               },
             )}
           >
-            <LinkIcon className="w-5 text-purple-500" />
+            <LinkIcon className="w-6 text-primary" />
             <p className="block">{link.name}</p>
           </Link>
         );

@@ -1,28 +1,14 @@
 "use client";
 
-import {
-  HomeIcon,
-  NumberedListIcon,
-  Squares2X2Icon,
-} from "@heroicons/react/24/outline";
+import { HomeIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
-// Map of links to display in the side navigation.
-// Depending on the size of the application, this would be stored in a database.
+// 保持与 Desktop 一致
 const links = [
   { name: "主页", href: "/home", icon: HomeIcon },
-  {
-    name: "浏览",
-    href: "/browse",
-    icon: Squares2X2Icon,
-  },
-  {
-    name: "排行榜",
-    href: "/charts",
-    icon: NumberedListIcon,
-  },
+  { name: "发现", href: "/browse", icon: Squares2X2Icon },
 ];
 
 export default function MenusLinks({
@@ -33,7 +19,7 @@ export default function MenusLinks({
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col space-y-1">
       {links.map((link) => {
         const LinkIcon = link.icon;
         return (
@@ -42,13 +28,14 @@ export default function MenusLinks({
             href={link.href}
             onClick={onLinkClick}
             className={clsx(
-              "flex ml-6 mr-6 h-10 grow gap-2 rounded-md text-sm font-medium flex-none justify-start p-2 px-3",
+              "flex mx-4 h-12 items-center gap-3 rounded-xl text-base font-medium px-4 transition-colors",
               {
-                "bg-gray-200 text-gray-600": pathname === link.href,
+                "bg-base-200 text-base-content": pathname === link.href,
+                "text-base-content/70": pathname !== link.href,
               },
             )}
           >
-            <LinkIcon className="w-5 text-purple-500" />
+            <LinkIcon className="w-6 text-primary" />
             <p className="block">{link.name}</p>
           </Link>
         );
