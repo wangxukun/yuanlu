@@ -1,7 +1,9 @@
 "use client";
-// 新建客户端组件
 import { useSession, signOut } from "next-auth/react";
-import { UserIcon, UserCircleIcon } from "@heroicons/react/24/solid";
+import {
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 
 export default function LoginHomeBtn() {
@@ -11,36 +13,33 @@ export default function LoginHomeBtn() {
   if (session) {
     return (
       <button
-        // className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
-        className="btn btn-ghost flex items-center gap-2"
+        className="btn btn-ghost btn-sm gap-2 text-base-content/80 hover:text-base-content hover:bg-base-200"
         onClick={async () => {
           await signOut({ redirect: false });
           router.push("/browse");
         }}
+        title="退出登录"
       >
-        <UserCircleIcon className="w-5 h-5 hidden sm:block" />
-        <span className="text-sm font-medium text-gray-700">退出</span>
+        <ArrowRightOnRectangleIcon className="w-5 h-5" />
+        <span className="hidden xl:inline text-sm font-medium">退出</span>
       </button>
     );
   }
 
   return (
-    <>
-      <button
-        // className="bg-purple-700 w-[80px] h-7 text-white flex items-center justify-center space-x-1 px-3 py-1 hover:drop-shadow-md rounded-lg transition-colors"
-        className="btn btn-ghost btn-sm flex items-center gap-1"
-        onClick={() => {
-          const modal = document.getElementById(
-            "email_check_modal_box",
-          ) as HTMLDialogElement;
-          if (modal) {
-            modal.showModal();
-          }
-        }}
-      >
-        <UserIcon className="w-4 h-4 hidden sm:block" />
-        登录
-      </button>
-    </>
+    <button
+      className="btn btn-primary btn-sm gap-2 shadow-sm shadow-primary/20"
+      onClick={() => {
+        const modal = document.getElementById(
+          "email_check_modal_box",
+        ) as HTMLDialogElement;
+        if (modal) {
+          modal.showModal();
+        }
+      }}
+    >
+      <UserCircleIcon className="w-5 h-5" />
+      <span>登录</span>
+    </button>
   );
 }

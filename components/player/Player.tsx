@@ -3,14 +3,15 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEffect, useRef, useCallback } from "react";
 import { debounce, throttle } from "lodash";
 import { formatTime } from "@/lib/tools";
-import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
+import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import PodcastIcon from "@/components/icons/PodcastIcon";
-import Image from "next/image";
-import { useTheme } from "next-themes";
+// import { useTheme } from "next-themes";
 import { useSaveProgress } from "@/lib/hooks/useSaveProgress";
+import Link from "next/link";
 
 export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null!);
+
   const setAudioRef = usePlayerStore((state) => state.setAudioRef);
   const currentEpisode = usePlayerStore((state) => state.currentEpisode);
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -20,15 +21,13 @@ export default function Player() {
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const pause = usePlayerStore((state) => state.pause);
   const setCurrentEpisode = usePlayerStore((state) => state.setCurrentEpisode);
+  const currentAudioUrl = usePlayerStore((state) => state.currentAudioUrl);
   const setCurrentAudioUrl = usePlayerStore(
     (state) => state.setCurrentAudioUrl,
   );
-  const { theme } = useTheme();
 
-  const logoSrc =
-    theme === "dark"
-      ? "/static/images/podcast-logo-dark.png"
-      : "/static/images/podcast-logo-light.png";
+  // const { theme } = useTheme();
+  // const logoSrc = theme === "dark" ? "/static/images/podcast-logo-dark.png" : "/static/images/podcast-logo-light.png";
 
   const resumeTimeRef = useRef<number | null>(null);
 
@@ -51,9 +50,7 @@ export default function Player() {
     }
   }, [setCurrentTime]);
 
-  // ----------------------------------------------------------------
-  // [修改]：获取历史进度逻辑
-  // ----------------------------------------------------------------
+  // 1. 监听切歌：获取历史进度
   useEffect(() => {
     if (!currentEpisode?.episodeid) return;
 
@@ -66,23 +63,18 @@ export default function Player() {
           const data = await res.json();
           const userState = data?.userState;
           const savedProgress = userState?.progressSeconds;
-          const isFinished = userState?.isFinished; // [新增] 获取完成状态
+          const isFinished = userState?.isFinished;
 
-          // [关键逻辑修改]
-          // 如果已经听完了 (isFinished === true)，则不恢复进度，直接从头开始
           if (isFinished) {
             console.log(`[Player] 该集已标记为完成，重置进度从头播放`);
             resumeTimeRef.current = null;
             setCurrentTime(0);
             if (audioRef.current) audioRef.current.currentTime = 0;
-          }
-          // 否则，只有在进度有效时才恢复
-          else if (typeof savedProgress === "number" && savedProgress > 0) {
+          } else if (typeof savedProgress === "number" && savedProgress > 0) {
             console.log(`[Player] 获取到历史进度: ${savedProgress}s`);
             resumeTimeRef.current = savedProgress;
             tryRestoreProgress();
           } else {
-            // 新的一集
             resumeTimeRef.current = null;
             setCurrentTime(0);
             if (audioRef.current) audioRef.current.currentTime = 0;
@@ -96,20 +88,26 @@ export default function Player() {
     fetchEpisodeStatus();
   }, [currentEpisode?.episodeid, setCurrentTime, tryRestoreProgress]);
 
-  // ... (其余代码保持不变) ...
+  // 初始化 Audio Ref
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) setAudioRef(audio);
   }, [setAudioRef]);
 
+  // 核心播放控制逻辑
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     if (isPlaying) {
-      audio.play().catch((error) => {
-        console.error("播放音频时出错:", error);
-      });
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          if (error.name !== "AbortError") {
+            console.error("播放音频时出错:", error);
+          }
+        });
+      }
     } else {
       audio.pause();
     }
@@ -120,39 +118,10 @@ export default function Player() {
     };
 
     audio.addEventListener("timeupdate", updateTime);
-
     return () => {
       audio.removeEventListener("timeupdate", updateTime);
     };
-  }, [isPlaying, setCurrentTime]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleEnded = () => {
-      if (currentEpisode?.episodeid) {
-        saveToBackend(audio.duration, true, true);
-      }
-      pause();
-      setCurrentTime(0);
-      resumeTimeRef.current = null;
-      setCurrentEpisode(null);
-      setCurrentAudioUrl("");
-    };
-
-    audio.addEventListener("ended", handleEnded);
-    return () => {
-      audio.removeEventListener("ended", handleEnded);
-    };
-  }, [
-    pause,
-    setCurrentTime,
-    setCurrentEpisode,
-    setCurrentAudioUrl,
-    saveToBackend,
-    currentEpisode,
-  ]);
+  }, [isPlaying, currentAudioUrl, setCurrentTime]);
 
   const handleProgressChange = (newTime: number) => {
     const audio = audioRef.current;
@@ -180,14 +149,36 @@ export default function Player() {
       tryRestoreProgress();
     };
 
+    const handleEnded = () => {
+      if (currentEpisode?.episodeid) {
+        saveToBackend(audio.duration, true, true);
+      }
+      pause();
+      setCurrentTime(0);
+      resumeTimeRef.current = null;
+      setCurrentEpisode(null);
+      setCurrentAudioUrl("");
+    };
+
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("ended", handleEnded);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("ended", handleEnded);
     };
-  }, [tryRestoreProgress, setDuration]);
+  }, [
+    pause,
+    setCurrentTime,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+    saveToBackend,
+    currentEpisode,
+    setDuration,
+    tryRestoreProgress,
+  ]);
 
   const throttledActiveUpdate = useRef(
     throttle(() => {
@@ -199,64 +190,89 @@ export default function Player() {
   );
 
   return (
-    <div className="group/player flex items-center w-full border border-base-300 bg-base-200 rounded-xl shadow-md overflow-hidden">
-      {/* ... 封面区 ... */}
-      <button className="relative flex bg-base-200 border-r border-base-300 hover:brightness-110 transition-all">
-        <div className="invisible group-hover/player:visible absolute inset-0 flex items-center justify-center bg-black/30">
-          <ArrowsPointingOutIcon className="w-6 h-6 text-white opacity-70" />
-        </div>
+    <div className="flex items-center w-full gap-4 px-2">
+      {/* 1. 封面与基本信息区域 */}
+      <div className="flex items-center gap-3 w-1/3 min-w-[140px] max-w-[200px]">
         {currentEpisode ? (
-          <div className="w-[48px] h-[48px]">
-            <img
-              src={currentEpisode.coverUrl}
-              alt="封面"
-              className="w-full h-full object-cover rounded-none"
-            />
-          </div>
-        ) : (
-          <PodcastIcon size={48} fill="fill-gray-300" />
-        )}
-      </button>
-
-      {/* ... 内容区 ... */}
-      <div className="flex-1 flex flex-col justify-center px-2">
-        {currentEpisode ? (
-          <>
-            <div className="flex items-center justify-between text-xs text-base-content/70">
-              <span className="invisible group-hover/player:visible pl-1">
-                {formatTime(currentTime)}
-              </span>
-              <span className="font-semibold text-base-content truncate max-w-[30ch] text-sm">
-                {currentEpisode?.title || "暂无播放"}
-              </span>
-              <span className="invisible group-hover/player:visible pr-1">
-                {formatTime(duration || 0)}
-              </span>
+          <Link
+            href={`/episode/${currentEpisode.episodeid}`}
+            className="relative group shrink-0 block cursor-pointer"
+            title="进入精读模式"
+          >
+            <div className="w-12 h-12 rounded-md overflow-hidden shadow-sm border border-base-300/50">
+              <img
+                src={currentEpisode.coverUrl}
+                alt="封面"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
             </div>
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={(e) => debouncedSeek(Number(e.target.value))}
-              onMouseUp={(e) =>
-                handleProgressChange(Number(e.currentTarget.value))
-              }
-              onTouchEnd={(e) =>
-                handleProgressChange(Number(e.currentTarget.value))
-              }
-              className="range range-xs range-primary mt-1 w-full"
-            />
-          </>
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md backdrop-blur-[1px]">
+              <DocumentTextIcon className="w-5 h-5 text-white" />
+            </div>
+          </Link>
         ) : (
-          <div className="flex justify-center items-center w-full">
-            <Image src={logoSrc} alt="logo" width={40} height={40} />
+          <div className="w-12 h-12 rounded-md bg-base-200 flex items-center justify-center text-base-content/20">
+            <PodcastIcon size={24} fill="fill-current" />
           </div>
         )}
+
+        <div className="flex flex-col min-w-0 justify-center">
+          {currentEpisode ? (
+            <Link
+              href={`/episode/${currentEpisode.episodeid}`}
+              className="text-sm font-semibold truncate text-base-content block hover:text-primary transition-colors"
+            >
+              {currentEpisode.title}
+            </Link>
+          ) : (
+            <span className="text-sm font-semibold truncate text-base-content block">
+              未播放
+            </span>
+          )}
+
+          <span className="text-xs text-base-content/60 truncate block">
+            {currentEpisode?.podcast?.title || "选择一集开始收听"}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. 进度条区域 */}
+      <div className="flex flex-col flex-1 justify-center gap-1">
+        <div className="flex items-center gap-3 w-full">
+          <span className="text-xs text-base-content/50 font-mono min-w-[40px] text-right">
+            {formatTime(currentTime)}
+          </span>
+
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={(e) => debouncedSeek(Number(e.target.value))}
+            onMouseUp={(e) =>
+              handleProgressChange(Number(e.currentTarget.value))
+            }
+            onTouchEnd={(e) =>
+              handleProgressChange(Number(e.currentTarget.value))
+            }
+            disabled={!currentEpisode}
+            className={`range range-xs w-full ${
+              currentEpisode
+                ? "range-primary cursor-pointer"
+                : "range-disabled opacity-50"
+            }`}
+          />
+
+          <span className="text-xs text-base-content/50 font-mono min-w-[40px]">
+            {formatTime(duration || 0)}
+          </span>
+        </div>
       </div>
 
       <audio
         ref={audioRef}
+        // [修复] 如果 currentAudioUrl 为空字符串，传递 undefined 以避免浏览器请求当前页面
+        src={currentAudioUrl || undefined}
         onLoadedData={(e) => {
           setDuration(e.currentTarget.duration);
           fetch("/api/auth/update-activity", {

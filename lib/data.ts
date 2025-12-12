@@ -252,8 +252,6 @@ async function data(subtitleUrl: string) {
   } else {
     try {
       const response = await axios.get(subtitleUrl);
-      console.log("合并前response.data: ", response.data);
-      console.log("合并前parseSrt: ", parseSrt(response.data));
       return parseSrt(response.data);
     } catch (err) {
       console.error("Failed to fetch subtitles:", err);

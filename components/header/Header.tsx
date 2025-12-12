@@ -23,10 +23,10 @@ export default function Header() {
       {/* 移动端浏览器下Header */}
       <div
         className={`sm:hidden fixed w-full top-0 h-[48px] bg-base-100 transition-shadow duration-500 ${
-          isMenuOpen ? "" : "shadow-xs" // 动态控制阴影
+          isMenuOpen ? "" : "shadow-xs"
         } z-50`}
       >
-        <div className="flex items-center justify-between h-full px-4">
+        <div className="flex items-center justify-between h-full px-4 relative z-50 bg-base-100">
           {/* 左侧菜单切换按钮 */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -53,21 +53,17 @@ export default function Header() {
           </div>
         </div>
 
-        {/* 可折叠菜单区域 */}
+        {/* 可折叠菜单区域 - 修改为 absolute 定位以覆盖下层内容，并确保背景不透明 */}
         <div
-          className="overflow-hidden transition-all duration-500 ease-in-out"
+          className={`absolute top-[48px] left-0 w-full bg-base-100 overflow-hidden transition-all duration-500 ease-in-out shadow-xl z-40`}
           style={{
-            maxHeight: isMenuOpen
-              ? `calc(100vh - 48px)` // 视口高度减去Header高度
-              : "0px",
-            transitionProperty: "max-height",
-            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+            maxHeight: isMenuOpen ? `calc(100vh - 48px)` : "0px",
+            opacity: isMenuOpen ? 1 : 0, // 增加透明度过渡优化视觉
           }}
         >
-          <div className="bg-base-100 h-[calc(100vh-48px)]">
+          <div className="h-[calc(100vh-48px)] overflow-y-auto bg-base-100">
             {/* 菜单内容 */}
             <div className="p-4 border-t border-base-200">
-              {/* 这里放置菜单项*/}
               <Menus onLinkClick={closeMenu} />
             </div>
           </div>
@@ -98,10 +94,12 @@ export default function Header() {
               <ThemeSwitcher />
               {status === "authenticated" &&
                 (session as Session).user.role === "ADMIN" && (
-                  <Link href="/admin" className="flex-1 flex">
-                    <div className="w-20 text-xs text-base-content px-2 py-1 rounded-lg transition-colors">
-                      控制台
-                    </div>
+                  // 修改此处：使用 btn 类替代固定宽度的 div，确保包裹文字
+                  <Link
+                    href="/admin"
+                    className="btn btn-xs btn-ghost font-normal whitespace-nowrap text-base-content"
+                  >
+                    控制台
                   </Link>
                 )}
               {/* 登录按钮 */}

@@ -1,154 +1,170 @@
 "use client";
 
-import Image from "next/image";
-import { formatTime } from "@/lib/tools";
-import { useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { usePlayerStore } from "@/store/player-store";
-import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
-import { EpisodeFavoriteBtn } from "@/components/FavoriteBtn";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
+import {
+  PlayIcon,
+  PauseIcon, // [新增] 引入暂停图标
+  HeartIcon,
+  BookmarkIcon,
+  ShareIcon,
+  ArrowDownTrayIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  TagIcon,
+} from "@heroicons/react/24/outline";
+import Link from "next/link";
+import Image from "next/image";
+import { usePlayerStore } from "@/store/player-store";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
-  const { data: session } = useSession();
+  // [修改] 获取更多状态和方法
+  const {
+    play,
+    togglePlay,
+    isPlaying,
+    currentEpisode,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+  } = usePlayerStore();
 
-  const audioRef = usePlayerStore((state) => state.audioRef);
-  const currentEpisode = usePlayerStore((state) => state.currentEpisode);
-  const setCurrentEpisode = usePlayerStore((state) => state.setCurrentEpisode);
-  const currentAudioUrl = usePlayerStore((state) => state.currentAudioUrl);
-  const setCurrentAudioUrl = usePlayerStore(
-    (state) => state.setCurrentAudioUrl,
-  );
-  const setDuration = usePlayerStore((state) => state.setDuration);
-  const isPlaying = usePlayerStore((state) => state.isPlaying);
-  const play = usePlayerStore((state) => state.play);
-  const pause = usePlayerStore((state) => state.pause);
-
-  // 当 currentAudioUrl 发生变化时，更新音频源并播放
-  useEffect(() => {
-    if (!audioRef) {
-      console.log("audioRef is null");
-      return;
-    }
-    if (currentAudioUrl && audioRef.src !== currentAudioUrl) {
-      const audioElement = audioRef;
-      try {
-        console.log("currentAudioUrl值改变，重头开始播放");
-        // 暂停当前音频
-        pause();
-        // 设置新的音频源
-        audioElement.src = currentAudioUrl;
-        // 加载新的音频资源
-        audioElement.load();
-        // 播放新的音频
-        play();
-        console.log("已经PLAY");
-      } catch (error) {
-        console.error("Error while switching audio source:", error);
-      }
-    }
-  }, [currentAudioUrl]);
+  // [新增] 判断当前页面展示的剧集，是否就是播放器里的那一集
+  const isCurrentEpisode = currentEpisode?.episodeid === episode.episodeid;
+  // [新增] 是否正在播放当前这集
+  const isPlayingThis = isCurrentEpisode && isPlaying;
 
   const handlePlay = () => {
-    const audioUrl = episode.audioUrl;
-    if (audioRef) {
-      // 如果当前音频已经是目标音频，则直接播放或暂停
-      if (currentEpisode?.episodeid === episode?.episodeid) {
-        console.log("handlePlay", 11111);
-        if (isPlaying) {
-          pause();
-        } else {
-          play();
-        }
-      } else {
-        // 否则，设置新的音频 URL 并播放
-        setCurrentAudioUrl(audioUrl);
-        setCurrentEpisode(episode);
-        setDuration(episode.duration);
-        audioRef.src = "";
-      }
+    if (isCurrentEpisode) {
+      // 如果是当前集，直接切换 播放/暂停
+      togglePlay();
+    } else {
+      // 如果是新的一集，切歌并播放
+      setCurrentEpisode(episode);
+      setCurrentAudioUrl(episode.audioUrl);
+      play();
     }
   };
 
   return (
-    <div className="flex flex-col justify-start w-full max-w-[1200px]">
-      <div className="flex items-center space-x-6 mb-8">
-        {/* 修改为16:9比例的图片容器 */}
-        <div className="relative w-48 aspect-square rounded-lg overflow-hidden shrink-0">
-          <Image
-            src={episode.coverUrl}
-            alt={episode.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        </div>
-
-        {/* 单集详细信息 */}
-        <div className="flex-1">
-          <h1 className="text-base font-bold text-gray-800 mb-4">
-            {episode.title}
-          </h1>
-
-          {/* 新增分类标签 */}
-          <div className="flex items-center space-x-2 mb-4">
-            <p className="text-sm text-gray-500">{episode.podcast.platform}</p>
-            <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-sm">
-              {episode.podcast.title}
-            </span>
-          </div>
-
-          <p className="text-sm text-gray-500 mb-4">
-            发布日期：{episode.publishAt.split("T")[0]}
-          </p>
-          <p className="text-sm text-gray-500 mb-4">
-            剧集时长：{formatTime(episode.duration)}
-          </p>
-
-          <div className="flex text-sm space-x-1 justify-start">
-            {/* 播放节目按钮 */}
-            <button
-              onClick={handlePlay}
-              className="btn btn-sm bg-[#622069] text-white border-[#591660]"
-            >
-              {isPlaying &&
-              currentEpisode &&
-              currentEpisode.episodeid === episode.episodeid ? (
-                <PauseIcon className="h-4 w-4 text-white" />
-              ) : (
-                <PlayIcon className="h-4 w-4 text-white" />
-              )}
-
-              {currentEpisode === null ||
-              currentEpisode.episodeid !== episode.episodeid
-                ? "播放"
-                : isPlaying
-                  ? "暂停"
-                  : "恢复"}
-            </button>
-            {/*收藏按钮*/}
-            {session?.user && (
-              <EpisodeFavoriteBtn
-                episodeid={episode.episodeid}
-                userid={session.user.userid}
-              />
+    <div className="flex flex-col gap-6">
+      {/* 封面与核心信息区 */}
+      <div className="group relative w-full aspect-square md:aspect-video lg:aspect-square overflow-hidden rounded-2xl shadow-xl border border-base-200 bg-base-100">
+        <Image
+          src={episode.coverUrl}
+          alt={episode.title}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+        {/* 播放遮罩 */}
+        {/* [修改]
+            1. 如果正在播放，常驻显示暂停按钮（方便暂停）
+            2. 如果没播放，悬停显示播放按钮
+        */}
+        <div
+          className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] transition-opacity duration-300
+                bg-black/30 opacity-0 group-hover:opacity-100"
+        >
+          <button
+            onClick={handlePlay}
+            className="btn btn-circle btn-lg btn-primary shadow-2xl scale-110 border-none"
+          >
+            {/* [修改] 动态图标切换 */}
+            {isPlayingThis ? (
+              <PauseIcon className="w-8 h-8" />
+            ) : (
+              <PlayIcon className="w-8 h-8 ml-1" />
             )}
-            {/* 文档下载链接 */}
-            <a href="#" role="button" className="btn btn-sm">
-              <ArrowDownTrayIcon className="w-4 h-4" />
-              下载文稿
-            </a>
-          </div>
+          </button>
         </div>
       </div>
 
-      {/* 第二行：单集简介 */}
-      <div className="flex flex-col">
-        <h2 className="text-base font-medium text-slate-500 mb-4">剧集简介</h2>
-        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-          {episode.description}
-        </p>
+      {/* 信息区 */}
+      <div className="space-y-4">
+        {/* 标题 & 平台 */}
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold leading-tight mb-2 text-base-content">
+            {episode.title}
+          </h1>
+          <div className="flex flex-wrap gap-2 text-sm text-base-content/70">
+            <Link
+              href={`/podcast/${episode.podcastid}`}
+              className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
+            >
+              📺 {episode.podcast?.title || "未知频道"}
+            </Link>
+          </div>
+        </div>
+
+        {/* 元数据 (日期/时长) */}
+        <div className="flex items-center gap-4 text-xs text-base-content/50 font-mono uppercase tracking-wide">
+          <div className="flex items-center gap-1">
+            <CalendarDaysIcon className="w-4 h-4" />
+            {new Date(episode.publishAt).toLocaleDateString()}
+          </div>
+          <div className="flex items-center gap-1">
+            <ClockIcon className="w-4 h-4" />
+            {Math.floor(episode.duration / 60)} 分钟
+          </div>
+        </div>
+
+        {/* 简介 */}
+        <div className="text-sm text-base-content/80 leading-relaxed line-clamp-4 hover:line-clamp-none transition-all cursor-pointer">
+          {episode.description || "暂无简介..."}
+        </div>
+
+        {/* 标签 */}
+        {episode.tags && episode.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {episode.tags.map((tagRef) => (
+              <span
+                key={tagRef.tagid}
+                className="badge badge-ghost badge-sm gap-1 text-xs"
+              >
+                <TagIcon className="w-3 h-3" />
+                {tagRef.tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* 操作按钮组 */}
+        <div className="grid grid-cols-4 gap-2 pt-2">
+          {/* [修改] 播放/暂停按钮 */}
+          <button
+            className="btn btn-sm md:btn-md btn-primary flex flex-col md:flex-row gap-1 h-auto py-2 md:py-0"
+            onClick={handlePlay}
+          >
+            {isPlayingThis ? (
+              <>
+                <PauseIcon className="w-5 h-5" />
+                <span className="text-xs md:text-sm">暂停</span>
+              </>
+            ) : (
+              <>
+                <PlayIcon className="w-5 h-5" />
+                <span className="text-xs md:text-sm">播放</span>
+              </>
+            )}
+          </button>
+
+          <button className="btn btn-sm md:btn-md btn-ghost border-base-200 flex flex-col md:flex-row gap-1 h-auto py-2 md:py-0">
+            <HeartIcon className="w-5 h-5" />
+            <span className="text-xs md:text-sm hidden md:inline">点赞</span>
+          </button>
+          <button className="btn btn-sm md:btn-md btn-ghost border-base-200 flex flex-col md:flex-row gap-1 h-auto py-2 md:py-0">
+            <BookmarkIcon className="w-5 h-5" />
+            <span className="text-xs md:text-sm hidden md:inline">收藏</span>
+          </button>
+          <button className="btn btn-sm md:btn-md btn-ghost border-base-200 flex flex-col md:flex-row gap-1 h-auto py-2 md:py-0">
+            <ShareIcon className="w-5 h-5" />
+            <span className="text-xs md:text-sm hidden md:inline">分享</span>
+          </button>
+        </div>
+
+        {/* 下载文档按钮 */}
+        <button className="btn btn-block btn-outline btn-sm gap-2">
+          <ArrowDownTrayIcon className="w-4 h-4" />
+          下载 PDF 讲义
+        </button>
       </div>
     </div>
   );
