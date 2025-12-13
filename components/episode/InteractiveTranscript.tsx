@@ -13,6 +13,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/solid";
 import { Episode } from "@/core/episode/episode.entity";
+import { toast } from "sonner";
 
 interface MergedSubtitleItem {
   id: number;
@@ -205,14 +206,14 @@ export default function InteractiveTranscript({
         }),
       });
       if (res.ok) {
-        alert("已加入生词本！");
+        toast.success("已加入生词本！");
         setIsModalOpen(false);
       } else {
-        alert("保存失败");
+        toast.error("保存失败，请重试");
       }
     } catch (error) {
       console.error(error);
-      alert("网络错误");
+      toast.error("网络错误，请检查网络连接");
     } finally {
       setIsSaving(false);
     }
@@ -277,73 +278,6 @@ export default function InteractiveTranscript({
         </div>
       </div>
 
-      {/*/!* 字幕容器 *!/*/}
-      {/*<div*/}
-      {/*  ref={containerRef}*/}
-      {/*  className="h-[500px] overflow-y-auto p-4 bg-base-100 rounded-xl border border-base-200 shadow-inner space-y-6"*/}
-      {/*>*/}
-      {/*  {processedSubtitles.length === 0 ? (*/}
-      {/*    <div className="text-center text-gray-400 py-10">暂无字幕内容</div>*/}
-      {/*  ) : (*/}
-      {/*    processedSubtitles.map((sub, index) => {*/}
-      {/*      const isActive = index === activeIndex;*/}
-
-      {/*      return (*/}
-      {/*        <div*/}
-      {/*          key={sub.id || index}*/}
-      {/*          ref={isActive ? activeRef : null}*/}
-      {/*          className={`transition-all duration-300 p-3 rounded-lg flex gap-3 ${*/}
-      {/*            isActive*/}
-      {/*              ? "bg-primary/10 border-l-4 border-primary scale-[1.02]"*/}
-      {/*              : "hover:bg-base-200/50 border-l-4 border-transparent"*/}
-      {/*          }`}*/}
-      {/*        >*/}
-      {/*          /!* 播放按钮 *!/*/}
-      {/*          <button*/}
-      {/*            onClick={() => handleJump(sub.start)}*/}
-      {/*            className={`mt-1 flex-shrink-0 transition-colors ${*/}
-      {/*              isActive*/}
-      {/*                ? "text-primary"*/}
-      {/*                : "text-gray-300 hover:text-primary"*/}
-      {/*            }`}*/}
-      {/*            title={isPlayingThisEpisode ? "跳转到此句" : "播放此集并跳转"}*/}
-      {/*          >*/}
-      {/*            <PlayCircleIcon className="w-6 h-6" />*/}
-      {/*          </button>*/}
-
-      {/*          /!* 文本内容区域 *!/*/}
-      {/*          <div className="flex-1">*/}
-      {/*            <p*/}
-      {/*              className={`text-lg leading-relaxed ${isActive ? "text-base-content font-medium" : "text-base-content/70"}`}*/}
-      {/*            >*/}
-      {/*              {sub.textEn.split(" ").map((word, i) => (*/}
-      {/*                <span*/}
-      {/*                  key={i}*/}
-      {/*                  onClick={(e) => {*/}
-      {/*                    e.stopPropagation();*/}
-      {/*                    handleWordClick(word, sub.textEn, sub.textZh);*/}
-      {/*                  }}*/}
-      {/*                  className="cursor-pointer hover:bg-yellow-200 hover:text-black rounded px-0.5 transition-colors duration-150 inline-block"*/}
-      {/*                >*/}
-      {/*                  {word}{" "}*/}
-      {/*                </span>*/}
-      {/*              ))}*/}
-      {/*            </p>*/}
-
-      {/*            {showTranslation && sub.textZh && (*/}
-      {/*              <p*/}
-      {/*                className={`mt-2 text-sm border-t border-base-content/5 pt-1 ${isActive ? "text-base-content/80" : "text-base-content/50"}`}*/}
-      {/*              >*/}
-      {/*                {sub.textZh}*/}
-      {/*              </p>*/}
-      {/*            )}*/}
-      {/*          </div>*/}
-      {/*        </div>*/}
-      {/*      );*/}
-      {/*    })*/}
-      {/*  )}*/}
-      {/*</div>*/}
-
       {/* 字幕列表 */}
       <div
         ref={containerRef}
@@ -392,178 +326,6 @@ export default function InteractiveTranscript({
           );
         })}
       </div>
-
-      {/*/!* 生词本 Modal (保持不变) *!/*/}
-      {/*{isModalOpen && (*/}
-      {/*  <div className="modal modal-open">*/}
-      {/*    <div className="modal-box">*/}
-      {/*      <h3 className="font-bold text-lg flex items-center gap-2 mb-4">*/}
-      {/*        <PlusCircleIcon className="w-6 h-6 text-primary" />*/}
-      {/*        添加生词*/}
-      {/*      </h3>*/}
-      {/*      <div className="space-y-4">*/}
-      {/*        /!* word *!/*/}
-      {/*        <div className="form-control w-full">*/}
-      {/*          <label className="label">*/}
-      {/*            <span className="label-text">单词</span>*/}
-      {/*          </label>*/}
-      {/*          <input*/}
-      {/*            type="text"*/}
-      {/*            value={selectedWord}*/}
-      {/*            onChange={(e) => setSelectedWord(e.target.value)}*/}
-      {/*            className="input input-bordered w-full font-bold text-xl text-primary"*/}
-      {/*          />*/}
-      {/*        </div>*/}
-      {/*        <div className="form-control w-full relative">*/}
-      {/*          <label className="label">*/}
-      {/*            <span className="label-text">备注 / 释义</span>*/}
-      {/*            /!* 如果正在加载，显示一个小提示 *!/*/}
-      {/*            {isLoadingDefinition && (*/}
-      {/*                <span className="label-text-alt text-warning flex items-center gap-1">*/}
-      {/*                      <ArrowPathIcon className="w-3 h-3 animate-spin" />*/}
-      {/*                      AI 查询中...*/}
-      {/*                  </span>*/}
-      {/*            )}*/}
-      {/*          </label>*/}
-
-      {/*          <div className="relative">*/}
-      {/*          <input*/}
-      {/*            type="text"*/}
-      {/*            value={definition}*/}
-      {/*            onChange={(e) => setDefinition(e.target.value)}*/}
-      {/*            placeholder={isLoadingDefinition ? "正在分析语境..." : "请输入释义..."}*/}
-      {/*            className={`input input-bordered w-full pr-10 ${isLoadingDefinition ? "bg-base-200 animate-pulse" : ""}`}*/}
-      {/*            autoFocus*/}
-      {/*          />*/}
-      {/*            /!* 输入框内的加载图标 *!/*/}
-      {/*            {isLoadingDefinition && (*/}
-      {/*                <div className="absolute right-3 top-3">*/}
-      {/*                  <ArrowPathIcon className="w-5 h-5 text-gray-400 animate-spin" />*/}
-      {/*                </div>*/}
-      {/*            )}*/}
-      {/*        </div>*/}
-      {/*        </div>*/}
-      {/*        /!* 上下文例句 *!/*/}
-      {/*        <div className="form-control w-full">*/}
-      {/*          <label className="label">*/}
-      {/*            <span className="label-text">上下文例句</span>*/}
-      {/*          </label>*/}
-      {/*          <div className="p-3 bg-base-200 rounded-lg text-sm italic">*/}
-      {/*            <p className="text-base-content/80">{selectedContext}</p>*/}
-      {/*            {selectedTranslation && (*/}
-      {/*              <p className="text-base-content/50 mt-1 border-t border-base-content/10 pt-1">*/}
-      {/*                {selectedTranslation}*/}
-      {/*              </p>*/}
-      {/*            )}*/}
-      {/*          </div>*/}
-      {/*        </div>*/}
-      {/*      </div>*/}
-      {/*      <div className="modal-action">*/}
-      {/*        <button*/}
-      {/*          className="btn btn-ghost"*/}
-      {/*          onClick={() => setIsModalOpen(false)}*/}
-      {/*        >*/}
-      {/*          取消*/}
-      {/*        </button>*/}
-      {/*        <button*/}
-      {/*          className="btn btn-primary"*/}
-      {/*          onClick={handleSaveVocabulary}*/}
-      {/*          disabled={isSaving}*/}
-      {/*        >*/}
-      {/*          {isSaving ? "保存中..." : "保存"}*/}
-      {/*        </button>*/}
-      {/*      </div>*/}
-      {/*    </div>*/}
-      {/*    <div*/}
-      {/*      className="modal-backdrop"*/}
-      {/*      onClick={() => setIsModalOpen(false)}*/}
-      {/*    ></div>*/}
-      {/*  </div>*/}
-      {/*)}*/}
-
-      {/*{isModalOpen && (*/}
-      {/*    <div className="modal modal-open">*/}
-      {/*      <div className="modal-box">*/}
-      {/*        <h3 className="font-bold text-lg flex items-center gap-2 mb-4">*/}
-      {/*          <PlusCircleIcon className="w-6 h-6 text-primary" />*/}
-      {/*          添加生词*/}
-      {/*        </h3>*/}
-
-      {/*        <div className="space-y-4">*/}
-      {/*          /!* [修改] 单词与发音 *!/*/}
-      {/*          <div className="form-control w-full">*/}
-      {/*            <div className="flex items-center gap-2">*/}
-      {/*              <input*/}
-      {/*                  type="text"*/}
-      {/*                  value={selectedWord}*/}
-      {/*                  onChange={(e) => setSelectedWord(e.target.value)}*/}
-      {/*                  className="input input-bordered flex-1 font-bold text-xl text-primary"*/}
-      {/*              />*/}
-      {/*              {wordDetails.speakUrl && (*/}
-      {/*                  <button*/}
-      {/*                      className="btn btn-square btn-outline btn-primary"*/}
-      {/*                      onClick={playWordAudio}*/}
-      {/*                      title="点击发音"*/}
-      {/*                  >*/}
-      {/*                    <SpeakerWaveIcon className="w-5 h-5" />*/}
-      {/*                  </button>*/}
-      {/*              )}*/}
-      {/*            </div>*/}
-      {/*            /!* [修改] 移除音标显示，改为显示外部链接 *!/*/}
-      {/*            <div className="flex gap-2 mt-2">*/}
-      {/*              {wordDetails.webUrl && (*/}
-      {/*                  <a href={wordDetails.webUrl} target="_blank" rel="noreferrer" className="btn btn-xs btn-outline gap-1">*/}
-      {/*                    <ArrowTopRightOnSquareIcon className="w-3 h-3" /> 网页查看*/}
-      {/*                  </a>*/}
-      {/*              )}*/}
-      {/*              {wordDetails.dictUrl && (*/}
-      {/*                  <a href={wordDetails.dictUrl} className="btn btn-xs btn-outline gap-1 sm:hidden">*/}
-      {/*                    <ArrowTopRightOnSquareIcon className="w-3 h-3" /> 打开App*/}
-      {/*                  </a>*/}
-      {/*              )}*/}
-      {/*            </div>*/}
-      {/*          </div>*/}
-
-      {/*          /!* 释义 *!/*/}
-      {/*          <div className="form-control w-full relative">*/}
-      {/*            <label className="label py-1">*/}
-      {/*              <span className="label-text">释义</span>*/}
-      {/*              {isLoadingDefinition && <span className="label-text-alt flex items-center gap-1 text-warning"><ArrowPathIcon className="w-3 h-3 animate-spin"/> 查询中...</span>}*/}
-      {/*            </label>*/}
-      {/*            <textarea*/}
-      {/*                value={definition}*/}
-      {/*                onChange={(e) => setDefinition(e.target.value)}*/}
-      {/*                placeholder="请输入释义..."*/}
-      {/*                className={`textarea textarea-bordered w-full h-20 ${isLoadingDefinition ? "animate-pulse bg-base-200" : ""}`}*/}
-      {/*            />*/}
-      {/*          </div>*/}
-
-      {/*          /!* 语境 *!/*/}
-      {/*          <div className="form-control w-full">*/}
-      {/*            <label className="label py-1"><span className="label-text">语境</span></label>*/}
-      {/*            <div className="p-3 bg-base-200 rounded-lg text-sm italic border-l-4 border-base-content/20">*/}
-      {/*              <p className="text-base-content/80">{selectedContext}</p>*/}
-      {/*              {selectedTranslation && (*/}
-      {/*                  <p className="text-base-content/50 mt-1">{selectedTranslation}</p>*/}
-      {/*              )}*/}
-      {/*            </div>*/}
-      {/*          </div>*/}
-      {/*        </div>*/}
-
-      {/*        <div className="modal-action mt-6">*/}
-      {/*          <button className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>取消</button>*/}
-      {/*          <button*/}
-      {/*              className="btn btn-primary"*/}
-      {/*              onClick={handleSaveVocabulary}*/}
-      {/*              disabled={isSaving}*/}
-      {/*          >*/}
-      {/*            {isSaving ? "保存中..." : "确认保存"}*/}
-      {/*          </button>*/}
-      {/*        </div>*/}
-      {/*      </div>*/}
-      {/*      <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}></div>*/}
-      {/*    </div>*/}
-      {/*)}*/}
 
       {isModalOpen && (
         <div className="modal modal-open">

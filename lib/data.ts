@@ -1,25 +1,11 @@
 import { generateSignatureUrl } from "@/lib/oss";
 import axios from "axios";
-import { Tag, TagGroup } from "@/core/tag/tag.entity";
+import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
 import { Episode } from "@/core/episode/episode.entity";
 import { User } from "@/core/user/user.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-/**
- * 获取标签组列表
- */
-export async function fetchTagGroups(): Promise<TagGroup[]> {
-  const res = await fetch(`${baseUrl}/api/tag-group/list`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch tag groups");
-  }
-  return await res.json();
-}
 
 /**
  * 获取标签列表

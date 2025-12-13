@@ -15,8 +15,6 @@ import {
   EpisodeManagementItem,
   Status,
 } from "./dto/episode-management-item";
-import { EpisodePlayItem } from "./dto/episode-play-item";
-import { EpisodeListItem } from "./dto/episode-list-item";
 import { formatDate, formatTime } from "@/lib/tools";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 import {
@@ -70,30 +68,6 @@ export class EpisodeMapper {
       publishAt: e.publishAt,
       status: e.status,
       tags: e.tags,
-    };
-  }
-
-  static toPlayItem(e: Episode): EpisodePlayItem {
-    return {
-      id: e.episodeid,
-      title: e.title,
-      description: e.description,
-      audioUrl: e.audioUrl,
-      coverUrl: e.coverUrl,
-      duration: e.duration,
-    };
-  }
-
-  /**
-   * 返回数据映射列表视图用数据
-   * @param e
-   */
-  static toListItem(e: Episode): EpisodeListItem {
-    return {
-      id: e.episodeid,
-      title: e.title,
-      coverUrl: e.coverUrl,
-      publishedAt: e.publishAt ? e.publishAt : null,
     };
   }
 

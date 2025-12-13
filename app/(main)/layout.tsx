@@ -12,6 +12,7 @@ import EmailCheckDialog from "@/components/auth/email-check-dialog";
 import SignInDialog from "@/components/auth/sign-in-dialog";
 import SignUpDialog from "@/components/auth/sign-up-dialog";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -36,6 +37,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <Toaster richColors />
             <div className="flex">
               {/* 左侧导航栏 */}
               <SideNav />
@@ -48,7 +50,7 @@ export default function RootLayout({
                 <SignInDialog />
                 <SignUpDialog />
                 {/* 主体内容区域 */}
-                <main className="flex-1 bg-base-100 overflow-y-auto">
+                <main className="flex-1 lg:pl-[260px] bg-base-100 overflow-y-auto">
                   <div className="w-full min-h-[calc(100vh-8rem)]">
                     {children}
                   </div>

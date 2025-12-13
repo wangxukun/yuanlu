@@ -1,6 +1,6 @@
 import { Episode } from "@/core/episode/episode.entity";
 import { PodcastFavorites } from "@/core/podcast-favorites/podcast-favorites.entity";
-import { PodcastTags } from "@/core/podcast-tags/podcast-tags.entity";
+import { Tag } from "@/core/tag/tag.entity";
 
 export interface Podcast {
   podcastid: string;
@@ -11,6 +11,6 @@ export interface Podcast {
   description: string;
   isEditorPick: boolean;
   episode: Episode[];
-  tags: PodcastTags[];
+  tags: Tag[];
   podcastFavorites: PodcastFavorites[];
 }

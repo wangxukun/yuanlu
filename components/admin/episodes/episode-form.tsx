@@ -20,7 +20,6 @@ import { UploadedSubtitleFile } from "@/app/types/podcast";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
 import { createEpisode, deleteFile, EpisodeState } from "@/lib/actions";
 import { redirect } from "next/navigation";
-import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -41,7 +40,6 @@ export default function EpisodeForm() {
   const [isExclusive, setIsExclusive] = useState(false); // 是否付费
   const [publishDate, setPublishDate] = useState<string>(""); // 发布时间
   const [selectedTags, setSelectedTags] = useState<string[]>([]); // 选中的标签
-  const [tags, setTags] = useState<Tag[]>([]); // 标签列表
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [podcastId, setPodcastId] = useState(""); // 播客id
   const { setNeedConfirm } = useLeaveConfirm();
@@ -92,21 +90,6 @@ export default function EpisodeForm() {
   useEffect(() => {
     // 监听页面离开事件
     setNeedConfirm(true);
-    const fetchTagsData = async () => {
-      try {
-        const res = await fetch(`${baseUrl}/api/tag/list`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!res.ok) {
-          throw new Error("Failed to fetch tags");
-        }
-        const data = await res.json();
-        setTags(data);
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-      }
-    };
     const fetchPodcastData = async () => {
       try {
         const res = await fetch(`${baseUrl}/api/podcast/list`, {
@@ -122,7 +105,6 @@ export default function EpisodeForm() {
         console.error("Error fetching podcasts:", error);
       }
     };
-    fetchTagsData();
     fetchPodcastData();
   }, []);
 
@@ -211,7 +193,6 @@ export default function EpisodeForm() {
           </div>
           <UploadAudio onUploadComplete={handleUploadAudioComplete} />
         </div>
-        {/*<UploadAudio onUploadComplete={handleUploadAudioComplete}/>*/}
         {/* 添加隐藏字段来传递音频信息 */}
         <input type="hidden" name="audioFileName" value={audioFileName} />
         <input type="hidden" name="audioUrl" value={audioUrl} />
@@ -251,15 +232,13 @@ export default function EpisodeForm() {
             <span className="font-semibold">标签</span>
           </div>
           <TagSelector
-            availableTags={tags}
-            selectedTagIds={selectedTags}
+            selectedTags={selectedTags}
             onChange={setSelectedTags}
-            allowTypes={["EPISODE", "UNIVERSAL"]}
-            maxSelected={5}
+            maxSelected={10}
           />
           {/* 添加隐藏字段来传递标签 */}
-          {selectedTags.map((tagId) => (
-            <input key={tagId} type="hidden" name="tags" value={tagId} />
+          {selectedTags.map((tagName) => (
+            <input key={tagName} type="hidden" name="tags" value={tagName} />
           ))}
         </div>
         <div className="flex flex-row">

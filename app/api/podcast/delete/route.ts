@@ -15,24 +15,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 删除 podcast_tags 表中的关联记录
-    await prisma.podcast_tags.deleteMany({
-      where: {
-        podcastid: podcastid,
-      },
-    });
-
     // 执行删除操作
-    const deletedPodcast = await prisma.podcast.deleteMany({
+    await prisma.podcast.delete({
       where: {
         podcastid: podcastid,
       },
     });
-
-    // 检查是否成功删除
-    if (deletedPodcast.count === 0) {
-      return NextResponse.json({ error: "Podcast not found" }, { status: 404 });
-    }
 
     return NextResponse.json(
       { message: "redirect:/admin/podcasts/delete-success" },

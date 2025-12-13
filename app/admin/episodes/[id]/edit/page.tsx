@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import EpisodeEditForm from "@/app/admin/episodes/[id]/edit/episode-edit-form";
+import EpisodeEditForm from "@/components/admin/episodes/episode-edit-form";
 import { episodeService } from "@/core/episode/episode.service";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 

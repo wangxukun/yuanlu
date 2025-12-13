@@ -29,6 +29,12 @@ export async function GET() {
             title: true,
           },
         },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     return NextResponse.json(episodes);

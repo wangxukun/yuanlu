@@ -96,12 +96,8 @@ export const episodeRepository = {
         },
         tags: {
           select: {
-            tag: {
-              select: {
-                tagid: true,
-                name: true,
-              },
-            },
+            id: true,
+            name: true,
           },
         },
       },

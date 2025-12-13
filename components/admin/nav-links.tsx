@@ -25,7 +25,6 @@ const links = [
     icon: DocumentDuplicateIcon,
   },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
-  { name: "标签分组", href: "/admin/tag-groups", icon: TagIcon },
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
 ];
 

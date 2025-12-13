@@ -30,10 +30,10 @@ export async function GET(
             coverUrl: true,
           },
         },
-        // 获取标签（例如：难度、口音）
         tags: {
-          include: {
-            tag: true,
+          select: {
+            id: true,
+            name: true,
           },
         },
         // 关键点：获取当前用户的交互数据

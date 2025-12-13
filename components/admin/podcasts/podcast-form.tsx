@@ -9,40 +9,19 @@ import { TagSelector } from "@/components/admin/tags/tag-selector";
 import UploadCover, {
   UploadCoverResponse,
 } from "@/components/admin/episodes/uploadCover";
-import { Tag } from "@/core/tag/tag.entity";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export default function PodcastForm() {
-  const [coverFileName, setCoverFileName] = useState<string>(""); // 封面文件名
-  const [coverUrl, setCoverUrl] = useState<string>(""); // 封面文件url
+  const [coverFileName, setCoverFileName] = useState<string>("");
+  const [coverUrl, setCoverUrl] = useState<string>("");
   const [podcastName, setPodcastName] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState("");
+
+  // [修改] selectedTags 现在存储的是标签名字符串数组
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
   const [isEditorPick, setIsEditorPick] = useState(false);
 
   const coverApi = "/api/podcast/upload-podcast-cover";
-
-  // 使用 useEffect 获取标签数据
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${baseUrl}/api/tag/list`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!res.ok) {
-          throw new Error("Failed to fetch tags");
-        }
-        const data = await res.json();
-        setTags(data);
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-      }
-    };
-    fetchData();
-  }, []);
 
   const initialState: PodcastState = {
     errors: {
@@ -55,23 +34,16 @@ export default function PodcastForm() {
     message: null,
   };
 
-  /**
-   * state: 存储上一次action执行的返回值
-   * formAction: 创建的异步函数,传给 <form action={...}> 的函数
-   * isPending: 表示当前 action 是否正在执行
-   */
   const [state, action, isPending] = useActionState<PodcastState, FormData>(
-    createPodcast, // 表单提交时自动执行的异步函数
-    initialState, // 初始状态
+    createPodcast,
+    initialState,
   );
 
-  // 封面文件上传回调函数
   const handleUploadCoverComplete = (response: UploadCoverResponse) => {
     setCoverFileName(response.coverFileName);
     setCoverUrl(response.coverUrl);
   };
 
-  // 处理 重定向
   useEffect(() => {
     if (state?.message?.startsWith("redirect:")) {
       if (state.message != null) {
@@ -93,7 +65,6 @@ export default function PodcastForm() {
           onUploadComplete={handleUploadCoverComplete}
           coverApi={coverApi}
         />
-        {/* 添加隐藏字段来传递封面信息 */}
         <input type="hidden" name="coverFileName" value={coverFileName} />
         <input type="hidden" name="coverUrl" value={coverUrl} />
       </div>
@@ -132,22 +103,20 @@ export default function PodcastForm() {
         />
       </div>
 
-      {/* 标签 */}
+      {/* [修改] 标签选择器 */}
       <div className="flex flex-row">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-red-500">*</span>
           <span className="font-semibold">标签</span>
         </div>
         <TagSelector
-          availableTags={tags}
-          selectedTagIds={selectedTags}
+          selectedTags={selectedTags}
           onChange={setSelectedTags}
-          allowTypes={["PODCAST", "UNIVERSAL"]}
           maxSelected={5}
         />
-        {/* 添加隐藏字段来传递标签 */}
-        {selectedTags.map((tagId) => (
-          <input key={tagId} type="hidden" name="tags" value={tagId} />
+        {/* [修改] 传递标签名给 Server Action */}
+        {selectedTags.map((tagName) => (
+          <input key={tagName} type="hidden" name="tags" value={tagName} />
         ))}
       </div>
 

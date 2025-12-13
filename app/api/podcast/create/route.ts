@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { generateTagConnectOrCreate } from "@/lib/tools"; // [新增] 引入工具函数
 
 export async function POST(request: Request) {
   console.log("POST /api/podcast/create");
@@ -11,11 +12,12 @@ export async function POST(request: Request) {
       description,
       coverUrl,
       coverFileName,
-      tags,
+      tags, // 这里现在接收的是标签名字符串数组 ["Business", "English"]
       isEditorPick,
     } = await request.json();
+
     // 检查是否缺少参数
-    if (!podcastName || !platform || !description || !coverUrl || !tags) {
+    if (!podcastName || !platform || !description || !coverUrl) {
       return NextResponse.json(
         { success: false, message: "缺少参数" },
         { status: 400 },
@@ -28,14 +30,18 @@ export async function POST(request: Request) {
       },
       select: {
         podcastid: true,
-      }, // 仅查询必要的字段
+      },
     });
+
     if (podcastNameExists) {
       return NextResponse.json(
-        { success: false, message: "播客类别已存在" },
+        { success: false, message: "播客名称已存在" },
         { status: 401 },
       );
     }
+
+    // [新增] 准备标签关联数据
+    const tagsConnect = generateTagConnectOrCreate(tags);
 
     const podcast = await prisma.podcast.create({
       data: {
@@ -45,17 +51,15 @@ export async function POST(request: Request) {
         coverFileName,
         coverUrl,
         isEditorPick,
-        tags: {
-          create: tags.map((tagId: string) => ({
-            tag: {
-              connect: {
-                tagid: tagId,
-              },
-            },
-          })),
-        },
+        // [修改] 使用 connectOrCreate 逻辑
+        tags: tagsConnect
+          ? {
+              connectOrCreate: tagsConnect,
+            }
+          : undefined,
       },
     });
+
     if (!podcast) {
       return NextResponse.json(
         { success: false, message: "创建播客失败" },

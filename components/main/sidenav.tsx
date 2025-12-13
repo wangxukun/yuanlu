@@ -10,7 +10,9 @@ export default function SideNav() {
   const { data: session, status } = useSession();
 
   return (
-    <aside className="hidden sm:block w-[260px] border-r border-base-300 h-screen flex flex-col justify-between bg-base-100">
+    // [修改] hidden sm:block -> hidden lg:block
+    // 只有在 Large (1024px+) 屏幕上才显示侧边栏
+    <aside className="hidden lg:block w-[260px] border-r border-base-300 h-screen flex flex-col justify-between bg-base-100 fixed left-0 top-0 overflow-y-auto z-50">
       <Link
         className="mb-2 flex h-24 flex-col items-center justify-center gap-2 p-4"
         href="/"
@@ -25,7 +27,6 @@ export default function SideNav() {
 
         {status === "authenticated" && session && (
           <div className="flex flex-col space-y-2 pt-6 mt-4 border-t border-base-200">
-            {/* 优化标题显示 */}
             <span className="px-4 text-xs font-bold text-base-content/50 uppercase tracking-wider">
               我的学习库
             </span>
@@ -34,7 +35,6 @@ export default function SideNav() {
         )}
       </div>
 
-      {/* 底部留白或放置用户信息 */}
       <div className="p-4"></div>
     </aside>
   );

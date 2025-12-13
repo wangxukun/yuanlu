@@ -22,14 +22,8 @@ export async function GET() {
         isEditorPick: true,
         tags: {
           select: {
-            tagid: true,
-            podcastid: true,
-            tag: {
-              select: {
-                tagid: true,
-                name: true,
-              },
-            },
+            id: true,
+            name: true,
           },
         },
       },

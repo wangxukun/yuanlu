@@ -45,6 +45,12 @@ export async function GET(req: NextRequest) {
             platform: true,
           },
         },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     return NextResponse.json(episode);

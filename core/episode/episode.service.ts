@@ -20,7 +20,6 @@ import { EpisodeMapper } from "@/core/episode/episode.mapper";
 import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeResponse } from "@/app/types/podcast";
-import prisma from "@/lib/prisma";
 
 /**
  * 音频管理列表
@@ -124,12 +123,6 @@ export const episodeService = {
    * @param id episode id
    */
   async delete(id: string) {
-    // 先删除episode_tags表中关联的标签数据
-    await prisma.episode_tags.deleteMany({
-      where: {
-        episodeid: id,
-      },
-    });
     await episodeRepository.delete(id);
     return EpisodeMapper.toDeleteState();
   },

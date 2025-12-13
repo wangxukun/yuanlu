@@ -86,8 +86,8 @@ export default function PodcastItem({ podcast }: { podcast: Podcast }) {
                 {podcast.tags.length > 0 &&
                   podcast.tags.map((tag) => {
                     return (
-                      <div key={tag.tag.tagid} className="badge badge-neutral">
-                        {tag.tag.name}
+                      <div key={tag.id} className="badge badge-neutral">
+                        {tag.name}
                       </div>
                     );
                   })}

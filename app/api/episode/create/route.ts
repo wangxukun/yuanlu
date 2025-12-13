@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+import { generateTagConnectOrCreate } from "@/lib/tools";
 
 export async function POST(request: Request) {
-  console.log("POST /api/podcast/create");
-
   try {
-    // 从请求体中获取数据
+    // 1. 权限校验
+    const session = await auth();
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. 从请求体中获取数据
     const {
       title,
       description,
@@ -36,9 +42,7 @@ export async function POST(request: Request) {
       !audioDuration ||
       !publishDate ||
       !description ||
-      !publishStatus ||
-      !tags ||
-      !uploaderId
+      !publishStatus
     ) {
       return NextResponse.json({
         success: false,
@@ -65,6 +69,10 @@ export async function POST(request: Request) {
       });
     }
 
+    // 3. 准备标签关联数据
+    const tagsConnect = generateTagConnectOrCreate(tags);
+
+    // 4. 写入数据库
     const episode = await prisma.episode.create({
       data: {
         title: title,
@@ -83,15 +91,14 @@ export async function POST(request: Request) {
         duration: parseInt(audioDuration, 10),
         status: publishStatus,
         uploaderid: uploaderId,
-        tags: {
-          create: tags.map((tagId: string) => ({
-            tag: {
-              connect: {
-                tagid: tagId,
-              },
-            },
-          })),
-        },
+        tags: tagsConnect
+          ? {
+              connectOrCreate: tagsConnect,
+            }
+          : undefined,
+      },
+      include: {
+        tags: true, // 添加此选项以返回关联的标签
       },
     });
     if (!episode) {
@@ -101,7 +108,6 @@ export async function POST(request: Request) {
         status: 402,
       });
     }
-
     console.log("API剧集创建成功:", episode);
     return NextResponse.json({
       success: true,
@@ -110,7 +116,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("剧集创建时出错:", error);
-
     return NextResponse.json({
       success: false,
       message: "服务器错误",

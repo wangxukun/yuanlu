@@ -1,4 +1,4 @@
-import { EpisodeTags } from "@/core/episode-tags/episode-tags.entity";
+import { Tag } from "@/core/tag/tag.entity";
 
 export interface EpisodeEditItem {
   episodeid: string;
@@ -10,5 +10,5 @@ export interface EpisodeEditItem {
   isExclusive: boolean;
   publishAt: string;
   status: string;
-  tags: EpisodeTags[];
+  tags: Tag[];
 }

@@ -3,9 +3,9 @@ import LoginHomeBtn from "@/components/auth/login-home-btn";
 import Player from "@/components/player/Player";
 import PlayControls from "@/components/controls/PlayControls";
 import SoundControls from "@/components/controls/SoundControls";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { EqualsIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Menus from "@/components/main/menus";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
@@ -14,100 +14,118 @@ import PhoneAcmeLogo from "@/components/phone-acme-logo";
 
 export default function Header() {
   const { data: session, status } = useSession();
-  // 移动端菜单开关状态
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // 菜单开关状态切换
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const closeMenu = () => setIsMenuOpen(false);
+
   return (
-    <div>
-      {/* 移动端浏览器下Header */}
+    <>
+      {/* ================= 移动端/平板端 Header (< lg) ================= */}
       <div
-        className={`sm:hidden fixed w-full top-0 h-[48px] bg-base-100 transition-shadow duration-500 ${
-          isMenuOpen ? "" : "shadow-xs"
-        } z-50`}
+        // [修改] 移除 /90 透明度和 backdrop-blur，改为纯色 bg-base-100
+        className={`lg:hidden fixed w-full top-0 h-[60px] z-50 transition-all duration-300 ${
+          scrolled || isMenuOpen
+            ? "bg-base-100 shadow-sm border-b border-base-200"
+            : "bg-base-100 border-b border-transparent"
+        }`}
       >
-        <div className="flex items-center justify-between h-full px-4 relative z-50 bg-base-100">
-          {/* 左侧菜单切换按钮 */}
+        <div className="flex items-center justify-between h-full px-4 relative z-50">
+          {/* 左侧：菜单按钮 */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 rounded-lg bg-base-200 hover:bg-base-300"
+            className="p-2 -ml-2 rounded-full hover:bg-base-200 transition-colors active:scale-95"
+            aria-label="Toggle Menu"
           >
             {isMenuOpen ? (
-              <XMarkIcon className="w-7 h-7 text-base-content" />
+              <XMarkIcon className="w-6 h-6 text-base-content" />
             ) : (
-              <EqualsIcon className="w-7 h-7 text-base-content" />
+              <Bars3Icon className="w-6 h-6 text-base-content" />
             )}
           </button>
 
-          {/* 中间 Logo */}
-          <Link href="/" className="flex-1 flex justify-center">
-            <div className="w-32 text-base-content">
+          {/* 中间：Logo */}
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2"
+            onClick={closeMenu}
+          >
+            <div className="w-32 opacity-90 hover:opacity-100 transition-opacity flex justify-center">
               <PhoneAcmeLogo />
             </div>
           </Link>
 
-          {/* 右侧主题切换按钮和登录按钮（仅移动端显示） */}
-          <div className="ml-auto sm:hidden flex items-center space-x-2">
+          {/* 右侧：工具栏 */}
+          <div className="flex items-center space-x-1">
             <ThemeSwitcher />
-            <LoginHomeBtn />
-          </div>
-        </div>
-
-        {/* 可折叠菜单区域 - 修改为 absolute 定位以覆盖下层内容，并确保背景不透明 */}
-        <div
-          className={`absolute top-[48px] left-0 w-full bg-base-100 overflow-hidden transition-all duration-500 ease-in-out shadow-xl z-40`}
-          style={{
-            maxHeight: isMenuOpen ? `calc(100vh - 48px)` : "0px",
-            opacity: isMenuOpen ? 1 : 0, // 增加透明度过渡优化视觉
-          }}
-        >
-          <div className="h-[calc(100vh-48px)] overflow-y-auto bg-base-100">
-            {/* 菜单内容 */}
-            <div className="p-4 border-t border-base-200">
-              <Menus onLinkClick={closeMenu} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 桌面浏览器下Header */}
-      <div className="hidden sm:block fixed h-[58px] top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b border-base-300 bg-base-100 z-50">
-        <div className="flex items-center justify-between h-full w-full">
-          {/* 左侧播放、回退、前进按钮 */}
-          <div className="flex-[30%] min-w-0 flex items-center">
-            <div className="flex items-center mx-auto my-auto">
-              <PlayControls />
-            </div>
-          </div>
-
-          {/* 中间 */}
-          <div className="flex-[40%] min-w-0 flex justify-center">
-            <Player />
-          </div>
-
-          {/* 右侧按钮组 */}
-          <div className="flex-[30%] min-w-0 flex items-center justify-between p-4">
-            <div className="flex items-center">
-              <SoundControls />
-            </div>
-            <div className="flex items-center space-x-4">
-              <ThemeSwitcher />
-              {status === "authenticated" &&
-                (session as Session).user.role === "ADMIN" && (
-                  // 修改此处：使用 btn 类替代固定宽度的 div，确保包裹文字
-                  <Link
-                    href="/admin"
-                    className="btn btn-xs btn-ghost font-normal whitespace-nowrap text-base-content"
-                  >
-                    控制台
-                  </Link>
-                )}
-              {/* 登录按钮 */}
+            <div className="scale-90 origin-right">
               <LoginHomeBtn />
             </div>
           </div>
         </div>
+
+        {/* 折叠菜单 */}
+        <div
+          // [修改] 移除 bg-base-100/95 和 backdrop-blur-xl，确保背景完全不透明
+          // 添加 h-screen 确保遮住底部内容 (视情况而定，calc 计算更精准)
+          className={`absolute top-[60px] left-0 w-full bg-base-100 border-b border-base-200 overflow-hidden transition-all duration-300 ease-in-out shadow-xl z-40`}
+          style={{
+            // 使用 calc(100vh - 60px) 确保菜单占满剩余屏幕高度，遮挡住下面的内容
+            height: isMenuOpen ? "calc(100vh - 60px)" : "0px",
+            opacity: isMenuOpen ? 1 : 0,
+          }}
+        >
+          <div className="h-full overflow-y-auto pb-8">
+            <Menus onLinkClick={closeMenu} />
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* ================= 桌面端 Header (>= lg) ================= */}
+      <div
+        className={`hidden lg:flex fixed top-0 left-[260px] w-[calc(100%-260px)] h-[72px] z-40 transition-all duration-300 items-center justify-between px-6 border-b border-base-200 ${
+          scrolled ? "bg-base-100/80 backdrop-blur-lg shadow-sm" : "bg-base-100"
+        }`}
+      >
+        {/* 左区域：播放控制 */}
+        <div className="flex-none w-[180px] flex items-center justify-start">
+          <PlayControls />
+        </div>
+
+        {/* 中间区域：进度条与信息 */}
+        <div className="flex-1 max-w-3xl px-4 flex justify-center">
+          <Player />
+        </div>
+
+        {/* 右区域：音量与设置 */}
+        <div className="flex-none w-[300px] flex items-center justify-end gap-4">
+          <div className="hidden xl:block">
+            <SoundControls />
+          </div>
+
+          <div className="h-6 w-px bg-base-300 mx-2"></div>
+
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+
+            {status === "authenticated" &&
+              (session as Session).user.role === "ADMIN" && (
+                <Link href="/admin">
+                  <button className="btn btn-xs btn-ghost whitespace-nowrap">
+                    控制台
+                  </button>
+                </Link>
+              )}
+            <LoginHomeBtn />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

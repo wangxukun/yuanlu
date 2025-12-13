@@ -15,6 +15,30 @@ export const generateRandomCode = (length: number) => {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
 };
 
+/**
+ * 将标签字符串数组转换为 Prisma 的 connectOrCreate 语法结构
+ * 用于隐式多对多关联：如果标签存在则关联，不存在则创建
+ * @param tags 标签名称数组，例如 ["Business", "Tech", "Life"]
+ */
+export function generateTagConnectOrCreate(tags: string[] | undefined | null) {
+  if (!tags || !Array.isArray(tags) || tags.length === 0) {
+    return undefined;
+  }
+
+  // 1. 清洗数据：去空、去重
+  const uniqueTags = Array.from(
+    new Set(tags.map((t) => t.trim()).filter(Boolean)),
+  );
+
+  if (uniqueTags.length === 0) return undefined;
+
+  // 2. 生成 Prisma 语法
+  return uniqueTags.map((name) => ({
+    where: { name },
+    create: { name },
+  }));
+}
+
 //  检查邮箱
 export const validateEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
