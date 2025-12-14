@@ -8,7 +8,9 @@ declare module "next-auth" {
     email: string;
     userid: string; // → 允许用户对象携带 userid 字段
     role: string; // → 允许用户对象携带 role 字段
-    emailVerified: Date | null;
+    emailVerified?: Date | null;
+    avatarUrl?: string | null;
+    nickname?: string | null;
   }
 
   interface Session {
@@ -18,7 +20,9 @@ declare module "next-auth" {
       email: string;
       userid: string; // → 使 session.users.userid 类型合法化
       role: string; // → 使 session.users.role 类型合法化
-      emailVerified: Date | null;
+      emailVerified?: Date | null;
+      avatarUrl?: string | null;
+      nickname?: string | null;
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
   }
 }
@@ -29,5 +33,7 @@ declare module "next-auth/jwt" {
     email: string;
     role: string;
     emailVerified: Date | null;
+    avatarUrl?: string | null;
+    nickname?: string | null;
   }
 }

@@ -1,8 +1,15 @@
 "use client";
-// 注册表单组件
+
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema, SignInFormValues } from "@/lib/form-schema";
+import { signInSchema } from "@/lib/form-schema";
+import {
+  LockClosedIcon,
+  ShieldCheckIcon,
+  ArrowUturnLeftIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 
 export default function SignUpForm() {
   const checkedEmail = useAuthStore((state) => state.checkedEmail);
@@ -13,12 +20,8 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [formValues, setFormValues] = useState<SignInFormValues>({
-    email: "",
-    password: "",
-  });
 
-  // 新增：是否同意协议
+  // 是否同意协议
   const [agreed, setAgreed] = useState(false);
   const [agreedError, setAgreedError] = useState("");
 
@@ -34,22 +37,27 @@ export default function SignUpForm() {
     const emailCheckBox = document.getElementById(
       "email_check_modal_box",
     ) as HTMLDialogElement;
+
+    // 关闭当前弹窗 (兼容新旧ID)
+    const currentModal = (document.getElementById("my_modal_register") ||
+      document.getElementById("sign_up_modal_box")) as HTMLDialogElement;
+
     if (emailCheckBox) {
+      // 重置状态
       setPassword("");
       setPasswordError("");
       setVerificationCode("");
       setVerificationCodeError("");
       setCodeSent(false);
-      (
-        document.getElementById("sign_up_modal_box") as HTMLDialogElement
-      )?.close();
+
+      if (currentModal) currentModal.close();
       emailCheckBox.showModal();
     }
   };
 
   // 发送验证码
   const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // 防止触发表单提交
     try {
       setVerificationCodeError("");
       setPasswordError("");
@@ -60,11 +68,10 @@ export default function SignUpForm() {
       });
 
       const data = await response.json();
-      console.log(data.message);
       if (!data.success) throw new Error("发送失败");
 
       setCodeSent(true);
-      setCountdown(60); // 60秒倒计时
+      setCountdown(60);
     } catch (err) {
       console.log(err);
       setVerificationCodeError("验证码发送失败，请重试");
@@ -75,24 +82,30 @@ export default function SignUpForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 新增：必须先同意协议
+    // 1. 协议验证
     if (!agreed) {
-      setAgreedError("请先阅读并同意《用户协议》和《隐私政策》");
+      setAgreedError("请先阅读并同意用户协议");
       return;
     } else {
       setAgreedError("");
     }
 
-    // 验证密码
+    // 2. 密码格式验证
+    // 注意：这里我们构造一个完整的对象来匹配 signInSchema 的要求
     try {
       const result = signInSchema.safeParse({
         email: checkedEmail,
         password,
       });
       if (!result.success) {
-        const error = result.error.errors[0];
-        setPasswordError(error.message);
-        return;
+        // 提取密码相关的错误
+        const error = result.error.errors.find((e) =>
+          e.path.includes("password"),
+        );
+        if (error) {
+          setPasswordError(error.message);
+          return;
+        }
       }
     } catch (err) {
       console.log(err);
@@ -100,20 +113,21 @@ export default function SignUpForm() {
 
     setLoading(true);
     try {
-      // 验证验证码
+      // 3. 验证验证码
       const verifyResponse = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: checkedEmail, code: verificationCode }),
       });
       const verifyData = await verifyResponse.json();
-      console.log("Verify:", verifyData.message);
+
       if (verifyData.success === false) {
-        setVerificationCodeError(verifyData.message);
+        setVerificationCodeError(verifyData.message || "验证码错误");
+        setLoading(false);
         return;
       }
 
-      // 创建用户
+      // 4. 创建用户
       const createResponse = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,188 +137,181 @@ export default function SignUpForm() {
 
       if (!createData.success) throw new Error(createData.message);
 
-      // 注册成功后关闭对话框
-      const modal = document.getElementById(
-        "sign_up_modal_box",
-      ) as HTMLDialogElement;
-      if (modal) {
-        modal.close(); // 关闭对话框
-      }
+      // 5. 成功后处理
+      const modal = (document.getElementById("my_modal_register") ||
+        document.getElementById("sign_up_modal_box")) as HTMLDialogElement;
+      if (modal) modal.close();
 
-      // 显示注册成功提示
+      // 显示注册成功提示 (保持原有逻辑)
       const toast = document.createElement("div");
-      toast.className = "toast toast-middle toast-center";
+      toast.className = "toast toast-middle toast-center z-50";
       toast.innerHTML = `
-            <div class="alert alert-success">
-                <span>注册成功！</span>
+            <div class="alert alert-success shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>注册成功！请登录</span>
             </div>
         `;
       document.body.appendChild(toast);
-      // 3秒后移除提示
-      setTimeout(() => {
-        toast.remove();
-      }, 3000);
+      setTimeout(() => toast.remove(), 3000);
 
-      // 注册成功后自动登录或跳转
-      // window.location.href = '/';
+      // 这里可以触发登录弹窗，或者让用户手动点击
+      const loginModal = (document.getElementById("my_modal_login") ||
+        document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
+      if (loginModal) loginModal.showModal();
     } catch (err) {
       console.error(err);
+      // 如果是通用错误，可以显示在某个地方，这里暂时借用验证码错误显示
+      setVerificationCodeError("注册失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <h2 className="card-title text-lg font-bold mb-2">创建你的账户</h2>
-        <p className="text-2xl text-base-content/70 mb-4">{checkedEmail}</p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 密码输入 */}
-          <div className="form-control">
-            <label className="input w-full">
-              <svg
-                className="h-[1em] opacity-50 size-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
-                />
-              </svg>
-              <input
-                type="password"
-                className="grow"
-                placeholder="请输入密码"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setFormValues({ ...formValues, password: e.target.value });
-                  if (passwordError) setPasswordError(""); // 清除错误信息
-                }}
-                required
-              />
-            </label>
-            {passwordError && (
-              <p className="text-error text-sm mt-1">{passwordError}</p>
-            )}
+    <div className="w-full">
+      {/* 用户信息展示区 */}
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="avatar placeholder mb-2">
+          <div className="bg-base-200 text-secondary rounded-full w-16 h-16 ring ring-secondary ring-offset-base-100 ring-offset-2  grid place-items-center">
+            <UserIcon className="mt-4 block w-8 h-8" />
           </div>
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-base-content">{checkedEmail}</p>
+        </div>
+      </div>
 
-          {/* 验证码输入 */}
-          <div className="form-control flex justify-between">
-            <label className="input w-48">
-              <svg
-                className="h-[1em] opacity-50 size-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* 密码输入 */}
+        <div className="form-control">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-secondary transition-colors">
+              <LockClosedIcon className="h-5 w-5" />
+            </div>
+            <input
+              type="password"
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary transition-all rounded-xl h-12 ${passwordError ? "input-error" : ""}`}
+              placeholder="设置登录密码"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError("");
+              }}
+              required
+            />
+          </div>
+          {passwordError && (
+            <div className="text-error text-xs mt-1 ml-1 flex items-center gap-1">
+              <ExclamationCircleIcon className="w-3 h-3" /> {passwordError}
+            </div>
+          )}
+        </div>
+
+        {/* 验证码输入 (使用 Join 组件优化布局) */}
+        <div className="form-control">
+          <div className="join w-full shadow-sm">
+            <div className="relative w-full join-item">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20 text-base-content/40">
+                <ShieldCheckIcon className="h-5 w-5" />
+              </div>
               <input
                 type="text"
-                className="grow"
-                placeholder="6位数字验证码"
+                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
+                placeholder="6位验证码"
                 value={verificationCode}
                 onChange={(e) => {
                   setVerificationCode(
                     e.target.value.replace(/\D/g, "").slice(0, 6),
                   );
-                  if (verificationCodeError) setVerificationCodeError(""); // 清除错误信息
+                  if (verificationCodeError) setVerificationCodeError("");
                 }}
                 required
               />
-            </label>
-            <div className="flex justify-between items-center mt-1">
-              <button
-                onClick={handleSendCode}
-                className={`btn btn-sm ${countdown > 0 ? "btn-disabled" : "btn-outline"}`}
-                disabled={countdown > 0}
-              >
-                {countdown > 0 ? `${countdown}秒后重发` : "获取验证码"}
-              </button>
+            </div>
+            <button
+              type="button"
+              onClick={handleSendCode}
+              className="btn btn-secondary join-item w-[110px] h-12 font-normal text-white"
+              disabled={countdown > 0}
+            >
+              {countdown > 0 ? `${countdown}s` : "获取验证码"}
+            </button>
+          </div>
+
+          <div className="flex justify-between items-start mt-1 px-1 min-h-[20px]">
+            <div className="flex-1">
+              {verificationCodeError && (
+                <span className="text-error text-xs flex items-center gap-1">
+                  <ExclamationCircleIcon className="w-3 h-3" />{" "}
+                  {verificationCodeError}
+                </span>
+              )}
               {codeSent && !verificationCodeError && (
-                <span className="text-success text-sm">验证码已发送至邮箱</span>
+                <span className="text-success text-xs">验证码已发送</span>
               )}
             </div>
-            {verificationCodeError && (
-              <p className="text-error text-sm mt-1">{verificationCodeError}</p>
-            )}
           </div>
+        </div>
 
-          {/* 新增：协议复选框（daisyUI checkbox） */}
-          <div className="form-control">
-            <label className="label cursor-pointer gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-primary"
-                checked={agreed}
-                onChange={(e) => {
-                  setAgreed(e.target.checked);
-                  if (agreedError) setAgreedError("");
-                }}
-                aria-required
-              />
-              <span className="label-text text-sm">
-                我已阅读并同意{" "}
-                <a
-                  href="/auth/user-agreement"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link link-primary ml-1"
-                >
-                  《用户协议》
-                </a>{" "}
-                和{" "}
-                <a
-                  href="/auth/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link link-primary ml-1"
-                >
-                  《隐私政策》
-                </a>
-              </span>
-            </label>
-            {agreedError && (
-              <p className="text-error text-sm mt-1">{agreedError}</p>
-            )}
-          </div>
+        {/* 协议复选框 */}
+        <div className="form-control">
+          <label className="label cursor-pointer justify-start gap-3 py-0">
+            <input
+              type="checkbox"
+              className={`checkbox checkbox-sm checkbox-secondary rounded-md ${agreedError ? "checkbox-error" : ""}`}
+              checked={agreed}
+              onChange={(e) => {
+                setAgreed(e.target.checked);
+                if (agreedError) setAgreedError("");
+              }}
+            />
+            <span className="label-text text-xs text-base-content/70">
+              我已阅读并同意
+              <a
+                href="/auth/user-agreement"
+                target="_blank"
+                className="link link-secondary mx-1"
+              >
+                用户协议
+              </a>
+              和
+              <a
+                href="/auth/privacy-policy"
+                target="_blank"
+                className="link link-secondary mx-1"
+              >
+                隐私政策
+              </a>
+            </span>
+          </label>
+          {agreedError && (
+            <p className="text-error text-xs mt-1 ml-8">{agreedError}</p>
+          )}
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={onBack}
-              className="btn btn-outline flex-1"
-              type="button"
-            >
-              返回
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary flex-1"
-              disabled={loading || !agreed}
-            >
-              {loading ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                "注册"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* 按钮组 */}
+        <div className="grid grid-cols-3 gap-3 pt-2">
+          <button
+            onClick={onBack}
+            className="btn btn-outline col-span-1 border-base-300 text-base-content/70 hover:bg-base-200 hover:border-base-300 hover:text-base-content rounded-xl h-11 min-h-0 font-normal"
+            type="button"
+          >
+            <ArrowUturnLeftIcon className="w-4 h-4" />
+          </button>
+
+          <button
+            type="submit"
+            className="btn btn-secondary col-span-2 rounded-xl h-11 min-h-0 text-base font-semibold shadow-secondary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-white"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner loading-sm"></span>
+            ) : (
+              "立即注册"
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import SideNav from "@/components/admin/sidenav";
 import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/admin/header/Header";
 import { lusitana } from "@/components/fonts";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -16,6 +17,7 @@ export default function RootLayout({
     <AuthProvider>
       <html lang="en">
         <body className={lusitana.className}>
+          <Toaster richColors />
           <LeaveConfirmProvider>
             <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
               <div className="w-full flex-none md:w-64">

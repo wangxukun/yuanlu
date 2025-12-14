@@ -113,7 +113,9 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                 {session.user?.image ? (
                   <img src={session.user.image} alt="me" />
                 ) : (
-                  <span className="text-sm font-bold">Me</span>
+                  <span className="flex items-center justify-center w-full h-full text-sm font-bold">
+                    我
+                  </span>
                 )}
               </div>
             </div>

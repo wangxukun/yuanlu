@@ -5,9 +5,15 @@ import { signIn } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import {
+  LockClosedIcon,
+  ArrowUturnLeftIcon,
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon, UserIcon } from "@heroicons/react/24/solid";
 
 const SIGNIN_ERROR_URL = "/error";
-// 使用电子邮箱登录或注册表单
+
 export default function SignInForm() {
   // 登录表单组件
   const checkedEmail = useAuthStore((state) => state.checkedEmail);
@@ -17,6 +23,7 @@ export default function SignInForm() {
 
   // 创建对密码输入框的引用
   const passwordInputRef = useRef<HTMLInputElement>(null);
+
   // 在组件挂载时设置焦点
   useEffect(() => {
     if (passwordInputRef.current) {
@@ -29,12 +36,15 @@ export default function SignInForm() {
     const emailCheckBox = document.getElementById(
       "email_check_modal_box",
     ) as HTMLDialogElement;
+
+    // 尝试获取当前弹窗 (兼容新旧 ID)
+    const currentModal = (document.getElementById("my_modal_login") ||
+      document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
+
     if (emailCheckBox) {
       setError("");
       setPassword("");
-      (
-        document.getElementById("sign_in_modal_box") as HTMLDialogElement
-      ).close();
+      if (currentModal) currentModal.close();
       emailCheckBox.showModal();
     }
   };
@@ -43,33 +53,27 @@ export default function SignInForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      // 这里添加实际的登录逻辑
-      // await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟延迟
       const result = await signIn("credentials", {
         redirect: false,
         email: checkedEmail,
         password,
       });
+
       if (result?.error) {
         setError("密码错误，请重试");
+        setLoading(false); // 确保在错误时停止 loading
         return;
       }
+
       if (result?.ok) {
-        (
-          document.getElementById("sign_in_modal_box") as HTMLDialogElement
-        ).close();
+        const currentModal = (document.getElementById("my_modal_login") ||
+          document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
+        if (currentModal) currentModal.close();
       }
     } catch (error) {
-      // Signin can fail for a number of reasons, such as the user
-      // not existing, or the user not having the correct role.
-      // In some cases, you may want to redirect to a custom error
       if (error instanceof AuthError) {
         return redirect(`${SIGNIN_ERROR_URL}?error=${error.type}`);
       }
-      // Otherwise if a redirects happens Next.js can handle it
-      // so you can just re-thrown the error and let Next.js handle it.
-      // Docs:
-      // https://nextjs.org/docs/app/api-reference/functions/redirect#server-component
       throw error;
     } finally {
       setLoading(false);
@@ -77,63 +81,92 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <h2 className="card-title text-lg font-bold mb-2">欢迎回来</h2>
-        <p className="text-2xl text-base-content/70 mb-4">{checkedEmail}</p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-control">
-            <label className="input w-full">
-              <svg
-                className="h-[1em] opacity-50 size-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
-                />
-              </svg>
-              <input
-                type="password"
-                className="input input-bordered w-full grow focus:outline-none"
-                placeholder="请输入密码"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                ref={passwordInputRef}
-              />
-            </label>
-            {error && <p className="text-error text-sm mt-1">{error}</p>}
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={onBack}
-              className="btn btn-outline flex-1"
-              type="button"
-            >
-              返回
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary flex-1"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                "登录"
+    <div className="w-full">
+      {/* 用户信息展示区 */}
+      <div className="flex flex-col items-center justify-center space-y-3 mb-8">
+        <div className="avatar placeholder animate-in zoom-in duration-300">
+          <div className="bg-base-200 text-primary rounded-full w-20 h-20 ring ring-primary ring-offset-base-100 ring-offset-2 flex items-center justify-center shadow-lg">
+            <span className="flex items-center justify-center w-full h-full text-3xl font-bold text-secondary">
+              {checkedEmail?.charAt(0).toUpperCase() || (
+                <UserIcon className="w-20 h-20" />
               )}
-            </button>
+            </span>
           </div>
-        </form>
+        </div>
+        <div className="text-center">
+          <p className="text-sm text-base-content/50 mb-1">正在登录</p>
+          <p className="font-semibold text-xl text-base-content tracking-tight">
+            {checkedEmail}
+          </p>
+        </div>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="form-control space-y-2">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+              <LockClosedIcon className="h-5 w-5" />
+            </div>
+            <input
+              type="password"
+              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"
+              placeholder="请输入密码"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError(""); // 输入时清除错误
+              }}
+              required
+              ref={passwordInputRef}
+            />
+          </div>
+
+          {/* 错误提示 */}
+          <div className="h-6 flex items-center">
+            {error && (
+              <div className="flex items-center gap-1.5 text-error text-sm animate-in slide-in-from-top-1 fade-in">
+                <ExclamationCircleIcon className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 按钮组 */}
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <button
+            onClick={onBack}
+            className="btn btn-outline border-base-300 text-base-content/70 hover:bg-base-200 hover:border-base-300 hover:text-base-content rounded-xl h-11 min-h-0 font-normal"
+            type="button"
+          >
+            <ArrowUturnLeftIcon className="w-4 h-4 mr-1" />
+            返回
+          </button>
+
+          <button
+            type="submit"
+            className="btn btn-primary rounded-xl h-11 min-h-0 text-base font-semibold shadow-primary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner loading-sm text-primary-content"></span>
+            ) : (
+              <>
+                登录 <ArrowRightIcon className="w-4 h-4 ml-1" />
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="text-center">
+          <button
+            type="button"
+            className="text-xs text-base-content/40 hover:text-primary transition-colors"
+          >
+            忘记密码?
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

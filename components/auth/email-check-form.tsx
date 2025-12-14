@@ -1,9 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
 import { signInSchema } from "@/lib/form-schema";
+import { EnvelopeIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 
 const EmailCheckForm = () => {
   const setCheckedEmail = useAuthStore((state) => state.setCheckedEmail);
@@ -13,21 +16,22 @@ const EmailCheckForm = () => {
   const router = useRouter();
   const { data: session } = useSession();
 
-  // 👇 新增：ref 引用输入框
-  // const inputRef = useRef<HTMLInputElement>(null);
+  // 引用输入框以实现自动聚焦
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // 👇 组件渲染后自动聚焦
-  // useEffect(() => {
-  //   // 使用 setTimeout 确保 DaisyUI 动画已完成
-  //   const timer = setTimeout(() => {
-  //     inputRef.current?.focus();
-  //   }, 100);
-  //   return () => clearTimeout(timer);
-  // }, []);
+  // 组件挂载或弹窗显示时自动聚焦
+  useEffect(() => {
+    // 稍微延迟以等待动画完成
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
+  // 如果已登录则跳转
   useEffect(() => {
     if (session) router.push("/");
-  }, [session]);
+  }, [session, router]);
 
   const checkUserExists = async () => {
     try {
@@ -36,95 +40,148 @@ const EmailCheckForm = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (!res.ok) throw new Error("Network response was not ok");
       return (await res.json()).exists;
     } catch (err) {
-      setError(`服务不可用，请稍后重试: ${err}`);
-      return false;
+      console.error(err);
+      setError("服务暂不可用，请稍后重试");
+      return null; // 返回 null 表示检查失败
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     try {
-      const result = signInSchema.safeParse({ email, password: "xxxx1111" });
+      // 1. 本地格式验证
+      const emailSchema = signInSchema.pick({ email: true });
+      const result = emailSchema.safeParse({ email }); // 仅验证邮箱
       if (!result.success) {
-        setError(result.error.errors[0].message);
+        // 提取 Zod 错误信息中关于 email 的部分
+        const emailError = result.error.errors[0];
+        setError(emailError?.message || "请输入有效的邮箱地址");
         return;
       }
-    } catch {
-      setError("请输入有效的邮箱地址");
+    } catch (err) {
+      // 避免 catch 块掩盖真实的程序错误
+      console.error("Schema validation error:", err);
+      setError("验证过程发生错误，请刷新重试");
       return;
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const exists = await checkUserExists();
-    setCheckedEmail(email);
-    setLoading(false);
 
-    const modal = document.getElementById(
-      "email_check_modal_box",
-    ) as HTMLDialogElement;
-    modal?.close();
+    try {
+      // 2. 模拟网络延迟 (可选，为了视觉体验)
+      await new Promise((r) => setTimeout(r, 500));
 
-    const nextModal = document.getElementById(
-      exists ? "sign_in_modal_box" : "sign_up_modal_box",
-    ) as HTMLDialogElement;
-    nextModal?.showModal();
+      // 3. 检查用户是否存在
+      const exists = await checkUserExists();
+
+      if (exists === null) {
+        setLoading(false);
+        return; // 检查失败，停留在当前页面
+      }
+
+      // 4. 更新状态并切换弹窗
+      setCheckedEmail(email);
+
+      const currentModal = document.getElementById(
+        "email_check_modal_box",
+      ) as HTMLDialogElement;
+      if (currentModal) currentModal.close();
+
+      // 根据用户是否存在决定跳转到登录还是注册
+      const nextModalId = exists ? "sign_in_modal_box" : "sign_up_modal_box";
+      const nextModal = document.getElementById(
+        nextModalId,
+      ) as HTMLDialogElement;
+
+      // 兼容旧 ID (如果新组件还没完全替换)
+      const fallbackModalId = exists
+        ? "sign_in_modal_box"
+        : "sign_up_modal_box";
+      const targetModal =
+        nextModal ||
+        (document.getElementById(fallbackModalId) as HTMLDialogElement);
+
+      if (targetModal) {
+        targetModal.showModal();
+      }
+    } catch (err) {
+      console.error(err);
+      setError("发生未知错误");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <h2 className="card-title text-lg font-bold mb-2">请输入邮箱地址</h2>
-        <p className="text-sm text-base-content/70 mb-4">
-          已有账户可直接登录，新用户我们将帮助您创建账户。
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-control">
-            <label className="input w-full">
-              <svg
-                className="h-[1em] opacity-50 size-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25"
-                />
-              </svg>
-
-              <input
-                // ref={inputRef} // 👈 绑定 ref
-                type="email"
-                className="input input-bordered w-full grow focus:outline-none"
-                placeholder="你的邮箱地址"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
-            {error && <p className="text-error text-sm mt-1">{error}</p>}
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="form-control">
+          {/* 输入框区域 */}
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+              <EnvelopeIcon className="h-5 w-5" />
+            </div>
+            <input
+              ref={inputRef}
+              type="email"
+              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"
+              placeholder="请输入邮箱地址"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError(""); // 输入时清除错误
+              }}
+              disabled={loading}
+              required
+            />
           </div>
 
+          {/* 错误提示区域 */}
+          <div className="h-6 mt-1.5 flex items-center">
+            {error && (
+              <div className="flex items-center gap-1.5 text-error text-sm animate-in slide-in-from-top-1 fade-in">
+                <ExclamationCircleIcon className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 按钮区域 */}
+        <div className="flex flex-col gap-3">
           <button
             type="submit"
-            className="btn btn-primary w-full"
+            className="btn btn-primary w-full rounded-xl h-12 text-base font-semibold shadow-primary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
             disabled={loading}
           >
             {loading ? (
-              <span className="loading loading-spinner text-primary loading-sm"></span>
+              <span className="loading loading-spinner loading-sm text-primary-content"></span>
             ) : (
-              "继续"
+              <>
+                继续 <ArrowRightIcon className="w-4 h-4 ml-1" />
+              </>
             )}
           </button>
-        </form>
-      </div>
+
+          <button
+            type="button"
+            className="btn btn-ghost w-full rounded-xl h-11 font-normal text-base-content/60 hover:bg-base-200"
+            onClick={() => {
+              const modal = document.getElementById(
+                "email_check_modal_box",
+              ) as HTMLDialogElement;
+              if (modal) modal.close();
+            }}
+            disabled={loading}
+          >
+            取消
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

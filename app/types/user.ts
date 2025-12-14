@@ -79,3 +79,22 @@ export interface UserPaginationResponse {
   page: number; // 当前页码
   limit: number; // 每页条数
 }
+
+export interface userData {
+  userid: string;
+  email: string;
+  password: string;
+  role: string | null;
+  emailVerified: Date | null;
+  isOnline: boolean;
+  lastActiveAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  user_profile: {
+    userid: string;
+    nickname: string | null;
+    avatarFileName: string | null;
+    bio: string | null;
+    learnLevel: string | null;
+  } | null;
+}
