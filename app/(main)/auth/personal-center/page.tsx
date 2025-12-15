@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import Image from "next/image";
+import Cropper from "react-easy-crop"; // [新增] 引入裁剪组件
+import { getCroppedImg } from "@/lib/canvasUtils"; // [新增] 引入工具函数
+import type { Area as CropArea, Point } from "react-easy-crop";
 import {
   MapPinIcon,
   CalendarDaysIcon,
@@ -16,9 +19,12 @@ import {
   UserCircleIcon,
   CameraIcon,
   XMarkIcon,
+  MagnifyingGlassMinusIcon, // [新增]
+  MagnifyingGlassPlusIcon, // [新增]
+  CheckIcon, // [新增]
 } from "@heroicons/react/24/outline";
 
-// 引入 Recharts (请确保运行了 npm install recharts)
+// 引入 Recharts
 import {
   AreaChart,
   Area,
@@ -29,6 +35,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatDate } from "@/lib/tools";
+
+// interface CroppedAreaPixels {
+//   x: number;
+//   y: number;
+//   width: number;
+//   height: number;
+// }
+//
+// interface CroppedArea {
+//   x: number;
+//   y: number;
+// }
 
 // --- Types ---
 interface UserProfile {
@@ -61,7 +79,7 @@ const MOCK_RECENT_PODCASTS = [
     title: "The Daily Life of a Programmer",
     author: "Tech Talk",
     progress: 75,
-    thumbnailUrl: "/static/images/podcast-light.png", // 使用本地默认图
+    thumbnailUrl: "/static/images/podcast-light.png",
   },
   {
     id: 2,
@@ -78,6 +96,19 @@ const MOCK_RECENT_PODCASTS = [
     thumbnailUrl: "/static/images/episode-light.png",
   },
 ];
+
+// [新增] 辅助函数：读取文件为 Base64
+function readFile(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.addEventListener(
+      "load",
+      () => resolve(reader.result as string),
+      false,
+    );
+    reader.readAsDataURL(file);
+  });
+}
 
 // --- Edit Modal Component ---
 const EditProfileModal = ({
@@ -96,12 +127,23 @@ const EditProfileModal = ({
   const [learnLevel, setLearnLevel] = useState(
     initialData.learnLevel || "Beginner",
   );
+
+  // 图片相关状态
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     initialData.avatarUrl,
   );
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // [新增] 裁剪相关状态
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [isCropping, setIsCropping] = useState(false);
+  const [uploadImageSrc, setUploadImageSrc] = useState<string | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(
+    null,
+  );
 
   // 当 initialData 更新时同步状态
   useEffect(() => {
@@ -111,19 +153,68 @@ const EditProfileModal = ({
       setLearnLevel(initialData.learnLevel || "Beginner");
       setAvatarPreview(initialData.avatarUrl);
       setSelectedFile(null);
+      // 重置裁剪状态
+      setIsCropping(false);
+      setUploadImageSrc(null);
+      setZoom(1);
     }
   }, [initialData, isOpen]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // [修改] 处理文件选择：不直接预览，而是开启裁剪模式
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
+      // 检查文件类型
+      if (!file.type.startsWith("image/")) {
+        toast.warning("请选择图片文件");
+        return;
+      }
+      // 检查文件大小 (2MB)
+      if (file.size > 5 * 1024 * 1024) {
         toast.warning("图片大小不能超过 2MB");
         return;
       }
-      setSelectedFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+
+      const imageDataUrl = await readFile(file);
+      setUploadImageSrc(imageDataUrl);
+      setIsCropping(true); // 开启裁剪视图
+      setZoom(1);
+
+      // 清空 input value，防止选择同一文件不触发 onChange
+      e.target.value = "";
     }
+  };
+
+  const onCropComplete = useCallback(
+    (croppedArea: Point, croppedAreaPixels: CropArea) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    [],
+  );
+
+  // [新增] 确认裁剪
+  const handleCropConfirm = async () => {
+    if (!uploadImageSrc || !croppedAreaPixels) return;
+    try {
+      const croppedBlob = await getCroppedImg(
+        uploadImageSrc,
+        croppedAreaPixels,
+      );
+      if (croppedBlob) {
+        setSelectedFile(croppedBlob);
+        setAvatarPreview(URL.createObjectURL(croppedBlob));
+        setIsCropping(false); // 关闭裁剪视图，回到表单
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("图片裁剪失败");
+    }
+  };
+
+  // [新增] 取消裁剪
+  const handleCropCancel = () => {
+    setIsCropping(false);
+    setUploadImageSrc(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,9 +224,15 @@ const EditProfileModal = ({
       const formData = new FormData();
       formData.append("nickname", nickname);
       formData.append("bio", bio);
-      // formData.append("learnLevel", learnLevel); // 假设后端支持更新等级
+      formData.append("learnLevel", learnLevel);
+
       if (selectedFile) {
-        formData.append("avatar", selectedFile);
+        // 如果是 Blob (裁剪产生的)，FormData 需要第三个参数作为文件名
+        if (selectedFile instanceof Blob && !(selectedFile as File).name) {
+          formData.append("avatar", selectedFile, "avatar.jpg");
+        } else {
+          formData.append("avatar", selectedFile as File);
+        }
       }
       await onSave(formData);
       onClose();
@@ -150,104 +247,164 @@ const EditProfileModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-4 border-b border-base-200">
-          <h3 className="font-bold text-lg">编辑个人资料</h3>
+      {/* 增加 max-h 设置以适应裁剪器 */}
+      <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-base-200 shrink-0">
+          <h3 className="font-bold text-lg">
+            {isCropping ? "调整头像" : "编辑个人资料"}
+          </h3>
           <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* 头像上传 */}
-          <div className="flex justify-center mb-6">
-            <div className="relative group">
-              <div className="w-24 h-24 rounded-full overflow-hidden ring ring-primary ring-offset-base-100 ring-offset-2 bg-base-200">
-                {avatarPreview && avatarPreview !== "default_avatar_url" ? (
-                  <Image
-                    src={avatarPreview}
-                    alt="Avatar"
-                    width={96}
-                    height={96}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-base-200 text-base-content/30">
-                    <UserCircleIcon className="w-16 h-16" />
-                  </div>
-                )}
+        {/* Content Area - 使用 flex-col 和 overflow-y-auto 确保内容滚动 */}
+        <div className="overflow-y-auto p-6">
+          {isCropping && uploadImageSrc ? (
+            // --- 裁剪视图 ---
+            <div className="flex flex-col h-full">
+              <div className="relative w-full h-64 bg-gray-900 rounded-lg overflow-hidden mb-4">
+                <Cropper
+                  image={uploadImageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1} // 1:1 正方形
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                  showGrid={false}
+                  cropShape="round" // 圆形遮罩预览，更符合头像场景
+                />
               </div>
-              <div
-                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <CameraIcon className="w-8 h-8 text-white" />
+
+              {/* Zoom Slider */}
+              <div className="flex items-center gap-2 mb-6 px-2">
+                <MagnifyingGlassMinusIcon className="w-5 h-5 text-base-content/50" />
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="range range-primary range-xs flex-1"
+                />
+                <MagnifyingGlassPlusIcon className="w-5 h-5 text-base-content/50" />
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-              />
+
+              <div className="flex gap-3 justify-end">
+                <button onClick={handleCropCancel} className="btn btn-ghost">
+                  取消
+                </button>
+                <button onClick={handleCropConfirm} className="btn btn-primary">
+                  <CheckIcon className="w-4 h-4 mr-1" />
+                  确认使用
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            // --- 常规表单视图 ---
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* 头像上传 */}
+              <div className="flex justify-center mb-6">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full overflow-hidden ring ring-primary ring-offset-base-100 ring-offset-2 bg-base-200">
+                    {avatarPreview && avatarPreview !== "default_avatar_url" ? (
+                      <Image
+                        src={avatarPreview}
+                        alt="Avatar"
+                        width={96}
+                        height={96}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-base-200 text-base-content/30">
+                        <UserCircleIcon className="w-16 h-16" />
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <CameraIcon className="w-8 h-8 text-white" />
+                  </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                </div>
+              </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">昵称</span>
-            </label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="input input-bordered w-full focus:input-primary"
-              placeholder="你的名字"
-            />
-          </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">昵称</span>
+                </label>
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="input input-bordered w-full focus:input-primary"
+                  placeholder="你的名字"
+                />
+              </div>
 
-          {/* 模拟等级选择 - 实际需后端支持 */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">英语水平</span>
-            </label>
-            <select
-              className="select select-bordered w-full focus:select-primary"
-              name="learnLevel"
-              value={learnLevel}
-              onChange={(e) => setLearnLevel(e.target.value)}
-            >
-              <option value="Beginner">Beginner (初级)</option>
-              <option value="Intermediate">Intermediate (中级)</option>
-              <option value="Advanced">Advanced (高级)</option>
-            </select>
-          </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">英语水平</span>
+                </label>
+                <select
+                  className="select select-bordered w-full focus:select-primary"
+                  name="learnLevel"
+                  value={learnLevel}
+                  onChange={(e) => setLearnLevel(e.target.value)}
+                >
+                  <option value="Beginner">Beginner (初级)</option>
+                  <option value="Intermediate">Intermediate (中级)</option>
+                  <option value="Advanced">Advanced (高级)</option>
+                </select>
+              </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">个人简介</span>
-            </label>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="textarea textarea-bordered h-24 focus:textarea-primary"
-              placeholder="介绍一下自己..."
-            ></textarea>
-          </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">个人简介</span>
+                </label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="textarea textarea-bordered h-24 focus:textarea-primary"
+                  placeholder="介绍一下自己..."
+                ></textarea>
+              </div>
 
-          <div className="modal-action">
-            <button type="button" onClick={onClose} className="btn btn-ghost">
-              取消
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? (
-                <span className="loading loading-spinner"></span>
-              ) : (
-                "保存更改"
-              )}
-            </button>
-          </div>
-        </form>
+              <div className="modal-action">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn btn-ghost"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : (
+                    "保存更改"
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -262,7 +419,7 @@ export default function PersonalCenterPage() {
     nickname: "",
     avatarUrl: "",
     bio: "",
-    learnLevel: "Intermediate", // 默认值，若后端无此字段则使用此Mock
+    learnLevel: "Intermediate",
     joinDate: new Date().toLocaleDateString(),
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -277,7 +434,7 @@ export default function PersonalCenterPage() {
           nickname: data.nickname || session?.user?.name || "User",
           avatarUrl: data.avatarUrl || session?.user?.image || "",
           bio: data.bio || "This user hasn't written a bio yet.",
-          learnLevel: data.learnLevel || "Intermediate", // Mock if null
+          learnLevel: data.learnLevel || "Intermediate",
           joinDate: formatDate(data.User.createAt.toString()),
         });
       }

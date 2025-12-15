@@ -72,7 +72,7 @@ export async function PUT(req: Request) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       // 2. 指定上传目录
-      const fileName = `yuanlu/avator/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+      const fileName = `yuanlu/avatar/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
       // 3. 上传到阿里云 OSS
       const { fileUrl: avatarUrl } = await uploadFile(buffer, fileName);
       await getBucketAcl();
@@ -92,7 +92,20 @@ export async function PUT(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, data: updatedProfile });
+    type UserProfileWithAvatar = typeof updatedProfile & {
+      avatarFileName?: string | null;
+    };
+
+    const safeProfile = updatedProfile as UserProfileWithAvatar;
+
+    const profileWithSignature = {
+      ...safeProfile,
+      avatarUrl: safeProfile.avatarFileName
+        ? await generateSignatureUrl(safeProfile.avatarFileName, 3600 * 3)
+        : null,
+    };
+
+    return NextResponse.json({ success: true, data: profileWithSignature });
   } catch (error) {
     console.error("Profile update error:", error);
     return NextResponse.json(

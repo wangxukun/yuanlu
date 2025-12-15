@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { generateSignatureUrl } from "@/lib/oss";
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
             user_profile: {
               select: {
                 nickname: true,
-                avatarUrl: true,
+                avatarFileName: true,
               },
             },
           },
@@ -42,7 +43,33 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(newComment);
+    type CommentsWithAvatar = typeof newComment & {
+      User: {
+        user_profile: {
+          avatarFileName: string;
+        };
+      };
+    };
+
+    const safeComment = newComment as CommentsWithAvatar;
+
+    const commentWithAvatar = {
+      ...safeComment,
+      User: {
+        ...safeComment.User,
+        user_profile: {
+          ...safeComment.User.user_profile,
+          avatarUrl: safeComment.User.user_profile.avatarFileName
+            ? await generateSignatureUrl(
+                safeComment.User.user_profile.avatarFileName,
+                3600 * 3,
+              )
+            : null,
+        },
+      },
+    };
+
+    return NextResponse.json(commentWithAvatar);
   } catch (error) {
     console.error("Failed to post comment:", error);
     return NextResponse.json(
