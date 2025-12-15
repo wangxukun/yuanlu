@@ -389,7 +389,7 @@ export default function PersonalCenterPage() {
                 <div className="mt-6 flex flex-col space-y-3 text-sm text-base-content/60">
                   <div className="flex items-center justify-center space-x-2">
                     <MapPinIcon className="w-4 h-4" />
-                    <span>根据IP识别：Shanghai, China</span>
+                    <span>中国</span>
                   </div>
                   <div className="flex items-center justify-center space-x-2">
                     <CalendarDaysIcon className="w-4 h-4" />
@@ -412,7 +412,7 @@ export default function PersonalCenterPage() {
             <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
               <h3 className="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
                 <TrophyIcon className="w-5 h-5 text-warning" />
-                Recent Achievements
+                近期成就
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
@@ -452,7 +452,7 @@ export default function PersonalCenterPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-                      Total Hours
+                      总小时数
                     </p>
                     <p className="mt-1 text-2xl font-bold text-base-content">
                       {MOCK_STATS.totalHours}h
@@ -469,7 +469,7 @@ export default function PersonalCenterPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-                      Day Streak
+                      连续天数
                     </p>
                     <p className="mt-1 text-2xl font-bold text-base-content">
                       {MOCK_STATS.streakDays}
@@ -486,7 +486,7 @@ export default function PersonalCenterPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-                      Words
+                      词汇
                     </p>
                     <p className="mt-1 text-2xl font-bold text-base-content">
                       {MOCK_STATS.wordsLearned}
@@ -503,11 +503,11 @@ export default function PersonalCenterPage() {
             <div className="bg-base-100 p-6 rounded-2xl shadow-sm border border-base-200">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-base-content">
-                  Weekly Learning Activity
+                  每周学习活动
                 </h3>
                 <select className="select select-sm select-bordered bg-base-200/50">
-                  <option>This Week</option>
-                  <option>Last Week</option>
+                  <option>本周</option>
+                  <option>上周</option>
                 </select>
               </div>
               <div className="h-64 w-full">
@@ -575,10 +575,10 @@ export default function PersonalCenterPage() {
             <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
               <div className="p-6 border-b border-base-200 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-base-content">
-                  Recently Listened
+                  最近听过
                 </h3>
                 <button className="text-sm text-primary hover:text-primary-focus font-medium">
-                  View All
+                  查看全部
                 </button>
               </div>
               <div className="divide-y divide-base-200">

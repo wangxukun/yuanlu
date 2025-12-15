@@ -101,7 +101,11 @@ export default function SignInForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        suppressHydrationWarning
+        className="space-y-6"
+      >
         <div className="form-control space-y-2">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
@@ -109,6 +113,7 @@ export default function SignInForm() {
             </div>
             <input
               type="password"
+              suppressHydrationWarning
               className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"
               placeholder="请输入密码"
               value={password}

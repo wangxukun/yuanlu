@@ -82,7 +82,7 @@ export default function EmailCheckDialog() {
           </p>
 
           {/* 关闭按钮表单 */}
-          <form method="dialog">
+          <form method="dialog" suppressContentEditableWarning>
             <button
               onClick={handleClose}
               className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/40 hover:text-base-content hover:bg-base-200 transition-colors"

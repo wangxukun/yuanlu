@@ -181,7 +181,11 @@ export default function SignUpForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        suppressHydrationWarning
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
         {/* 密码输入 */}
         <div className="form-control">
           <div className="relative group">
@@ -190,6 +194,7 @@ export default function SignUpForm() {
             </div>
             <input
               type="password"
+              suppressHydrationWarning
               className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary transition-all rounded-xl h-12 ${passwordError ? "input-error" : ""}`}
               placeholder="设置登录密码"
               value={password}
@@ -215,6 +220,7 @@ export default function SignUpForm() {
                 <ShieldCheckIcon className="h-5 w-5" />
               </div>
               <input
+                suppressHydrationWarning
                 type="text"
                 className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
                 placeholder="6位验证码"
@@ -257,6 +263,7 @@ export default function SignUpForm() {
         <div className="form-control">
           <label className="label cursor-pointer justify-start gap-3 py-0">
             <input
+              suppressHydrationWarning
               type="checkbox"
               className={`checkbox checkbox-sm checkbox-secondary rounded-md ${agreedError ? "checkbox-error" : ""}`}
               checked={agreed}

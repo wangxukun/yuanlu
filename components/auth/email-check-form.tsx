@@ -21,6 +21,7 @@ const EmailCheckForm = () => {
 
   // 组件挂载或弹窗显示时自动聚焦
   useEffect(() => {
+    // 仅在客户端执行的代码
     // 稍微延迟以等待动画完成
     const timer = setTimeout(() => {
       inputRef.current?.focus();
@@ -118,7 +119,11 @@ const EmailCheckForm = () => {
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        suppressHydrationWarning
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
         <div className="form-control">
           {/* 输入框区域 */}
           <div className="relative group">
@@ -126,6 +131,7 @@ const EmailCheckForm = () => {
               <EnvelopeIcon className="h-5 w-5" />
             </div>
             <input
+              suppressHydrationWarning
               ref={inputRef}
               type="email"
               className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"

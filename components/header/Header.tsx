@@ -56,13 +56,13 @@ export default function Header() {
             className="absolute left-1/2 -translate-x-1/2"
             onClick={closeMenu}
           >
-            <div className="w-32 opacity-90 hover:opacity-100 transition-opacity flex justify-center">
+            <div className="w-24 opacity-90 hover:opacity-100 transition-opacity flex justify-center">
               <PhoneAcmeLogo />
             </div>
           </Link>
 
           {/* 右侧：工具栏 */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 z-20">
             <ThemeSwitcher />
             <div className="scale-90 origin-right">
               <LoginHomeBtn />
