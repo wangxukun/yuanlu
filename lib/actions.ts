@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { episodeService } from "@/core/episode/episode.service";
 import { Prisma } from "@prisma/client";
 import { ActionState } from "@/lib/types";
+import { generateTagConnectOrCreate } from "@/lib/tools";
+import prisma from "@/lib/prisma";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export type RegisterState = {
@@ -244,12 +246,11 @@ export async function createEpisode(
       };
     }
 
-    const subtitleEnFileName = formData.get("subtitleEnFileName");
-    const subtitleZhFileName = formData.get("subtitleZhFileName");
-    const subtitleEnUrl = formData.get("subtitleEnUrl");
-    const subtitleZhUrl = formData.get("subtitleZhUrl");
-
-    const audioFileName = formData.get("audioFileName");
+    const subtitleEnFileName = formData.get("subtitleEnFileName") as string;
+    const subtitleZhFileName = formData.get("subtitleZhFileName") as string;
+    const subtitleEnUrl = formData.get("subtitleEnUrl") as string;
+    const subtitleZhUrl = formData.get("subtitleZhUrl") as string;
+    const audioFileName = formData.get("audioFileName") as string;
     if (audioFileName === null || audioFileName === "") {
       return new Promise((resolve) => {
         resolve({
@@ -264,7 +265,7 @@ export async function createEpisode(
         });
       });
     }
-    const coverFileName = formData.get("coverFileName");
+    const coverFileName = formData.get("coverFileName") as string;
     if (coverFileName === null || coverFileName === "") {
       return new Promise((resolve) => {
         resolve({
@@ -279,32 +280,32 @@ export async function createEpisode(
         });
       });
     }
-    const res = await fetch(`${baseUrl}/api/episode/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: formData.get("title"),
-        description: formData.get("description"),
-        audioDuration: formData.get("audioDuration"),
-        audioFileName: audioFileName,
-        coverFileName: coverFileName,
-        subtitleEnFileName:
-          subtitleZhFileName === "" ? null : subtitleEnFileName,
-        subtitleZhFileName:
-          subtitleZhFileName === "" ? null : subtitleZhFileName,
-        subtitleEnUrl: subtitleEnUrl === "" ? null : subtitleEnUrl,
-        subtitleZhUrl: subtitleZhUrl === "" ? null : subtitleZhUrl,
-        audioUrl: formData.get("audioUrl"),
-        coverUrl: formData.get("coverUrl"),
-        publishStatus: formData.get("publishStatus"),
-        isExclusive: formData.get("isExclusive") === "on",
-        publishDate: formData.get("publishDate"),
-        tags: formData.getAll("tags"),
-        podcastId: formData.get("podcastId"),
-        uploaderId: session?.user?.userid,
-      }),
-    });
-    if (!res.ok) {
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const audioDurationStr = formData.get("audioDuration") as string;
+    const audioDuration = parseInt(audioDurationStr || "0", 10);
+    const audioUrl = formData.get("audioUrl") as string;
+    const coverUrl = formData.get("coverUrl") as string;
+    const publishStatus = formData.get("publishStatus") as string;
+    const isExclusive = formData.get("isExclusive") === "on";
+    const publishDate = formData.get("publishDate") as string;
+    const tags = formData.getAll("tags") as string[];
+    const podcastId = formData.get("podcastId") as string;
+    const uploaderId = session?.user?.userid;
+
+    // 检查是否缺少参数
+    if (
+      !podcastId ||
+      !title ||
+      !coverUrl ||
+      !coverFileName ||
+      !audioUrl ||
+      !audioFileName ||
+      !audioDuration ||
+      !publishDate ||
+      !description ||
+      !publishStatus
+    ) {
       return new Promise((resolve) => {
         resolve({
           errors: {
@@ -314,26 +315,57 @@ export async function createEpisode(
             podcastId: "",
             coverFileName: "",
           },
-          message: "创建过程中发生错误",
+          message: "缺少参数",
         });
       });
     }
-    const data = await res.json();
-    if (res.ok) {
-      console.log("创建剧集成功:", data);
-      revalidatePath("/admin/episodes/create");
-      return {
-        errors: {
-          title: "",
-          description: "",
-          audioFileName: "",
-          podcastId: "",
-          coverFileName: "",
-        },
-        // 在episodes页面中，通过message判断是否需要重定向
-        message: "redirect:/admin/episodes/create-success",
-      };
-    }
+
+    // 3. 准备标签关联数据
+    const tagsConnect = generateTagConnectOrCreate(tags);
+
+    // 4. 写入数据库
+    await prisma.episode.create({
+      data: {
+        title,
+        description,
+        audioFileName,
+        audioUrl,
+        coverFileName,
+        coverUrl,
+        subtitleEnFileName,
+        subtitleZhFileName,
+        subtitleEnUrl,
+        subtitleZhUrl,
+        podcastid: podcastId,
+        isExclusive,
+        publishAt: new Date(publishDate),
+        duration: audioDuration,
+        status: publishStatus,
+        uploaderid: uploaderId,
+        tags: tagsConnect
+          ? {
+              connectOrCreate: tagsConnect,
+            }
+          : undefined,
+      },
+      include: {
+        tags: true, // 添加此选项以返回关联的标签
+      },
+    });
+
+    console.log("Server Action: 创建剧集成功:");
+    revalidatePath("/admin/episodes/create");
+    return {
+      errors: {
+        title: "",
+        description: "",
+        audioFileName: "",
+        podcastId: "",
+        coverFileName: "",
+      },
+      // 在episodes页面中，通过message判断是否需要重定向
+      message: "redirect:/admin/episodes/create-success",
+    };
   } catch (error) {
     console.error("创建剧集失败:", error);
     return new Promise((resolve) => {

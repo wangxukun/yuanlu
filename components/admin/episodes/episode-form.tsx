@@ -267,36 +267,36 @@ export default function EpisodeForm() {
             <div className="flex gap-4">
               <div className="flex items-center">
                 <input
-                  id="paid"
+                  id="published"
                   name="publishStatus"
                   type="radio"
-                  checked={publishStatus === "paid"}
-                  value="paid"
+                  checked={publishStatus === "published"}
+                  value="published"
                   onChange={(e) => setPublishStatus(e.target.value)}
                   className="radio cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                 />
                 <label
-                  htmlFor="paid"
+                  htmlFor="published"
                   className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
                 >
-                  发布 <CheckIcon className="h-4 w-4" />
+                  已发布 <CheckIcon className="h-4 w-4" />
                 </label>
               </div>
               <div className="flex items-center">
                 <input
-                  id="pending"
+                  id="unpublished"
                   name="publishStatus"
                   type="radio"
-                  checked={publishStatus === "pending"}
-                  value="pending"
+                  checked={publishStatus === "unpublished"}
+                  value="unpublished"
                   onChange={(e) => setPublishStatus(e.target.value)}
                   className="radio text-white-600 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
                 />
                 <label
-                  htmlFor="pending"
+                  htmlFor="unpublished"
                   className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
                 >
-                  待审核 <ClockIcon className="h-4 w-4" />
+                  审核中 <ClockIcon className="h-4 w-4" />
                 </label>
               </div>
             </div>

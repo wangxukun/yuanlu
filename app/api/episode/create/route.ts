@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   try {
     // 1. 权限校验
     const session = await auth();
+    console.log("POST /api/podcast/create", session);
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
