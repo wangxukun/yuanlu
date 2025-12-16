@@ -36,18 +36,6 @@ import {
 } from "recharts";
 import { formatDate } from "@/lib/tools";
 
-// interface CroppedAreaPixels {
-//   x: number;
-//   y: number;
-//   width: number;
-//   height: number;
-// }
-//
-// interface CroppedArea {
-//   x: number;
-//   y: number;
-// }
-
 // --- Types ---
 interface UserProfile {
   nickname: string;

@@ -6,7 +6,6 @@ import Image from "next/image";
 import PodcastAuthPrompt from "@/components/main/home/podcast-auth-prompt";
 import {
   PlayCircleIcon,
-  // ClockIcon,
   BoltIcon,
   ArrowRightIcon,
   PlayIcon,
@@ -88,7 +87,6 @@ const MOCK_RECOMMENDED_PODCASTS = [
 export default function Home() {
   const { data: session, status } = useSession();
 
-  console.log(session);
   // 1. 未登录状态：显示引导页
   if (status === "unauthenticated") {
     return <PodcastAuthPrompt />;
@@ -104,20 +102,22 @@ export default function Home() {
   }
 
   // 3. 已登录状态：显示主页内容
-  // const user = session?.user || {
-  //   name: "User",
-  //   nickname: "User",
-  //   avatarUrl: "",
-  // };
-  // const displayName = user.nickname || user.name || user.email?.split("@")[0] || "Friend";
+  const user = session?.user || {
+    name: "User",
+    nickname: "User",
+    avatarUrl: "",
+    email: "",
+  };
+  const displayName =
+    user.nickname || user.name || user.email?.split("@")[0] || "Friend";
 
-  // const currentHour = new Date().getHours();
-  // const greeting =
-  //     currentHour < 12
-  //         ? "Good morning"
-  //         : currentHour < 18
-  //             ? "Good afternoon"
-  //             : "Good evening";
+  const currentHour = new Date().getHours();
+  const greeting =
+    currentHour < 12
+      ? "Good morning"
+      : currentHour < 18
+        ? "Good afternoon"
+        : "Good evening";
 
   const onPlayPodcast = (id: string) => {
     console.log("Play podcast:", id);
@@ -125,7 +125,7 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-base-100 min-h-screen pb-20">
+    <div className="bg-base-200 min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {/* Welcome & Stats Hero */}
         <div className="flex flex-col md:flex-row gap-6">
@@ -136,7 +136,7 @@ export default function Home() {
             </div>
             <div className="relative z-10">
               <h1 className="text-3xl font-bold mb-2">
-                {/*{greeting}, {displayName}!*/} 被我注释了！！！！
+                {greeting}, {displayName}!
               </h1>
               <p className="text-indigo-100 mb-6 max-w-md text-sm sm:text-base leading-relaxed">
                 You're on a <strong>{MOCK_STATS.streakDays} day streak</strong>.
