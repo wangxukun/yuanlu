@@ -157,7 +157,7 @@ const CategoryIcon = ({
   }
 };
 
-export default function BrowsePage() {
+export default function DiscoverPage() {
   const onPlayPodcast = (id: string) => {
     console.log("Playing podcast", id);
   };
@@ -168,16 +168,16 @@ export default function BrowsePage() {
         {/* Search Header */}
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-3xl font-bold text-base-content">
-            Find your next lesson
+            找到你的下一课
           </h1>
           <p className="text-base-content/60">
-            Explore thousands of episodes tailored to your level and interests.
+            探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。
           </p>
 
           <div className="relative mt-4">
             <input
               type="text"
-              placeholder="Search for 'Business English' or 'Travel'..."
+              placeholder="搜索“商务英语”或“旅行”......"
               className="w-full pl-12 pr-12 py-4 rounded-2xl border border-base-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base-content bg-base-100 placeholder:text-base-content/40"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">
@@ -192,7 +192,7 @@ export default function BrowsePage() {
         {/* Categories Grid */}
         <section>
           <h2 className="text-xl font-bold text-base-content mb-6">
-            Browse by Topic
+            按主题浏览
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {MOCK_CATEGORIES.map((category) => (
@@ -220,12 +220,10 @@ export default function BrowsePage() {
               <div className="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-md">
                 <ArrowTrendingUpIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
-              <h2 className="text-xl font-bold text-base-content">
-                Trending Now
-              </h2>
+              <h2 className="text-xl font-bold text-base-content">当前热门</h2>
             </div>
             <button className="text-sm font-medium text-primary hover:text-primary/80">
-              See Top 50
+              Top 50
             </button>
           </div>
 
@@ -301,7 +299,7 @@ export default function BrowsePage() {
           </div>
           <div className="relative z-20 max-w-lg">
             <span className="inline-block py-1 px-3 rounded-full bg-primary text-primary-content text-xs font-bold uppercase tracking-wider mb-4">
-              New Series
+              新系列
             </span>
             <h2 className="text-3xl font-bold mb-4">
               English for Global Travel
@@ -314,10 +312,10 @@ export default function BrowsePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <button className="bg-white text-gray-900 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center justify-center shadow-lg border-none">
                 <PlayIcon className="mr-2 w-5 h-5" />
-                Start Episode 1
+                开始第一集
               </button>
               <button className="bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-full font-semibold hover:bg-white/20 transition-colors border border-white/20">
-                View Syllabus
+                查看全部
               </button>
             </div>
           </div>

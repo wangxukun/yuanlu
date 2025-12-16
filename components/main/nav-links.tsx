@@ -13,7 +13,7 @@ const links = [
   { name: "主页", href: "/home", icon: HomeIcon },
   {
     name: "发现", // 将“浏览”改为“发现”更符合探索语境
-    href: "/browse",
+    href: "/discover",
     icon: Squares2X2Icon,
   },
   // 移除了排行榜，学习者更关注内容本身而非热度

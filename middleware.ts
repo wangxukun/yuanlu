@@ -31,7 +31,7 @@ export default auth((req) => {
 
   // 根路由重定向
   if (pathname === "/") {
-    return NextResponse.redirect(new URL("/browse", nextUrl));
+    return NextResponse.redirect(new URL("/discover", nextUrl));
   }
 
   // 如果用户已登录但 token 已过期，则重定向到登录页面

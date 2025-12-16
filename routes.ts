@@ -4,8 +4,7 @@ export const DEFAULT_LOGIN_REDIRECT = "/home";
 
 export const publicRoutes = [
   "/home",
-  "/browse",
-  "/charts",
+  "/discover",
   "/podcast/:id",
   "/episode/:id",
   "/auth/user-agreement",
@@ -22,9 +21,6 @@ export const adminRoutes = [
   "/admin/episodes/create",
   "/admin/users",
   "/admin/tags",
-  "/admin/tags/create",
-  "/admin/tag-groups",
-  "/admin/tag-groups/create",
 ];
 
 export const premiumRoutes = ["/library/premiums"];

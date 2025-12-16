@@ -477,7 +477,7 @@ export default function PersonalCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100/50 pb-12">
+    <div className="min-h-screen bg-base-200 pb-12">
       {/* Edit Modal */}
       <EditProfileModal
         isOpen={isEditModalOpen}

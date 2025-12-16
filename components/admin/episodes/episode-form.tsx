@@ -36,7 +36,7 @@ export default function EpisodeForm() {
   const [coverUrl, setCoverUrl] = useState<string>(""); // 封面文件url
   const [subtitleEnUrl, setSubtitleEnUrl] = useState<string>(""); // 英文字幕文件url
   const [subtitleZhUrl, setSubtitleZhUrl] = useState<string>(""); // 中文字幕文件url
-  const [publishStatus, setPublishStatus] = useState("paid"); // 发布状态,已发布：paid，审核中：pending
+  const [publishStatus, setPublishStatus] = useState("published"); // 发布状态,已发布：published 审核中：reviewing
   const [isExclusive, setIsExclusive] = useState(false); // 是否付费
   const [publishDate, setPublishDate] = useState<string>(""); // 发布时间
   const [selectedTags, setSelectedTags] = useState<string[]>([]); // 选中的标签
@@ -284,16 +284,16 @@ export default function EpisodeForm() {
               </div>
               <div className="flex items-center">
                 <input
-                  id="unpublished"
+                  id="reviewing"
                   name="publishStatus"
                   type="radio"
-                  checked={publishStatus === "unpublished"}
-                  value="unpublished"
+                  checked={publishStatus === "reviewing"}
+                  value="reviewing"
                   onChange={(e) => setPublishStatus(e.target.value)}
                   className="radio text-white-600 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
                 />
                 <label
-                  htmlFor="unpublished"
+                  htmlFor="reviewing"
                   className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
                 >
                   审核中 <ClockIcon className="h-4 w-4" />

@@ -167,7 +167,7 @@ export default function LoginHomeBtn() {
               onClick={async () => {
                 setIsOpen(false);
                 await signOut({ redirect: false });
-                router.push("/browse");
+                router.push("/discover");
               }}
               className="w-full text-left px-2 py-2 text-sm text-error hover:bg-error/10 rounded-lg flex items-center space-x-3 transition-colors"
             >

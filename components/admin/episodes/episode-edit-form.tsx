@@ -161,8 +161,8 @@ export default function EpisodeEditForm({ episode }: Props) {
             <input
               type="radio"
               name="status"
-              value="unpublished"
-              checked={publishStatus === "unpublished"}
+              value="reviewing"
+              checked={publishStatus === "reviewing"}
               onChange={(e) => setPublishStatus(e.target.value)}
               className="radio"
             />

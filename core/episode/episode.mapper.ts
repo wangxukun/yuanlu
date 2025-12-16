@@ -39,7 +39,7 @@ export class EpisodeMapper {
       title: e.title,
       coverUrl: e.coverUrl,
       publishDate: formatDate(e.publishAt),
-      status: e.status === "paid" ? Status.PUBLISHED : Status.REVIEWING,
+      status: e.status === "published" ? Status.PUBLISHED : Status.REVIEWING,
       access: e.isExclusive ? Access.MEMBER : Access.FREE,
       stats: {
         likes: 0,

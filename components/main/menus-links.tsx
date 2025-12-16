@@ -8,7 +8,7 @@ import clsx from "clsx";
 // 保持与 Desktop 一致
 const links = [
   { name: "主页", href: "/home", icon: HomeIcon },
-  { name: "发现", href: "/browse", icon: Squares2X2Icon },
+  { name: "发现", href: "/discover", icon: Squares2X2Icon },
 ];
 
 export default function MenusLinks({
