@@ -10,6 +10,8 @@ export interface Podcast {
   platform: string;
   description: string;
   isEditorPick: boolean;
+  totalPlays: number;
+  followerCount: number;
   episode: Episode[];
   tags: Tag[];
   podcastFavorites: PodcastFavorites[];

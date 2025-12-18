@@ -23,6 +23,7 @@ export interface Episode {
   status: string;
   uploaderid: string;
   isCommentEnabled: boolean;
+  playCount: number;
   podcast: Podcast;
   tags: Tag[];
   episode_favorites: EpisodeFavorites[];

@@ -5,9 +5,6 @@ import {
   MagnifyingGlassIcon,
   ArrowTrendingUpIcon,
   AdjustmentsHorizontalIcon,
-  PlayCircleIcon,
-  EllipsisHorizontalIcon,
-  ClockIcon,
   BriefcaseIcon,
   NewspaperIcon,
   CpuChipIcon,
@@ -17,9 +14,8 @@ import {
   MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
 import { PlayIcon } from "@heroicons/react/24/solid";
-import { fetchPodcasts } from "@/lib/data";
-import { generateSignatureUrl } from "@/lib/oss";
-import { Podcast } from "@/core/podcast/podcast.entity";
+import TrendingRow from "@/components/main/discover/TrendingRow"; // 引入新组件
+import { getTrendingPodcasts } from "@/lib/discover-service"; // 引入后端查询
 
 // --- Types ---
 interface Category {
@@ -27,17 +23,6 @@ interface Category {
   name: string;
   icon: string;
   colorClass: string;
-}
-
-// 适配UI显示的接口
-interface DisplayPodcast {
-  id: string;
-  title: string;
-  author: string;
-  category: string;
-  thumbnailUrl: string;
-  duration: string;
-  plays: number | string;
 }
 
 // --- Mock Data (Categories 保持静态即可，也可后续改为从数据库获取) ---
@@ -113,51 +98,8 @@ const CategoryIcon = ({
 };
 
 export default async function DiscoverPage() {
-  // 1. 获取真实数据
-  let rawPodcasts: Podcast[] = [];
-  try {
-    rawPodcasts = await fetchPodcasts();
-  } catch (error) {
-    console.error("Failed to fetch podcasts for discover page:", error);
-  }
-
-  // 2. 数据处理与映射
-  // fetchPodcasts 返回的数据中 coverUrl 未必是签名后的，需要处理
-  const trendingPodcasts: DisplayPodcast[] = await Promise.all(
-    rawPodcasts.slice(0, 10).map(async (p: Podcast) => {
-      // 处理封面图签名
-      let signedCoverUrl = p.coverUrl;
-      // 如果 coverUrl 是默认值或者我们需要根据 coverFileName 生成签名
-      if (
-        p.coverFileName &&
-        (!p.coverUrl ||
-          p.coverUrl === "default_cover_url" ||
-          !p.coverUrl.includes("http"))
-      ) {
-        try {
-          signedCoverUrl = await generateSignatureUrl(
-            p.coverFileName,
-            3600 * 3,
-          );
-        } catch (e) {
-          console.error(`Failed to sign url for podcast ${p.title}`, e);
-          signedCoverUrl = "/static/images/podcast-light.png"; // Fallback
-        }
-      }
-
-      return {
-        id: p.podcastid,
-        title: p.title,
-        author: p.platform || "Yuanlu Official", // 数据库中 platform 字段作为作者/来源
-        // 尝试从 tags 获取分类，如果没有则默认
-        category:
-          p.tags && p.tags.length > 0 ? p.tags[0].name : "General English",
-        thumbnailUrl: signedCoverUrl,
-        duration: "Series", // 播客是系列，显示 Series
-        plays: Math.floor(Math.random() * 5000) + 1000, // 暂时 Mock 播放量，因为数据库未聚合
-      };
-    }),
-  );
+  // 1. 获取真实热门数据
+  const trendingPodcasts = await getTrendingPodcasts();
 
   return (
     <div className="bg-base-200 min-h-screen pb-20">
@@ -225,61 +167,14 @@ export default async function DiscoverPage() {
             </button>
           </div>
 
-          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden">
+          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-sm">
             {trendingPodcasts.length > 0 ? (
               trendingPodcasts.map((podcast, index) => (
-                <Link
-                  href={`/podcast/${podcast.id}`}
-                  key={podcast.id}
-                  className="flex items-center p-4 hover:bg-base-200/50 transition-colors border-b border-base-200 last:border-0 group cursor-pointer"
-                >
-                  {/* Rank */}
-                  <div className="w-8 text-center font-bold text-base-content/40 group-hover:text-primary">
-                    {index + 1}
-                  </div>
-
-                  {/* Thumbnail */}
-                  <div className="relative mx-4 flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-base-300">
-                    <Image
-                      src={podcast.thumbnailUrl}
-                      alt={podcast.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <PlayCircleIcon className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 pr-4">
-                    <h3 className="text-sm font-bold text-base-content truncate">
-                      {podcast.title}
-                    </h3>
-                    <div className="flex items-center space-x-2 text-xs text-base-content/60">
-                      <span>{podcast.author}</span>
-                      <span>•</span>
-                      <span>{podcast.category}</span>
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="hidden sm:flex items-center space-x-6 mr-6">
-                    <div className="flex items-center text-xs text-base-content/60">
-                      <ClockIcon className="w-3.5 h-3.5 mr-1" />
-                      {podcast.duration}
-                    </div>
-                    <div className="flex items-center text-xs text-base-content/60">
-                      <MusicalNoteIcon className="w-3.5 h-3.5 mr-1" />
-                      {podcast.plays.toLocaleString()}
-                    </div>
-                  </div>
-
-                  {/* Action */}
-                  <div className="p-2 text-base-content/40 hover:text-base-content hover:bg-base-200 rounded-full transition-colors">
-                    <EllipsisHorizontalIcon className="w-5 h-5" />
-                  </div>
-                </Link>
+                <TrendingRow
+                  key={podcast.podcastid}
+                  podcast={podcast}
+                  rank={index + 1}
+                />
               ))
             ) : (
               <div className="p-8 text-center text-base-content/40">

@@ -21,6 +21,8 @@ interface PlayerState {
   pause: () => void;
   forward: () => void;
   backward: () => void;
+  // [新增] 定义 playEpisode 方法类型
+  playEpisode: (episode: Episode) => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -49,17 +51,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set((state) => ({ isPlaying: !state.isPlaying }));
   },
   play: () => {
-    // [修改] 移除 audio.play()，只更新状态，由 Player 组件的 useEffect 响应变化
     set({ isPlaying: true });
   },
   pause: () => {
-    // [修改] 移除 audio.pause()，只更新状态
     set({ isPlaying: false });
   },
   forward: () => {
     set((state) => {
       const newTime = state.currentTime + 30;
-      // 这里可以直接操作，因为是瞬时动作，不会引发状态冲突
       if (state.audioRef) {
         state.audioRef.currentTime = newTime;
       }
@@ -73,6 +72,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         state.audioRef.currentTime = newTime;
       }
       return { currentTime: newTime };
+    });
+  },
+  // [新增] 实现 playEpisode 逻辑
+  playEpisode: (episode: Episode) => {
+    set({
+      currentEpisode: episode,
+      currentAudioUrl: episode.audioUrl || "", // 确保有播放链接
+      isPlaying: true, // 立即开始播放
+      currentTime: 0, // 重置进度（Player组件内的 useEffect 会负责恢复历史进度）
     });
   },
 }));

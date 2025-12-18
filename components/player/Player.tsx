@@ -8,6 +8,7 @@ import PodcastIcon from "@/components/icons/PodcastIcon";
 // import { useTheme } from "next-themes";
 import { useSaveProgress } from "@/lib/hooks/useSaveProgress";
 import Link from "next/link";
+import { incrementPlayCount } from "@/lib/actions/analytics-actions";
 
 export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null!);
@@ -30,6 +31,9 @@ export default function Player() {
   // const logoSrc = theme === "dark" ? "/static/images/podcast-logo-dark.png" : "/static/images/podcast-logo-light.png";
 
   const resumeTimeRef = useRef<number | null>(null);
+
+  // 用于防止同一集重复计数的 Ref
+  const loggedEpisodeIdRef = useRef<string | null>(null);
 
   const { saveToBackend } = useSaveProgress({
     episodeId: currentEpisode?.episodeid || "",
@@ -87,6 +91,27 @@ export default function Player() {
 
     fetchEpisodeStatus();
   }, [currentEpisode?.episodeid, setCurrentTime, tryRestoreProgress]);
+
+  // 2. 监听切歌并播放：增加播放量统计
+  useEffect(() => {
+    // 只有当正在播放且切到了新歌时才记录
+    // 同时也防止同一首歌在暂停/播放切换时重复记录
+    if (
+      currentEpisode &&
+      isPlaying &&
+      currentEpisode.episodeid !== loggedEpisodeIdRef.current
+    ) {
+      // 触发 Server Action
+      // 这里的 podcastid 可能是直接在 episode 对象上的 foreign key，也可能在 podcast 关联对象里
+      const podcastId =
+        currentEpisode.podcastid || currentEpisode.podcast?.podcastid || "";
+
+      incrementPlayCount(currentEpisode.episodeid, podcastId);
+
+      // 标记当前 ID 已记录
+      loggedEpisodeIdRef.current = currentEpisode.episodeid;
+    }
+  }, [currentEpisode?.episodeid, isPlaying, currentEpisode]);
 
   // 初始化 Audio Ref
   useEffect(() => {

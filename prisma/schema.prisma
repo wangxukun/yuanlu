@@ -86,11 +86,15 @@ model podcast {
   description       String?
   isEditorPick      Boolean?            @default(false)
   parentPodcastid   String?
+  totalPlays        Int                 @default(0) // 总播放次数 (热度核心指标)
+  followerCount     Int                 @default(0) // 收藏/订阅人数 (可选，用于展示)
   podcast           podcast?            @relation("podcastTopodcast", fields: [parentPodcastid], references: [podcastid], onUpdate: NoAction)
   otherPodcast      podcast[]           @relation("podcastTopodcast")
   episode           episode[]
   podcast_favorites podcast_favorites[]
   tags              tag[]
+
+  @@index([totalPlays(sort: Desc)]) // 加索引，查询 Top 50 极快
 }
 
 model comments {
@@ -127,6 +131,7 @@ model episode {
   subtitleZhUrl      String?              @db.VarChar(255)
   subtitleZhFileName String?              @db.VarChar(255)
   duration           Int                  @default(0)
+  playCount          Int                  @default(0) // 单集播放次数
   podcastid          String?
   uploaderid         String?
   publishAt          DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
