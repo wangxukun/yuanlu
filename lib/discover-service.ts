@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 // 1. 定义查询条件对象，并使用 satisfies 确保符合 Prisma 类型
 // 这样既能获得自动补全，又能作为类型推断的依据
 const trendingQuery = {
-  take: 5,
+  take: 3,
   orderBy: {
     totalPlays: Prisma.SortOrder.desc, // 按总播放量降序
   },

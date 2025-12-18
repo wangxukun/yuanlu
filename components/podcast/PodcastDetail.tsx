@@ -10,17 +10,19 @@ import {
   MusicalNoteIcon,
   ClockIcon,
   CalendarIcon,
-  HeartIcon,
+  // HeartIcon,
   ArrowDownTrayIcon,
   QueueListIcon,
   FlagIcon,
   LinkIcon,
   BookmarkIcon,
   ArrowPathIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 import {
   PlayIcon as PlaySolidIcon,
-  HeartIcon as HeartSolidIcon,
+  // HeartIcon as HeartSolidIcon,
+  BookmarkIcon as BookmarkSolidIcon,
   CheckCircleIcon as CheckCircleSolidIcon,
   PauseIcon,
 } from "@heroicons/react/24/solid";
@@ -160,10 +162,10 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-base-100"></div>
 
-        <div className="absolute top-0 w-full p-4 flex items-center justify-between z-20">
+        <div className="absolute top-3 w-full p-4 flex items-center justify-between z-20">
           <button
             onClick={handleBack}
-            className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors border border-base-200 text-base-content"
+            className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -172,12 +174,12 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
             className="flex items-center space-x-2 relative"
             ref={headerMenuRef}
           >
-            <button className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors border border-base-200 text-base-content">
+            <button className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content">
               <ShareIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
-              className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors border border-base-200 text-base-content"
+              className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
             >
               <EllipsisHorizontalIcon className="w-5 h-5" />
             </button>
@@ -237,16 +239,16 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
               </span>
               <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
               <div className="flex items-center text-sm text-base-content/60">
-                <MusicalNoteIcon className="w-4 h-4 mr-1" />
-                {(mockPlays / 1000).toFixed(1)}k Plays
+                <PlayIcon className="w-4 h-4 mr-1" />
+                {(mockPlays / 1000).toFixed(1)}k 播放
               </div>
               <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
               <div className="flex items-center text-sm text-base-content/60">
-                <HeartIcon
+                <BookmarkIcon
                   className={`w-4 h-4 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
                 />
                 {((mockFavorites + (isFavorited ? 1 : 0)) / 1000).toFixed(1)}k
-                Favorites
+                收藏
               </div>
             </div>
 
@@ -260,7 +262,7 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                 className="bg-primary text-primary-content px-8 py-3.5 rounded-full font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all flex items-center transform active:scale-95 group border-none"
               >
                 <PlaySolidIcon className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-                Play Latest
+                播放最新剧集
               </button>
               <button
                 onClick={() => setIsFavorited(!isFavorited)}
@@ -271,11 +273,11 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                 }`}
               >
                 {isFavorited ? (
-                  <HeartSolidIcon className="w-5 h-5 mr-2" />
+                  <BookmarkSolidIcon className="w-5 h-5 mr-2" />
                 ) : (
-                  <HeartIcon className="w-5 h-5 mr-2" />
+                  <BookmarkIcon className="w-5 h-5 mr-2" />
                 )}
-                {isFavorited ? "Favorited" : "Favorite"}
+                {isFavorited ? "已收藏" : "收藏"}
               </button>
             </div>
           </div>
@@ -285,7 +287,7 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
         <div className="mt-16 mb-20">
           <div className="flex items-center justify-between border-b border-base-200 pb-4 mb-6">
             <h2 className="text-2xl font-bold text-base-content">
-              Episodes
+              剧集
               <span className="ml-2 text-base-content/40 font-medium text-lg">
                 ({podcast.episode?.length || 0})
               </span>
@@ -296,8 +298,8 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
               >
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
+                <option value="desc">最近发布</option>
+                <option value="asc">最早发布</option>
               </select>
             </div>
           </div>

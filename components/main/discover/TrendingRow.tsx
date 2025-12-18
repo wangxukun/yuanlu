@@ -5,14 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  PlayCircleIcon,
+  // PlayCircleIcon,
   EllipsisHorizontalIcon,
-  ClockIcon,
-  MusicalNoteIcon,
+  // MusicalNoteIcon,
   HeartIcon,
   ShareIcon,
   ArrowTopRightOnSquareIcon,
   PlayIcon,
+  Square3Stack3DIcon,
 } from "@heroicons/react/24/outline";
 import { TrendingPodcastItem } from "@/lib/discover-service";
 
@@ -67,9 +67,9 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
           fill
           className="object-cover"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <PlayCircleIcon className="w-6 h-6 text-white" />
-        </div>
+        {/*<div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">*/}
+        {/*  <PlayCircleIcon className="w-6 h-6 text-white" />*/}
+        {/*</div>*/}
       </div>
 
       <div className="flex-1 min-w-0 pr-4">
@@ -88,14 +88,14 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
           className="flex items-center text-xs text-base-content/60"
           title="剧集数量"
         >
-          <ClockIcon className="w-3.5 h-3.5 mr-1" />
+          <Square3Stack3DIcon className="w-3.5 h-3.5 mr-1" />
           {podcast.episodeCount} Eps
         </div>
         <div
           className="flex items-center text-xs text-base-content/60"
           title="总播放量"
         >
-          <MusicalNoteIcon className="w-3.5 h-3.5 mr-1" />
+          <PlayIcon className="w-3.5 h-3.5 mr-1" />
           {podcast.totalPlays.toLocaleString()}
         </div>
       </div>
