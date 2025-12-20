@@ -88,6 +88,7 @@ model podcast {
   parentPodcastid   String?
   totalPlays        Int                 @default(0) // 总播放次数 (热度核心指标)
   followerCount     Int                 @default(0) // 收藏/订阅人数 (可选，用于展示)
+  createAt          DateTime            @default(now()) @db.Timestamptz(6)
   podcast           podcast?            @relation("podcastTopodcast", fields: [parentPodcastid], references: [podcastid], onUpdate: NoAction)
   otherPodcast      podcast[]           @relation("podcastTopodcast")
   episode           episode[]
@@ -95,6 +96,8 @@ model podcast {
   tags              tag[]
 
   @@index([totalPlays(sort: Desc)]) // 加索引，查询 Top 50 极快
+  // [新增] 建议为 createAt 添加索引以优化“最新”查询
+  @@index([createAt(sort: Desc)])
 }
 
 model comments {

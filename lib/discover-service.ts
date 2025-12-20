@@ -74,3 +74,71 @@ export async function getTrendingPodcasts() {
 export type TrendingPodcastItem = Awaited<
   ReturnType<typeof getTrendingPodcasts>
 >[number];
+
+/**
+ * 获取最新发布的播客数据 (用于 Featured Banner)
+ * @param limit 获取数量
+ */
+export async function getLatestPodcasts(limit: number = 1) {
+  try {
+    const podcasts = await prisma.podcast.findMany({
+      orderBy: {
+        createAt: Prisma.SortOrder.desc, // [修改] 使用 createAt 倒序
+      },
+      take: limit,
+      include: {
+        tags: true,
+        _count: {
+          select: { episode: true },
+        },
+        // 获取第一集的信息用于"开始第一集"按钮
+        episode: {
+          take: 1,
+          orderBy: {
+            episodeid: Prisma.SortOrder.asc, // 或者 publishAt: 'asc'，假设第一集是最早发布的
+          },
+          select: {
+            episodeid: true,
+          },
+        },
+      },
+    });
+
+    if (!podcasts || podcasts.length === 0) {
+      return [];
+    }
+
+    // 处理 OSS 签名
+    const processedPodcasts = await Promise.all(
+      podcasts.map(async (podcast) => {
+        let signedCoverUrl = podcast.coverUrl;
+
+        if (podcast.coverFileName && podcast.coverUrl !== "default_cover_url") {
+          try {
+            signedCoverUrl = await generateSignatureUrl(
+              podcast.coverFileName,
+              3600 * 3,
+            );
+          } catch (error) {
+            console.error(
+              `Failed to sign cover for podcast ${podcast.podcastid}`,
+              error,
+            );
+          }
+        }
+
+        return {
+          ...podcast,
+          coverUrl: signedCoverUrl,
+          episodeCount: podcast._count.episode,
+          firstEpisodeId: podcast.episode[0]?.episodeid,
+        };
+      }),
+    );
+
+    return processedPodcasts;
+  } catch (error) {
+    console.error("Failed to fetch latest podcasts:", error);
+    return [];
+  }
+}

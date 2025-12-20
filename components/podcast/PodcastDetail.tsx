@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // [新增] 引入 Session
+import { toast } from "sonner"; // [新增] 引入 Toast
 import {
   ArrowLeftIcon,
   ShareIcon,
@@ -10,7 +12,6 @@ import {
   MusicalNoteIcon,
   ClockIcon,
   CalendarIcon,
-  // HeartIcon,
   ArrowDownTrayIcon,
   QueueListIcon,
   FlagIcon,
@@ -21,61 +22,81 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   PlayIcon as PlaySolidIcon,
-  // HeartIcon as HeartSolidIcon,
   BookmarkIcon as BookmarkSolidIcon,
   CheckCircleIcon as CheckCircleSolidIcon,
   PauseIcon,
 } from "@heroicons/react/24/solid";
-import { Podcast } from "@/core/podcast/podcast.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { formatTime } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
+import { togglePodcastFavorite } from "@/lib/actions/favorite-actions"; // [新增] 引入 Server Action
 
-// --- 工具函数：根据字符串 ID 生成稳定的伪随机数 ---
-function getStableNumber(id: string, min: number, max: number) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    const char = id.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  const normalized = Math.abs(hash) % (max - min + 1);
-  return min + normalized;
+// 在 PodcastDetail.tsx 中定义专用接口
+interface PodcastDetailData {
+  podcastid: string;
+  title: string;
+  coverUrl: string;
+  coverFileName: string | null;
+  platform: string | null;
+  description: string | null;
+  isEditorPick: boolean | null;
+  totalPlays: number;
+  followerCount: number;
+  createAt: Date | string;
+  tags: Array<{
+    id: number;
+    name: string;
+  }>;
+  isFavorited: boolean;
+  podcastFavorites: undefined;
+  episode: Array<{
+    episodeid: string;
+    title: string;
+    description: string | null;
+    coverUrl: string | null;
+    coverFileName: string | null;
+    duration: number | null;
+    playCount: number;
+    audioUrl: string | null;
+    audioFileName: string | null;
+    subtitleEnUrl: string | null;
+    subtitleEnFileName: string | null;
+    subtitleZhUrl: string | null;
+    subtitleZhFileName: string | null;
+    publishAt: Date;
+    createAt: Date | null;
+    status: string | null;
+    isExclusive: boolean | null;
+    isFavorited: boolean;
+    progressSeconds: number;
+    isFinished: boolean;
+  }>;
 }
 
-function getStableBoolean(id: string, probability: number = 0.5) {
-  const num = getStableNumber(id, 0, 100);
-  return num < probability * 100;
-}
-// ------------------------------------------------
-
-type PodcastWithMock = Podcast & {
-  totalPlays?: number;
-  followerCount?: number;
-  level?: string;
-  category?: string;
-};
-
-interface PodcastDetailProps {
-  podcast: PodcastWithMock;
+// [新增] 定义包含进度的 Episode 接口
+interface EpisodeWithProgress extends Episode {
+  progressSeconds?: number;
+  isFinished?: boolean;
 }
 
-export default function PodcastDetail({ podcast }: PodcastDetailProps) {
+export default function PodcastDetail({
+  podcast,
+}: {
+  podcast: PodcastDetailData;
+}) {
   const router = useRouter();
+  const { data: session } = useSession(); // [新增] 获取 Session
   const { playEpisode, togglePlay, currentEpisode, isPlaying } =
     usePlayerStore();
 
-  const mockLevel = podcast.level || "Intermediate";
-  const mockCategory = podcast.category || "General English";
+  const initialPlays = podcast.totalPlays;
+  const initialFavorites = podcast.followerCount;
 
-  const mockPlays =
-    podcast.totalPlays ||
-    getStableNumber(podcast.podcastid + "plays", 1000, 50000);
-  const mockFavorites =
-    podcast.followerCount ||
-    getStableNumber(podcast.podcastid + "fav", 100, 2000);
-
+  // [新增] 收藏数状态，支持乐观更新
+  const [favoritesCount, setFavoritesCount] = useState(initialFavorites);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [activeEpisodeMenu, setActiveEpisodeMenu] = useState<string | null>(
     null,
@@ -84,6 +105,27 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
 
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const episodeMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // [新增] 检查初始收藏状态
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (session?.user?.userid && podcast.podcastid) {
+        try {
+          const response = await fetch(
+            `/api/podcast/favorite/find-unique?podcastid=${podcast.podcastid}&userid=${session.user.userid}`,
+            { method: "GET" },
+          );
+          const data = await response.json();
+          if (data.success) {
+            setIsFavorited(true);
+          }
+        } catch (error) {
+          console.error("Failed to check favorite status", error);
+        }
+      }
+    };
+    checkFavoriteStatus();
+  }, [session, podcast.podcastid]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -121,14 +163,13 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
     router.push(`/episode/${episode.episodeid}`);
   };
 
-  // [修改点 1] 封装一个 helper，确保 episode 包含 podcastid
   const playEpisodeWithId = (ep: Episode) => {
-    // API 获取的嵌套 episode 可能没有 podcastid，手动注入父级 ID
     const episodeWithId = {
       ...ep,
       podcastid: ep.podcastid || podcast.podcastid,
+      podcast: podcast,
     };
-    playEpisode(episodeWithId);
+    playEpisode(episodeWithId as unknown as Episode);
   };
 
   const handlePlayLatest = () => {
@@ -137,7 +178,7 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
         (a, b) =>
           new Date(b.publishAt).getTime() - new Date(a.publishAt).getTime(),
       )[0];
-      playEpisodeWithId(latest); // 使用新方法
+      playEpisodeWithId(latest as unknown as Episode);
     }
   };
 
@@ -146,7 +187,49 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
     if (currentEpisode?.episodeid === episode.episodeid) {
       togglePlay();
     } else {
-      playEpisodeWithId(episode); // 使用新方法
+      playEpisodeWithId(episode as unknown as Episode);
+    }
+  };
+
+  // 处理收藏逻辑
+  const handleToggleFavorite = async () => {
+    console.log("Toggle favorite for podcast:", podcast.podcastid);
+    console.log("Session user:", session);
+    if (!session?.user) {
+      toast.error("请先登录后收藏");
+      // 可以在这里添加跳转登录页的逻辑，例如: router.push('/login');
+      return;
+    }
+
+    if (isLoadingFavorite) return;
+    setIsLoadingFavorite(true);
+
+    // 乐观更新 (Optimistic Update)
+    const prevIsFavorited = isFavorited;
+    const prevCount = favoritesCount;
+
+    setIsFavorited(!prevIsFavorited);
+    setFavoritesCount(prevIsFavorited ? prevCount - 1 : prevCount + 1);
+
+    try {
+      // 调用 Server Action
+      const result = await togglePodcastFavorite(podcast.podcastid);
+
+      if (!result.success) {
+        // 如果失败，回滚状态
+        setIsFavorited(prevIsFavorited);
+        setFavoritesCount(prevCount);
+        toast.error(result.message || "操作失败");
+      } else {
+        toast.success(result.isFavorited ? "收藏成功" : "已取消收藏");
+      }
+    } catch (error) {
+      console.error(error);
+      setIsFavorited(prevIsFavorited);
+      setFavoritesCount(prevCount);
+      toast.error("网络错误，请重试");
+    } finally {
+      setIsLoadingFavorite(false);
     }
   };
 
@@ -220,13 +303,23 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
 
           {/* Text Content */}
           <div className="flex-1 space-y-4 pt-4 md:pt-8 w-full">
+            {/*<div className="flex flex-wrap items-center gap-2">*/}
+            {/*<span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">*/}
+            {/*  {mockLevel}*/}
+            {/*</span>*/}
+            {/*  <span className="bg-secondary/10 text-secondary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">*/}
+            {/*  {mockCategory}*/}
+            {/*</span>*/}
+            {/*</div>*/}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                {mockLevel}
-              </span>
-              <span className="bg-secondary/10 text-secondary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                {mockCategory}
-              </span>
+              {podcast.tags?.slice(0, 5).map((tag) => (
+                <span
+                  key={tag.id}
+                  className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
+                >
+                  {tag.name}
+                </span>
+              ))}
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold text-base-content leading-tight">
@@ -240,15 +333,15 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
               <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
               <div className="flex items-center text-sm text-base-content/60">
                 <PlayIcon className="w-4 h-4 mr-1" />
-                {(mockPlays / 1000).toFixed(1)}k 播放
+                {(initialPlays / 1).toFixed(1)}k 播放
               </div>
               <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
               <div className="flex items-center text-sm text-base-content/60">
                 <BookmarkIcon
                   className={`w-4 h-4 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
                 />
-                {((mockFavorites + (isFavorited ? 1 : 0)) / 1000).toFixed(1)}k
-                收藏
+                {/* [修改] 使用实时更新的 favoritesCount */}
+                {(favoritesCount / 1).toFixed(1)}k 收藏
               </div>
             </div>
 
@@ -265,14 +358,18 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                 播放最新剧集
               </button>
               <button
-                onClick={() => setIsFavorited(!isFavorited)}
+                onClick={handleToggleFavorite} // [修改] 绑定新的处理函数
+                disabled={isLoadingFavorite} // [新增] 防止重复点击
                 className={`px-8 py-3.5 rounded-full font-bold transition-all flex items-center border-2 ${
                   isFavorited
                     ? "bg-red-50 border-red-100 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400"
                     : "bg-base-100 border-base-200 text-base-content/70 hover:border-red-200 hover:text-red-500 dark:hover:border-red-900/50"
-                }`}
+                } ${isLoadingFavorite ? "opacity-70 cursor-not-allowed" : ""}`}
               >
-                {isFavorited ? (
+                {/* 加载中状态显示 */}
+                {isLoadingFavorite ? (
+                  <span className="loading loading-spinner loading-xs mr-2"></span>
+                ) : isFavorited ? (
                   <BookmarkSolidIcon className="w-5 h-5 mr-2" />
                 ) : (
                   <BookmarkIcon className="w-5 h-5 mr-2" />
@@ -306,20 +403,37 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
 
           <div className="space-y-4">
             {sortedEpisodes.length > 0 ? (
-              sortedEpisodes.map((episode) => {
-                const hasProgress = getStableBoolean(
-                  episode.episodeid + "prog",
-                  0.4,
-                );
-                const isFinished = getStableBoolean(
-                  episode.episodeid + "fin",
-                  0.1,
-                );
-                const mockProgress = isFinished
-                  ? 100
-                  : hasProgress
-                    ? getStableNumber(episode.episodeid + "pct", 10, 90)
-                    : 0;
+              sortedEpisodes.map((ep) => {
+                // 使用类型断言访问扩展字段
+                const episode = ep as unknown as EpisodeWithProgress;
+                // 计算真实进度百分比
+                const progressSeconds = episode.progressSeconds || 0;
+                const isFinished = episode.isFinished || false;
+                const duration = episode.duration || 0;
+
+                let progressPercentage = 0;
+                if (isFinished) {
+                  progressPercentage = 100;
+                } else if (duration > 0) {
+                  progressPercentage = Math.min(
+                    (progressSeconds / duration) * 100,
+                    100,
+                  );
+                }
+
+                // const hasProgress = getStableBoolean(
+                //     episode.episodeid + "prog",
+                //     0.4,
+                // );
+                // const isFinished = getStableBoolean(
+                //     episode.episodeid + "fin",
+                //     0.1,
+                // );
+                // const mockProgress = isFinished
+                //     ? 100
+                //     : hasProgress
+                //         ? getStableNumber(episode.episodeid + "pct", 10, 90)
+                //         : 0;
 
                 const isCurrentPlaying =
                   currentEpisode?.episodeid === episode.episodeid && isPlaying;
@@ -337,7 +451,8 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                       className="w-10 flex-shrink-0 flex items-center justify-center relative z-10 hover:scale-110 transition-transform"
                       onClick={(e) => handlePlayClick(e, episode)}
                     >
-                      {mockProgress === 100 ? (
+                      {/* 只有当明确标记为已听完时才显示绿勾 */}
+                      {isFinished ? (
                         <CheckCircleSolidIcon className="w-8 h-8 text-green-500" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-content transition-colors">
@@ -373,16 +488,16 @@ export default function PodcastDetail({ podcast }: PodcastDetailProps) {
                     </div>
 
                     {/* Progress Bar */}
-                    {mockProgress > 0 && mockProgress < 100 && (
+                    {progressPercentage > 0 && progressPercentage < 100 && (
                       <div className="hidden sm:block w-32 ml-4">
                         <div className="flex justify-between text-[10px] font-bold text-base-content/40 mb-1">
                           <span>In Progress</span>
-                          <span>{mockProgress}%</span>
+                          <span>{Math.round(progressPercentage)}%</span>
                         </div>
                         <div className="h-1 w-full bg-base-300 rounded-full">
                           <div
                             className="h-full bg-primary rounded-full"
-                            style={{ width: `${mockProgress}%` }}
+                            style={{ width: `${progressPercentage}%` }}
                           ></div>
                         </div>
                       </div>

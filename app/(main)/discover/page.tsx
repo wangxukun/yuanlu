@@ -1,5 +1,5 @@
+// yuanlu/app/(main)/discover/page.tsx
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   MagnifyingGlassIcon,
@@ -14,10 +14,11 @@ import {
   MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
 import { PlayIcon } from "@heroicons/react/24/solid";
-import TrendingRow from "@/components/main/discover/TrendingRow"; // 引入新组件
-import { getTrendingPodcasts } from "@/lib/discover-service"; // 引入后端查询
+import TrendingRow from "@/components/main/discover/TrendingRow";
+import { getTrendingPodcasts, getLatestPodcasts } from "@/lib/discover-service"; // [新增] 引入 getLatestPodcasts
 
-// --- Types ---
+// --- Types & Mock Data (保持不变) ---
+// ... (保留原有的 Category 定义和 Helper Components) ...
 interface Category {
   id: string;
   name: string;
@@ -25,8 +26,8 @@ interface Category {
   colorClass: string;
 }
 
-// --- Mock Data (Categories 保持静态即可，也可后续改为从数据库获取) ---
 const CATEGORIES: Category[] = [
+  // ... (保持不变) ...
   {
     id: "1",
     name: "Business",
@@ -70,7 +71,6 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-// --- Helper Components ---
 const CategoryIcon = ({
   iconName,
   className,
@@ -78,6 +78,7 @@ const CategoryIcon = ({
   iconName: string;
   className?: string;
 }) => {
+  // ... (保持不变) ...
   const props = { className: className || "w-6 h-6" };
   switch (iconName) {
     case "Briefcase":
@@ -97,15 +98,23 @@ const CategoryIcon = ({
   }
 };
 
+export const dynamic = "force-dynamic"; // 确保服务端每次渲染最新数据
+
 export default async function DiscoverPage() {
-  // 1. 获取真实热门数据
-  const trendingPodcasts = await getTrendingPodcasts();
+  // 1. 并行获取热门数据和最新发布数据
+  const [trendingPodcasts, latestPodcasts] = await Promise.all([
+    getTrendingPodcasts(),
+    getLatestPodcasts(1),
+  ]);
+
+  const featuredPodcast = latestPodcasts[0];
 
   return (
     <div className="bg-base-200 min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        {/* Search Header */}
+        {/* Search Header (保持不变) */}
         <div className="text-center max-w-2xl mx-auto space-y-4">
+          {/* ... */}
           <h1 className="text-3xl font-bold text-base-content">
             找到你的下一课
           </h1>
@@ -130,13 +139,14 @@ export default async function DiscoverPage() {
 
         {/* Categories Grid */}
         <section>
+          {/* ... */}
           <h2 className="text-xl font-bold text-base-content mb-6">
             按主题浏览
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {CATEGORIES.map((category) => (
               <Link
-                href={`/series/${category.name.toLowerCase()}`} // 假设有分类页面
+                href={`/series/${category.name.toLowerCase()}`}
                 key={category.id}
                 className="flex flex-col items-center justify-center p-6 bg-base-100 rounded-2xl border border-base-200 hover:border-primary/30 hover:shadow-md transition-all group"
               >
@@ -153,8 +163,93 @@ export default async function DiscoverPage() {
           </div>
         </section>
 
+        {/* Featured Banner (替换为真实数据) */}
+        {featuredPodcast ? (
+          <div className="relative rounded-3xl overflow-hidden bg-neutral text-neutral-content p-8 md:p-12 text-center md:text-left min-h-[400px] flex items-center">
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent z-10"></div>
+              {/* 使用 img 标签或者 next/image (如果配置了 remotePatterns) */}
+              <img
+                src={featuredPodcast.coverUrl}
+                alt={featuredPodcast.title}
+                className="w-full h-full object-cover opacity-50 blur-sm scale-105"
+              />
+            </div>
+
+            <div className="relative z-20 max-w-2xl flex flex-col items-start gap-6">
+              <span className="inline-block py-1.5 px-4 rounded-full bg-secondary text-primary-content text-sm font-bold uppercase tracking-wider shadow-lg shadow-primary/20">
+                新系列
+              </span>
+
+              <h2 className="text-3xl md:text-5xl font-extrabold leading-tight">
+                {featuredPodcast.title}
+              </h2>
+
+              <p className="text-neutral-content/80 text-lg leading-relaxed line-clamp-3">
+                {featuredPodcast.description || "暂无描述"}
+              </p>
+
+              {featuredPodcast.tags && featuredPodcast.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {featuredPodcast.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="text-xs font-mono bg-white/10 px-2 py-1 rounded border border-white/10"
+                    >
+                      #{tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-2">
+                {featuredPodcast.firstEpisodeId ? (
+                  <Link
+                    href={`/episode/${featuredPodcast.firstEpisodeId}`}
+                    className="btn btn-primary rounded-full px-8 h-12 text-base font-bold shadow-lg shadow-primary/30 border-none"
+                  >
+                    <PlayIcon className="mr-2 w-5 h-5" />
+                    开始第一集
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/podcast/${featuredPodcast.podcastid}`}
+                    className="btn btn-primary rounded-full px-8 h-12 text-base font-bold shadow-lg shadow-primary/30 border-none"
+                  >
+                    <PlayIcon className="mr-2 w-5 h-5" />
+                    查看详情
+                  </Link>
+                )}
+
+                <Link
+                  href={`/podcast/${featuredPodcast.podcastid}`}
+                  className="btn btn-ghost bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-8 h-12 text-base font-semibold backdrop-blur-sm"
+                >
+                  查看全部 ({featuredPodcast.episodeCount || 0} 集)
+                </Link>
+              </div>
+            </div>
+
+            {/* Desktop Only: Right side visual */}
+            <div className="hidden lg:block absolute right-12 top-1/2 -translate-y-1/2 z-20">
+              <div className="w-64 h-64 rounded-xl shadow-2xl rotate-6 border-4 border-white/10 overflow-hidden">
+                <img
+                  src={featuredPodcast.coverUrl}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Fallback UI
+          <div className="skeleton w-full h-[400px] rounded-3xl"></div>
+        )}
+
         {/* Trending & Charts */}
         <section>
+          {/* ... */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
               <div className="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-md">
@@ -183,41 +278,6 @@ export default async function DiscoverPage() {
             )}
           </div>
         </section>
-
-        {/* Featured Banner (保持静态，或后续替换为最新推荐) */}
-        <div className="relative rounded-3xl overflow-hidden bg-gray-900 text-white p-8 md:p-12 text-center md:text-left">
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent z-10"></div>
-            <Image
-              src="/static/images/podcast-dark.png"
-              alt="Background"
-              fill
-              className="object-cover opacity-50"
-            />
-          </div>
-          <div className="relative z-20 max-w-lg">
-            <span className="inline-block py-1 px-3 rounded-full bg-primary text-primary-content text-xs font-bold uppercase tracking-wider mb-4">
-              新系列
-            </span>
-            <h2 className="text-3xl font-bold mb-4">
-              English for Global Travel
-            </h2>
-            <p className="text-gray-300 mb-8 leading-relaxed">
-              Master the essential vocabulary and cultural nuances you need for
-              your next international adventure. From booking flights to making
-              local friends.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <button className="bg-white text-gray-900 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center justify-center shadow-lg border-none">
-                <PlayIcon className="mr-2 w-5 h-5" />
-                开始第一集
-              </button>
-              <button className="bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-full font-semibold hover:bg-white/20 transition-colors border border-white/20">
-                查看全部
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

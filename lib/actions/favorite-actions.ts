@@ -11,7 +11,7 @@ export async function togglePodcastFavorite(
   pathname?: string,
 ) {
   const session = await auth();
-  const userId = session?.user?.id;
+  const userId = session?.user?.userid;
 
   if (!userId) return { success: false, message: "请先登录" };
 

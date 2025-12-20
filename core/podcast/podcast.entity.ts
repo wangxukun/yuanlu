@@ -6,12 +6,13 @@ export interface Podcast {
   podcastid: string;
   title: string;
   coverUrl: string;
-  coverFileName: string;
-  platform: string;
-  description: string;
-  isEditorPick: boolean;
+  coverFileName: string | null;
+  platform: string | null;
+  description: string | null;
+  isEditorPick: boolean | null;
   totalPlays: number;
   followerCount: number;
+  createAt: Date | string;
   episode: Episode[];
   tags: Tag[];
   podcastFavorites: PodcastFavorites[];
