@@ -10,11 +10,18 @@
  * Mapper（对象转换）
  */
 import { episodeService } from "@/core/episode/episode.service";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const list = await episodeService.getManagementList();
+    // [修改] 获取 URL 查询参数
+    const searchParams = request.nextUrl.searchParams;
+    const query = searchParams.get("query") || undefined;
+    const podcastId = searchParams.get("podcastId") || undefined;
+
+    // [修改] 将参数传递给 service
+    const list = await episodeService.getManagementList(query, podcastId);
+
     return NextResponse.json(list);
   } catch (error) {
     console.error("获取剧集列表时出错:", error);

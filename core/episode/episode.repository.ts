@@ -17,10 +17,14 @@ import { Episode } from "@/core/episode/episode.entity";
 import { Prisma } from "@prisma/client";
 
 export const episodeRepository = {
-  async findAll(): Promise<Episode[]> {
+  // [修改] 增加 where 参数，允许传递筛选条件
+  async findAll(where?: Prisma.episodeWhereInput): Promise<Episode[]> {
     const episodes = await prisma.episode.findMany({
+      where, // 应用筛选条件
+      orderBy: {
+        publishAt: Prisma.SortOrder.desc, // 默认按发布时间倒序，体验更好
+      },
       select: {
-        // 明确选择需要字段
         episodeid: true,
         coverUrl: true,
         coverFileName: true,
@@ -40,7 +44,6 @@ export const episodeRepository = {
         isCommentEnabled: true,
         podcast: {
           select: {
-            // 明确选择需要字段
             podcastid: true,
             title: true,
           },
@@ -50,13 +53,12 @@ export const episodeRepository = {
     return episodes as unknown as Episode[];
   },
 
+  // ... 其它方法保持不变 ...
   async findById(id: string): Promise<Episode> {
-    const episode = await prisma.episode.findUnique({
-      where: {
-        episodeid: id,
-      },
+    // ...
+    return (await prisma.episode.findUnique({
+      where: { episodeid: id },
       select: {
-        // 明确选择需要字段
         episodeid: true,
         title: true,
         description: true,
@@ -101,75 +103,39 @@ export const episodeRepository = {
           },
         },
       },
-    });
-    return episode as unknown as Episode;
+    })) as unknown as Episode;
   },
 
-  /**
-   * 创建剧集
-   * @param data
-   */
   async create(data: Prisma.episodeCreateInput) {
     return prisma.episode.create({
-      // 忽略 episodeid
-      omit: {
-        episodeid: true,
-      },
+      omit: { episodeid: true },
       data,
     });
   },
 
-  /**
-   * 更新剧集
-   * @param id
-   * @param data
-   */
   async update(id: string, data: Prisma.episodeUpdateInput) {
     return prisma.episode.update({
-      where: {
-        episodeid: id,
-      },
-      select: {
-        title: true,
-        description: true,
-      },
+      where: { episodeid: id },
+      select: { title: true, description: true },
       data,
     });
   },
 
-  // 更新英文字幕
   async updateSubtitleEn(id: string, data: Prisma.episodeUpdateInput) {
     const { subtitleEnUrl, subtitleEnFileName } = data;
     return prisma.episode.update({
-      where: {
-        episodeid: id,
-      },
-      select: {
-        subtitleEnUrl: true,
-        subtitleEnFileName: true,
-      },
-      data: {
-        subtitleEnUrl,
-        subtitleEnFileName,
-      },
+      where: { episodeid: id },
+      select: { subtitleEnUrl: true, subtitleEnFileName: true },
+      data: { subtitleEnUrl, subtitleEnFileName },
     });
   },
 
-  // 更新中文字幕
   async updateSubtitleZh(id: string, data: Prisma.episodeUpdateInput) {
     const { subtitleZhUrl, subtitleZhFileName } = data;
     return prisma.episode.update({
-      where: {
-        episodeid: id,
-      },
-      select: {
-        subtitleZhUrl: true,
-        subtitleZhFileName: true,
-      },
-      data: {
-        subtitleZhUrl,
-        subtitleZhFileName,
-      },
+      where: { episodeid: id },
+      select: { subtitleZhUrl: true, subtitleZhFileName: true },
+      data: { subtitleZhUrl, subtitleZhFileName },
     });
   },
 

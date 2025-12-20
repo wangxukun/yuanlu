@@ -15,6 +15,7 @@ import {
   Square3Stack3DIcon,
 } from "@heroicons/react/24/outline";
 import { TrendingPodcastItem } from "@/lib/discover-service";
+import { Headphones } from "lucide-react";
 
 interface TrendingRowProps {
   podcast: TrendingPodcastItem;
@@ -95,7 +96,7 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
           className="flex items-center text-xs text-base-content/60"
           title="总播放量"
         >
-          <PlayIcon className="w-3.5 h-3.5 mr-1" />
+          <Headphones className="w-3.5 h-3.5 mr-1" />
           {podcast.totalPlays.toLocaleString()}
         </div>
       </div>

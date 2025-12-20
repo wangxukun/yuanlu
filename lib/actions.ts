@@ -146,84 +146,82 @@ export async function createPodcast(
   formData: FormData,
 ): Promise<PodcastState> {
   try {
-    // 1. 获取封面文件
-    const coverFileName = formData.get("coverFileName");
-    const coverUrl = formData.get("coverUrl");
-    if (coverFileName === null || coverFileName === "") {
-      return new Promise((resolve) => {
-        resolve({
-          errors: {
-            podcastName: "",
-            description: "",
-            coverUrl: "请上传封面图片", // 使用已定义的 cover 字段
-            coverFileName: "",
-            platform: "",
-          },
-          message: "缺少必要文件",
-        });
-      });
+    const title = formData.get("podcastName") as string;
+    const description = formData.get("description") as string;
+    const platform = formData.get("platform") as string;
+    const coverUrl = formData.get("coverUrl") as string;
+    const coverFileName = formData.get("coverFileName") as string;
+    const isEditorPick = formData.get("isEditorPick") === "on";
+    const tags = formData.getAll("tags") as string[];
+
+    // 简单校验
+    if (!title || !coverUrl) {
+      return { message: "请补全标题和封面信息" };
     }
-    const res = await fetch(`${baseUrl}/api/podcast/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        podcastName: formData.get("podcastName"),
-        description: formData.get("description"),
-        coverUrl: coverUrl,
-        coverFileName: coverFileName,
-        isEditorPick: formData.get("isEditorPick") === "on",
-        platform: formData.get("platform"),
-        tags: formData.getAll("tags"),
-      }),
-    });
-    if (!res.ok) {
-      return new Promise((resolve) => {
-        resolve({
-          message: "创建播客失败",
-        });
-      });
-    }
-    if (res.ok) {
-      revalidatePath("/admin/podcasts/create");
-      // 先返回成功状态再执行重定向
-      return {
-        errors: {
-          podcastName: "",
-          description: "",
-          coverUrl: "",
-          coverFileName: "",
-          platform: "",
+
+    await prisma.podcast.create({
+      data: {
+        title,
+        description,
+        platform,
+        coverUrl,
+        coverFileName,
+        isEditorPick,
+        tags: {
+          connectOrCreate: generateTagConnectOrCreate(tags),
         },
-        // 在podcasts页面中，通过message判断是否需要重定向
-        message: "redirect:/admin/podcasts/create-success", // 添加特殊标识
-      };
-    }
+      },
+    });
+
+    revalidatePath("/admin/podcasts");
+    return { message: "redirect:/admin/podcasts/create-success" };
   } catch (error) {
-    console.error("创建播客失败:", error);
-    return new Promise((resolve) => {
-      resolve({
-        errors: {
-          podcastName: "",
-          description: "",
-          coverUrl: "",
-          coverFileName: "",
-          platform: "",
-        },
-        message: "创建过程中发生错误",
-      });
-    });
+    console.error("Create Podcast Error:", error);
+    return { message: "创建失败，可能是标题重复或数据库错误" };
   }
-  // 添加默认返回（防御性编程）
-  return {
-    errors: {
-      podcastName: "",
-      description: "",
-      coverUrl: "",
-      coverFileName: "",
-      platform: "",
-    },
-    message: "未知错误",
-  };
+}
+
+// 2. 更新播客 (新增)
+export async function updatePodcast(
+  id: string,
+  prevState: PodcastState,
+  formData: FormData,
+): Promise<PodcastState> {
+  try {
+    const title = formData.get("podcastName") as string;
+    const description = formData.get("description") as string;
+    const platform = formData.get("platform") as string;
+    const coverUrl = formData.get("coverUrl") as string;
+    const coverFileName = formData.get("coverFileName") as string;
+    const isEditorPick = formData.get("isEditorPick") === "on";
+    const tags = formData.getAll("tags") as string[];
+
+    // 获取旧数据以判断是否需要删除旧封面（可选优化）
+    // const oldPodcast = await prisma.podcast.findUnique({ where: { podcastid: id } });
+
+    await prisma.podcast.update({
+      where: { podcastid: id },
+      data: {
+        title,
+        description,
+        platform,
+        coverUrl,
+        coverFileName,
+        isEditorPick,
+        tags: {
+          set: [], // 先清空现有标签关联
+          connectOrCreate: generateTagConnectOrCreate(tags), // 再重新关联
+        },
+      },
+    });
+
+    revalidatePath("/admin/podcasts");
+    // 编辑成功后直接跳转回列表，或者停留在编辑页提示成功
+    return { message: "redirect:/admin/podcasts" };
+  } catch (error) {
+    console.error("Update Podcast Error:", error);
+    return { message: "更新失败，请重试" };
+  }
 }
 
 export async function createEpisode(
@@ -403,29 +401,53 @@ export async function deletePodcast(
   id: string,
   coverFileName: string,
 ): Promise<PodcastDelState> {
-  // 删除OSS中封面图片
-  const result = await deleteObject(coverFileName);
+  try {
+    // 1. 删除数据库数据
+    // Prisma 的 onDelete: Cascade 应该会处理 tags 关联（隐式多对多通常只是删除关联记录）
+    // 但必须确保 episode 是否级联删除？Schema 中 episode 没有定义 onDelete: Cascade 指向 podcast
+    // 所以如果 podcast 下有 episode，数据库可能会报错。
 
-  const res = await fetch(`${baseUrl}/api/podcast/delete`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ podcastid: id }),
-  });
-  const data = await res.json();
-  console.log("删除OSS中封面图片", result);
-  console.log("删除数据库中数据", res);
-  if (!result || !res.ok) {
+    // 检查是否有关联的 Episodes
+    const episodesCount = await prisma.episode.count({
+      where: { podcastid: id },
+    });
+
+    if (episodesCount > 0) {
+      return {
+        message: `无法删除：该合集下还有 ${episodesCount} 个音频。请先删除或转移音频。`,
+        status: 400,
+      };
+    }
+
+    await prisma.podcast.delete({
+      where: { podcastid: id },
+    });
+
+    // 2. 删除OSS中封面图片
+    if (coverFileName) {
+      await deleteObject(coverFileName);
+    }
+
+    // 3. 刷新页面
+    revalidatePath("/admin/podcasts");
+
     return {
-      message: "",
+      message: "删除成功",
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Delete Podcast Error:", error);
+    return {
+      message: "删除失败，服务器错误",
       status: 500,
     };
   }
-  return {
-    message: data.message,
-    status: data.status,
-  };
 }
 
+/**
+ * OSS  文件删除
+ * @param fileName
+ */
 export async function deleteFile(fileName: string) {
   const result = await deleteObject(fileName);
   if (result && result.res && result.res.status === 204) {

@@ -21,15 +21,34 @@ import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client";
 import { EditEpisodeResponse } from "@/app/types/podcast";
 
-/**
- * 音频管理列表
- */
 export const episodeService = {
-  async getManagementList() {
-    const episodes = await episodeRepository.findAll();
+  /**
+   * 音频管理列表
+   * [修改] 支持根据 query (标题/描述) 和 podcastId 过滤
+   */
+  async getManagementList(query?: string, podcastId?: string) {
+    // 构建查询条件
+    const where: Prisma.episodeWhereInput = {};
+
+    // 1. 如果有 podcastId，精确匹配
+    if (podcastId) {
+      where.podcastid = podcastId;
+    }
+
+    // 2. 如果有搜索词 query，模糊匹配标题
+    if (query) {
+      where.OR = [
+        { title: { contains: query, mode: "insensitive" } },
+        // 如果需要也可以搜描述：
+        // { description: { contains: query, mode: 'insensitive' } }
+      ];
+    }
+
+    // 调用 Repository，传入构造好的 where 条件
+    const episodes = await episodeRepository.findAll(where);
+
     if (episodes.length > 0) {
       for (const episode of episodes) {
-        // 获取封面图片的签名URL
         episode.coverUrl = await generateSignatureUrl(
           episode.coverFileName,
           60 * 60 * 3,
@@ -39,10 +58,6 @@ export const episodeService = {
     return episodes.map(EpisodeMapper.toManagementItem);
   },
 
-  /**
-   * 音频编辑填充数据
-   * @param id
-   */
   async getEditItem(id: string) {
     const episode = await episodeRepository.findById(id);
     episode.audioUrl = await generateSignatureUrl(
@@ -52,11 +67,6 @@ export const episodeService = {
     return EpisodeMapper.toEditItem(episode);
   },
 
-  /**
-   * 音频更新，更新除了音频文件、封面文件、字幕文件以外的所有字段
-   * @param id
-   * @param data
-   */
   async update(
     id: string,
     data: Prisma.episodeUpdateInput,
@@ -86,11 +96,6 @@ export const episodeService = {
     return EpisodeMapper.toSubtitles(episode);
   },
 
-  /**
-   * 更新英文字幕
-   * @param id
-   * @param data
-   */
   async updateSubtitleEn(
     id: string,
     data: Prisma.episodeUpdateInput,
@@ -102,11 +107,6 @@ export const episodeService = {
     return EpisodeMapper.toUpdateSubtitleEnState(updatedSubtitleEn);
   },
 
-  /**
-   * 更新中文字幕
-   * @param id
-   * @param data
-   */
   async updateSubtitleZh(
     id: string,
     data: Prisma.episodeUpdateInput,
@@ -118,19 +118,11 @@ export const episodeService = {
     return EpisodeMapper.toUpdateSubtitleZhState(updatedSubtitleZh);
   },
 
-  /**
-   * 删除episode
-   * @param id episode id
-   */
   async delete(id: string) {
     await episodeRepository.delete(id);
     return EpisodeMapper.toDeleteState();
   },
 
-  /**
-   * 获取episode的oss文件信息
-   * @param id episode id
-   */
   async getEpisodeOSSFiles(id: string) {
     const episode = await episodeRepository.findById(id);
     return EpisodeMapper.toEpisodeOSSFiles(episode);

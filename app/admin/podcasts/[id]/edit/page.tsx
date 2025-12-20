@@ -1,27 +1,30 @@
-import { Metadata } from "next";
-import Breadcrumbs from "@/components/admin/breadcrumbs";
+import React from "react";
+import PodcastForm from "@/components/admin/podcasts/podcast-form";
+import { updatePodcast } from "@/lib/actions";
+import { getAdminPodcast } from "@/lib/admin-podcasts-service";
 
-export const metadata: Metadata = {
-  title: "Edit Invoice",
-};
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
+export default async function EditPodcastPage(props: PageProps) {
   const params = await props.params;
-  const id = params.id;
+  const { id } = params;
+
+  // 2. 转换数据格式以适配表单
+  const initialData = await getAdminPodcast(id);
+
+  // 3. 绑定 Server Action ID (关键步骤)
+  const updatePodcastWithId = updatePodcast.bind(null, id);
 
   return (
-    <main>
-      <Breadcrumbs
-        breadcrumbs={[
-          { label: "播客", href: "/admin/podcasts" },
-          {
-            label: "编辑播客",
-            href: `/admin/podcasts/${id}/edit`,
-            active: true,
-          },
-        ]}
+    <div className="max-w-5xl mx-auto space-y-6 py-6">
+      {/* 渲染表单 */}
+      <PodcastForm
+        initialData={initialData}
+        formAction={updatePodcastWithId}
+        mode="edit"
       />
-      <h1 className="mb-4 text-2xl font-bold">编辑播客有待完成</h1>
-    </main>
+    </div>
   );
 }

@@ -1,22 +1,12 @@
-import PodcastForm from "@/components/admin/podcasts/podcast-form";
 import React from "react";
-import Breadcrumbs from "@/components/admin/breadcrumbs";
-export default function Page() {
+import PodcastForm from "@/components/admin/podcasts/podcast-form";
+import { createPodcast } from "@/lib/actions";
+
+export default function CreatePodcastPage() {
   return (
-    <main>
-      <Breadcrumbs
-        breadcrumbs={[
-          { label: "合集管理", href: "/admin/podcasts" },
-          {
-            label: "创建合集",
-            href: "/admin/podcasts/create",
-            active: true,
-          },
-        ]}
-      />
-      <div className="rounded-lg bg-base-200 text-sm p-6 max-w-4xl mx-auto">
-        <PodcastForm />
-      </div>
-    </main>
+    <div className="max-w-5xl mx-auto space-y-6 py-6">
+      {/* 传入 createPodcast Action */}
+      <PodcastForm formAction={createPodcast} mode="create" />
+    </div>
   );
 }
