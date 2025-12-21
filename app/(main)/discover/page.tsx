@@ -17,8 +17,7 @@ import { PlayIcon } from "@heroicons/react/24/solid";
 import TrendingRow from "@/components/main/discover/TrendingRow";
 import { getTrendingPodcasts, getLatestPodcasts } from "@/lib/discover-service"; // [新增] 引入 getLatestPodcasts
 
-// --- Types & Mock Data (保持不变) ---
-// ... (保留原有的 Category 定义和 Helper Components) ...
+// --- Types & Mock Data ---
 interface Category {
   id: string;
   name: string;
@@ -27,7 +26,6 @@ interface Category {
 }
 
 const CATEGORIES: Category[] = [
-  // ... (保持不变) ...
   {
     id: "1",
     name: "Business",

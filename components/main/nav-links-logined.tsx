@@ -3,7 +3,6 @@
 import {
   BookOpenIcon, // 生词本图标
   ClockIcon, // 历史记录图标
-  TvIcon, // 订阅/节目图标
   HeartIcon, // 收藏图标
   GiftIcon,
 } from "@heroicons/react/24/outline";
@@ -17,8 +16,6 @@ const links = [
   { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
   // [新增] 方便回溯复习
   { name: "收听历史", href: "/library/history", icon: ClockIcon },
-  // 原有的节目列表
-  { name: "我的订阅", href: "/library/podcasts", icon: TvIcon },
   // 将“剧集”改为“收藏”，语意更明确
   { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
   // 这是一个特殊入口，可以保留或放入个人中心

@@ -11,7 +11,11 @@ export const publicRoutes = [
   "/auth/privacy-policy",
 ];
 
-export const userRoutes = ["/library/podcasts", "/library/episodes"];
+export const userRoutes = [
+  "/library/favorites",
+  "/library/history",
+  "/library/vocabulary",
+];
 
 export const adminRoutes = [
   "/admin",

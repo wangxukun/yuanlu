@@ -50,7 +50,7 @@ export default function RootLayout({
                 <SignInDialog />
                 <SignUpDialog />
                 {/* 主体内容区域 */}
-                <main className="flex-1 lg:pl-[260px] bg-base-100 overflow-y-auto">
+                <main className="flex-1 lg:pl-[260px] bg-base-200 overflow-y-auto">
                   <div className="w-full min-h-[calc(100vh-8rem)]">
                     {children}
                   </div>

@@ -153,6 +153,7 @@ model episode {
   ratings            ratings[]
   speech_recognition speech_recognition[]
   tags               tag[]
+  vocabulary         vocabulary[]
 }
 
 model episode_favorites {
@@ -334,6 +335,7 @@ model vocabulary {
   nextReviewAt    DateTime? @default(now()) @db.Timestamptz(6)
   addedDate       DateTime? @default(now()) @db.Timestamptz(6)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  episode         episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([userid, episodeid])
 }

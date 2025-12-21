@@ -1,6 +1,7 @@
 import { EpisodeFavorites } from "@/core/episode-favorites/episode-favorite.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
 import { Tag } from "@/core/tag/tag.entity";
+import { Vocabulary } from "@/core/vocabulary/vocabulary.entity";
 
 export interface Episode {
   episodeid: string;
@@ -26,5 +27,6 @@ export interface Episode {
   playCount: number;
   podcast: Podcast;
   tags: Tag[];
+  vocabulary: Vocabulary[];
   episode_favorites: EpisodeFavorites[];
 }
