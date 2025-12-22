@@ -1,9 +1,23 @@
-"use client";
+import { auth } from "@/auth";
+import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
+import ListeningHistoryPage from "./ListeningHistoryPage";
+import { redirect } from "next/navigation";
 
-export default function Charts() {
-  return (
-    <div className="bg-base-100 flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-(family-name:--font-geist-sans)">
-      <h1 className="text-base-content">收听历史</h1>
-    </div>
+export const metadata = {
+  title: "收听历史 | 远路",
+};
+
+export default async function HistoryPage() {
+  const session = await auth();
+
+  if (!session?.user?.userid) {
+    redirect("/");
+  }
+
+  // 服务端获取数据
+  const history = await listeningHistoryService.getUserHistory(
+    session.user.userid,
   );
+
+  return <ListeningHistoryPage history={history} />;
 }
