@@ -30,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: "24"
         # 设置 Node.js 环境，指定使用版本为 20此步骤确保后续的构建和测试都在该 Node.js 版本中运行。
 
       - name: Install dependencies
