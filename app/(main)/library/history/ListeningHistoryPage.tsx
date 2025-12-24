@@ -200,7 +200,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
         <div className="relative overflow-hidden bg-slate-900 rounded-3xl p-8 text-white shadow-xl shadow-slate-200 group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-            <div className="relative w-40 h-40 flex-shrink-0 shadow-2xl rounded-2xl overflow-hidden bg-slate-800">
+            <div className="relative w-48 h-27 flex-shrink-0 shadow-2xl rounded-2xl overflow-hidden bg-slate-800">
               <img
                 src={latestUnfinished.episode.thumbnailUrl}
                 alt={latestUnfinished.episode.title}
@@ -319,7 +319,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                     onClick={() => handlePlayEpisode(item.episode.id)}
                     className="group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all cursor-pointer flex items-center gap-4 relative"
                   >
-                    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-slate-100">
+                    <div className="w-32 h-18 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-slate-100">
                       <img
                         src={item.episode.thumbnailUrl}
                         alt={item.episode.title}

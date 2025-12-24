@@ -16,13 +16,13 @@ import {
   QueueListIcon,
   FlagIcon,
   LinkIcon,
-  BookmarkIcon,
+  HeartIcon,
   ArrowPathIcon,
   PlayIcon,
 } from "@heroicons/react/24/outline";
 import {
   PlayIcon as PlaySolidIcon,
-  BookmarkIcon as BookmarkSolidIcon,
+  HeartIcon as HeartSolidIcon,
   CheckCircleIcon as CheckCircleSolidIcon,
   PauseIcon,
 } from "@heroicons/react/24/solid";
@@ -270,7 +270,7 @@ export default function PodcastDetail({
             {headerMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-56 bg-base-100 rounded-xl shadow-xl border border-base-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                 <button className="w-full text-left px-4 py-2.5 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
-                  <BookmarkIcon className="w-4 h-4" />
+                  <HeartIcon className="w-4 h-4" />
                   <span>Add to Library</span>
                 </button>
                 <button className="w-full text-left px-4 py-2.5 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
@@ -290,7 +290,7 @@ export default function PodcastDetail({
 
       {/* Podcast Info Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-8 items-center">
           {/* Cover Art */}
           <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-2xl shadow-2xl overflow-hidden flex-shrink-0 border-4 border-base-100 bg-base-300 relative">
             <Image
@@ -337,7 +337,7 @@ export default function PodcastDetail({
               </div>
               <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
               <div className="flex items-center text-sm text-base-content/60">
-                <BookmarkIcon
+                <HeartIcon
                   className={`w-4 h-4 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
                 />
                 {/* [修改] 使用实时更新的 favoritesCount */}
@@ -370,9 +370,9 @@ export default function PodcastDetail({
                 {isLoadingFavorite ? (
                   <span className="loading loading-spinner loading-xs mr-2"></span>
                 ) : isFavorited ? (
-                  <BookmarkSolidIcon className="w-5 h-5 mr-2" />
+                  <HeartSolidIcon className="w-5 h-5 mr-2" />
                 ) : (
-                  <BookmarkIcon className="w-5 h-5 mr-2" />
+                  <HeartIcon className="w-5 h-5 mr-2" />
                 )}
                 {isFavorited ? "已收藏" : "收藏"}
               </button>

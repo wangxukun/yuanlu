@@ -115,17 +115,19 @@ export const listeningHistoryService = {
       throw new Error("记录不存在或无权删除");
     }
 
-    return await prisma.listening_history.delete({
+    const result = await prisma.listening_history.delete({
       where: { historyid: historyId },
     });
+    return result;
   },
 
   /**
    * 清空用户所有历史记录
    */
   async clearAllHistory(userId: string) {
-    return await prisma.listening_history.deleteMany({
+    const result = await prisma.listening_history.deleteMany({
       where: { userid: userId },
     });
+    return result;
   },
 };

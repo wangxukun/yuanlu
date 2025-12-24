@@ -1,9 +1,31 @@
-"use client";
+import { auth } from "@/auth";
+import { favoritesService } from "@/core/favorites/favorites.service";
+import FavoritesPage from "./FavoritesPage";
+import { redirect } from "next/navigation";
 
-export default function Charts() {
+export const metadata = {
+  title: "我的收藏 | 远路",
+};
+
+export default async function Page() {
+  const session = await auth();
+
+  if (!session?.user?.userid) {
+    redirect("/");
+  }
+
+  const userId = session.user.userid;
+
+  // 并行获取数据，提升性能
+  const [favoritePodcasts, favoriteEpisodes] = await Promise.all([
+    favoritesService.getFavoriteSeries(userId),
+    favoritesService.getFavoriteEpisodes(userId),
+  ]);
+
   return (
-    <div className="bg-base-100 flex flex-col items-center justify-items-center min-h-screen p-2 gap-16 sm:p-20 font-(family-name:--font-geist-sans)">
-      <h1 className="text-base-content">我的收藏</h1>
-    </div>
+    <FavoritesPage
+      favoritePodcasts={favoritePodcasts}
+      favoriteEpisodes={favoriteEpisodes}
+    />
   );
 }

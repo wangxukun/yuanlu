@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Award,
   BookOpen,
+  BookOpenCheck,
 } from "lucide-react";
 import { submitReviewAction } from "@/lib/actions/vocabulary-actions";
 import { ReviewQuality } from "@/lib/srs";
@@ -217,7 +218,8 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       {/* 1. 头部与统计面板 */}
       <header className="flex flex-col md:flex-row justify-between items-end border-b border-slate-200 pb-6 gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center">
+            <BookOpenCheck className="mr-3 text-indigo-600" size={32} />
             生词本
           </h1>
           <p className="text-slate-500 mt-2">
