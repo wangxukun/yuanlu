@@ -1,4 +1,4 @@
-import NextAuth, { User } from "next-auth";
+import NextAuth, { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { ZodError } from "zod";
 import { signInSchema } from "@/lib/form-schema";
@@ -84,6 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: user.role || "USER",
             emailVerified: user.emailVerified,
             avatarUrl: avatarUrl || null,
+            avatarFileName: user.user_profile?.avatarFileName || null,
             nickname: user.user_profile?.nickname || null,
           } as User;
         } catch (error) {
@@ -96,29 +97,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  // callbacks: {
-  //   async jwt({ token, user }: { token: JWT; user: User }) {
-  //     if (user) {
-  //       token.userid = user.userid;
-  //       token.email = user.email;
-  //       token.role = user.role;
-  //       token.emailVerified = user.emailVerified || null;
-  //       token.nickname = user.nickname;
-  //     }
-  //     return token;
-  //   },
-  //   async session({ session, token }: { session: Session; token: JWT }) {
-  //     session.user = {
-  //       ...session.user,
-  //       email: token.email,
-  //       userid: token.userid,
-  //       role: token.role,
-  //       avatarUrl: token.avatarUrl,
-  //       nickname: token.nickname,
-  //     };
-  //     return session;
-  //   },
-  // },
+  // [新增] 在这里覆盖 authConfig 的 callbacks
+  callbacks: {
+    ...authConfig.callbacks, // 继承 jwt 回调
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (token && session.user) {
+        session.user.userid = token.userid as string;
+        session.user.email = token.email as string;
+        session.user.role = token.role as string;
+        session.user.nickname = token.nickname as string | null;
+        session.user.emailVerified = token.emailVerified as Date | null;
+
+        // [核心修复逻辑]
+        // 如果 Token 中有文件名，每次获取 Session 时都重新生成签名 URL
+        if (token.avatarFileName) {
+          try {
+            // 动态生成新的签名 URL (3小时有效期)
+            const newAvatarUrl = await generateSignatureUrl(
+              token.avatarFileName as string,
+              3600 * 3,
+            );
+            session.user.avatarUrl = newAvatarUrl;
+          } catch (e) {
+            console.error("Session avatar refresh failed", e);
+            session.user.avatarUrl = token.avatarUrl as string | null; // 降级方案
+          }
+        } else {
+          // 如果没有文件名，使用旧的 url
+          session.user.avatarUrl = token.avatarUrl as string | null;
+        }
+      }
+      return session;
+    },
+  },
   events: {
     async signIn({ user }: { user: User }) {
       // 用户登录时标记为在线

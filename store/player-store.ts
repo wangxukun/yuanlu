@@ -1,6 +1,16 @@
 import { create } from "zustand";
 import { Episode } from "@/core/episode/episode.entity";
 
+export interface AudioTrack {
+  id: string;
+  src: string;
+  title: string;
+  author: string;
+  coverUrl: string;
+  duration: number;
+  initialTime?: number;
+}
+
 interface PlayerState {
   isPlaying: boolean;
   currentTime: number;
@@ -9,6 +19,8 @@ interface PlayerState {
   currentEpisode: Episode | null;
   currentAudioUrl: string;
   volume: number;
+  initialTime: number | null;
+
   setVolume: (volume: number) => void;
   setAudioRef: (ref: HTMLAudioElement) => void;
   setIsPlaying: (isPlaying: boolean) => void;
@@ -16,12 +28,16 @@ interface PlayerState {
   setCurrentEpisode: (episode: Episode | null) => void;
   setDuration: (duration: number) => void;
   setCurrentAudioUrl: (url: string) => void;
+  setInitialTime: (time: number | null) => void;
+
+  // 确保这一行存在
+  setAudio: (audio: AudioTrack) => void;
+
   togglePlay: () => void;
   play: () => void;
   pause: () => void;
   forward: () => void;
   backward: () => void;
-  // [新增] 定义 playEpisode 方法类型
   playEpisode: (episode: Episode) => void;
 }
 
@@ -32,6 +48,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   duration: 0,
   currentAudioUrl: "",
   currentEpisode: null,
+  initialTime: null,
   setAudioRef: (ref: HTMLAudioElement) => set({ audioRef: ref }),
   setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
   setCurrentTime: (time: number) => set({ currentTime: time }),
@@ -39,6 +56,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ currentEpisode: episode }),
   setDuration: (duration: number) => set({ duration: duration }),
   setCurrentAudioUrl: (url: string) => set({ currentAudioUrl: url }),
+  setInitialTime: (time) => set({ initialTime: time }),
   volume: 1,
   setVolume: (volume: number) => {
     const audio = get().audioRef;
@@ -74,13 +92,32 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return { currentTime: newTime };
     });
   },
-  // [新增] 实现 playEpisode 逻辑
   playEpisode: (episode: Episode) => {
     set({
       currentEpisode: episode,
-      currentAudioUrl: episode.audioUrl || "", // 确保有播放链接
-      isPlaying: true, // 立即开始播放
-      currentTime: 0, // 重置进度（Player组件内的 useEffect 会负责恢复历史进度）
+      currentAudioUrl: episode.audioUrl || "",
+      isPlaying: true,
+      currentTime: 0,
+      initialTime: null,
+    });
+  },
+  setAudio: (audio: AudioTrack) => {
+    // 构造兼容 Episode 的对象
+    const episode = {
+      episodeid: audio.id,
+      title: audio.title,
+      audioUrl: audio.src,
+      coverUrl: audio.coverUrl,
+      duration: audio.duration,
+      podcast: { title: audio.author },
+    } as unknown as Episode;
+
+    set({
+      currentEpisode: episode,
+      currentAudioUrl: audio.src,
+      isPlaying: true,
+      initialTime: audio.initialTime || 0,
+      currentTime: audio.initialTime || 0,
     });
   },
 }));

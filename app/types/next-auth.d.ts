@@ -10,6 +10,7 @@ declare module "next-auth" {
     role: string; // → 允许用户对象携带 role 字段
     emailVerified?: Date | null;
     avatarUrl?: string | null;
+    avatarFileName?: string | null;
     nickname?: string | null;
   }
 
@@ -22,6 +23,7 @@ declare module "next-auth" {
       role: string; // → 使 session.users.role 类型合法化
       emailVerified?: Date | null;
       avatarUrl?: string | null;
+      avatarFileName?: string | null;
       nickname?: string | null;
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
   }
@@ -34,6 +36,7 @@ declare module "next-auth/jwt" {
     role: string;
     emailVerified: Date | null;
     avatarUrl?: string | null;
+    avatarFileName?: string | null;
     nickname?: string | null;
   }
 }

@@ -1,4 +1,3 @@
-// core/listening-history/listening-history.service.ts
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss";
@@ -129,5 +128,88 @@ export const listeningHistoryService = {
       where: { userid: userId },
     });
     return result;
+  },
+
+  /**
+   * 获取用户最近的一条未完成收听记录 (用于首页 Resume)
+   */
+  async getLatestHistory(userId: string) {
+    try {
+      const record = await prisma.listening_history.findFirst({
+        where: {
+          userid: userId,
+          isFinished: false, // 优先找未完成的
+        },
+        orderBy: {
+          listenAt: Prisma.SortOrder.desc,
+        },
+        include: {
+          episode: {
+            include: {
+              podcast: true,
+            },
+          },
+        },
+      });
+
+      if (!record || !record.episode) return null;
+
+      const ep = record.episode;
+
+      // 1. 处理封面签名
+      let signedCoverUrl = ep.coverUrl || "/static/images/episode-light.png";
+      if (ep.coverFileName) {
+        try {
+          signedCoverUrl = await generateSignatureUrl(
+            ep.coverFileName,
+            3600 * 3,
+          );
+        } catch (e) {
+          console.error(`Failed to sign url for episode ${ep.title}`, e);
+          if (ep.coverUrl) signedCoverUrl = ep.coverUrl;
+        }
+      } else if (ep.podcast?.coverFileName) {
+        try {
+          signedCoverUrl = await generateSignatureUrl(
+            ep.podcast.coverFileName,
+            3600 * 3,
+          );
+        } catch (e) {
+          console.error(
+            `Failed to sign url for podcast ${ep.podcast.title}`,
+            e,
+          );
+          if (ep.podcast.coverUrl) signedCoverUrl = ep.podcast.coverUrl;
+        }
+      }
+
+      // 2. 处理音频签名 (播放必须要有有效的音频链接)
+      let signedAudioUrl = ep.audioUrl || "";
+      if (ep.audioFileName) {
+        try {
+          signedAudioUrl = await generateSignatureUrl(
+            ep.audioFileName,
+            3600 * 3,
+          );
+        } catch (e) {
+          console.error("Audio signature failed", e);
+        }
+      }
+
+      if (!signedAudioUrl) return null; // 如果没有音频链接，无法播放
+
+      return {
+        episodeId: ep.episodeid,
+        title: ep.title,
+        author: ep.podcast?.title || "Unknown",
+        audioUrl: signedAudioUrl,
+        coverUrl: signedCoverUrl,
+        progressSeconds: record.progressSeconds,
+        duration: ep.duration,
+      };
+    } catch (error) {
+      console.error("Failed to fetch latest history:", error);
+      return null;
+    }
   },
 };

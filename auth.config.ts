@@ -25,6 +25,7 @@ export const authConfig = {
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
         token.avatarUrl = user.avatarUrl;
+        token.avatarFileName = user.avatarFileName;
       }
 
       // 2. [新增] 处理客户端的 update() 调用
@@ -35,6 +36,8 @@ export const authConfig = {
         // 更新 token 中的字段
         if (session.user.nickname) token.nickname = session.user.nickname;
         if (session.user.avatarUrl) token.avatarUrl = session.user.avatarUrl;
+        if (session.user.avatarFileName)
+          token.avatarFileName = session.user.avatarFileName;
 
         // 如果有其他需要更新的字段，也在这里赋值
       }

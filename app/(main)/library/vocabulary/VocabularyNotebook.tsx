@@ -119,8 +119,34 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   // 播放音频
   const playAudio = (e: React.MouseEvent, url?: string | null) => {
     e.stopPropagation();
-    if (!url) return;
-    new Audio(url).play().catch(console.error);
+    if (!url) {
+      toast.error("暂无发音");
+      return;
+    }
+    try {
+      const audio = new Audio(url);
+
+      // 添加错误监听
+      audio.onerror = (err) => {
+        console.error("Audio playback error:", err);
+        toast.error("播放失败：音频源无效或格式不支持");
+      };
+
+      // 尝试播放
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Play promise rejected:", error);
+          // 很多时候是浏览器的自动播放策略拦截，或者是 404
+          toast.error("播放失败，请检查音频链接");
+        });
+      }
+    } catch (error) {
+      console.error("Audio initialization error:", error);
+      toast.error("音频初始化失败");
+    }
+    // new Audio(url).play().catch(console.error);
   };
 
   // --- 复习模式逻辑 ---
