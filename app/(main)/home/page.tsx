@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
-import HomeClient from "./HomeClient";
+import HomeClient from "@/components/main/home/HomeClient";
 
 // 标记为 Server Component (默认就是)
 export default async function HomePage() {

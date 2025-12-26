@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import PodcastAuthPrompt from "@/components/main/home/podcast-auth-prompt";
-import ResumeButton, { ResumeData } from "./ResumeButton"; // 引入 ResumeButton
+import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton"; // 引入 ResumeButton
 import {
   PlayCircleIcon,
   BoltIcon,
@@ -129,19 +129,26 @@ export default function HomeClient({ user, latestHistory }: HomeClientProps) {
                 你的每日目标是{MOCK_STATS.dailyGoalMins}分钟，还剩
                 {MOCK_STATS.remainingMins}分钟。
               </p>
-
-              {/* [修改] 使用 ResumeButton 替换原来的 button */}
               <ResumeButton latestHistory={latestHistory} />
+            </div>
+            <div className="absolute top-6 right-10">
+              <Image
+                src={
+                  latestHistory?.coverUrl || "/static/images/podcast-light.png"
+                }
+                alt="Podcast"
+                width={516}
+                height={516}
+                className="w-64 h-36 rounded-lg"
+              />
+              <h4 className="p-2">{latestHistory?.title}</h4>
             </div>
           </div>
 
           {/* Mini Stats Card */}
           <div className="md:w-80 bg-base-100 rounded-3xl p-6 shadow-sm border border-base-200 flex flex-col justify-center">
-            {/* ... 保持原有统计卡片代码不变 ... */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-base-content">
-                Weekly Progress
-              </h3>
+              <h3 className="font-semibold text-base-content">每周进度</h3>
               <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full dark:bg-green-900/30 dark:text-green-400">
                 +{MOCK_STATS.weeklyProgress}%
               </span>
@@ -150,7 +157,7 @@ export default function HomeClient({ user, latestHistory }: HomeClientProps) {
               {/* Listening Time */}
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-base-content/60">Listening Time</span>
+                  <span className="text-base-content/60">收听时间</span>
                   <span className="font-medium text-base-content">
                     {MOCK_STATS.listeningTimeCurrent} /{" "}
                     {MOCK_STATS.listeningTimeGoal}h
@@ -168,7 +175,7 @@ export default function HomeClient({ user, latestHistory }: HomeClientProps) {
               {/* Words Learned */}
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-base-content/60">Words Learned</span>
+                  <span className="text-base-content/60">学习单词</span>
                   <span className="font-medium text-base-content">
                     {MOCK_STATS.wordsLearnedCurrent} /{" "}
                     {MOCK_STATS.wordsLearnedGoal}
@@ -191,11 +198,9 @@ export default function HomeClient({ user, latestHistory }: HomeClientProps) {
         {/* Continue Listening Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-base-content">
-              Continue Listening
-            </h2>
+            <h2 className="text-xl font-bold text-base-content">继续收听</h2>
             <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-              View History
+              查看历史
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -244,11 +249,9 @@ export default function HomeClient({ user, latestHistory }: HomeClientProps) {
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-bold text-base-content">
-                Recommended for You
-              </h2>
+              <h2 className="text-xl font-bold text-base-content">推荐给你</h2>
               <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
-                Intermediate
+                中级
               </span>
             </div>
             <button className="p-1 rounded-full hover:bg-base-200 transition-colors">

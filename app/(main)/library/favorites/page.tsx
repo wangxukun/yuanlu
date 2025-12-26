@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { favoritesService } from "@/core/favorites/favorites.service";
-import FavoritesPage from "./FavoritesPage";
+import FavoritesPage from "@/components/main/library/favorites/FavoritesPage";
 import { redirect } from "next/navigation";
 
 export const metadata = {
