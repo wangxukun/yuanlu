@@ -3,9 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import PodcastAuthPrompt from "@/components/main/home/podcast-auth-prompt";
-import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton";
-import UserStatsCard from "@/components/main/home/UserStatsCard"; // [新增]
-import { UserHomeStatsDto } from "@/core/stats/dto"; // [新增]
+import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton"; // 引入 ResumeButton
 import {
   PlayCircleIcon,
   BoltIcon,
@@ -13,10 +11,21 @@ import {
   PlayIcon,
 } from "@heroicons/react/24/solid";
 import { ClockIcon as ClockOutlineIcon } from "@heroicons/react/24/outline";
-import { User } from "next-auth";
+import { User } from "next-auth"; // 引入 NextAuth User 类型
 
 // --- Mock Data ---
-// 仅保留不需要数据库的静态推荐数据 (Podcast部分暂不属于本次重构范围)
+// (保留原来的 MOCK 数据)
+const MOCK_STATS = {
+  streakDays: 12,
+  dailyGoalMins: 30,
+  remainingMins: 15,
+  weeklyProgress: 12,
+  listeningTimeCurrent: 4.5,
+  listeningTimeGoal: 5,
+  wordsLearnedCurrent: 42,
+  wordsLearnedGoal: 50,
+};
+
 const MOCK_RECENT_PODCASTS = [
   {
     id: "1",
@@ -77,16 +86,12 @@ const MOCK_RECOMMENDED_PODCASTS = [
 ];
 
 interface HomeClientProps {
-  user?: User;
-  latestHistory: ResumeData | null;
-  userStats: UserHomeStatsDto | null; // [新增] 接收真实统计数据
+  user?: User; // 从服务端传递 User 对象
+  latestHistory: ResumeData | null; // 从服务端传递历史记录
 }
 
-export default function HomeClient({
-  user,
-  latestHistory,
-  userStats,
-}: HomeClientProps) {
+export default function HomeClient({ user, latestHistory }: HomeClientProps) {
+  // 如果没有 user，显示引导页
   if (!user) {
     return <PodcastAuthPrompt />;
   }
@@ -100,18 +105,7 @@ export default function HomeClient({
 
   const onPlayPodcast = (id: string) => {
     console.log("Play podcast:", id);
-  };
-
-  // 兜底数据：如果服务端获取失败，至少不让页面崩，显示 0
-  const stats = userStats || {
-    streakDays: 0,
-    dailyGoalMins: 30,
-    remainingMins: 30,
-    weeklyProgress: 0,
-    listeningTimeCurrent: 0,
-    listeningTimeGoal: 5,
-    wordsLearnedCurrent: 0,
-    wordsLearnedGoal: 50,
+    // 这里可以集成播放器逻辑
   };
 
   return (
@@ -129,34 +123,79 @@ export default function HomeClient({
                 {greeting}, {displayName}!
               </h1>
               <p className="text-indigo-100 mb-6 max-w-md text-sm sm:text-base leading-relaxed">
-                你已经连续坚持了<strong>{stats.streakDays}</strong>
+                你已经连续坚持了<strong>{MOCK_STATS.streakDays}</strong>
                 天！继续加油！
                 <br />
-                你的每日目标是{stats.dailyGoalMins}分钟，还剩
-                {stats.remainingMins}分钟。
+                你的每日目标是{MOCK_STATS.dailyGoalMins}分钟，还剩
+                {MOCK_STATS.remainingMins}分钟。
               </p>
               <ResumeButton latestHistory={latestHistory} />
             </div>
-            {latestHistory && (
-              <div className="absolute top-6 right-10 hidden sm:block">
-                <Image
-                  src={
-                    latestHistory.coverUrl || "/static/images/podcast-light.png"
-                  }
-                  alt="Podcast"
-                  width={516}
-                  height={516}
-                  className="w-48 h-28 object-cover rounded-lg shadow-md opacity-90 rotate-3 border-2 border-white/20"
-                />
-              </div>
-            )}
+            <div className="absolute top-6 right-10">
+              <Image
+                src={
+                  latestHistory?.coverUrl || "/static/images/podcast-light.png"
+                }
+                alt="Podcast"
+                width={516}
+                height={516}
+                className="w-64 h-36 rounded-lg"
+              />
+              <h4 className="p-2">{latestHistory?.title}</h4>
+            </div>
           </div>
 
-          {/* Mini Stats Card - 使用提取后的组件 */}
-          <UserStatsCard stats={stats} />
+          {/* Mini Stats Card */}
+          <div className="md:w-80 bg-base-100 rounded-3xl p-6 shadow-sm border border-base-200 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-base-content">每周进度</h3>
+              <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                +{MOCK_STATS.weeklyProgress}%
+              </span>
+            </div>
+            <div className="space-y-4">
+              {/* Listening Time */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-base-content/60">收听时间</span>
+                  <span className="font-medium text-base-content">
+                    {MOCK_STATS.listeningTimeCurrent} /{" "}
+                    {MOCK_STATS.listeningTimeGoal}h
+                  </span>
+                </div>
+                <div className="w-full bg-base-200 rounded-full h-2">
+                  <div
+                    className="bg-indigo-500 h-2 rounded-full"
+                    style={{
+                      width: `${(MOCK_STATS.listeningTimeCurrent / MOCK_STATS.listeningTimeGoal) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+              {/* Words Learned */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-base-content/60">学习单词</span>
+                  <span className="font-medium text-base-content">
+                    {MOCK_STATS.wordsLearnedCurrent} /{" "}
+                    {MOCK_STATS.wordsLearnedGoal}
+                  </span>
+                </div>
+                <div className="w-full bg-base-200 rounded-full h-2">
+                  <div
+                    className="bg-purple-500 h-2 rounded-full"
+                    style={{
+                      width: `${(MOCK_STATS.wordsLearnedCurrent / MOCK_STATS.wordsLearnedGoal) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Continue Listening Section (Mocked for now) */}
+        {/* ... 保留 Continue Listening Section 和 Recommended for You ... */}
+        {/* Continue Listening Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-base-content">继续收听</h2>

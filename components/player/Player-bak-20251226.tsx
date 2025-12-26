@@ -1,10 +1,11 @@
 "use client";
 import { usePlayerStore } from "@/store/player-store";
 import { useEffect, useRef, useCallback } from "react";
-import { debounce } from "lodash"; // [修改] 移除了 throttle
+import { debounce, throttle } from "lodash";
 import { formatTime } from "@/lib/tools";
 import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import PodcastIcon from "@/components/icons/PodcastIcon";
+// import { useTheme } from "next-themes";
 import { useSaveProgress } from "@/lib/hooks/useSaveProgress";
 import Link from "next/link";
 import { incrementPlayCount } from "@/lib/actions/analytics-actions";
@@ -26,11 +27,13 @@ export default function Player() {
     (state) => state.setCurrentAudioUrl,
   );
 
-  const resumeTimeRef = useRef<number | null>(null);
-  const loggedEpisodeIdRef = useRef<string | null>(null);
+  // const { theme } = useTheme();
+  // const logoSrc = theme === "dark" ? "/static/images/podcast-logo-dark.png" : "/static/images/podcast-logo-light.png";
 
-  // [新增] 用于累加未上报的收听时长 (秒)
-  const unsentSecondsRef = useRef<number>(0);
+  const resumeTimeRef = useRef<number | null>(null);
+
+  // 用于防止同一集重复计数的 Ref
+  const loggedEpisodeIdRef = useRef<string | null>(null);
 
   const { saveToBackend } = useSaveProgress({
     episodeId: currentEpisode?.episodeid || "",
@@ -39,72 +42,6 @@ export default function Player() {
     duration,
   });
 
-  // [新增] 核心上报逻辑：发送收听时长到后端
-  const reportListeningTime = useCallback(async (seconds: number) => {
-    if (seconds <= 0) return;
-
-    // 开发环境日志，方便观察心跳
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[PlayerStats] 上报收听时长: +${seconds}s`);
-    }
-
-    try {
-      await fetch("/api/auth/update-activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seconds }), // 发送增量秒数
-        keepalive: true, // 确保页面关闭时请求能发出
-      });
-    } catch (e) {
-      console.error("Failed to report listening time", e);
-    }
-  }, []);
-
-  // [新增] 监听播放状态，进行计时和心跳上报
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isPlaying) {
-      // 1. 开始播放：启动计时器
-      interval = setInterval(() => {
-        unsentSecondsRef.current += 1;
-
-        // 2. 达到阈值 (例如 30秒) 自动上报一次
-        if (unsentSecondsRef.current >= 30) {
-          reportListeningTime(unsentSecondsRef.current);
-          unsentSecondsRef.current = 0;
-        }
-      }, 1000);
-    }
-
-    // 清理函数：当暂停、组件卸载、或 isPlaying 变 false 时触发
-    return () => {
-      clearInterval(interval);
-      // 3. 暂停/停止时：将剩余未上报的时间立即发送
-      if (unsentSecondsRef.current > 0) {
-        reportListeningTime(unsentSecondsRef.current);
-        unsentSecondsRef.current = 0;
-      }
-    };
-  }, [isPlaying, reportListeningTime]);
-
-  // [新增] 页面关闭/刷新前的兜底上报
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (unsentSecondsRef.current > 0) {
-        // 注意：这里不能使用 keepalive 以外的复杂逻辑，直接发请求
-        const blob = new Blob(
-          [JSON.stringify({ seconds: unsentSecondsRef.current })],
-          { type: "application/json" },
-        );
-        navigator.sendBeacon("/api/auth/update-activity", blob);
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  // --- 原有的恢复进度逻辑 ---
   const tryRestoreProgress = useCallback(() => {
     const audio = audioRef.current;
     const targetTime = resumeTimeRef.current;
@@ -155,16 +92,23 @@ export default function Player() {
     fetchEpisodeStatus();
   }, [currentEpisode?.episodeid, setCurrentTime, tryRestoreProgress]);
 
-  // 2. 监听切歌并播放：增加播放量统计 (Total Plays)
+  // 2. 监听切歌并播放：增加播放量统计
   useEffect(() => {
+    // 只有当正在播放且切到了新歌时才记录
+    // 同时也防止同一首歌在暂停/播放切换时重复记录
     if (
       currentEpisode &&
       isPlaying &&
       currentEpisode.episodeid !== loggedEpisodeIdRef.current
     ) {
+      // 触发 Server Action
+      // 这里的 podcastid 可能是直接在 episode 对象上的 foreign key，也可能在 podcast 关联对象里
       const podcastId =
         currentEpisode.podcastid || currentEpisode.podcast?.podcastid || "";
+
       incrementPlayCount(currentEpisode.episodeid, podcastId);
+
+      // 标记当前 ID 已记录
       loggedEpisodeIdRef.current = currentEpisode.episodeid;
     }
   }, [currentEpisode?.episodeid, isPlaying, currentEpisode]);
@@ -261,7 +205,14 @@ export default function Player() {
     tryRestoreProgress,
   ]);
 
-  // [修改] 移除了原有的 throttledActiveUpdate 逻辑，因为现在由上面的 useEffect 接管了
+  const throttledActiveUpdate = useRef(
+    throttle(() => {
+      fetch("/api/auth/update-activity", {
+        method: "POST",
+        keepalive: true,
+      });
+    }, 60000),
+  );
 
   return (
     <div className="flex items-center w-full gap-4 px-2">
@@ -345,15 +296,24 @@ export default function Player() {
 
       <audio
         ref={audioRef}
+        // [修复] 如果 currentAudioUrl 为空字符串，传递 undefined 以避免浏览器请求当前页面
         src={currentAudioUrl || undefined}
         onLoadedData={(e) => {
           setDuration(e.currentTarget.duration);
-          // [修改] 移除了 onLoadedData 里的 fetch 更新，因为没必要刚加载就更新活跃时间，依靠播放时的心跳即可
+          fetch("/api/auth/update-activity", {
+            method: "POST",
+            keepalive: true,
+          });
         }}
         onEnded={() => setCurrentTime(0)}
-        // [修改] 移除了 onTimeUpdate 中的 throttledActiveUpdate
+        onTimeUpdate={() => {
+          throttledActiveUpdate.current();
+        }}
         onPlay={() => {
-          // [修改] 移除了 onPlay 中的 fetch，因为 useEffect 会在 playing 变 true 时自动启动计时器
+          fetch("/api/auth/update-activity", {
+            method: "POST",
+            keepalive: true,
+          });
         }}
         onError={(e) => console.error("音频错误:", e.currentTarget.error)}
       />

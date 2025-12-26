@@ -8,17 +8,17 @@ datasource db {
 }
 
 model User {
-  userid             String               @id @default(cuid())
-  email              String               @unique @db.VarChar(255)
-  password           String               @db.VarChar(255)
-  role               String?              @default("USER") @db.VarChar(50)
-  languagePreference String?              @default("zh-CN") @db.VarChar(50)
-  createAt           DateTime             @default(now()) @db.Timestamptz(6)
-  updateAt           DateTime             @updatedAt @db.Timestamptz(6)
-  isOnline           Boolean              @default(false)
-  lastActiveAt       DateTime?            @db.Timestamptz(6)
-  isCommentAllowed   Boolean              @default(true)
-  emailVerified      DateTime?            @db.Timestamptz(6)
+  userid             String                @id @default(cuid())
+  email              String                @unique @db.VarChar(255)
+  password           String                @db.VarChar(255)
+  role               String?               @default("USER") @db.VarChar(50)
+  languagePreference String?               @default("zh-CN") @db.VarChar(50)
+  createAt           DateTime              @default(now()) @db.Timestamptz(6)
+  updateAt           DateTime              @updatedAt @db.Timestamptz(6)
+  isOnline           Boolean               @default(false)
+  lastActiveAt       DateTime?             @db.Timestamptz(6)
+  isCommentAllowed   Boolean               @default(true)
+  emailVerified      DateTime?             @db.Timestamptz(6)
   achievements       achievements[]
   comments           comments[]
   discussion_threads discussion_threads[]
@@ -34,6 +34,7 @@ model User {
   subscriptions      subscriptions[]
   user_profile       user_profile?
   vocabulary         vocabulary[]
+  daily_activities   user_daily_activity[]
 }
 
 ///用户资料模型，存储用户的个人信息
@@ -362,4 +363,31 @@ model verification_code {
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+/// 用户每日活动统计表
+/// 用于精确追踪每一天的学习时长、活跃状态，支持打卡(Streak)和图表分析
+model user_daily_activity {
+  id     String   @id @default(cuid())
+  userid String
+  date   DateTime @db.Date // 仅存储日期 (YYYY-MM-DD 00:00:00)
+
+  // 当日收听时长 (秒) - 精确累加
+  listeningSeconds Int @default(0)
+
+  // 当日新学单词数 - 可作为缓存字段，也可通过关联查询实时计算，这里建议缓存以提升查询性能
+  wordsLearned Int @default(0)
+
+  // 是否视为“已打卡” (例如收听超过5分钟)
+  isActive Boolean @default(false)
+
+  createAt DateTime @default(now()) @db.Timestamptz(6)
+  updateAt DateTime @updatedAt @db.Timestamptz(6)
+
+  User User @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  // 确保每个用户每天只有一条记录
+  @@unique([userid, date])
+  // 添加索引以便快速查询最近7天/30天的数据
+  @@index([userid, date(sort: Desc)])
 }

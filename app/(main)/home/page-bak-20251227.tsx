@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
-import { statsService } from "@/core/stats/stats.service"; // 引入统计服务
+import { statsService } from "@/core/stats/stats.service";
 import HomeClient from "@/components/main/home/HomeClient";
 
 // 标记为 Server Component
