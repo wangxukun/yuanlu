@@ -74,8 +74,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             avatarUrl = user.user_profile.avatarUrl;
           }
 
-          console.log("avatarUrl:", avatarUrl);
-
           // return JSON object with the user data
           return {
             id: user.userid,

@@ -78,9 +78,9 @@ export default function PersonalCenterPage() {
 
       // 更新本地 Session
       await updateSession({
-        ...session,
+        // ...session,
         user: {
-          ...session?.user,
+          // ...session?.user,
           nickname: result.data.nickname,
           avatarUrl: result.data.avatarUrl,
           avatarFileName: result.data.avatarFileName,

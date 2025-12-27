@@ -47,10 +47,6 @@ export async function uploadFile(
     if (!result.name) {
       throw new Error("文件上传失败");
     }
-    // 生成签名URL
-    // const url = client.signatureUrl(result.name, {
-    //   expires: 3600,
-    // });
 
     return {
       fileUrl: result.url,
