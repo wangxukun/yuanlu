@@ -68,9 +68,14 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
     );
   }
 
+  console.log(
+    "latestHistory progressSeconds : ",
+    latestHistory.progressSeconds,
+  );
   const mins = Math.floor(latestHistory.progressSeconds / 60);
   const secs = latestHistory.progressSeconds % 60;
   const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+  console.log("timeStr: ", timeStr);
 
   return (
     <button

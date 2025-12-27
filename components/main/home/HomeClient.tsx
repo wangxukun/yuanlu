@@ -2,91 +2,32 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import PodcastAuthPrompt from "@/components/main/home/podcast-auth-prompt";
 import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton";
-import UserStatsCard from "@/components/main/home/UserStatsCard"; // [新增]
-import { UserHomeStatsDto } from "@/core/stats/dto"; // [新增]
-import {
-  PlayCircleIcon,
-  BoltIcon,
-  ArrowRightIcon,
-  PlayIcon,
-} from "@heroicons/react/24/solid";
-import { ClockIcon as ClockOutlineIcon } from "@heroicons/react/24/outline";
+import UserStatsCard from "@/components/main/home/UserStatsCard";
+import ContinueListening from "@/components/main/home/ContinueListening";
+import RecommendedPodcasts from "@/components/main/home/RecommendedPodcasts";
+import { UserHomeStatsDto } from "@/core/stats/dto";
+import { RecentHistoryItemDto } from "@/core/listening-history/dto";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import { User } from "next-auth";
-
-// --- Mock Data ---
-// 仅保留不需要数据库的静态推荐数据 (Podcast部分暂不属于本次重构范围)
-const MOCK_RECENT_PODCASTS = [
-  {
-    id: "1",
-    title: "The Daily Life of a Programmer",
-    author: "Tech Talk",
-    progress: 75,
-    thumbnailUrl: "/static/images/podcast-light.png",
-  },
-  {
-    id: "2",
-    title: "Learn English with Movies",
-    author: "English 101",
-    progress: 30,
-    thumbnailUrl: "/static/images/podcast-dark.png",
-  },
-  {
-    id: "3",
-    title: "Global News Roundup",
-    author: "World News",
-    progress: 90,
-    thumbnailUrl: "/static/images/episode-light.png",
-  },
-];
-
-const MOCK_RECOMMENDED_PODCASTS = [
-  {
-    id: "101",
-    title: "Modern History",
-    author: "History Buffs",
-    category: "History",
-    duration: "45 min",
-    thumbnailUrl: "/static/images/episode-dark.png",
-  },
-  {
-    id: "102",
-    title: "Culinary Secrets",
-    author: "Chef Gordon",
-    category: "Food",
-    duration: "32 min",
-    thumbnailUrl: "/static/images/podcast-light.png",
-  },
-  {
-    id: "103",
-    title: "Space Exploration",
-    author: "NASA Fan",
-    category: "Science",
-    duration: "58 min",
-    thumbnailUrl: "/static/images/podcast-dark.png",
-  },
-  {
-    id: "104",
-    title: "Mindfulness 101",
-    author: "Peaceful Mind",
-    category: "Health",
-    duration: "20 min",
-    thumbnailUrl: "/static/images/episode-light.png",
-  },
-];
 
 interface HomeClientProps {
   user?: User;
   latestHistory: ResumeData | null;
-  userStats: UserHomeStatsDto | null; // [新增] 接收真实统计数据
+  userStats: UserHomeStatsDto | null;
+  recentHistory: RecentHistoryItemDto[]; // [新增]
 }
 
 export default function HomeClient({
   user,
   latestHistory,
   userStats,
+  recentHistory,
 }: HomeClientProps) {
+  const router = useRouter();
+
   if (!user) {
     return <PodcastAuthPrompt />;
   }
@@ -99,10 +40,10 @@ export default function HomeClient({
     currentHour < 12 ? "早上好" : currentHour < 18 ? "下午好" : "晚上好";
 
   const onPlayPodcast = (id: string) => {
-    console.log("Play podcast:", id);
+    // 路由到播放页
+    router.push(`/episode/${id}`);
   };
 
-  // 兜底数据：如果服务端获取失败，至少不让页面崩，显示 0
   const stats = userStats || {
     streakDays: 0,
     dailyGoalMins: 30,
@@ -119,7 +60,6 @@ export default function HomeClient({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {/* Welcome & Stats Hero */}
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Welcome Section */}
           <div className="flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20">
             <div className="absolute top-0 right-0 p-8 opacity-10">
               <BoltIcon className="w-32 h-32" />
@@ -151,113 +91,14 @@ export default function HomeClient({
               </div>
             )}
           </div>
-
-          {/* Mini Stats Card - 使用提取后的组件 */}
           <UserStatsCard stats={stats} />
         </div>
 
-        {/* Continue Listening Section (Mocked for now) */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-base-content">继续收听</h2>
-            <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-              查看历史
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_RECENT_PODCASTS.map((podcast) => (
-              <div
-                key={podcast.id}
-                className="bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer flex items-center space-x-4 group"
-                onClick={() => onPlayPodcast(podcast.id)}
-              >
-                <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-base-300">
-                  <Image
-                    src={podcast.thumbnailUrl}
-                    alt={podcast.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <PlayCircleIcon className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-base-content line-clamp-2 mb-1">
-                    {podcast.title}
-                  </h3>
-                  <p className="text-xs text-base-content/60 mb-2">
-                    {podcast.author}
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 h-1 bg-base-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-indigo-500 rounded-full"
-                        style={{ width: `${podcast.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-[10px] text-base-content/40 font-medium">
-                      {podcast.progress}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* Continue Listening Section - 传入剩余的历史记录 */}
+        <ContinueListening history={recentHistory} onPlay={onPlayPodcast} />
 
         {/* Recommended for You */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-bold text-base-content">推荐给你</h2>
-              <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
-                中级
-              </span>
-            </div>
-            <button className="p-1 rounded-full hover:bg-base-200 transition-colors">
-              <ArrowRightIcon className="w-5 h-5 text-base-content/40" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {MOCK_RECOMMENDED_PODCASTS.map((podcast) => (
-              <div key={podcast.id} className="group flex flex-col">
-                <div className="relative aspect-square mb-3 overflow-hidden rounded-xl bg-base-200">
-                  <Image
-                    src={podcast.thumbnailUrl}
-                    alt={podcast.title}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md flex items-center">
-                    <ClockOutlineIcon className="w-3 h-3 mr-1" />
-                    {podcast.duration}
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <button
-                      onClick={() => onPlayPodcast(podcast.id)}
-                      className="bg-white/90 text-indigo-600 rounded-full p-3 shadow-lg hover:scale-110 transition-transform border-none"
-                    >
-                      <PlayIcon className="w-8 h-8 fill-indigo-600 text-indigo-600 ml-0.5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-                    {podcast.category}
-                  </span>
-                  <h3 className="font-bold text-base-content leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                    {podcast.title}
-                  </h3>
-                  <p className="text-sm text-base-content/60">
-                    {podcast.author}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <RecommendedPodcasts onPlay={onPlayPodcast} />
       </div>
     </div>
   );

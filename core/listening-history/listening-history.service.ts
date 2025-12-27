@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss";
-import { ListeningHistoryItem } from "./dto";
+import { ListeningHistoryItem, RecentHistoryItemDto } from "./dto";
 
 // 简单的秒转时间字符串辅助函数
 const formatDuration = (seconds: number) => {
@@ -211,5 +211,91 @@ export const listeningHistoryService = {
       console.error("Failed to fetch latest history:", error);
       return null;
     }
+  },
+
+  /**
+   * 获取用户最近的听播历史 (用于首页/个人中心概览)
+   * @param userId 用户ID
+   * @param limit 条数限制，默认为 3
+   */
+  async getRecentHistory(
+    userId: string,
+    limit: number = 4, // 默认为4（1个给Banner，3个给列表）
+  ): Promise<RecentHistoryItemDto[]> {
+    const historyList = await prisma.listening_history.findMany({
+      where: {
+        userid: userId,
+      },
+      orderBy: {
+        listenAt: Prisma.SortOrder.desc, // 按收听时间倒序
+      },
+      take: limit,
+      include: {
+        episode: {
+          select: {
+            episodeid: true,
+            title: true,
+            coverUrl: true,
+            coverFileName: true, // 查询文件名用于签名
+            audioFileName: true,
+            duration: true,
+            podcast: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return Promise.all(
+      historyList.map(async (item) => {
+        const duration = item.episode?.duration || 0;
+        // 计算进度百分比
+        let progress = 0;
+        if (item.isFinished) {
+          progress = 100;
+        } else if (duration > 0) {
+          progress = Math.min(
+            100,
+            Math.round((item.progressSeconds / duration) * 100),
+          );
+        }
+
+        // [新增] 处理封面签名
+        let coverUrl =
+          item.episode?.coverUrl || "/static/images/default_cover_url.png";
+        if (item.episode?.coverFileName) {
+          coverUrl = await generateSignatureUrl(
+            item.episode.coverFileName,
+            3600 * 3,
+          );
+        }
+        let audioUrl = "";
+        if (item.episode?.audioFileName) {
+          audioUrl = await generateSignatureUrl(
+            item.episode.audioFileName,
+            3600 * 3,
+          );
+        }
+
+        return {
+          historyId: item.historyid,
+          episodeId: item.episodeid || "",
+          title: item.episode?.title || "未知剧集",
+          audioUrl,
+          coverUrl,
+          progress,
+          progressSeconds: item.progressSeconds,
+          duration,
+          listenAt: item.listenAt
+            ? item.listenAt.toISOString()
+            : new Date().toISOString(),
+          isFinished: item.isFinished,
+          author: item.episode?.podcast?.title || "未知播客",
+        };
+      }),
+    );
   },
 };

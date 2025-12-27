@@ -18,3 +18,18 @@ export interface ListeningHistoryItem {
   isFinished: boolean;
   episode: HistoryEpisode;
 }
+
+// 用于前端展示的最近历史DTO接口
+export interface RecentHistoryItemDto {
+  historyId: number;
+  episodeId: string;
+  title: string;
+  coverUrl: string;
+  audioUrl: string;
+  progress: number; // 进度百分比 (0-100)
+  progressSeconds: number;
+  duration: number;
+  listenAt: string; // ISO String
+  isFinished: boolean;
+  author: string; // 播客名称／作者
+}

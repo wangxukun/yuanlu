@@ -1,68 +1,119 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  PlayCircleIcon,
-  EllipsisHorizontalIcon,
-} from "@heroicons/react/24/outline";
-import { MOCK_RECENT_PODCASTS } from "./mock-data";
+import Link from "next/link"; // 用于路由跳转
+import { PlayCircleIcon } from "@heroicons/react/24/solid";
+import { RecentHistoryItemDto } from "@/core/listening-history/dto";
+import { useRouter } from "next/navigation";
 
 export default function RecentHistory() {
+  const [history, setHistory] = useState<RecentHistoryItemDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch("/api/user/history/recent");
+        if (res.ok) {
+          const data = await res.json();
+          setHistory(data);
+        }
+      } catch (error) {
+        console.error("Error fetching recent history:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  // 点击"查看全部"跳转
+  const handleViewAll = () => {
+    router.push("/library/history");
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-base-100 p-6 rounded-2xl shadow-sm border border-base-200 animate-pulse">
+        <div className="h-6 bg-base-200 w-1/3 rounded mb-6"></div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 bg-base-200 rounded-xl"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-      <div className="p-6 border-b border-base-200 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-base-content">最近听过</h3>
-        <button className="text-sm text-primary hover:text-primary-focus font-medium">
+    <div className="bg-base-100 p-6 rounded-2xl shadow-sm border border-base-200">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold text-base-content">最近播放</h3>
+        {/* 查看全部按钮 */}
+        <button
+          onClick={handleViewAll}
+          className="text-sm font-medium text-primary hover:underline cursor-pointer transition-colors"
+        >
           查看全部
         </button>
       </div>
-      <div className="divide-y divide-base-200">
-        {MOCK_RECENT_PODCASTS.map((podcast) => (
-          <div
-            key={podcast.id}
-            className="p-4 flex items-center hover:bg-base-200/50 transition-colors group"
-          >
-            <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-base-300">
-              <Image
-                src={podcast.thumbnailUrl}
-                alt={podcast.title}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                <PlayCircleIcon className="w-8 h-8 text-white" />
-              </div>
-            </div>
 
-            <div className="ml-4 flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-base-content truncate">
-                {podcast.title}
-              </h4>
-              <p className="text-sm text-base-content/60 mb-1">
-                {podcast.author}
-              </p>
-
-              {/* Progress Bar */}
-              <div className="flex items-center space-x-3">
-                <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${podcast.progress}%` }}
-                  ></div>
+      {history.length === 0 ? (
+        <div className="text-center py-8 text-base-content/50 text-sm">
+          暂无播放记录，去听听看吧！
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {history.map((item) => (
+            <div
+              key={item.historyId}
+              className="group flex items-center gap-4 p-3 rounded-xl hover:bg-base-200/50 transition-colors border border-transparent hover:border-base-200"
+            >
+              {/* Cover & Play Button */}
+              <div className="relative w-16 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-base-300">
+                <Image
+                  src={item.coverUrl}
+                  alt={item.title}
+                  fill
+                  className="object-cover group-hover:opacity-80 transition-opacity"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Link href={`/episode/${item.episodeId}`}>
+                    <PlayCircleIcon className="w-8 h-8 text-white drop-shadow-md" />
+                  </Link>
                 </div>
-                <span className="text-xs text-base-content/40 font-medium w-8 text-right">
-                  {podcast.progress === 100 ? "Done" : `${podcast.progress}%`}
-                </span>
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-base-content truncate">
+                  <Link
+                    href={`/episode/${item.episodeId}`}
+                    className="hover:text-primary"
+                  >
+                    {item.title}
+                  </Link>
+                </h4>
+                <div className="flex items-center gap-3 mt-1.5">
+                  {/* Progress Bar */}
+                  <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${item.progress}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs text-base-content/50 tabular-nums">
+                    {item.isFinished ? "已听完" : `${item.progress}%`}
+                  </span>
+                </div>
               </div>
             </div>
-
-            <div className="ml-4 flex-shrink-0">
-              <button className="p-2 text-base-content/40 hover:text-base-content hover:bg-base-200 rounded-full transition-colors">
-                <EllipsisHorizontalIcon className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

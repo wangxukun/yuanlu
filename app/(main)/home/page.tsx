@@ -1,41 +1,63 @@
 import { auth } from "@/auth";
-import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
-import { statsService } from "@/core/stats/stats.service"; // 引入统计服务
 import HomeClient from "@/components/main/home/HomeClient";
+import { statsService } from "@/core/stats/stats.service";
+import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
+import { ResumeData } from "@/components/main/home/ResumeButton";
+import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 
-// 标记为 Server Component
 export default async function HomePage() {
   const session = await auth();
-  const userId = session?.user?.userid;
+  const user = session?.user;
 
-  // 1. 【并行启动请求】
-  // Promise 创建即开始执行，互不阻塞。
-  // 我们手动处理 userId 为空的情况，返回 Promise.resolve(null)
-  const historyPromise = userId
-    ? listeningHistoryService.getLatestHistory(userId).catch((e) => {
-        console.error("Fetch history failed", e);
-        return null;
-      })
-    : Promise.resolve(null);
+  let latestHistory: ResumeData | null = null;
+  // [新增] 用于继续收听列表的数据
+  let recentHistoryList: RecentHistoryItemDto[] = [];
+  let userStats = null;
 
-  const statsPromise = userId
-    ? statsService.getUserHomeStats(userId).catch((e) => {
+  if (user?.userid) {
+    const statsPromise = statsService
+      .getUserHomeStats(user.userid)
+      .catch((e) => {
         console.error("Fetch stats failed", e);
         return null;
-      })
-    : Promise.resolve(null);
+      });
 
-  // 2. 【分别等待结果】
-  // TypeScript 能完美推断每个变量的具体类型，不会混淆。
-  // 并且因为请求已经在上面同时发出了，这里 await 的总耗时依然取决于最慢的那个请求（并行效果）。
-  const latestHistory = await historyPromise;
-  const userStats = await statsPromise;
+    // 获取前 4 条记录
+    const historyPromise = listeningHistoryService
+      .getRecentHistory(user.userid, 4)
+      .catch((e) => {
+        console.error("Fetch history failed", e);
+        return [];
+      });
+
+    userStats = await statsPromise;
+    const history = await historyPromise;
+
+    if (history.length > 0) {
+      // 1. 第一条给 Welcome Section 的 ResumeButton
+      const first = history[0];
+      latestHistory = {
+        episodeId: first.episodeId,
+        title: first.title,
+        coverUrl: first.coverUrl,
+        audioUrl: first.audioUrl,
+        progress: first.progress,
+        progressSeconds: first.progressSeconds, // ResumeButton 需要秒数
+        duration: first.duration,
+      } as unknown as ResumeData;
+
+      // 2. 剩余的给 ContinueListening 组件
+      recentHistoryList = history.slice(1);
+      console.log("recentHistoryList", recentHistoryList);
+    }
+  }
 
   return (
     <HomeClient
-      user={session?.user}
+      user={user}
       latestHistory={latestHistory}
       userStats={userStats}
+      recentHistory={recentHistoryList} // [新增] 传递剩余历史记录
     />
   );
 }
