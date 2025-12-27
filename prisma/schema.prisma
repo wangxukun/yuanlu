@@ -44,21 +44,24 @@ model User {
 /// 当用户被删除时，其个人资料也会被级联删除。
 model user_profile {
   /// 用户ID，作为主键，与 User 模型的 userid 字段关联
-  userid         String  @id
+  userid                   String  @id
   /// 用户昵称，最大长度255个字符，可为空
-  nickname       String? @db.VarChar(255)
+  nickname                 String? @db.VarChar(255)
   /// 用户头像URL地址，默认值为"default_avatar_url"，最大长度255个字符，可为空
-  avatarUrl      String? @default("default_avatar_url") @db.VarChar(255)
+  avatarUrl                String? @default("default_avatar_url") @db.VarChar(255)
   /// 头像文件名，用于本地存储时的文件标识，最大长度255个字符，可为空
-  avatarFileName String? @db.VarChar(255)
+  avatarFileName           String? @db.VarChar(255)
   /// 用户个人简介或签名，可为空
-  bio            String?
+  bio                      String?
   /// 用户学习等级标识，最大长度50个字符，可为空
-  learnLevel     String? @db.VarChar(50)
+  learnLevel               String? @db.VarChar(50)
+  dailyStudyGoalMins       Int     @default(30) // 每日学习时长目标 (分钟)
+  weeklyListeningGoalHours Int     @default(5) // 每周收听时长目标 (小时)
+  weeklyWordsGoal          Int     @default(50) // 每周单词学习目标 (个)
   /// 关联的用户基础信息，通过 userid 字段与 User 模型建立外键关系
   /// 删除策略为级联删除（当用户被删除时，个人资料也会被删除）
   /// 更新策略为无操作（当用户ID更新时，不执行任何操作）
-  User           User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  User                     User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model achievements {
@@ -209,7 +212,7 @@ model learning_paths {
 /// - userid:关联的用户ID
 /// - episodeid: 关联的剧集ID
 /// - listenAt: 开始收听的时间，默认为当前时间
-/// - progressSeconds: 已收听的秒数，用于断点续传功能
+/// - progressSeconds: 已收听的秒数，用于断点续传功能// <--- [修复关键点] 传入 userStats
 /// - isFinished: 标识是否已完成收听/// - episode: 关联的剧集对象
 /// - User: 关联的用户对象
 /// 

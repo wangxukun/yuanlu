@@ -26,8 +26,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
         body: JSON.stringify(data),
       });
       if (res.ok) {
-        const result = await res.json();
-        console.log("User updated successfully:", result);
+        await res.json();
         alert("用户更新成功！");
       } else {
         const error = await res.json();

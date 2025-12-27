@@ -2,10 +2,14 @@ import { User } from "@/core/user/user.entity";
 
 export interface UserProfile {
   userid: string;
-  nickName: string;
+  nickname: string;
   avatarUrl: string;
   avatarFileName: string;
   bio: string;
   learnLevel: string;
-  user: User;
+  joinDate: string;
+  dailyStudyGoalMins: number;
+  weeklyListeningGoalHours: number;
+  weeklyWordsGoal: number;
+  user: User | undefined;
 }

@@ -82,10 +82,17 @@ export const statsService = {
       this.getWeeklyListeningSeconds(userId, subWeeks(now, 1)),
       this.getWeeklyWordsCount(userId, now),
     ]);
-
+    const userProfilePromise = prisma.user_profile.findUnique({
+      where: { userid: userId },
+      select: {
+        dailyStudyGoalMins: true,
+        weeklyListeningGoalHours: true,
+        weeklyWordsGoal: true,
+      },
+    });
     const activityPromise = this.getTodayActivity(userId);
 
-    // 2. 【分别等待结果】
+    // 【分别等待结果】
     // 这种写法彻底避开了 Promise.all 对混合类型的推断报错
     // 因为 numbersPromise 和 activityPromise 已经在后台并行跑了，所以这里分别 await 不会降低速度
     const [
@@ -94,11 +101,15 @@ export const statsService = {
       lastWeekListeningSeconds,
       thisWeekWordsCount,
     ] = await numbersPromise;
-
+    const userProfile = await userProfilePromise;
     const todayActivity = await activityPromise;
 
-    // 计算逻辑
-    const dailyGoalMins = 30;
+    // 2. 确定目标值 (优先使用用户配置，否则使用默认值)
+    const dailyGoalMins = userProfile?.dailyStudyGoalMins || 20;
+    const listeningTimeGoal = userProfile?.weeklyListeningGoalHours || 2;
+    const wordsLearnedGoal = userProfile?.weeklyWordsGoal || 50;
+
+    // 3. 计算逻辑
     const todaySeconds = todayActivity?.listeningSeconds || 0;
     const todayMins = Math.floor(todaySeconds / 60);
     const remainingMins = Math.max(0, dailyGoalMins - todayMins);
@@ -106,7 +117,6 @@ export const statsService = {
     const listeningTimeCurrent = parseFloat(
       (thisWeekListeningSeconds / 3600).toFixed(1),
     );
-    const listeningTimeGoal = 5;
 
     let weeklyProgress = 0;
     if (lastWeekListeningSeconds > 0) {
@@ -127,7 +137,7 @@ export const statsService = {
       listeningTimeCurrent,
       listeningTimeGoal,
       wordsLearnedCurrent: thisWeekWordsCount,
-      wordsLearnedGoal: 50,
+      wordsLearnedGoal,
     };
   },
 
