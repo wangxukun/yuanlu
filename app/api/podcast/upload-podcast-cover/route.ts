@@ -3,7 +3,7 @@
  * 上传文件到OSS并返回上传文件的URL
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getBucketAcl, uploadFile } from "@/lib/oss";
+import { uploadFile } from "@/lib/oss";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const fileName = `yuanlu/podcastes/covers/${timestamp}_${Math.random().toString(36).substring(2)}.${coverFile.name.split(".").pop()}`;
     const { fileUrl: coverUrl } = await uploadFile(buffer, fileName);
-    await getBucketAcl();
+    // await getBucketAcl();
 
     return NextResponse.json({
       message: "图片上传成功",
