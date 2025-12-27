@@ -7,7 +7,11 @@ import {
   subDays,
   isSameDay,
 } from "date-fns";
-import { UpdateUserActivityDto, UserHomeStatsDto } from "./dto";
+import {
+  UpdateUserActivityDto,
+  UserHomeStatsDto,
+  UserProfileStatsDto,
+} from "./dto";
 import { Prisma } from "@prisma/client";
 
 export const statsService = {
@@ -67,6 +71,33 @@ export const statsService = {
         });
       }
     });
+  },
+
+  /**
+   * 获取个人中心概览统计数据 (总时长、连续天数、总词汇)
+   */
+  async getUserProfileStats(userId: string): Promise<UserProfileStatsDto> {
+    // 并行查询以提高性能
+    const [streakDays, totalSecondsResult, wordsCount] = await Promise.all([
+      this.calculateStreak(userId),
+      prisma.user_daily_activity.aggregate({
+        where: { userid: userId },
+        _sum: { listeningSeconds: true },
+      }),
+      prisma.vocabulary.count({
+        where: { userid: userId },
+      }),
+    ]);
+
+    // 计算总小时数 (四舍五入)
+    const totalListeningSeconds = totalSecondsResult._sum.listeningSeconds || 0;
+    const totalHours = Math.round(totalListeningSeconds / 3600);
+
+    return {
+      totalHours,
+      streakDays,
+      wordsLearned: wordsCount,
+    };
   },
 
   /**

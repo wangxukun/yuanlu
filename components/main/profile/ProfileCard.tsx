@@ -45,7 +45,7 @@ export default function ProfileCard({
           {profile.nickname || "User"}
         </h1>
         <p className="text-sm font-medium bg-primary/10 text-primary py-1 px-3 rounded-full inline-block mt-2">
-          {profile.learnLevel} 用户
+          {profile.learnLevel}
         </p>
 
         <p className="mt-4 text-base-content/70 text-sm leading-relaxed px-4">

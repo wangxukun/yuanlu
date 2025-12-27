@@ -17,3 +17,10 @@ export interface UserHomeStatsDto {
   wordsLearnedCurrent: number;
   wordsLearnedGoal: number;
 }
+
+// 个人中心概览统计数据
+export interface UserProfileStatsDto {
+  totalHours: number;
+  streakDays: number;
+  wordsLearned: number;
+}
