@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { generateSignatureUrl, getBucketAcl, uploadFile } from "@/lib/oss";
+import { generateSignatureUrl, uploadFile } from "@/lib/oss";
 
 // --- Types ---
 // 定义 ProfileData 接口以包含学习目标
@@ -100,7 +100,6 @@ export async function PUT(req: Request) {
       const fileName = `yuanlu/avatar/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
 
       const { fileUrl: avatarUrl } = await uploadFile(buffer, fileName);
-      await getBucketAcl();
 
       updateData.avatarFileName = fileName;
       updateData.avatarUrl = avatarUrl;

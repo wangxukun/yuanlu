@@ -83,6 +83,7 @@ export default function PersonalCenterPage() {
           ...session?.user,
           nickname: result.data.nickname,
           avatarUrl: result.data.avatarUrl,
+          avatarFileName: result.data.avatarFileName,
         },
       });
 

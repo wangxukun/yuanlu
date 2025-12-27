@@ -17,16 +17,19 @@ if (
   !config.accessKeySecret ||
   !config.bucket
 ) {
-  throw new Error("请检查环境变量是否正确设置");
+  // 注意：在构建阶段 Next.js 可能会预执行代码，这里可以加个非空判断防止 build 失败
+  if (process.env.NODE_ENV !== "production") {
+    console.warn("OSS环境变量未设置，OSS功能将不可用");
+  }
 }
 
 const client = new OSS(config);
 
 // 获取存储空间的访问权限。
-export async function getBucketAcl() {
-  const result = await client.getBucketACL(process.env.OSS_BUCKET as string);
-  console.log(`${process.env.OSS_BUCKET} acl: `, result.acl);
-}
+// export async function getBucketAcl() {
+//   const result = await client.getBucketACL(process.env.OSS_BUCKET as string);
+//   console.log(`${process.env.OSS_BUCKET} acl: `, result.acl);
+// }
 
 // 上传文件
 export async function uploadFile(
@@ -39,7 +42,6 @@ export async function uploadFile(
     fileContent = Buffer.from(arrayBuffer);
   }
   try {
-    console.log(process.env.OSS_ACCESS_KEY_ID);
     const result = await client.put(uniqueFilename, fileContent);
 
     if (!result.name) {
