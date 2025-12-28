@@ -147,6 +147,8 @@ model episode {
   status             String?              @default("unpublished") @db.VarChar(50)
   isExclusive        Boolean?             @default(false)
   isCommentEnabled   Boolean?             @default(true)
+  // [新增] CEFR 难度等级 (e.g. A1, A2, B1, B2, C1, C2, General)
+  difficulty         String?              @default("General") @db.VarChar(50)
   comments           comments[]
   discussion_threads discussion_threads[]
   podcast            podcast?             @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)

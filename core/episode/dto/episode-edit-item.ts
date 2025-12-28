@@ -10,5 +10,6 @@ export interface EpisodeEditItem {
   isExclusive: boolean;
   publishAt: string;
   status: string;
+  difficulty: string | null;
   tags: Tag[];
 }

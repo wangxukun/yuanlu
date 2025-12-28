@@ -13,7 +13,8 @@ export async function POST(request: Request) {
       publishAt,
       podcastId,
       isExclusive,
-      // [新增] 接收标签名数组 ["Business", "Tech"]
+      difficulty,
+      // 接收标签名数组 ["Business", "Tech"]
       tags,
     } = body;
 
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
         title,
         description,
         status,
+        difficulty,
         publishAt: publishAt ? new Date(publishAt) : undefined,
         podcastid: podcastId,
         isExclusive: isExclusive === "on" || isExclusive === true,

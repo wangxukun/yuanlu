@@ -23,6 +23,16 @@ import { redirect } from "next/navigation";
 import { Podcast } from "@/core/podcast/podcast.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// 定义难度选项常量
+const DIFFICULTY_OPTIONS = [
+  { value: "General", label: "通用 (General)" },
+  { value: "A1", label: "入门 (A1)" },
+  { value: "A2", label: "初级 (A2)" },
+  { value: "B1", label: "中级 (B1)" },
+  { value: "B2", label: "中高级 (B2)" },
+  { value: "C1", label: "高级 (C1)" },
+  { value: "C2", label: "精通 (C2)" },
+];
 
 export default function EpisodeForm() {
   const [title, setTitle] = useState<string>(""); // 标题
@@ -258,6 +268,26 @@ export default function EpisodeForm() {
             required
           />
         </div>
+
+        {/* Difficulty Select */}
+        <div className="flex flex-row">
+          <div className="flex items-center justify-center mr-4 gap-2">
+            <span className="text-red-500">*</span>
+            <span className="font-semibold">难度等级</span>
+          </div>
+          <select
+            name="difficulty"
+            className="select select-success"
+            defaultValue="General"
+          >
+            {DIFFICULTY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
             <span className="text-red-500">*</span>
@@ -317,6 +347,7 @@ export default function EpisodeForm() {
             required
           />
         </div>
+
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
             <span className="text-red-500">*</span>
@@ -330,6 +361,7 @@ export default function EpisodeForm() {
           {/* 添加隐藏字段来传递集合id */}
           <input type="hidden" name="podcastId" value={podcastId} />
         </div>
+
         <div className="flex flex-row">
           <div className="flex items-center justify-center m-6 ml-3">
             <span className="font-semibold">付费订阅</span>

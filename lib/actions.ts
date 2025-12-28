@@ -287,6 +287,7 @@ export async function createEpisode(
     const publishStatus = formData.get("publishStatus") as string;
     const isExclusive = formData.get("isExclusive") === "on";
     const publishDate = formData.get("publishDate") as string;
+    const difficulty = formData.get("difficulty") as string | null;
     const tags = formData.getAll("tags") as string[];
     const podcastId = formData.get("podcastId") as string;
     const uploaderId = session?.user?.userid;
@@ -339,6 +340,7 @@ export async function createEpisode(
         publishAt: new Date(publishDate),
         duration: audioDuration,
         status: publishStatus,
+        difficulty: difficulty || "General",
         uploaderid: uploaderId,
         tags: tagsConnect
           ? {

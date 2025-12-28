@@ -11,6 +11,17 @@ import { Tag } from "@/core/tag/tag.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+// 常量定义
+const DIFFICULTY_OPTIONS = [
+  { value: "General", label: "通用 (General)" },
+  { value: "A1", label: "入门 (A1)" },
+  { value: "A2", label: "初级 (A2)" },
+  { value: "B1", label: "中级 (B1)" },
+  { value: "B2", label: "中高级 (B2)" },
+  { value: "C1", label: "高级 (C1)" },
+  { value: "C2", label: "精通 (C2)" },
+];
+
 interface Props {
   episode: EpisodeEditItem;
 }
@@ -28,6 +39,8 @@ export default function EpisodeEditForm({ episode }: Props) {
       : "",
   );
   const [isExclusive, setIsExclusive] = useState(episode.isExclusive || false);
+  // [新增]
+  const [difficulty, setDifficulty] = useState(episode.difficulty || "General");
   const [podcastId, setPodcastId] = useState(episode.podcastid || "");
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
 
@@ -78,6 +91,7 @@ export default function EpisodeEditForm({ episode }: Props) {
           publishAt: publishDate,
           podcastId,
           isExclusive,
+          difficulty,
           tags: selectedTags, // [修改] 提交标签名数组
         }),
       });
@@ -137,6 +151,26 @@ export default function EpisodeEditForm({ episode }: Props) {
             onChange={setSelectedTags}
             maxSelected={10}
           />
+        </div>
+      </div>
+
+      {/* Difficulty Field */}
+      <div className="flex flex-row items-center">
+        <label className="w-24 font-semibold text-right mr-4">难度等级</label>
+        <div className="flex-1">
+          <div className="relative w-80">
+            <select
+              className="select select-success"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+            >
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

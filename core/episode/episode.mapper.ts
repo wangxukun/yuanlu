@@ -67,6 +67,7 @@ export class EpisodeMapper {
       isExclusive: e.isExclusive,
       publishAt: e.publishAt,
       status: e.status,
+      difficulty: e.difficulty,
       tags: e.tags,
     };
   }

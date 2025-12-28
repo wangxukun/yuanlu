@@ -42,6 +42,7 @@ export const episodeRepository = {
         status: true,
         isExclusive: true,
         isCommentEnabled: true,
+        difficulty: true,
         podcast: {
           select: {
             podcastid: true,
@@ -79,6 +80,7 @@ export const episodeRepository = {
         isCommentEnabled: true,
         uploaderid: true,
         updateAt: true,
+        difficulty: true,
         episode_favorites: {
           select: {
             userid: true,

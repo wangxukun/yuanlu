@@ -25,6 +25,7 @@ export interface Episode {
   uploaderid: string;
   isCommentEnabled: boolean;
   playCount: number;
+  difficulty: string | null;
   podcast: Podcast;
   tags: Tag[];
   vocabulary: Vocabulary[];
