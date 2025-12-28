@@ -12,12 +12,15 @@ import { UserHomeStatsDto } from "@/core/stats/dto";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { User } from "next-auth";
+import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 
 interface HomeClientProps {
   user?: User;
   latestHistory: ResumeData | null;
   userStats: UserHomeStatsDto | null;
-  recentHistory: RecentHistoryItemDto[]; // [新增]
+  recentHistory: RecentHistoryItemDto[];
+  recommendedEpisodes: RecommendedEpisodeDto[];
+  recommendedLevel: string;
 }
 
 export default function HomeClient({
@@ -25,6 +28,8 @@ export default function HomeClient({
   latestHistory,
   userStats,
   recentHistory,
+  recommendedEpisodes,
+  recommendedLevel,
 }: HomeClientProps) {
   const router = useRouter();
 
@@ -100,7 +105,11 @@ export default function HomeClient({
         <ContinueListening history={recentHistory} onPlay={onPlayPodcast} />
 
         {/* Recommended for You */}
-        <RecommendedPodcasts onPlay={onPlayPodcast} />
+        <RecommendedPodcasts
+          episodes={recommendedEpisodes}
+          level={recommendedLevel}
+          onPlay={onPlayPodcast}
+        />
       </div>
     </div>
   );

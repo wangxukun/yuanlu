@@ -4,15 +4,22 @@ import { statsService } from "@/core/stats/stats.service";
 import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
 import { ResumeData } from "@/components/main/home/ResumeButton";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
+import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
+import { episodeService } from "@/core/episode/episode.service";
 
 export default async function HomePage() {
   const session = await auth();
   const user = session?.user;
 
   let latestHistory: ResumeData | null = null;
-  // [新增] 用于继续收听列表的数据
+  // 用于继续收听列表的数据
   let recentHistoryList: RecentHistoryItemDto[] = [];
   let userStats = null;
+  // 推荐数据
+  let recommendedData = {
+    level: "General",
+    items: [] as RecommendedEpisodeDto[],
+  };
 
   if (user?.userid) {
     const statsPromise = statsService
@@ -30,10 +37,15 @@ export default async function HomePage() {
         return [];
       });
 
+    const recommendedPromise = episodeService
+      .getRecommendedEpisodes(user.userid) // 获取推荐
+      .catch(() => ({ level: "General", items: [] }));
+
     userStats = await statsPromise;
     const history = await historyPromise;
+    recommendedData = await recommendedPromise;
 
-    if (history.length > 0) {
+    if (history && history.length > 0) {
       // 1. 第一条给 Welcome Section 的 ResumeButton
       const first = history[0];
       latestHistory = {
@@ -50,6 +62,11 @@ export default async function HomePage() {
 
       // 2. 剩余的给 ContinueListening 组件
       recentHistoryList = history.slice(1);
+    } else {
+      // 未登录用户的兜底推荐
+      recommendedData = await episodeService
+        .getRecommendedEpisodes(undefined)
+        .catch(() => ({ level: "General", items: [] }));
     }
   }
 
@@ -58,7 +75,9 @@ export default async function HomePage() {
       user={user}
       latestHistory={latestHistory}
       userStats={userStats}
-      recentHistory={recentHistoryList} // [新增] 传递剩余历史记录
+      recentHistory={recentHistoryList} // 传递剩余历史记录
+      recommendedEpisodes={recommendedData.items}
+      recommendedLevel={recommendedData.level}
     />
   );
 }

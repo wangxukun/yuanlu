@@ -49,6 +49,12 @@ export const episodeRepository = {
             title: true,
           },
         },
+        tags: {
+          take: 1, // 只取一个作为分类标签
+          select: {
+            name: true,
+          },
+        },
       },
     });
     return episodes as unknown as Episode[];

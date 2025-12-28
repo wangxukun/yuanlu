@@ -316,9 +316,10 @@ export default function EditProfileModal({
                     value={learnLevel}
                     onChange={(e) => setLearnLevel(e.target.value)}
                   >
-                    <option value="初级">Beginner (初级)</option>
-                    <option value="中级">Intermediate (中级)</option>
-                    <option value="高级">Advanced (高级)</option>
+                    <option value="General">General (未分级)</option>
+                    <option value="Beginner">Beginner (初级)</option>
+                    <option value="Intermediate">Intermediate (中级)</option>
+                    <option value="Advanced">Advanced (高级)</option>
                   </select>
                 </div>
 
