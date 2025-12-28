@@ -39,16 +39,17 @@ export default async function HomePage() {
       latestHistory = {
         episodeId: first.episodeId,
         title: first.title,
+        author: first.author,
         coverUrl: first.coverUrl,
         audioUrl: first.audioUrl,
         progress: first.progress,
         progressSeconds: first.progressSeconds, // ResumeButton 需要秒数
         duration: first.duration,
+        isFinished: first.isFinished,
       } as unknown as ResumeData;
 
       // 2. 剩余的给 ContinueListening 组件
       recentHistoryList = history.slice(1);
-      console.log("recentHistoryList", recentHistoryList);
     }
   }
 

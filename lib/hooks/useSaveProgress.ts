@@ -19,6 +19,8 @@ export function useSaveProgress({
   const isSavingRef = useRef<boolean>(false);
   // 专门用于追踪当前时间的 Ref，供 cleanup 使用
   const currentTimeRef = useRef<number>(currentTime);
+  // [新增] 记录上一次保存是否是“已完成”状态，防止切歌逻辑覆盖
+  const lastSaveWasFinishedRef = useRef<boolean>(false);
 
   // [新增] 记录当前的 episodeId，用于检测切换
   const currentEpisodeIdRef = useRef<string>(episodeId);
@@ -35,7 +37,11 @@ export function useSaveProgress({
       if (!force && isSavingRef.current && !finished) return;
 
       try {
+        // 先更新状态，防止重入
         lastSavedTimeRef.current = time;
+        // [新增] 记录本次保存的状态
+        lastSaveWasFinishedRef.current = finished;
+
         isSavingRef.current = true;
 
         await fetch(`/api/episode/${episodeId}/progress`, {
@@ -73,11 +79,14 @@ export function useSaveProgress({
 
       const prevEpisodeId = currentEpisodeIdRef.current;
       const lastTime = currentTimeRef.current;
+      // [新增] 检查上一集是否已经标记为完成
+      const wasFinished = lastSaveWasFinishedRef.current;
 
       // 1. 尝试保存上一集 (使用 fetch 防止闭包问题)
+      // 只有当上一集没完成时，才执行切歌保存。如果已完成，说明 handleEnded 已经处理过了，无需覆盖。
       // 注意：这里我们不能用 saveToBackend，因为它依赖当前的 episodeId scope
       // 我们需要手动发一个针对 prevEpisodeId 的请求
-      if (prevEpisodeId && lastTime > 0) {
+      if (prevEpisodeId && lastTime > 0 && !wasFinished) {
         console.log(
           `[切歌清理] 保存上一集 ${prevEpisodeId} 进度: ${lastTime}s`,
         );
@@ -99,6 +108,7 @@ export function useSaveProgress({
       // 这样 Math.abs(0 - 0) = 0 < 15，就不会触发自动保存了
       lastSavedTimeRef.current = 0;
       isSavingRef.current = false;
+      lastSaveWasFinishedRef.current = false; // [新增] 重置完成状态
 
       // 更新当前 ID Ref
       currentEpisodeIdRef.current = episodeId;
@@ -130,6 +140,9 @@ export function useSaveProgress({
   // 4. 页面关闭前保存
   useEffect(() => {
     const handleBeforeUnload = () => {
+      // 如果已经完成了，就不需要在关闭页面时再发请求了（避免覆盖）
+      if (lastSaveWasFinishedRef.current) return;
+
       const payload = JSON.stringify({
         progressSeconds: currentTimeRef.current,
         isFinished: false,

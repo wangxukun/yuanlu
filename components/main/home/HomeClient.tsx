@@ -72,8 +72,10 @@ export default function HomeClient({
                 你已经连续坚持了<strong>{stats.streakDays}</strong>
                 天！继续加油！
                 <br />
-                你的每日目标是{stats.dailyGoalMins}分钟，还剩
-                {stats.remainingMins}分钟。
+                你的每日目标是{stats.dailyGoalMins}分钟，
+                {stats.remainingMins <= 0
+                  ? "今日目标已经完成！"
+                  : "还剩" + stats.remainingMins + "分钟。"}
               </p>
               <ResumeButton latestHistory={latestHistory} />
             </div>

@@ -235,7 +235,7 @@ export default function Player() {
         saveToBackend(audio.duration, true, true);
       }
       pause();
-      setCurrentTime(0);
+      setCurrentTime(0); // 这里设置 0 是安全的，因为 isPlaying 已经 false
       resumeTimeRef.current = null;
       setCurrentEpisode(null);
       setCurrentAudioUrl("");
@@ -350,7 +350,7 @@ export default function Player() {
           setDuration(e.currentTarget.duration);
           // [修改] 移除了 onLoadedData 里的 fetch 更新，因为没必要刚加载就更新活跃时间，依靠播放时的心跳即可
         }}
-        onEnded={() => setCurrentTime(0)}
+        // onEnded={() => setCurrentTime(0)}
         // [修改] 移除了 onTimeUpdate 中的 throttledActiveUpdate
         onPlay={() => {
           // [修改] 移除了 onPlay 中的 fetch，因为 useEffect 会在 playing 变 true 时自动启动计时器
