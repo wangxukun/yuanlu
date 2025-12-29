@@ -14,15 +14,6 @@ import {
 } from "./dto";
 import { Prisma } from "@prisma/client";
 
-// 辅助函数：获取当前 UTC 时间的 00:00:00
-// 无论服务器在哪，返回的都是标准的 UTC 0点
-function getTodayUTC() {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-}
-
 export const statsService = {
   /**
    * 处理用户活跃更新 (核心写逻辑)
@@ -32,9 +23,8 @@ export const statsService = {
     const { userId, seconds = 0 } = dto;
     // [修改] 使用 UTC 零点，替代 startOfDay(new Date())
     // 用于调试，你会发现这下无论在哪里跑，都是 T00:00:00.000Z
-    const today = getTodayUTC(); // 获取今天00:00:00.000，代替startOfDay函数
-    // const today = startOfDay(new Date()); // 获取今天00:00:00.000
-
+    // const today = getTodayUTC(); // 获取今天00:00:00.000，代替startOfDay函数
+    const today = startOfDay(new Date()); // 获取今天00:00:00.000
     // 使用事务保证原子性
     await prisma.$transaction(async (tx) => {
       // 1. 更新用户最后活跃时间 (User 表)
