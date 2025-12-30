@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react"; // [新增] 引入 Session
-import { toast } from "sonner"; // [新增] 引入 Toast
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import {
   ArrowLeftIcon,
   ShareIcon,
@@ -29,9 +29,8 @@ import {
 import { usePlayerStore } from "@/store/player-store";
 import { formatTime } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
-import { togglePodcastFavorite } from "@/lib/actions/favorite-actions"; // [新增] 引入 Server Action
+import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
 
-// 在 PodcastDetail.tsx 中定义专用接口
 interface PodcastDetailData {
   podcastid: string;
   title: string;
@@ -73,10 +72,11 @@ interface PodcastDetailData {
   }>;
 }
 
-// [新增] 定义包含进度的 Episode 接口
 interface EpisodeWithProgress extends Episode {
   progressSeconds?: number;
   isFinished?: boolean;
+  coverUrl?: string | null;
+  description?: string | null;
 }
 
 export default function PodcastDetail({
@@ -85,14 +85,13 @@ export default function PodcastDetail({
   podcast: PodcastDetailData;
 }) {
   const router = useRouter();
-  const { data: session } = useSession(); // [新增] 获取 Session
+  const { data: session } = useSession();
   const { playEpisode, togglePlay, currentEpisode, isPlaying } =
     usePlayerStore();
 
   const initialPlays = podcast.totalPlays;
   const initialFavorites = podcast.followerCount;
 
-  // [新增] 收藏数状态，支持乐观更新
   const [favoritesCount, setFavoritesCount] = useState(initialFavorites);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
@@ -106,7 +105,6 @@ export default function PodcastDetail({
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const episodeMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // [新增] 检查初始收藏状态
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       if (session?.user?.userid && podcast.podcastid) {
@@ -191,20 +189,15 @@ export default function PodcastDetail({
     }
   };
 
-  // 处理收藏逻辑
   const handleToggleFavorite = async () => {
-    console.log("Toggle favorite for podcast:", podcast.podcastid);
-    console.log("Session user:", session);
     if (!session?.user) {
       toast.error("请先登录后收藏");
-      // 可以在这里添加跳转登录页的逻辑，例如: router.push('/login');
       return;
     }
 
     if (isLoadingFavorite) return;
     setIsLoadingFavorite(true);
 
-    // 乐观更新 (Optimistic Update)
     const prevIsFavorited = isFavorited;
     const prevCount = favoritesCount;
 
@@ -212,11 +205,9 @@ export default function PodcastDetail({
     setFavoritesCount(prevIsFavorited ? prevCount - 1 : prevCount + 1);
 
     try {
-      // 调用 Server Action
       const result = await togglePodcastFavorite(podcast.podcastid);
 
       if (!result.success) {
-        // 如果失败，回滚状态
         setIsFavorited(prevIsFavorited);
         setFavoritesCount(prevCount);
         toast.error(result.message || "操作失败");
@@ -292,7 +283,7 @@ export default function PodcastDetail({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-10">
         <div className="flex flex-col md:flex-row gap-8 items-center">
           {/* Cover Art */}
-          <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-2xl shadow-2xl overflow-hidden flex-shrink-0 border-4 border-base-100 bg-base-300 relative">
+          <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-base-200 bg-base-300 relative">
             <Image
               src={podcast.coverUrl}
               alt={podcast.title}
@@ -303,14 +294,6 @@ export default function PodcastDetail({
 
           {/* Text Content */}
           <div className="flex-1 space-y-4 pt-4 md:pt-8 w-full">
-            {/*<div className="flex flex-wrap items-center gap-2">*/}
-            {/*<span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">*/}
-            {/*  {mockLevel}*/}
-            {/*</span>*/}
-            {/*  <span className="bg-secondary/10 text-secondary text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">*/}
-            {/*  {mockCategory}*/}
-            {/*</span>*/}
-            {/*</div>*/}
             <div className="flex flex-wrap items-center gap-2">
               {podcast.tags?.slice(0, 5).map((tag) => (
                 <span
@@ -340,7 +323,6 @@ export default function PodcastDetail({
                 <HeartIcon
                   className={`w-4 h-4 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
                 />
-                {/* [修改] 使用实时更新的 favoritesCount */}
                 {(favoritesCount / 1).toFixed(1)}k 收藏
               </div>
             </div>
@@ -358,15 +340,14 @@ export default function PodcastDetail({
                 播放最新剧集
               </button>
               <button
-                onClick={handleToggleFavorite} // [修改] 绑定新的处理函数
-                disabled={isLoadingFavorite} // [新增] 防止重复点击
+                onClick={handleToggleFavorite}
+                disabled={isLoadingFavorite}
                 className={`px-8 py-3.5 rounded-full font-bold transition-all flex items-center border-2 ${
                   isFavorited
                     ? "bg-red-50 border-red-100 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400"
                     : "bg-base-100 border-base-200 text-base-content/70 hover:border-red-200 hover:text-red-500 dark:hover:border-red-900/50"
                 } ${isLoadingFavorite ? "opacity-70 cursor-not-allowed" : ""}`}
               >
-                {/* 加载中状态显示 */}
                 {isLoadingFavorite ? (
                   <span className="loading loading-spinner loading-xs mr-2"></span>
                 ) : isFavorited ? (
@@ -404,12 +385,13 @@ export default function PodcastDetail({
           <div className="space-y-4">
             {sortedEpisodes.length > 0 ? (
               sortedEpisodes.map((ep) => {
-                // 使用类型断言访问扩展字段
                 const episode = ep as unknown as EpisodeWithProgress;
-                // 计算真实进度百分比
                 const progressSeconds = episode.progressSeconds || 0;
                 const isFinished = episode.isFinished || false;
                 const duration = episode.duration || 0;
+
+                const displayCover =
+                  episode.coverUrl || podcast.coverUrl || "/placeholder.png";
 
                 let progressPercentage = 0;
                 if (isFinished) {
@@ -420,20 +402,6 @@ export default function PodcastDetail({
                     100,
                   );
                 }
-
-                // const hasProgress = getStableBoolean(
-                //     episode.episodeid + "prog",
-                //     0.4,
-                // );
-                // const isFinished = getStableBoolean(
-                //     episode.episodeid + "fin",
-                //     0.1,
-                // );
-                // const mockProgress = isFinished
-                //     ? 100
-                //     : hasProgress
-                //         ? getStableNumber(episode.episodeid + "pct", 10, 90)
-                //         : 0;
 
                 const isCurrentPlaying =
                   currentEpisode?.episodeid === episode.episodeid && isPlaying;
@@ -451,7 +419,6 @@ export default function PodcastDetail({
                       className="w-10 flex-shrink-0 flex items-center justify-center relative z-10 hover:scale-110 transition-transform"
                       onClick={(e) => handlePlayClick(e, episode)}
                     >
-                      {/* 只有当明确标记为已听完时才显示绿勾 */}
                       {isFinished ? (
                         <CheckCircleSolidIcon className="w-8 h-8 text-green-500" />
                       ) : (
@@ -468,14 +435,29 @@ export default function PodcastDetail({
                       )}
                     </div>
 
-                    {/* Episode Info */}
-                    <div className="ml-6 flex-1 min-w-0">
+                    {/* [修改] Episode Cover: 16:9 比例，高度不变 */}
+                    <div className="ml-4 h-16 sm:h-20 aspect-video relative flex-shrink-0 rounded-lg overflow-hidden bg-base-200 border border-base-100/50 shadow-sm group-hover:shadow-md transition-all">
+                      <Image
+                        src={displayCover}
+                        alt={episode.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+
+                    {/* Episode Info with Description */}
+                    <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
                       <h3
                         className={`text-base font-bold truncate transition-colors ${isCurrentPlaying ? "text-primary" : "text-base-content group-hover:text-primary"}`}
                       >
                         {episode.title}
                       </h3>
-                      <div className="flex items-center mt-1 space-x-4 text-sm text-base-content/60">
+
+                      <p className="text-sm text-base-content/60 mt-1 mb-1.5 line-clamp-2 leading-relaxed">
+                        {episode.description || "暂无简介"}
+                      </p>
+
+                      <div className="flex items-center space-x-4 text-xs sm:text-sm text-base-content/50">
                         <div className="flex items-center">
                           <CalendarIcon className="w-3.5 h-3.5 mr-1" />
                           {new Date(episode.publishAt).toLocaleDateString()}
@@ -489,7 +471,7 @@ export default function PodcastDetail({
 
                     {/* Progress Bar */}
                     {progressPercentage > 0 && progressPercentage < 100 && (
-                      <div className="hidden sm:block w-32 ml-4">
+                      <div className="hidden sm:block w-24 lg:w-32 ml-4 flex-shrink-0">
                         <div className="flex justify-between text-[10px] font-bold text-base-content/40 mb-1">
                           <span>In Progress</span>
                           <span>{Math.round(progressPercentage)}%</span>
@@ -505,7 +487,7 @@ export default function PodcastDetail({
 
                     {/* Actions Dropdown */}
                     <div
-                      className="ml-4 relative"
+                      className="ml-4 relative flex-shrink-0"
                       ref={(el) => {
                         episodeMenuRefs.current[episode.episodeid] = el;
                       }}
