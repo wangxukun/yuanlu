@@ -75,8 +75,8 @@ interface PodcastDetailData {
 interface EpisodeWithProgress extends Episode {
   progressSeconds?: number;
   isFinished?: boolean;
-  coverUrl?: string | null;
-  description?: string | null;
+  coverUrl: string;
+  description: string;
 }
 
 export default function PodcastDetail({
