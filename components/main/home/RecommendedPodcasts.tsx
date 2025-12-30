@@ -33,7 +33,7 @@ export default function RecommendedPodcasts({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {episodes.map((episode) => (
           <div key={episode.id} className="group flex flex-col">
-            <div className="relative aspect-square mb-3 overflow-hidden rounded-xl bg-base-200">
+            <div className="relative aspect-[16/9] mb-3 overflow-hidden rounded-xl bg-base-200">
               <Image
                 src={episode.coverUrl || "/static/images/default_cover_url.png"}
                 alt={episode.title}

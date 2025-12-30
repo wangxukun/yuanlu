@@ -38,7 +38,7 @@ export default function ContinueListening({
             className="bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer flex items-center space-x-4 group"
             onClick={() => onPlay(item.episodeId)}
           >
-            <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-base-300">
+            <div className="relative flex-shrink-0 w-32 aspect-[16/9] rounded-lg overflow-hidden bg-base-300">
               <Image
                 src={item.coverUrl}
                 alt={item.title}

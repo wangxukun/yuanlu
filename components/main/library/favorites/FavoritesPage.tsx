@@ -174,7 +174,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                 onClick={() => handleSelectSeries(series.id)}
                 className="group bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               >
-                <div className="relative aspect-[4/4] bg-gray-100">
+                <div className="relative aspect-square bg-gray-100">
                   <img
                     src={series.thumbnailUrl}
                     alt={series.title}
