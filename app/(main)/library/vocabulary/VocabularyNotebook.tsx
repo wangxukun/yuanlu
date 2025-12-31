@@ -189,7 +189,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
 
   // --- 渲染辅助函数 ---
 
-  // 高亮上下文中的单词 - [修复] 适配 Dark Mode 颜色
+  // 高亮上下文中的单词
   const renderContext = (
     text?: string | null,
     word?: string,
@@ -228,59 +228,67 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 font-sans">
       {/* 1. 头部与统计面板 */}
-      <header className="flex flex-col md:flex-row justify-between items-end border-b border-slate-200 dark:border-slate-800 pb-6 gap-6">
+      <header className="flex flex-col xl:flex-row justify-between xl:items-end border-b border-slate-200 dark:border-slate-800 pb-6 gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+          <h1 className="text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
             <BookOpenCheck
               className="mr-3 text-indigo-600 dark:text-indigo-400"
               size={32}
             />
             生词本
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm xl:text-base">
             管理你的生词收藏并进行科学的间隔复习。
           </p>
         </div>
 
-        <div className="flex gap-4 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm min-w-[140px]">
-            <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg">
-              <BookOpen size={18} />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
-                总计
+        {/* 统计卡片：Mobile (<xl) 使用 Grid，Desktop (>=xl) 使用 Flex 行 */}
+        <div className="w-full xl:w-auto">
+          <div className="grid grid-cols-3 gap-2 xl:flex xl:gap-4 xl:overflow-x-auto">
+            {/* Total Card */}
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm xl:min-w-[140px]">
+              <div className="p-1.5 xl:p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg mb-1 xl:mb-0">
+                <BookOpen size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
-              <div className="text-xl font-bold text-slate-800 dark:text-slate-200">
-                {stats.total}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm min-w-[140px]">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg">
-              <Clock size={18} />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
-                今日待复习
-              </div>
-              <div className="text-xl font-bold text-slate-800 dark:text-slate-200">
-                {stats.due}
+              <div className="text-center xl:text-left">
+                <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                  总计
+                </div>
+                <div className="text-lg xl:text-xl font-bold text-slate-800 dark:text-slate-200">
+                  {stats.total}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm min-w-[140px]">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <Award size={18} />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
-                已掌握
+
+            {/* Due Card */}
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm xl:min-w-[140px]">
+              <div className="p-1.5 xl:p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg mb-1 xl:mb-0">
+                <Clock size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
-              <div className="text-xl font-bold text-slate-800 dark:text-slate-200">
-                {stats.mastered}
+              <div className="text-center xl:text-left">
+                <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                  待复习
+                </div>
+                <div className="text-lg xl:text-xl font-bold text-slate-800 dark:text-slate-200">
+                  {stats.due}
+                </div>
+              </div>
+            </div>
+
+            {/* Mastered Card */}
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm xl:min-w-[140px]">
+              <div className="p-1.5 xl:p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg mb-1 xl:mb-0">
+                <Award size={16} className="xl:w-[18px] xl:h-[18px]" />
+              </div>
+              <div className="text-center xl:text-left">
+                <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                  已掌握
+                </div>
+                <div className="text-lg xl:text-xl font-bold text-slate-800 dark:text-slate-200">
+                  {stats.mastered}
+                </div>
               </div>
             </div>
           </div>
@@ -290,21 +298,21 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       {/* 2. 复习入口 (SRS) */}
       <section className="grid grid-cols-1 gap-6">
         {stats.due > 0 ? (
-          <div className="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-indigo-950 dark:to-slate-900 dark:border dark:border-indigo-900/50 rounded-2xl p-8 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl shadow-slate-200 dark:shadow-none">
-            <div className="mb-6 sm:mb-0">
-              <h2 className="text-2xl font-bold flex items-center mb-2">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-indigo-950 dark:to-slate-900 dark:border dark:border-indigo-900/50 rounded-2xl p-6 xl:p-8 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl shadow-slate-200 dark:shadow-none gap-6 sm:gap-0">
+            <div>
+              <h2 className="text-xl xl:text-2xl font-bold flex items-center mb-2">
                 <BrainCircuit className="mr-3 text-indigo-400" />
                 复习计划已就绪
               </h2>
-              <p className="text-slate-300 dark:text-slate-400 max-w-lg">
+              <p className="text-slate-300 dark:text-slate-400 max-w-lg text-sm xl:text-base">
                 根据遗忘曲线，你有{" "}
                 <span className="text-white font-bold">{stats.due} 个生词</span>{" "}
-                需要复习。请优先关注语境而非死记硬背。
+                需要复习。
               </p>
             </div>
             <button
               onClick={startReview}
-              className="bg-white dark:bg-slate-200 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-indigo-50 dark:hover:bg-slate-100 transition-colors shadow-lg flex items-center shrink-0"
+              className="w-full sm:w-auto bg-white dark:bg-slate-200 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-indigo-50 dark:hover:bg-slate-100 transition-colors shadow-lg flex items-center justify-center shrink-0"
             >
               <PlayCircle className="mr-2" size={20} />
               开始复习
@@ -324,8 +332,8 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       </section>
 
       {/* 3. 列表控制栏 */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-        <div className="relative w-full sm:w-96">
+      <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors sticky top-0 z-10 xl:static">
+        <div className="relative w-full xl:w-96">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
             size={18}
@@ -339,29 +347,31 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto overflow-x-auto">
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase mr-1 whitespace-nowrap">
+        <div className="flex items-center space-x-2 w-full xl:w-auto overflow-x-auto pb-1 xl:pb-0 scrollbar-hide">
+          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase mr-1 whitespace-nowrap hidden xl:inline">
             排序:
           </span>
-          {[
-            { id: "review", label: "复习时间" },
-            { id: "added", label: "添加时间" },
-            { id: "alpha", label: "A-Z" },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() =>
-                setSortMethod(opt.id as "review" | "added" | "alpha")
-              }
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                sortMethod === opt.id
-                  ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          <div className="flex w-full xl:w-auto gap-2">
+            {[
+              { id: "review", label: "复习时间" },
+              { id: "added", label: "添加时间" },
+              { id: "alpha", label: "A-Z" },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() =>
+                  setSortMethod(opt.id as "review" | "added" | "alpha")
+                }
+                className={`flex-1 xl:flex-none px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  sortMethod === opt.id
+                    ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -383,12 +393,13 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                   : "border-slate-100 dark:border-slate-800 hover:border-indigo-100 dark:hover:border-indigo-900/50 hover:shadow-sm"
               }`}
             >
-              {/* 卡片摘要行 */}
-              <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  {/* 状态指示点 */}
+              {/* 卡片内容区: Mobile为垂直布局，Desktop为水平布局 */}
+              <div className="p-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 xl:gap-0">
+                {/* 左侧：单词与定义 */}
+                <div className="flex flex-row items-start space-x-4 w-full xl:w-auto">
+                  {/* 状态指示点 (Desktop) / 状态条 (Mobile) */}
                   <div
-                    className={`w-2 h-2 rounded-full ${
+                    className={`hidden xl:block w-2 h-2 rounded-full mt-2.5 xl:mt-0 shrink-0 ${
                       due
                         ? "bg-orange-500 animate-pulse"
                         : "bg-slate-300 dark:bg-slate-600"
@@ -396,77 +407,97 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     title={due ? "需要复习" : "未到期"}
                   />
 
-                  <div className="min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
-                        {item.word}
-                      </h3>
+                  <div className="min-w-0 flex-1">
+                    {/* Word Row */}
+                    <div className="flex items-center justify-between xl:justify-start space-x-2 mb-1 xl:mb-0">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {item.word}
+                        </h3>
+                        {/* Mobile: 状态指示点在标题旁 */}
+                        <div
+                          className={`xl:hidden w-2 h-2 rounded-full ${
+                            due
+                              ? "bg-orange-500"
+                              : "bg-slate-300 dark:bg-slate-600"
+                          }`}
+                        />
+                      </div>
                       {item.speakUrl && (
                         <button
                           onClick={(e) => playAudio(e, item.speakUrl)}
-                          className="p-1 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors shrink-0"
+                          className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full bg-slate-50 dark:bg-slate-800 xl:bg-transparent transition-colors shrink-0"
                         >
                           <Volume2 size={16} />
                         </button>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[150px] sm:max-w-md">
+                    {/* Definition Row */}
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate w-full xl:max-w-md">
                       {item.definition || "暂无定义"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-6 shrink-0">
+                {/* 右侧：统计数据与箭头 (Mobile: 底部行, Desktop: 右侧) */}
+                <div className="flex items-center justify-between xl:justify-end xl:space-x-6 shrink-0 w-full xl:w-auto pt-2 xl:pt-0 border-t border-slate-50 dark:border-slate-800 xl:border-none">
                   {/* 熟练度条 */}
-                  <div className="hidden sm:flex flex-col items-end">
-                    <div className="flex space-x-1 mb-1">
-                      {[1, 2, 3, 4, 5].map((level) => (
-                        <div
-                          key={level}
-                          className={`w-1.5 h-6 rounded-full ${
-                            level <= item.proficiency
-                              ? "bg-indigo-500"
-                              : "bg-slate-100 dark:bg-slate-800"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`w-1.5 h-4 xl:h-6 rounded-full ${
+                          level <= item.proficiency
+                            ? "bg-indigo-500"
+                            : "bg-slate-100 dark:bg-slate-800"
+                        }`}
+                      />
+                    ))}
                   </div>
 
-                  {/* 日期徽章 */}
-                  <div className="text-right min-w-[80px]">
-                    <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
-                      下次复习
+                  <div className="flex items-center space-x-4">
+                    {/* 日期徽章 */}
+                    <div className="text-right min-w-[80px]">
+                      <div className="hidden xl:block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                        下次复习
+                      </div>
+                      <div
+                        className={`text-xs font-medium ${
+                          due
+                            ? "text-orange-600 dark:text-orange-400"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {due ? (
+                          <span className="flex items-center justify-end">
+                            <Clock size={12} className="mr-1 xl:hidden" />
+                            复习
+                          </span>
+                        ) : (
+                          formatDate(item.nextReviewAt)
+                        )}
+                      </div>
                     </div>
-                    <div
-                      className={`text-xs font-medium ${
-                        due
-                          ? "text-orange-600 dark:text-orange-400"
-                          : "text-slate-600 dark:text-slate-300"
-                      }`}
-                    >
-                      {due ? "今天" : formatDate(item.nextReviewAt)}
-                    </div>
-                  </div>
 
-                  {isExpanded ? (
-                    <ChevronUp
-                      size={20}
-                      className="text-slate-300 dark:text-slate-600"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={20}
-                      className="text-slate-300 dark:text-slate-600"
-                    />
-                  )}
+                    {isExpanded ? (
+                      <ChevronUp
+                        size={20}
+                        className="text-slate-300 dark:text-slate-600"
+                      />
+                    ) : (
+                      <ChevronDown
+                        size={20}
+                        className="text-slate-300 dark:text-slate-600"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* 展开的详情面板 */}
               {isExpanded && (
                 <div
-                  className="bg-slate-50 dark:bg-slate-950/30 border-t border-slate-100 dark:border-slate-800 p-6 animate-in slide-in-from-top-2 duration-200 cursor-default"
+                  className="bg-slate-50 dark:bg-slate-950/30 border-t border-slate-100 dark:border-slate-800 p-4 xl:p-6 animate-in slide-in-from-top-2 duration-200 cursor-default"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -489,7 +520,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                       </div>
                     </div>
 
-                    <div className="space-y-4 border-l border-slate-200 dark:border-slate-800 pl-0 md:pl-6">
+                    <div className="space-y-4 border-l-0 md:border-l border-slate-200 dark:border-slate-800 pl-0 md:pl-6">
                       <div>
                         <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
                           来源
@@ -543,10 +574,10 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
 
       {/* 5. 复习会话模态框 */}
       {isReviewOpen && reviewQueue.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-[500px] animate-in zoom-in-95 duration-200 border dark:border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 xl:p-4 bg-slate-900/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-full h-full xl:h-auto max-w-none xl:max-w-2xl rounded-none xl:rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border-none xl:border dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 shrink-0 mt-safe xl:mt-0">
               <div className="flex items-center space-x-2">
                 <BrainCircuit
                   className="text-indigo-600 dark:text-indigo-400"
@@ -568,19 +599,19 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
             </div>
 
             {/* Flashcard Body */}
-            <div className="flex-1 flex flex-col relative">
+            <div className="flex-1 flex flex-col relative overflow-y-auto">
               {/* 正反面切换区域 */}
               <div
-                className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center cursor-pointer hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors"
+                className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors min-h-[300px]"
                 onClick={() => !isCardFlipped && setIsCardFlipped(true)}
               >
                 {!isCardFlipped ? (
                   // 正面: 先展示例句（挖空）
-                  <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="space-y-8 animate-in fade-in duration-300 max-w-lg mx-auto">
                     <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                       补全句子
                     </div>
-                    <div className="text-2xl md:text-3xl leading-relaxed font-serif text-slate-800 dark:text-slate-100">
+                    <div className="text-xl md:text-3xl leading-relaxed font-serif text-slate-800 dark:text-slate-100">
                       {renderContext(
                         reviewQueue[currentReviewIndex].contextSentence,
                         reviewQueue[currentReviewIndex].word,
@@ -593,9 +624,9 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                   </div>
                 ) : (
                   // 背面: 完整信息
-                  <div className="space-y-6 w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="space-y-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 xl:pb-0">
                     <div>
-                      <h2 className="text-4xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">
+                      <h2 className="text-3xl xl:text-4xl font-bold text-indigo-700 dark:text-indigo-400 mb-2 break-words">
                         {reviewQueue[currentReviewIndex].word}
                       </h2>
                       <div className="flex items-center justify-center space-x-2 text-slate-500 dark:text-slate-400">
@@ -634,7 +665,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               </div>
 
               {/* 控制栏 Footer */}
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <div className="p-4 xl:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0 pb-safe xl:pb-6">
                 {!isCardFlipped ? (
                   <button
                     onClick={() => setIsCardFlipped(true)}
@@ -643,52 +674,60 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     显示答案
                   </button>
                 ) : (
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-4 gap-2 xl:gap-3">
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.FORGOT)}
-                      className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 transition-all group disabled:opacity-50"
                     >
                       <RotateCcw
                         size={20}
                         className="mb-1 group-hover:scale-110 transition-transform"
                       />
-                      <span className="text-xs font-bold uppercase">忘记</span>
+                      <span className="text-[10px] xl:text-xs font-bold uppercase">
+                        忘记
+                      </span>
                     </button>
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.HARD)}
-                      className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 transition-all group disabled:opacity-50"
                     >
                       <Clock
                         size={20}
                         className="mb-1 group-hover:scale-110 transition-transform"
                       />
-                      <span className="text-xs font-bold uppercase">模糊</span>
+                      <span className="text-[10px] xl:text-xs font-bold uppercase">
+                        模糊
+                      </span>
                       <span className="text-[10px] opacity-60">1天</span>
                     </button>
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.GOOD)}
-                      className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group disabled:opacity-50"
                     >
                       <CheckCircle
                         size={20}
                         className="mb-1 group-hover:scale-110 transition-transform"
                       />
-                      <span className="text-xs font-bold uppercase">认识</span>
+                      <span className="text-[10px] xl:text-xs font-bold uppercase">
+                        认识
+                      </span>
                       <span className="text-[10px] opacity-60">3天</span>
                     </button>
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.EASY)}
-                      className="flex flex-col items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all group disabled:opacity-50"
                     >
                       <Award
                         size={20}
                         className="mb-1 group-hover:scale-110 transition-transform"
                       />
-                      <span className="text-xs font-bold uppercase">简单</span>
+                      <span className="text-[10px] xl:text-xs font-bold uppercase">
+                        简单
+                      </span>
                       <span className="text-[10px] opacity-60">7天</span>
                     </button>
                   </div>

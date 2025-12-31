@@ -170,27 +170,27 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
   const latestUnfinished = history.find((h) => !h.isFinished);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-500 font-sans relative">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 animate-in fade-in duration-500 font-sans relative">
       {/* 页面标题 */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+          <h1 className="text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
             <History
               className="mr-3 text-indigo-600 dark:text-indigo-400"
               size={32}
             />
             收听历史
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm xl:text-base">
             继续你的精听之旅，随时回顾学习进度。
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 w-full xl:w-auto">
           <button
             onClick={requestClearAll}
             disabled={isPending || history.length === 0}
-            className="flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center w-full xl:w-auto px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 size={16} className="mr-2" />
             清空历史
@@ -200,33 +200,39 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
 
       {/* Hero 区域 */}
       {latestUnfinished && filter !== "finished" && (
-        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 dark:border dark:border-slate-800 rounded-3xl p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none group">
+        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 dark:border dark:border-slate-800 rounded-3xl p-6 xl:p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-            <div className="relative w-48 h-27 flex-shrink-0 shadow-2xl rounded-2xl overflow-hidden bg-slate-800 border border-slate-700">
+          {/* Mobile: Flex-col (Vertical), Desktop: Flex-row (Horizontal) */}
+          <div className="relative z-10 flex flex-col xl:flex-row items-center gap-6 xl:gap-8">
+            <div className="relative w-full xl:w-48 aspect-video xl:h-27 flex-shrink-0 shadow-2xl rounded-2xl overflow-hidden bg-slate-800 border border-slate-700">
               <img
                 src={latestUnfinished.episode.thumbnailUrl}
                 alt={latestUnfinished.episode.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                <PlayCircle size={48} className="text-white/80" />
+                <PlayCircle
+                  size={48}
+                  className="text-white/80 xl:w-12 xl:h-12 w-16 h-16"
+                />
               </div>
             </div>
 
-            <div className="flex-1 space-y-4 text-center md:text-left">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500 text-white uppercase tracking-wider">
-                继续收听
-              </span>
-              <h2 className="text-2xl font-bold leading-tight text-white">
+            <div className="flex-1 space-y-4 text-center xl:text-left w-full">
+              <div className="flex justify-center xl:justify-start">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500 text-white uppercase tracking-wider">
+                  继续收听
+                </span>
+              </div>
+              <h2 className="text-xl xl:text-2xl font-bold leading-tight text-white line-clamp-2">
                 {latestUnfinished.episode.title}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-slate-400 text-sm xl:text-base">
                 {latestUnfinished.episode.author} •{" "}
                 {latestUnfinished.episode.category}
               </p>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md mx-auto xl:mx-0">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-indigo-300">
                     上次听到 {formatTime(latestUnfinished.progressSeconds)}
@@ -249,14 +255,9 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                 </div>
               </div>
 
-              {/* [修改] 修复了 Dark Mode 下的样式：
-                  - dark:bg-slate-200: 在暗色模式下稍微降低亮度，避免纯白刺眼
-                  - dark:hover:bg-slate-100: Hover 时变亮
-                  - dark:text-slate-900: 保持文字深色，确保对比度
-              */}
               <button
                 onClick={() => handlePlayEpisode(latestUnfinished.episode.id)}
-                className="bg-white dark:bg-slate-200 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-indigo-50 dark:hover:bg-slate-100 transition-all flex items-center justify-center mx-auto md:mx-0 shadow-lg shadow-indigo-900/20 dark:shadow-none"
+                className="w-full xl:w-auto bg-white dark:bg-slate-200 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-indigo-50 dark:hover:bg-slate-100 transition-all flex items-center justify-center mx-auto xl:mx-0 shadow-lg shadow-indigo-900/20 dark:shadow-none"
               >
                 <RotateCcw size={18} className="mr-2" />从{" "}
                 {formatTime(latestUnfinished.progressSeconds)} 继续
@@ -266,31 +267,34 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
         </div>
       )}
 
-      {/* 筛选栏 */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
-          {[
-            { key: "all", label: "全部" },
-            { key: "in-progress", label: "进行中" },
-            { key: "finished", label: "已完成" },
-          ].map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() =>
-                setFilter(opt.key as "all" | "in-progress" | "finished")
-              }
-              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                filter === opt.key
-                  ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* 筛选栏 - Mobile Layout Redesign */}
+      <div className="flex flex-col-reverse xl:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors sticky top-0 xl:static z-20">
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full xl:w-auto">
+          {/* Mobile: Grid cols 3, Desktop: Flex row */}
+          <div className="grid grid-cols-3 xl:flex xl:flex-row w-full gap-1">
+            {[
+              { key: "all", label: "全部" },
+              { key: "in-progress", label: "进行中" },
+              { key: "finished", label: "已完成" },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() =>
+                  setFilter(opt.key as "all" | "in-progress" | "finished")
+                }
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  filter === opt.key
+                    ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full xl:w-64">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -328,18 +332,24 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                   <div
                     key={item.historyid}
                     onClick={() => handlePlayEpisode(item.episode.id)}
-                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all cursor-pointer flex items-center gap-4 relative"
+                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all cursor-pointer flex flex-col xl:flex-row xl:items-center gap-4 relative overflow-hidden"
                   >
-                    <div className="w-32 h-18 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-slate-100 dark:bg-slate-800">
+                    {/* Cover Image: Full width on mobile, Fixed size on Desktop */}
+                    <div className="w-full xl:w-32 aspect-video xl:h-18 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-slate-100 dark:bg-slate-800 relative">
                       <img
                         src={item.episode.thumbnailUrl}
                         alt={item.episode.title}
                         className="w-full h-full object-cover"
                       />
+                      {/* Mobile Play Overlay */}
+                      <div className="xl:hidden absolute inset-0 bg-black/10 flex items-center justify-center">
+                        <PlayCircle className="text-white/80 w-10 h-10" />
+                      </div>
                     </div>
 
-                    <div className="flex-1 min-w-0 pr-8">
-                      <div className="flex items-center gap-2 mb-1">
+                    {/* Content Section */}
+                    <div className="flex-1 min-w-0 pr-0 xl:pr-8 w-full">
+                      <div className="flex items-center gap-2 mb-2 xl:mb-1">
                         {item.isFinished ? (
                           <span className="flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md uppercase">
                             <CheckCircle2 size={10} className="mr-1" /> 已完成
@@ -359,15 +369,32 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                           {item.episode.category}
                         </span>
                       </div>
-                      <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                      <h4 className="text-lg xl:text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                         {item.episode.title}
                       </h4>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1 xl:mt-0">
                         {item.episode.author}
                       </p>
+
+                      {/* Mobile Only Meta Bar (Below Title/Author) */}
+                      <div className="flex xl:hidden items-center justify-between mt-4 pt-3 border-t border-slate-50 dark:border-slate-800/50">
+                        <div className="flex items-center text-xs text-slate-400 dark:text-slate-500">
+                          <span className="font-medium text-slate-700 dark:text-slate-300 mr-2">
+                            {formatTime(item.progressSeconds)}
+                          </span>
+                          / {item.episode.duration}
+                        </div>
+                        <button
+                          onClick={(e) => requestDelete(e, item.historyid)}
+                          className="flex items-center text-xs font-medium text-slate-400 hover:text-red-500 p-1"
+                        >
+                          <Trash2 size={14} className="mr-1" /> 删除
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="hidden md:flex flex-col items-end text-right min-w-[120px]">
+                    {/* Desktop Only Stats (Right Side) */}
+                    <div className="hidden xl:flex flex-col items-end text-right min-w-[120px]">
                       <span className="text-xs font-bold text-slate-900 dark:text-slate-200">
                         {item.isFinished
                           ? item.episode.duration
@@ -383,7 +410,8 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    {/* Desktop Only Actions (Right Chevron/Delete) */}
+                    <div className="hidden xl:flex items-center gap-1">
                       <button
                         onClick={(e) => requestDelete(e, item.historyid)}
                         className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
