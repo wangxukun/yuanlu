@@ -69,6 +69,9 @@ export default function SignInForm() {
         const currentModal = (document.getElementById("my_modal_login") ||
           document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
         if (currentModal) currentModal.close();
+
+        // 登录成功，跳转到首页
+        redirect("/home");
       }
     } catch (error) {
       if (error instanceof AuthError) {

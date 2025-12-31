@@ -5,9 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  // PlayCircleIcon,
   EllipsisHorizontalIcon,
-  // MusicalNoteIcon,
   HeartIcon,
   ShareIcon,
   ArrowTopRightOnSquareIcon,
@@ -37,60 +35,63 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
     if (elem) elem.blur();
   };
 
-  // ... handlePlayLatest, handleToggleFavorite, handleShare ...
   const handlePlayLatest = () => {
-    /* ... */
+    console.log("Play latest", podcast.title);
   };
   const handleToggleFavorite = () => {
-    /* ... */
+    console.log("Toggle favorite", podcast.title);
   };
   const handleShare = () => {
-    /* ... */
+    console.log("Share", podcast.title);
   };
 
   return (
     <div
       onClick={handleRowClick}
-      // [修改点]：
-      // 1. 添加 first:rounded-t-3xl 和 last:rounded-b-3xl (配合父级的 rounded-3xl)
-      // 2. 保持 group cursor-pointer 等原有样式
-      className="flex items-center p-4 hover:bg-base-200/50 transition-colors border-b border-base-200 last:border-0 group cursor-pointer relative first:rounded-t-3xl last:rounded-b-3xl"
+      // [布局优化]:
+      // 1. Mobile/Tablet: p-3 (更紧凑)
+      // 2. Desktop (xl): p-4 (保持原样)
+      className="flex items-center p-3 xl:p-4 hover:bg-base-200/50 transition-colors border-b border-base-200 last:border-0 group cursor-pointer relative first:rounded-t-3xl last:rounded-b-3xl"
     >
-      {/* ... 排名、封面、信息、统计数据 (保持不变) ... */}
-      <div className="w-8 text-center font-bold text-base-content/40 group-hover:text-primary">
+      {/* 排名: Mobile w-6 / Desktop w-8 */}
+      <div className="w-6 xl:w-8 text-center font-bold text-base-content/40 group-hover:text-primary text-sm xl:text-base">
         {rank}
       </div>
 
-      <div className="relative mx-4 flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-base-300">
+      {/* 封面图: Mobile w-10 h-10 / Desktop w-12 h-12 */}
+      <div className="relative mx-3 xl:mx-4 flex-shrink-0 w-10 h-10 xl:w-12 xl:h-12 rounded-lg overflow-hidden bg-base-300">
         <Image
           src={podcast.coverUrl}
           alt={podcast.title}
           fill
           className="object-cover"
         />
-        {/*<div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">*/}
-        {/*  <PlayCircleIcon className="w-6 h-6 text-white" />*/}
-        {/*</div>*/}
       </div>
 
-      <div className="flex-1 min-w-0 pr-4">
-        <h3 className="text-sm font-bold text-base-content truncate">
+      {/* 信息区域 */}
+      <div className="flex-1 min-w-0 pr-2 xl:pr-4">
+        {/* 标题字号适配 */}
+        <h3 className="text-sm font-bold text-base-content truncate leading-tight">
           {podcast.title}
         </h3>
-        <div className="flex items-center space-x-2 text-xs text-base-content/60">
-          <span>{podcast.platform || "Yuanlu"}</span>
+        <div className="flex items-center space-x-2 text-xs text-base-content/60 mt-0.5 xl:mt-0">
+          <span className="truncate max-w-[80px] sm:max-w-none">
+            {podcast.platform || "Yuanlu"}
+          </span>
           <span>•</span>
           <span>{podcast.category}</span>
         </div>
       </div>
 
-      <div className="hidden sm:flex items-center space-x-6 mr-6">
+      {/* 统计数据: 仅在 Tablet(sm) 和 Desktop 显示，手机端隐藏以节省空间 */}
+      <div className="hidden sm:flex items-center space-x-4 xl:space-x-6 mr-2 xl:mr-6">
         <div
           className="flex items-center text-xs text-base-content/60"
           title="剧集数量"
         >
           <Square3Stack3DIcon className="w-3.5 h-3.5 mr-1" />
-          {podcast.episodeCount} Eps
+          {podcast.episodeCount}{" "}
+          <span className="hidden xl:inline ml-1">Eps</span>
         </div>
         <div
           className="flex items-center text-xs text-base-content/60"
@@ -109,21 +110,20 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
         <div
           tabIndex={0}
           role="button"
-          className="btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-base-content hover:bg-base-200"
+          // Mobile: 增大触摸热区但图标保持小尺寸
+          className="btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-base-content hover:bg-base-200 w-8 h-8 xl:w-8 xl:h-8"
         >
           <EllipsisHorizontalIcon className="w-5 h-5" />
         </div>
 
-        {/* Dropdown 内容 */}
-        {/* z-[10] 确保它浮在下方元素的上方 */}
         <ul
           tabIndex={0}
-          className="dropdown-content z-[20] menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-200"
+          className="dropdown-content z-[20] menu p-2 shadow-xl bg-base-100 rounded-box w-48 xl:w-52 border border-base-200"
         >
           <li>
             <button onClick={(e) => handleAction(e, handlePlayLatest)}>
               <PlayIcon className="w-4 h-4" />
-              播放最新一集
+              播放最新
             </button>
           </li>
           <li>
@@ -136,7 +136,7 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
           <li>
             <button onClick={(e) => handleAction(e, handleShare)}>
               <ShareIcon className="w-4 h-4" />
-              分享链接
+              分享
             </button>
           </li>
           <li>
@@ -145,7 +145,7 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-              查看详情
+              详情
             </Link>
           </li>
         </ul>
