@@ -22,7 +22,6 @@ interface HomeClientProps {
   recommendedEpisodes: RecommendedEpisodeDto[];
   recommendedLevel: string;
 }
-
 export default function HomeClient({
   user,
   latestHistory,
@@ -45,7 +44,6 @@ export default function HomeClient({
     currentHour < 12 ? "早上好" : currentHour < 18 ? "下午好" : "晚上好";
 
   const onPlayPodcast = (id: string) => {
-    // 路由到播放页
     router.push(`/episode/${id}`);
   };
 
@@ -62,15 +60,16 @@ export default function HomeClient({
 
   return (
     <div className="bg-base-200 min-h-screen pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8 space-y-6 md:space-y-10">
         {/* Welcome & Stats Hero */}
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          <div className="flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20">
             <div className="absolute top-0 right-0 p-8 opacity-10">
               <BoltIcon className="w-32 h-32" />
             </div>
+
             <div className="relative z-10">
-              <h1 className="text-3xl font-bold mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
                 {greeting}, {displayName}!
               </h1>
               <p className="text-indigo-100 mb-6 max-w-md text-sm sm:text-base leading-relaxed">
@@ -82,10 +81,39 @@ export default function HomeClient({
                   ? "今日目标已经完成！"
                   : "还剩" + stats.remainingMins + "分钟。"}
               </p>
-              <ResumeButton latestHistory={latestHistory} />
+
+              {/* [Responsive Layout Optimization]
+                 Mobile: 使用 Flex 布局，将封面图放在左侧，按钮在右侧。
+                 Desktop: 封面图隐藏（由外部 absolute 元素处理），只显示按钮。
+              */}
+              <div className="flex items-center gap-4">
+                {/* Mobile Only Cover Image */}
+                {latestHistory && (
+                  <div className="block xl:hidden shrink-0">
+                    <div className="relative w-32 aspect-[16/9] rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
+                      <Image
+                        src={
+                          latestHistory.coverUrl ||
+                          "/static/images/podcast-light.png"
+                        }
+                        alt="Podcast Cover"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Button */}
+                <div className="flex-1 sm:flex-none">
+                  <ResumeButton latestHistory={latestHistory} />
+                </div>
+              </div>
             </div>
+
+            {/* Desktop Only: Absolute Right Image */}
             {latestHistory && (
-              <div className="absolute top-6 right-10 hidden sm:block">
+              <div className="absolute top-6 right-10 hidden xl:block">
                 <Image
                   src={
                     latestHistory.coverUrl || "/static/images/podcast-light.png"
@@ -98,10 +126,11 @@ export default function HomeClient({
               </div>
             )}
           </div>
+
           <UserStatsCard stats={stats} />
         </div>
 
-        {/* Continue Listening Section - 传入剩余的历史记录 */}
+        {/* Continue Listening Section */}
         <ContinueListening history={recentHistory} onPlay={onPlayPodcast} />
 
         {/* Recommended for You */}

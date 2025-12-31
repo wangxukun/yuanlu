@@ -126,7 +126,8 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
       className="bg-white text-indigo-600 px-6 py-2.5 rounded-full font-semibold hover:bg-indigo-50 transition-colors inline-flex items-center shadow-md border-none cursor-pointer"
     >
       <PlayCircleIcon className="w-5 h-5 mr-2" />
-      继续学习 ({timeStr})
+      <span className="text-sm sm:text-base">继续学习</span>
+      <span className="hidden sm:inline">({timeStr})</span>
     </button>
   );
 };
