@@ -4,7 +4,6 @@ import {
   BookOpenIcon, // 生词本图标
   ClockIcon, // 历史记录图标
   HeartIcon, // 收藏图标
-  GiftIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,8 +17,6 @@ const links = [
   { name: "收听历史", href: "/library/history", icon: ClockIcon },
   // 将“剧集”改为“收藏”，语意更明确
   { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
-  // 这是一个特殊入口，可以保留或放入个人中心
-  { name: "会员订阅", href: "/library/premiums", icon: GiftIcon },
 ];
 
 export default function NavLinksLogined() {

@@ -7,6 +7,14 @@ import {
 } from "@heroicons/react/24/outline";
 import { UserProfile } from "@/core/user-profile/user-profile.entity";
 
+// [新增] 难度映射表：将用户配置的粗粒度等级映射为剧集的细粒度 CEFR 标准
+const LEVEL_MAPPING: Record<string, string> = {
+  Beginner: "初级",
+  Intermediate: "中级",
+  Advanced: "高级",
+  General: "未分级",
+};
+
 interface ProfileCardProps {
   profile: UserProfile;
   onEditClick: () => void;
@@ -45,7 +53,7 @@ export default function ProfileCard({
           {profile.nickname || "User"}
         </h1>
         <p className="text-sm font-medium bg-primary/10 text-primary py-1 px-3 rounded-full inline-block mt-2">
-          {profile.learnLevel}
+          {LEVEL_MAPPING[profile.learnLevel]}
         </p>
 
         <p className="mt-4 text-base-content/70 text-sm leading-relaxed px-4">

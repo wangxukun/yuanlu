@@ -3,7 +3,6 @@
 import {
   BookOpenIcon,
   ClockIcon,
-  TvIcon,
   HeartIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -14,7 +13,6 @@ import clsx from "clsx";
 const links = [
   { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
   { name: "收听历史", href: "/library/history", icon: ClockIcon },
-  { name: "我的订阅", href: "/library/podcasts", icon: TvIcon },
   { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
 ];
 

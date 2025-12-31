@@ -28,41 +28,41 @@ interface Category {
 const CATEGORIES: Category[] = [
   {
     id: "1",
-    name: "Business",
+    name: "商业",
     icon: "Briefcase",
     colorClass:
       "text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400",
   },
   {
     id: "2",
-    name: "Daily Life",
+    name: "日常生活",
     icon: "Coffee",
     colorClass:
       "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400",
   },
   {
     id: "3",
-    name: "News",
+    name: "新闻",
     icon: "Newspaper",
     colorClass: "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400",
   },
   {
     id: "4",
-    name: "Tech",
+    name: "技术",
     icon: "Cpu",
     colorClass:
       "text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400",
   },
   {
     id: "5",
-    name: "Travel",
+    name: "交通",
     icon: "Plane",
     colorClass:
       "text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400",
   },
   {
     id: "6",
-    name: "Culture",
+    name: "文化",
     icon: "Book",
     colorClass:
       "text-pink-600 bg-pink-100 dark:bg-pink-900/30 dark:text-pink-400",
@@ -123,7 +123,7 @@ export default async function DiscoverPage() {
           <div className="relative mt-4">
             <input
               type="text"
-              placeholder="搜索“商务英语”或“旅行”......"
+              placeholder="搜索“日常生活”或“新闻”......"
               className="w-full pl-12 pr-12 py-4 rounded-2xl border border-base-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base-content bg-base-100 placeholder:text-base-content/40"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">
