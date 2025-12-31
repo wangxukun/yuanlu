@@ -39,6 +39,7 @@ interface PlayerState {
   forward: () => void;
   backward: () => void;
   playEpisode: (episode: Episode) => void;
+  closePlayer: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -118,6 +119,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       isPlaying: true,
       initialTime: audio.initialTime || 0,
       currentTime: audio.initialTime || 0,
+    });
+  },
+  // 实现关闭播放器逻辑
+  closePlayer: () => {
+    set({
+      isPlaying: false,
+      currentEpisode: null, // 清空当前剧集会导致 PlayControlBar 隐藏
+      currentAudioUrl: "",
+      currentTime: 0,
     });
   },
 }));

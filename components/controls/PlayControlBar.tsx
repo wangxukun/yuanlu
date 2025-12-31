@@ -1,56 +1,96 @@
-// components/controls/PlayControlBar.tsx
 "use client";
+
+import React from "react";
 import Link from "next/link";
-import { FastForward30 } from "@/components/icons";
-import { MusicalNoteIcon } from "@heroicons/react/24/outline";
-import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
+import Image from "next/image";
 import { usePlayerStore } from "@/store/player-store";
+import {
+  PlayIcon,
+  PauseIcon,
+  XMarkIcon,
+  SignalIcon, // 1. 引入合适的替代图标
+} from "@heroicons/react/24/solid";
 
 export default function PlayControlBar() {
-  const { isPlaying, currentEpisode, togglePlay, forward } = usePlayerStore();
-  return (
-    <div className="md:hidden fixed bottom-1 left-4 right-4 h-[58px] bg-base-100 rounded-2xl shadow-xl border-t border-base-200 z-50">
-      <div className="flex items-center justify-between h-full px-4">
-        {/* 左侧：播放详情入口 */}
-        <Link
-          href="/player"
-          className="p-2 rounded-full hover:bg-base-200"
-          aria-label="打开播放详情"
-        >
-          <MusicalNoteIcon className="h-6 w-6 text-base-content" />
-        </Link>
+  // 从 Store 获取状态
+  const { currentEpisode, isPlaying, togglePlay, closePlayer } =
+    usePlayerStore();
 
-        {/* 右侧操作区 */}
-        {(currentEpisode && (
-          <div className="flex items-center space-x-4">
-            <button onClick={togglePlay} className="p-2" aria-label="播放/暂停">
-              {isPlaying ? (
-                <PauseIcon className="h-8 w-8 text-base-content hover:text-primary" />
+  // 如果没有播放内容，不渲染
+  if (!currentEpisode) return null;
+
+  return (
+    // [Layout] Fixed 定位底部，z-index 确保在最上层
+    // [Responsive] xl:hidden 确保仅在 XL 以下尺寸显示 (Mobile/Tablet)
+    <div className="fixed bottom-0 left-0 right-0 z-50 xl:hidden">
+      {/* 容器背景：半透明毛玻璃 + 顶部边框 + 阴影 */}
+      <div className="bg-base-100/95 backdrop-blur-lg border-t border-base-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="h-16 px-4 max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* 3. 左侧交互区：点击跳转至精读详情页 */}
+          <Link
+            href={`/episode/${currentEpisode.episodeid}`}
+            className="flex items-center flex-1 min-w-0 group cursor-pointer"
+          >
+            {/* 2. 封面图与占位图标 */}
+            <div className="relative shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-base-200 border border-base-300 shadow-sm">
+              {currentEpisode.coverUrl ? (
+                <Image
+                  src={currentEpisode.coverUrl}
+                  alt={currentEpisode.title}
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
               ) : (
-                <PlayIcon className="h-8 w-8 text-base-content hover:text-primary" />
+                <div className="flex items-center justify-center w-full h-full text-base-content/40">
+                  <SignalIcon className="w-5 h-5" />
+                </div>
+              )}
+            </div>
+
+            {/* 2. 标题信息：截断显示 */}
+            <div className="ml-3 flex flex-col justify-center min-w-0">
+              <h3 className="text-sm font-semibold text-base-content truncate pr-2 leading-tight">
+                {currentEpisode.title}
+              </h3>
+              <p className="text-xs text-base-content/60 truncate leading-tight mt-0.5">
+                {/* 如果有 podcastTitle 字段显示，否则显示状态文本 */}
+                {currentEpisode.title || "正在播放"}
+              </p>
+            </div>
+          </Link>
+
+          {/* 右侧控制区 */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* 播放/暂停按钮 */}
+            <button
+              onClick={(e) => {
+                e.preventDefault(); // 阻止 Link 跳转
+                e.stopPropagation();
+                togglePlay();
+              }}
+              className="btn btn-circle btn-sm btn-primary text-white shadow-md border-none hover:scale-105 active:scale-95 transition-transform"
+            >
+              {isPlaying ? (
+                <PauseIcon className="w-5 h-5" />
+              ) : (
+                <PlayIcon className="w-5 h-5 ml-0.5" />
               )}
             </button>
 
-            {/* 快进控制 */}
+            {/* 关闭按钮 */}
             <button
-              onClick={forward}
-              className="p-2 text-base-content hover:text-primary"
-              aria-label="快进30秒"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closePlayer();
+              }}
+              className="p-2 rounded-full text-base-content/40 hover:bg-base-200 hover:text-base-content transition-colors"
             >
-              <FastForward30 size={48} fill="fill-current" />
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
-        )) || (
-          <div className="flex items-center space-x-4">
-            <div className="p-2">
-              <PlayIcon className="h-8 w-8 text-base-300" />
-            </div>
-            {/* 快进控制 */}
-            <div className="p-2">
-              <FastForward30 size={48} fill="fill-base-300" />
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -54,11 +54,11 @@ export default function RootLayout({
                   <div className="w-full min-h-[calc(100vh-8rem)]">
                     {children}
                   </div>
+                  {/* 底部播放器控制栏 */}
+                  <PlayControlBar />
                   {/* 底部页脚 */}
                   <Footer />
                 </main>
-                {/* 底部播放器控制栏 */}
-                <PlayControlBar />
               </div>
             </div>
           </ThemeProvider>
