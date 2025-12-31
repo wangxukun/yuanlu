@@ -31,6 +31,7 @@ import { formatTime } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
 
+// ---------------------- Types ----------------------
 interface PodcastDetailData {
   podcastid: string;
   title: string;
@@ -79,6 +80,8 @@ interface EpisodeWithProgress extends Episode {
   description: string;
 }
 
+// ---------------------- Component ----------------------
+
 export default function PodcastDetail({
   podcast,
 }: {
@@ -105,6 +108,7 @@ export default function PodcastDetail({
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const episodeMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  // ---------------------- Effects ----------------------
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       if (session?.user?.userid && podcast.podcastid) {
@@ -147,6 +151,7 @@ export default function PodcastDetail({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeEpisodeMenu]);
 
+  // ---------------------- Handlers ----------------------
   const sortedEpisodes = [...(podcast.episode || [])].sort((a, b) => {
     const dateA = new Date(a.publishAt).getTime();
     const dateB = new Date(b.publishAt).getTime();
@@ -225,9 +230,10 @@ export default function PodcastDetail({
   };
 
   return (
-    <div className="min-h-screen bg-base-100 font-sans">
+    // [Container] max-w-full overflow-x-hidden 确保根容器不溢出
+    <div className="min-h-screen bg-base-100 font-sans pb-10 w-full max-w-full overflow-x-hidden">
       {/* Header Background & Nav */}
-      <div className="h-64 bg-base-200 relative overflow-hidden">
+      <div className="h-48 sm:h-64 xl:h-64 bg-base-200 relative overflow-hidden transition-all duration-300 w-full">
         <Image
           src={podcast.coverUrl}
           alt={podcast.title}
@@ -236,10 +242,11 @@ export default function PodcastDetail({
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-base-100"></div>
 
-        <div className="absolute top-3 w-full p-4 flex items-center justify-between z-20">
+        {/* Top Navigation Bar */}
+        <div className="absolute top-0 w-full p-4 flex items-center justify-between z-20 safe-area-inset-top">
           <button
             onClick={handleBack}
-            className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
+            className="p-2 rounded-full bg-base-100/60 xl:bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -248,12 +255,12 @@ export default function PodcastDetail({
             className="flex items-center space-x-2 relative"
             ref={headerMenuRef}
           >
-            <button className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content">
+            <button className="p-2 rounded-full bg-base-100/60 xl:bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content">
               <ShareIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
-              className="p-2 rounded-full bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
+              className="p-2 rounded-full bg-base-100/60 xl:bg-base-100/80 backdrop-blur shadow-sm hover:bg-base-100 transition-colors text-base-content"
             >
               <EllipsisHorizontalIcon className="w-5 h-5" />
             </button>
@@ -280,21 +287,22 @@ export default function PodcastDetail({
       </div>
 
       {/* Podcast Info Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 sm:-mt-28 xl:-mt-32 relative z-10 w-full">
+        <div className="flex flex-col xl:flex-row gap-6 sm:gap-8 items-center xl:items-center w-full">
           {/* Cover Art */}
-          <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-base-200 bg-base-300 relative">
+          <div className="w-48 h-48 sm:w-64 sm:h-64 xl:w-64 xl:h-64 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0 border-4 border-base-100 shadow-2xl bg-base-300 relative">
             <Image
               src={podcast.coverUrl}
               alt={podcast.title}
               fill
-              className="object-cover transform hover:scale-105 transition-transform duration-500"
+              className="object-cover"
             />
           </div>
 
           {/* Text Content */}
-          <div className="flex-1 space-y-4 pt-4 md:pt-8 w-full">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1 space-y-3 sm:space-y-4 w-full text-center xl:text-left min-w-0 max-w-full">
+            {/* Tags */}
+            <div className="flex flex-wrap justify-center xl:justify-start items-center gap-2">
               {podcast.tags?.slice(0, 5).map((tag) => (
                 <span
                   key={tag.id}
@@ -305,74 +313,82 @@ export default function PodcastDetail({
               ))}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-base-content leading-tight">
+            {/* Title - break-words + hyphens-auto 确保长单词换行 */}
+            <h1 className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-base-content leading-tight px-2 sm:px-0 break-words hyphens-auto w-full">
               {podcast.title}
             </h1>
 
-            <div className="flex flex-wrap items-center space-x-3 gap-y-2">
-              <span className="text-lg font-semibold text-base-content/80">
+            {/* Meta Info Row */}
+            <div className="flex flex-wrap justify-center xl:justify-start items-center space-x-3 gap-y-2 text-sm sm:text-base">
+              <span className="font-semibold text-base-content/80">
                 By {podcast.platform || "Yuanlu Official"}
               </span>
-              <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
-              <div className="flex items-center text-sm text-base-content/60">
-                <PlayIcon className="w-4 h-4 mr-1" />
-                {(initialPlays / 1).toFixed(1)}k 播放
+              <div className="h-3 w-px bg-base-300"></div>
+              <div className="flex items-center text-base-content/60">
+                <PlayIcon className="w-3.5 h-3.5 mr-1" />
+                {(initialPlays / 1).toFixed(1)}k
               </div>
-              <div className="h-4 w-px bg-base-300 hidden sm:block"></div>
-              <div className="flex items-center text-sm text-base-content/60">
+              <div className="h-3 w-px bg-base-300"></div>
+              <div className="flex items-center text-base-content/60">
                 <HeartIcon
-                  className={`w-4 h-4 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
+                  className={`w-3.5 h-3.5 mr-1 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
                 />
-                {(favoritesCount / 1).toFixed(1)}k 收藏
+                {(favoritesCount / 1).toFixed(1)}k
               </div>
             </div>
 
-            <p className="text-base-content/70 max-w-2xl leading-relaxed">
+            {/* Description */}
+            <p className="text-sm sm:text-base text-base-content/70 w-full max-w-2xl leading-relaxed mx-auto xl:mx-0 line-clamp-3 xl:line-clamp-none break-words">
               {podcast.description || "No description available."}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            {/* Action Buttons Area: Mobile Stack / Desktop Row */}
+            <div className="flex flex-col sm:flex-row items-center justify-center xl:justify-start gap-3 pt-2 w-full sm:w-auto max-w-md mx-auto xl:mx-0 px-1 sm:px-0">
               <button
                 onClick={handlePlayLatest}
-                className="bg-primary text-primary-content px-8 py-3.5 rounded-full font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all flex items-center transform active:scale-95 group border-none"
+                className="btn btn-primary btn-md sm:btn-lg rounded-full font-bold shadow-lg shadow-primary/30 w-full sm:w-auto min-h-[3rem] h-auto py-3 px-6 border-none"
               >
-                <PlaySolidIcon className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-                播放最新剧集
+                <PlaySolidIcon className="w-5 h-5 mr-1 flex-shrink-0" />
+                <span className="whitespace-normal leading-tight break-words">
+                  播放最新剧集
+                </span>
               </button>
               <button
                 onClick={handleToggleFavorite}
                 disabled={isLoadingFavorite}
-                className={`px-8 py-3.5 rounded-full font-bold transition-all flex items-center border-2 ${
+                className={`btn btn-md sm:btn-lg rounded-full font-bold w-full sm:w-auto min-h-[3rem] h-auto py-3 px-6 border-2 ${
                   isFavorited
-                    ? "bg-red-50 border-red-100 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400"
-                    : "bg-base-100 border-base-200 text-base-content/70 hover:border-red-200 hover:text-red-500 dark:hover:border-red-900/50"
-                } ${isLoadingFavorite ? "opacity-70 cursor-not-allowed" : ""}`}
+                    ? "btn-error bg-red-50 border-red-100 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-900/50"
+                    : "btn-outline border-base-200 text-base-content/70 hover:border-red-200 hover:text-red-500 hover:bg-base-100"
+                }`}
               >
                 {isLoadingFavorite ? (
-                  <span className="loading loading-spinner loading-xs mr-2"></span>
+                  <span className="loading loading-spinner loading-xs mr-1"></span>
                 ) : isFavorited ? (
-                  <HeartSolidIcon className="w-5 h-5 mr-2" />
+                  <HeartSolidIcon className="w-5 h-5 mr-1 flex-shrink-0" />
                 ) : (
-                  <HeartIcon className="w-5 h-5 mr-2" />
+                  <HeartIcon className="w-5 h-5 mr-1 flex-shrink-0" />
                 )}
-                {isFavorited ? "已收藏" : "收藏"}
+                <span className="whitespace-normal leading-tight break-words">
+                  {isFavorited ? "已收藏" : "收藏"}
+                </span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Episodes Section */}
-        <div className="mt-16 mb-20">
-          <div className="flex items-center justify-between border-b border-base-200 pb-4 mb-6">
-            <h2 className="text-2xl font-bold text-base-content">
+        <div className="mt-10 sm:mt-16 mb-20 w-full">
+          <div className="flex items-center justify-between border-b border-base-200 pb-3 mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-base-content flex items-baseline">
               剧集
-              <span className="ml-2 text-base-content/40 font-medium text-lg">
+              <span className="ml-2 text-base-content/40 font-medium text-sm sm:text-lg">
                 ({podcast.episode?.length || 0})
               </span>
             </h2>
             <div className="flex items-center space-x-2">
               <select
-                className="select select-ghost select-sm text-sm font-semibold text-base-content/60 outline-none cursor-pointer focus:bg-base-200"
+                className="select select-ghost select-sm text-xs sm:text-sm font-semibold text-base-content/60 outline-none focus:bg-base-200"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
               >
@@ -382,7 +398,7 @@ export default function PodcastDetail({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {sortedEpisodes.length > 0 ? (
               sortedEpisodes.map((ep) => {
                 const episode = ep as unknown as EpisodeWithProgress;
@@ -411,12 +427,12 @@ export default function PodcastDetail({
                 return (
                   <div
                     key={episode.episodeid}
-                    className={`group flex items-center p-4 rounded-xl border border-transparent hover:border-base-300 hover:bg-base-200/50 transition-all cursor-pointer relative ${isCurrentPlaying || isCurrentPaused ? "bg-base-200/50 border-primary/20" : ""}`}
+                    className={`group flex items-center p-3 sm:p-4 rounded-xl border border-transparent hover:border-base-300 hover:bg-base-200/50 transition-all cursor-pointer relative overflow-hidden ${isCurrentPlaying || isCurrentPaused ? "bg-base-200/50 border-primary/20" : "bg-base-100/50 sm:bg-transparent"}`}
                     onClick={() => handleRowClick(episode)}
                   >
-                    {/* Status Indicator (Left Play Button) */}
+                    {/* Play Status Indicator (Left) - Hidden on mobile */}
                     <div
-                      className="w-10 flex-shrink-0 flex items-center justify-center relative z-10 hover:scale-110 transition-transform"
+                      className="hidden sm:flex w-10 flex-shrink-0 items-center justify-center relative z-10 hover:scale-110 transition-transform mr-4"
                       onClick={(e) => handlePlayClick(e, episode)}
                     >
                       {isFinished ? (
@@ -435,8 +451,8 @@ export default function PodcastDetail({
                       )}
                     </div>
 
-                    {/* [修改] Episode Cover: 16:9 比例，高度不变 */}
-                    <div className="ml-4 h-16 sm:h-20 aspect-video relative flex-shrink-0 rounded-lg overflow-hidden bg-base-200 border border-base-100/50 shadow-sm group-hover:shadow-md transition-all">
+                    {/* Episode Cover */}
+                    <div className="h-14 sm:h-20 aspect-video relative flex-shrink-0 rounded-lg overflow-hidden bg-base-200 border border-base-100/50 shadow-sm group-hover:shadow-md transition-all">
                       <Image
                         src={displayCover}
                         alt={episode.title}
@@ -445,31 +461,37 @@ export default function PodcastDetail({
                       />
                     </div>
 
-                    {/* Episode Info with Description */}
-                    <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
+                    {/* Episode Info */}
+                    <div className="ml-3 sm:ml-4 flex-1 min-w-0 flex flex-col justify-center">
+                      {/* [修改重点]:
+                          1. 移除 truncate (不再单行截断)
+                          2. 添加 break-words (强制换行)
+                          3. 添加 line-clamp-2 (限制最多2行，防止过高)
+                          4. 添加 leading-tight (多行时行距紧凑)
+                      */}
                       <h3
-                        className={`text-base font-bold truncate transition-colors ${isCurrentPlaying ? "text-primary" : "text-base-content group-hover:text-primary"}`}
+                        className={`text-sm sm:text-base font-bold break-words line-clamp-2 leading-tight transition-colors ${isCurrentPlaying ? "text-primary" : "text-base-content group-hover:text-primary"}`}
                       >
                         {episode.title}
                       </h3>
 
-                      <p className="text-sm text-base-content/60 mt-1 mb-1.5 line-clamp-2 leading-relaxed">
+                      <p className="hidden sm:block text-sm text-base-content/60 mt-1 mb-1.5 line-clamp-2 leading-relaxed break-words">
                         {episode.description || "暂无简介"}
                       </p>
 
-                      <div className="flex items-center space-x-4 text-xs sm:text-sm text-base-content/50">
+                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-base-content/50 mt-1 sm:mt-1.5">
                         <div className="flex items-center">
-                          <CalendarIcon className="w-3.5 h-3.5 mr-1" />
+                          <CalendarIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                           {new Date(episode.publishAt).toLocaleDateString()}
                         </div>
                         <div className="flex items-center">
-                          <ClockIcon className="w-3.5 h-3.5 mr-1" />
+                          <ClockIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                           {formatTime(episode.duration)}
                         </div>
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Progress Bar (Desktop/Tablet Only) */}
                     {progressPercentage > 0 && progressPercentage < 100 && (
                       <div className="hidden sm:block w-24 lg:w-32 ml-4 flex-shrink-0">
                         <div className="flex justify-between text-[10px] font-bold text-base-content/40 mb-1">
@@ -485,9 +507,9 @@ export default function PodcastDetail({
                       </div>
                     )}
 
-                    {/* Actions Dropdown */}
+                    {/* Actions Dropdown - Hidden on mobile */}
                     <div
-                      className="ml-4 relative flex-shrink-0"
+                      className="hidden sm:block ml-4 relative flex-shrink-0"
                       ref={(el) => {
                         episodeMenuRefs.current[episode.episodeid] = el;
                       }}
@@ -532,12 +554,12 @@ export default function PodcastDetail({
                 );
               })
             ) : (
-              <div className="py-20 text-center bg-base-200/30 rounded-3xl border border-base-200 dashed">
-                <div className="bg-base-100 inline-block p-4 rounded-full mb-4 shadow-sm">
-                  <MusicalNoteIcon className="w-8 h-8 text-base-content/20" />
+              <div className="py-12 sm:py-20 text-center bg-base-200/30 rounded-2xl sm:rounded-3xl border border-base-200 dashed">
+                <div className="bg-base-100 inline-block p-3 sm:p-4 rounded-full mb-3 sm:mb-4 shadow-sm">
+                  <MusicalNoteIcon className="w-6 h-6 sm:w-8 sm:h-8 text-base-content/20" />
                 </div>
                 <h3 className="text-base-content font-bold">No episodes yet</h3>
-                <p className="text-base-content/60 mt-1">
+                <p className="text-sm sm:text-base text-base-content/60 mt-1">
                   This series hasn&apos;t published any episodes yet.
                 </p>
               </div>
