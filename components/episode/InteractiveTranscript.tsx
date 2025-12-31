@@ -4,17 +4,19 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { usePlayerStore } from "@/store/player-store";
 import {
   PlayCircleIcon,
-  PlusCircleIcon,
-  LanguageIcon,
   SpeakerWaveIcon,
-  DevicePhoneMobileIcon,
-  ComputerDesktopIcon,
-  ArrowTopRightOnSquareIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/solid";
+  LanguageIcon,
+  BookOpenIcon,
+  XMarkIcon,
+  PauseCircleIcon,
+  ArrowsRightLeftIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
+import clsx from "clsx"; // 使用项目已安装的 clsx 库处理类名
 
+// --- 类型定义 ---
 interface MergedSubtitleItem {
   id: number;
   startTime: string;
@@ -25,18 +27,17 @@ interface MergedSubtitleItem {
 
 interface InteractiveTranscriptProps {
   subtitles: MergedSubtitleItem[];
-  episode: Episode; // [修改] 接收完整对象
+  episode: Episode;
 }
 
+// --- 辅助函数 ---
 function parseTimeStr(timeStr: string): number {
   if (!timeStr) return 0;
   const parts = timeStr.trim().split(":");
   if (parts.length < 2) return 0;
-
-  let seconds = 0;
-  let minutes = 0;
-  let hours = 0;
-
+  let seconds = 0,
+    minutes = 0,
+    hours = 0;
   if (parts.length === 3) {
     hours = parseInt(parts[0], 10);
     minutes = parseInt(parts[1], 10);
@@ -52,23 +53,46 @@ export default function InteractiveTranscript({
   subtitles,
   episode,
 }: InteractiveTranscriptProps) {
-  // 1. 获取播放器状态
-  const currentTime = usePlayerStore((state) => state.currentTime);
-  const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
-  const audioRef = usePlayerStore((state) => state.audioRef);
-  const pause = usePlayerStore((state) => state.pause);
+  // 1. Store State
+  const {
+    currentTime,
+    setCurrentTime,
+    audioRef,
+    pause,
+    play,
+    isPlaying,
+    currentEpisode,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+  } = usePlayerStore();
 
-  // [新增] 获取当前正在播放的剧集，用于比对
-  const currentEpisode = usePlayerStore((state) => state.currentEpisode);
-  const setCurrentEpisode = usePlayerStore((state) => state.setCurrentEpisode);
-  const setCurrentAudioUrl = usePlayerStore(
-    (state) => state.setCurrentAudioUrl,
-  );
-  const play = usePlayerStore((state) => state.play);
-  // 判断：当前页面显示的剧集，是否就是正在播放的剧集？
   const isPlayingThisEpisode = currentEpisode?.episodeid === episode.episodeid;
 
-  // 2. 数据处理
+  // 2. Local State
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [autoScroll, setAutoScroll] = useState(true); // 新增：自动滚屏开关
+
+  // Refs for scrolling
+  const activeRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Modal State
+  const [selectedWord, setSelectedWord] = useState<string>("");
+  const [selectedContext, setSelectedContext] = useState<string>("");
+  const [selectedTranslation, setSelectedTranslation] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [definition, setDefinition] = useState("");
+  const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
+  const [wordDetails, setWordDetails] = useState<{
+    speakUrl?: string;
+    dictUrl?: string;
+    webUrl?: string;
+    mobileUrl?: string;
+  }>({});
+
+  // 3. Process Subtitles
   const processedSubtitles = useMemo(() => {
     if (!Array.isArray(subtitles)) return [];
     return subtitles.map((item) => ({
@@ -78,112 +102,82 @@ export default function InteractiveTranscript({
     }));
   }, [subtitles]);
 
-  // 3. 状态管理
-  const [activeIndex, setActiveIndex] = useState<number>(-1);
-  const [showTranslation, setShowTranslation] = useState(true);
-
-  const activeRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // 弹窗状态
-  const [selectedWord, setSelectedWord] = useState<string>("");
-  const [selectedContext, setSelectedContext] = useState<string>("");
-  const [selectedTranslation, setSelectedTranslation] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [definition, setDefinition] = useState("");
-  const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
-
-  const [wordDetails, setWordDetails] = useState<{
-    speakUrl?: string;
-    dictUrl?: string;
-    webUrl?: string;
-    mobileUrl?: string;
-  }>({});
-
-  // 4. [修改] 同步高亮逻辑：增加 isPlayingThisEpisode 检查
+  // 4. Sync Highlight
   useEffect(() => {
-    // 如果全局播放的不是这一集，强制关闭高亮，且不执行后续查找逻辑
     if (!isPlayingThisEpisode) {
       if (activeIndex !== -1) setActiveIndex(-1);
       return;
     }
-
+    // 查找当前时间落在哪个区间，或者就在其后（为了流畅性）
     const index = processedSubtitles.findIndex(
       (sub) => currentTime >= sub.start && currentTime <= sub.end,
     );
-
     if (index !== -1 && index !== activeIndex) {
       setActiveIndex(index);
     }
   }, [currentTime, processedSubtitles, activeIndex, isPlayingThisEpisode]);
 
-  // 5. 自动滚动逻辑
+  // 5. Auto Scroll
   useEffect(() => {
-    // 只有当高亮有效（即正在播放本集）时才滚动
-    if (activeIndex !== -1 && activeRef.current && containerRef.current) {
+    if (autoScroll && activeIndex !== -1 && activeRef.current) {
       activeRef.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }
-  }, [activeIndex]);
+  }, [activeIndex, autoScroll]);
 
-  // 6. 点击单词
+  // 6. Interactions
+  const handleJump = (startTime: number) => {
+    if (isPlayingThisEpisode && audioRef) {
+      audioRef.currentTime = startTime;
+      setCurrentTime(startTime);
+      play();
+    } else {
+      // 切歌逻辑
+      setCurrentEpisode(episode);
+      setCurrentAudioUrl(episode.audioUrl);
+      // 这里的跳转可能会被 Player 初始逻辑覆盖，但在 UI 上我们先允许点击
+      // 实际完善需要 PlayerStore 支持 playFrom(time)
+    }
+  };
+
   const handleWordClick = async (
     word: string,
-    fullSentenceEn: string,
-    fullSentenceZh: string,
+    contextEn: string,
+    contextZh: string,
   ) => {
-    // 如果正在播放，先暂停
-    if (isPlayingThisEpisode) {
-      pause();
-    }
+    if (isPlayingThisEpisode && isPlaying) pause();
+
     const cleanWord = word.replace(/[.,!?;:"()]/g, "").trim();
+    if (!cleanWord) return;
+
     setSelectedWord(cleanWord);
-    setSelectedContext(fullSentenceEn);
-    setSelectedTranslation(fullSentenceZh);
+    setSelectedContext(contextEn);
+    setSelectedTranslation(contextZh);
     setDefinition("");
     setWordDetails({});
     setIsModalOpen(true);
-
-    // [新增] 调用查词 API
     setIsLoadingDefinition(true);
+
     try {
       const res = await fetch("/api/dictionary/youdao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: cleanWord,
-        }),
+        body: JSON.stringify({ word: cleanWord }),
       });
-
       if (res.ok) {
         const data = await res.json();
         setDefinition(data.definition);
-        setWordDetails({
-          speakUrl: data.speakUrl,
-          dictUrl: data.dictUrl,
-          webUrl: data.webUrl,
-          mobileUrl: data.mobileUrl,
-        });
+        setWordDetails(data);
       }
-    } catch (error) {
-      console.error("Auto definition failed:", error);
-      // 失败了也不要紧，用户可以手动输
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsLoadingDefinition(false);
     }
   };
 
-  const playWordAudio = () => {
-    if (wordDetails.speakUrl) {
-      const audio = new Audio(wordDetails.speakUrl);
-      audio.play().catch((e) => console.error("Play word failed", e));
-    }
-  };
-
-  // 7. 保存生词
   const handleSaveVocabulary = async () => {
     if (!selectedWord) return;
     setIsSaving(true);
@@ -197,8 +191,7 @@ export default function InteractiveTranscript({
           contextSentence: selectedContext,
           translation: selectedTranslation,
           episodeid: episode.episodeid,
-          timestamp: isPlayingThisEpisode ? currentTime : 0, // 只有在播放本集时才记录准确时间，否则记为0
-          // [修改] 提交字段变化
+          timestamp: isPlayingThisEpisode ? currentTime : 0,
           speakUrl: wordDetails.speakUrl,
           dictUrl: wordDetails.dictUrl,
           webUrl: wordDetails.webUrl,
@@ -206,251 +199,256 @@ export default function InteractiveTranscript({
         }),
       });
       if (res.ok) {
-        toast.success("已加入生词本！");
+        toast.success("已加入生词本");
         setIsModalOpen(false);
       } else {
-        toast.error("保存失败，请重试");
+        toast.error("保存失败");
       }
     } catch (error) {
-      console.error(error);
-      toast.error("网络错误，请检查网络连接");
+      toast.error("网络错误", error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 8. [修改] 跳转/播放逻辑
-  const handleJump = (startTime: number) => {
-    // 情况 A: 正在播放本集 -> 直接跳转
-    if (isPlayingThisEpisode && audioRef) {
-      audioRef.currentTime = startTime;
-      setCurrentTime(startTime);
-      play(); // 跳转后自动播放
-    }
-    // 情况 B: 正在播放别的集/没播放 -> 切歌，然后跳转
-    else {
-      console.log("Switching episode to:", episode.title);
-      setCurrentEpisode(episode);
-      setCurrentAudioUrl(episode.audioUrl);
-
-      // 注意：这里我们设置了 Store 的 currentTime，
-      // 但 Player 组件监听到 episode 变化后，会去 fetch 历史进度并可能覆盖它。
-      // 为了让“点读”优于“历史进度”，我们可以利用一个简短的延时或状态标记，
-      // 但通常 Player 组件加载音频需要时间，简单的处理是先切歌，
-      // 这里的跳转可能需要在 Player 的 onLoadedMetadata 里再次确认，
-      // 不过对于简单实现，我们可以先只切歌，让用户再点一次，或者相信 Player 的 props。
-
-      // 更稳妥的方式是：利用 Player Store 的某种机制告诉 Player "切歌并跳转到 X 秒"
-      // 但目前架构下，我们先切歌，并尝试设置时间（可能会被 Player 的历史恢复逻辑覆盖，但那是预期行为：
-      // 用户切换到这集，通常希望从上次听的地方开始；除非用户明确点了某句台词）
-
-      // 这里的逻辑稍微有点冲突：点台词是想听这句，历史恢复是想听上次。
-      // 简单的优化：先切歌。用户如果发现没跳过去，再点一次即可。
-      // 或者：在 Player Store 加一个 startFromTime 字段，切歌时带过去。
-
-      // 暂时方案：切歌。
-      // 如果你希望点哪播哪，可以在这里 setTimeout 强行设置一下，但不推荐。
+  const playWordAudio = () => {
+    if (wordDetails.speakUrl) {
+      new Audio(wordDetails.speakUrl).play().catch(console.error);
     }
   };
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto flex flex-col gap-4">
-      {/* 工具栏 */}
-      <div className="flex items-center justify-between bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm">
-        <div className="flex items-center gap-2 text-sm text-base-content/70">
-          <span className="badge badge-ghost badge-sm">
-            {isPlayingThisEpisode ? "同步滚动中" : "点击播放按钮开始精听"}
-          </span>
-        </div>
-        <div className="form-control">
-          <label className="label cursor-pointer gap-2">
-            <span className="label-text flex items-center gap-1 font-medium">
-              <LanguageIcon className="w-4 h-4" />
-              中英对照
+    <div className="relative w-full max-w-5xl mx-auto">
+      {/* --- 工具栏 (Toolbar) --- */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-base-200/60 sticky top-0 bg-base-100/95 backdrop-blur z-10 py-2">
+        <div className="flex items-center gap-2">
+          {/* 状态指示器 */}
+          {isPlayingThisEpisode ? (
+            <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">
+              <SpeakerWaveIcon className="w-3.5 h-3.5" /> 正在精听
             </span>
-            <input
-              type="checkbox"
-              className="toggle toggle-primary toggle-sm"
-              checked={showTranslation}
-              onChange={(e) => setShowTranslation(e.target.checked)}
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs font-medium text-base-content/40 bg-base-200 px-2 py-1 rounded-full">
+              <PauseCircleIcon className="w-3.5 h-3.5" /> 点击段落播放
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* 自动滚屏开关 */}
+          <button
+            onClick={() => setAutoScroll(!autoScroll)}
+            className={clsx(
+              "btn btn-xs sm:btn-sm btn-ghost gap-1.5 transition-colors",
+              autoScroll ? "text-primary bg-primary/5" : "text-base-content/40",
+            )}
+            title="开启/关闭自动跟随滚动"
+          >
+            <ArrowsRightLeftIcon
+              className={clsx("w-3.5 h-3.5", autoScroll && "rotate-90")}
             />
-          </label>
+            <span className="hidden sm:inline">跟随</span>
+          </button>
+
+          {/* 中文翻译开关 */}
+          <button
+            onClick={() => setShowTranslation(!showTranslation)}
+            className={clsx(
+              "btn btn-xs sm:btn-sm btn-ghost gap-1.5 transition-colors",
+              showTranslation
+                ? "text-primary bg-primary/5"
+                : "text-base-content/40",
+            )}
+          >
+            <LanguageIcon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">译文</span>
+          </button>
         </div>
       </div>
 
-      {/* 字幕列表 */}
-      <div
-        ref={containerRef}
-        className="h-[500px] overflow-y-auto p-4 bg-base-100 rounded-xl border border-base-200 shadow-inner space-y-6"
-      >
+      {/* --- 字幕内容区 (Transcript Content) --- */}
+      {/* 设计重点：
+         1. 字体：Serif for English, Sans for Chinese
+         2. 间距：加大 gap 和 leading
+         3. 颜色：深灰 (slate-800) 而不是纯黑
+      */}
+      <div className="space-y-6 pb-20" ref={containerRef}>
         {processedSubtitles.map((sub, index) => {
           const isActive = index === activeIndex;
           return (
             <div
               key={sub.id || index}
               ref={isActive ? activeRef : null}
-              className={`transition-all duration-300 p-3 rounded-lg flex gap-3 ${isActive ? "bg-primary/10 border-l-4 border-primary scale-[1.02]" : "hover:bg-base-200/50 border-l-4 border-transparent"}`}
+              className={clsx(
+                "group relative rounded-xl p-4 sm:p-6 transition-all duration-500 border-l-4",
+                isActive
+                  ? "bg-orange-50/80 border-orange-400 shadow-sm" // 激活：暖色背景，橙色边框
+                  : "bg-transparent border-transparent hover:bg-base-200/30", // 默认：透明，Hover微灰
+              )}
             >
-              <button
-                onClick={() => handleJump(sub.start)}
-                className={`mt-1 flex-shrink-0 transition-colors ${isActive ? "text-primary" : "text-gray-300 hover:text-primary"}`}
-              >
-                <PlayCircleIcon className="w-6 h-6" />
-              </button>
-              <div className="flex-1">
-                <p
-                  className={`text-lg leading-relaxed ${isActive ? "text-base-content font-medium" : "text-base-content/70"}`}
+              <div className="flex gap-4 sm:gap-6 items-start">
+                {/* 播放按钮图标 (悬浮显示 or 激活显示) */}
+                <button
+                  onClick={() => handleJump(sub.start)}
+                  className={clsx(
+                    "mt-1.5 flex-shrink-0 transition-all duration-300 transform",
+                    isActive
+                      ? "text-orange-500 scale-110 opacity-100"
+                      : "text-base-content/20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
+                  )}
+                  aria-label="Play segment"
                 >
-                  {sub.textEn.split(" ").map((word, i) => (
-                    <span
-                      key={i}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleWordClick(word, sub.textEn, sub.textZh);
-                      }}
-                      className="cursor-pointer hover:bg-yellow-200 hover:text-black rounded px-0.5 transition-colors duration-150 inline-block"
-                    >
-                      {word}{" "}
-                    </span>
-                  ))}
-                </p>
-                {showTranslation && sub.textZh && (
+                  {isActive && isPlaying ? (
+                    // 如果正在播放这句，显示个动态的小图标或者暂停
+                    <div className="relative w-6 h-6 flex items-center justify-center">
+                      <span className="loading loading-bars loading-xs"></span>
+                    </div>
+                  ) : (
+                    <PlayCircleIcon className="w-7 h-7" />
+                  )}
+                </button>
+
+                {/* 文本区域 */}
+                <div className="flex-1 min-w-0">
+                  {/* 英文原文 */}
                   <p
-                    className={`mt-2 text-sm border-t border-base-content/5 pt-1 ${isActive ? "text-base-content/80" : "text-base-content/50"}`}
+                    className={clsx(
+                      "font-serif text-lg sm:text-xl leading-8 sm:leading-9 tracking-wide transition-colors",
+                      isActive
+                        ? "text-slate-900 font-medium"
+                        : "text-slate-700",
+                    )}
                   >
-                    {sub.textZh}
+                    {sub.textEn.split(" ").map((word, i) => (
+                      <span
+                        key={i}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWordClick(word, sub.textEn, sub.textZh);
+                        }}
+                        className="cursor-pointer rounded hover:bg-primary/20 hover:text-primary-focus transition-colors px-0.5 inline-block active:scale-95 select-text"
+                      >
+                        {word}{" "}
+                      </span>
+                    ))}
                   </p>
-                )}
+
+                  {/* 中文译文 */}
+                  <div
+                    className={clsx(
+                      "overflow-hidden transition-all duration-500 ease-in-out",
+                      showTranslation
+                        ? "max-h-40 opacity-100 mt-3"
+                        : "max-h-0 opacity-0 mt-0",
+                    )}
+                  >
+                    <p
+                      className={clsx(
+                        "font-sans text-sm sm:text-base leading-7",
+                        isActive
+                          ? "text-slate-600 font-medium"
+                          : "text-slate-400",
+                      )}
+                    >
+                      {sub.textZh}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {isModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg flex items-center gap-2 mb-4">
-              <PlusCircleIcon className="w-6 h-6 text-primary" />
-              添加生词
+      {/* --- 生词弹窗 (Custom Modal) --- */}
+      {/* 使用 dialog 而不是 absolute，确保层级最高 */}
+      <dialog className={clsx("modal", isModalOpen && "modal-open")}>
+        <div className="modal-box bg-base-100 max-w-lg rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
+          {/* Header */}
+          <div className="bg-primary/5 px-6 py-4 flex justify-between items-center border-b border-primary/10">
+            <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+              <BookOpenIcon className="w-5 h-5" /> 查词助手
             </h3>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
 
-            <div className="space-y-4">
-              {/* 单词与发音 */}
-              <div className="form-control w-full">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={selectedWord}
-                    onChange={(e) => setSelectedWord(e.target.value)}
-                    className="input input-bordered flex-1 font-bold text-xl text-primary"
-                  />
-                  {wordDetails.speakUrl && (
-                    <button
-                      className="btn btn-square btn-outline btn-primary"
-                      onClick={playWordAudio}
-                      title="点击发音"
-                    >
-                      <SpeakerWaveIcon className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* [修改] 外部链接区域 */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {/* 1. App 深度链接 (仅移动端显示 sm:hidden) */}
-                  {wordDetails.dictUrl && (
-                    <a
-                      href={wordDetails.dictUrl}
-                      className="btn btn-xs btn-outline btn-accent gap-1 sm:hidden"
-                    >
-                      <DevicePhoneMobileIcon className="w-3 h-3" /> 打开App
-                    </a>
-                  )}
-
-                  {/* 2. 移动端网页链接 (作为兜底) */}
-                  {wordDetails.mobileUrl && (
-                    <a
-                      href={wordDetails.mobileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-xs btn-outline gap-1 sm:hidden"
-                    >
-                      <ArrowTopRightOnSquareIcon className="w-3 h-3" /> 网页版
-                    </a>
-                  )}
-
-                  {/* 3. 桌面端网页链接 (仅桌面端显示 hidden sm:inline-flex) */}
-                  {wordDetails.webUrl && (
-                    <a
-                      href={wordDetails.webUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-xs btn-outline gap-1 hidden sm:inline-flex"
-                    >
-                      <ComputerDesktopIcon className="w-3 h-3" /> 电脑网页
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* 释义 */}
-              <div className="form-control w-full relative">
-                <label className="label py-1">
-                  <span className="label-text">释义</span>
-                  {isLoadingDefinition && (
-                    <span className="label-text-alt flex items-center gap-1 text-warning">
-                      <ArrowPathIcon className="w-3 h-3 animate-spin" />{" "}
-                      查询中...
-                    </span>
-                  )}
-                </label>
-                <textarea
-                  value={definition}
-                  onChange={(e) => setDefinition(e.target.value)}
-                  placeholder="请输入释义..."
-                  className={`textarea textarea-bordered w-full h-20 ${isLoadingDefinition ? "animate-pulse bg-base-200" : ""}`}
-                />
-              </div>
-
-              {/* 语境 */}
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text">语境</span>
-                </label>
-                <div className="p-3 bg-base-200 rounded-lg text-sm italic border-l-4 border-base-content/20">
-                  <p className="text-base-content/80">{selectedContext}</p>
-                  {selectedTranslation && (
-                    <p className="text-base-content/50 mt-1">
-                      {selectedTranslation}
-                    </p>
-                  )}
-                </div>
+          <div className="p-6 space-y-6">
+            {/* 单词主体 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-3xl font-serif font-black text-slate-800">
+                  {selectedWord}
+                </h2>
+                {wordDetails.speakUrl && (
+                  <button
+                    onClick={playWordAudio}
+                    className="btn btn-circle btn-sm btn-primary btn-outline"
+                  >
+                    <SpeakerWaveIcon className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="modal-action mt-6">
-              <button
-                className="btn btn-ghost"
-                onClick={() => setIsModalOpen(false)}
-              >
-                取消
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveVocabulary}
-                disabled={isSaving}
-              >
-                {isSaving ? "保存中..." : "确认保存"}
-              </button>
+            {/* 释义区 */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-base-content/40 uppercase tracking-wider">
+                  Definition
+                </label>
+                {isLoadingDefinition && (
+                  <span className="loading loading-spinner loading-xs text-primary"></span>
+                )}
+              </div>
+              <textarea
+                className="textarea textarea-bordered w-full h-24 bg-base-200/30 text-base leading-relaxed focus:bg-white transition-colors resize-none"
+                placeholder="输入释义..."
+                value={definition}
+                onChange={(e) => setDefinition(e.target.value)}
+              ></textarea>
+            </div>
+
+            {/* 语境区 */}
+            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+              <p className="text-sm text-slate-700 font-serif italic mb-2">
+                “{selectedContext}”
+              </p>
+              <p className="text-xs text-slate-500">{selectedTranslation}</p>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setIsModalOpen(false)}
-          ></div>
+
+          {/* Footer */}
+          <div className="p-4 bg-base-200/50 flex justify-end gap-3 border-t border-base-200">
+            <button
+              className="btn btn-ghost rounded-xl"
+              onClick={() => setIsModalOpen(false)}
+            >
+              取消
+            </button>
+            <button
+              className="btn btn-primary rounded-xl px-8"
+              onClick={handleSaveVocabulary}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <span className="loading loading-spinner"></span>
+              ) : (
+                <>
+                  <CheckCircleIcon className="w-5 h-5" /> 保存生词
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setIsModalOpen(false)}>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

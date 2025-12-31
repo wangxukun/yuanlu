@@ -13,29 +13,31 @@ export default async function EpisodePage({
   const subtitles = await mergeSubtitles(episode);
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
-      {/* [重要修改]
-         将 lg:grid-cols-12 改为 xl:grid-cols-12
-         这意味着在 iPad Pro (1024px, 属于 lg 断点) 上，
-         布局将回退到 grid-cols-1 (单栏)，避免拥挤。
-      */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 xl:gap-12 items-start relative">
-        {/* 左侧/顶部：剧集概览 */}
-        {/* 同样，将 lg: 前缀改为 xl: */}
-        <div className="xl:col-span-3 xl:sticky xl:top-24 transition-all z-10">
-          <EpisodeSummarize episode={episode} />
-        </div>
+    // [Layout Change 1] 全局背景微调，增加层次感
+    <div className="min-h-screen bg-base-200/30">
+      <div className="max-w-[1800px] mx-auto p-4 md:p-6 lg:p-10">
+        {/* [Grid System]
+           < xl (Mobile/Tablet): 单列布局
+           >= xl (Desktop): 12列布局
+        */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 xl:gap-16 items-start relative">
+          {/* --- 左侧边栏 (Sidebar) --- */}
+          {/* Desktop: Sticky 定位，随页面滚动但固定在视口 */}
+          <aside className="xl:col-span-3 xl:sticky xl:top-28 transition-all z-10 order-1">
+            <EpisodeSummarize episode={episode} />
+          </aside>
 
-        {/* 右侧/底部：主要内容 */}
-        {/* 同样，将 lg: 前缀改为 xl: */}
-        <div className="xl:col-span-9 flex flex-col gap-10 min-w-0">
-          <section>
-            <EpisodeDocument subtitle={subtitles} episode={episode} />
-          </section>
+          {/* --- 右侧主要内容区 (Main Content) --- */}
+          {/* 包含：精读文稿 + 评论区 */}
+          <main className="xl:col-span-9 flex flex-col gap-10 min-w-0 order-2">
+            <section>
+              <EpisodeDocument subtitle={subtitles} episode={episode} />
+            </section>
 
-          <section>
-            <EpisodeComments episodeId={episode.episodeid} />
-          </section>
+            <section className="{/*max-w-4xl*/}">
+              <EpisodeComments episodeId={episode.episodeid} />
+            </section>
+          </main>
         </div>
       </div>
     </div>
