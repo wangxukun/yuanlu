@@ -24,7 +24,7 @@ export default function PodcastAuthPrompt() {
 
         {/* 描述文字 */}
         <p className="text-base-200 text-base xl:text-lg leading-relaxed px-2 xl:px-0">
-          保存您的位置，关注节目并查看最新剧集 - 所有这些都是免费的。
+          保存您的位置，关注节目并查看最新剧集，生词收藏等获取最多功能。
         </p>
 
         {/* 登录按钮 */}
