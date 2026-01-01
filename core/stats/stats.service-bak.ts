@@ -17,77 +17,69 @@ import { Prisma } from "@prisma/client";
 export const statsService = {
   /**
    * 处理用户活跃更新 (核心写逻辑)
-   * 优化：移除 $transaction 以防止在高并发页面（如播放页）出现 P2028 事务超时错误
-   * 逻辑：独立执行 User 更新和 UserDailyActivity 更新，互不阻塞
+   * 包含：更新用户在线状态 + 累加每日收听时长
    */
   async updateDailyActivity(dto: UpdateUserActivityDto): Promise<void> {
     const { userId, seconds = 0 } = dto;
+    // [修改] 使用 UTC 零点，替代 startOfDay(new Date())
+    // 用于调试，你会发现这下无论在哪里跑，都是 T00:00:00.000Z
+    // const today = getTodayUTC(); // 获取今天00:00:00.000，代替startOfDay函数
     const today = startOfDay(new Date()); // 获取今天00:00:00.000
-
-    // 1. 更新用户最后活跃时间 (User 表)
-    // 使用 Promise.allSettled 或独立的 try-catch 确保即使这步失败（极少见），也不影响下面的统计数据
-    const updateUserPromise = prisma.user
-      .update({
+    // 使用事务保证原子性
+    await prisma.$transaction(async (tx) => {
+      // 1. 更新用户最后活跃时间 (User 表)
+      await tx.user.update({
         where: { userid: userId },
         data: {
           lastActiveAt: new Date(),
           isOnline: true,
         },
-      })
-      .catch((e) => {
-        console.warn(`[Stats] Update user online status failed: ${e.message}`);
       });
 
-    // 2. 更新每日活动日志 (UserDailyActivity 表)
-    // [优化] 保持使用 upsert 的原子性 increment 操作
-    const updateActivityPromise = prisma.user_daily_activity.upsert({
-      where: {
-        userid_date: {
-          userid: userId,
-          date: today,
+      // 2. 更新每日活动日志 (UserDailyActivity 表)
+      // 先尝试查找今天的记录
+      const dailyActivity = await tx.user_daily_activity.findUnique({
+        where: {
+          userid_date: {
+            userid: userId,
+            date: today,
+          },
         },
-      },
-      create: {
-        userid: userId,
-        date: today,
-        listeningSeconds: seconds,
-        isActive: seconds >= 300,
-        wordsLearned: 0,
-      },
-      update: {
-        listeningSeconds: { increment: seconds },
-      },
-    });
+      });
 
-    // 并行执行以减少接口响应时间
-    const [, updatedActivity] = await Promise.all([
-      updateUserPromise,
-      updateActivityPromise,
-    ]);
+      if (dailyActivity) {
+        // 如果记录存在，累加时长并重新评估是否达标
+        const newTotal = dailyActivity.listeningSeconds + seconds;
+        // 达标阈值：5分钟 (300秒)
+        const isActive = newTotal >= 300;
 
-    // 3. 检查并更新达标状态 (isActive)
-    // 只有当 activity 更新成功且状态需要变更时才执行
-    if (
-      updatedActivity &&
-      !updatedActivity.isActive &&
-      updatedActivity.listeningSeconds >= 300
-    ) {
-      try {
-        await prisma.user_daily_activity.update({
-          where: { id: updatedActivity.id },
-          data: { isActive: true },
+        await tx.user_daily_activity.update({
+          where: { id: dailyActivity.id },
+          data: {
+            listeningSeconds: newTotal,
+            isActive: isActive,
+          },
         });
-      } catch (e) {
-        console.warn(`[Stats] Update isActive failed: ${e}`);
-        // 忽略此错误，下次心跳会再次检查
+      } else {
+        // 如果记录不存在，创建新记录
+        await tx.user_daily_activity.create({
+          data: {
+            userid: userId,
+            date: today,
+            listeningSeconds: seconds,
+            isActive: seconds >= 300,
+            wordsLearned: 0,
+          },
+        });
       }
-    }
+    });
   },
 
   /**
    * 获取个人中心概览统计数据 (总时长、连续天数、总词汇)
    */
   async getUserProfileStats(userId: string): Promise<UserProfileStatsDto> {
+    // 并行查询以提高性能
     const [streakDays, totalSecondsResult, wordsCount] = await Promise.all([
       this.calculateStreak(userId),
       prisma.user_daily_activity.aggregate({
@@ -99,6 +91,7 @@ export const statsService = {
       }),
     ]);
 
+    // 计算总小时数 (四舍五入)
     const totalListeningSeconds = totalSecondsResult._sum.listeningSeconds || 0;
     const totalHours = Math.round(totalListeningSeconds / 3600);
 
@@ -115,6 +108,7 @@ export const statsService = {
   async getUserHomeStats(userId: string): Promise<UserHomeStatsDto> {
     const now = new Date();
 
+    // 1. 将所有返回 number 的请求打包 (同构类型，TS 自动推断无压力)
     const numbersPromise = Promise.all([
       this.calculateStreak(userId),
       this.getWeeklyListeningSeconds(userId, now),
@@ -131,6 +125,9 @@ export const statsService = {
     });
     const activityPromise = this.getTodayActivity(userId);
 
+    // 【分别等待结果】
+    // 这种写法彻底避开了 Promise.all 对混合类型的推断报错
+    // 因为 numbersPromise 和 activityPromise 已经在后台并行跑了，所以这里分别 await 不会降低速度
     const [
       streakDays,
       thisWeekListeningSeconds,
@@ -140,10 +137,12 @@ export const statsService = {
     const userProfile = await userProfilePromise;
     const todayActivity = await activityPromise;
 
+    // 2. 确定目标值 (优先使用用户配置，否则使用默认值)
     const dailyGoalMins = userProfile?.dailyStudyGoalMins || 20;
     const listeningTimeGoal = userProfile?.weeklyListeningGoalHours || 2;
     const wordsLearnedGoal = userProfile?.weeklyWordsGoal || 50;
 
+    // 3. 计算逻辑
     const todaySeconds = todayActivity?.listeningSeconds || 0;
     const todayMins = Math.floor(todaySeconds / 60);
     const remainingMins = Math.max(0, dailyGoalMins - todayMins);
@@ -192,10 +191,11 @@ export const statsService = {
     if (activities.length === 0) return 0;
 
     let streak = 0;
-    const today = new Date();
-    const yesterday = subDays(today, 1);
-    const latestDate = activities[0].date;
+    const today = new Date(); // 获取当前时间
+    const yesterday = subDays(today, 1); // 获取昨天的时间
+    const latestDate = activities[0].date; // 获取最近一次打卡的时间
 
+    // 如果最近一次打卡不是今天也不是昨天，说明断签了
     if (!isSameDay(latestDate, today) && !isSameDay(latestDate, yesterday)) {
       return 0;
     }

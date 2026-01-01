@@ -4,7 +4,7 @@ import { Episode } from "@/core/episode/episode.entity";
 import {
   PlayIcon,
   PauseIcon,
-  HeartIcon,
+  HeartIcon as SolidHeartIcon, // 实心爱心 (已收藏)
   ShareIcon,
   CalendarDaysIcon,
   ClockIcon,
@@ -15,13 +15,20 @@ import {
 import {
   PlayIcon as PlayIconOutline,
   HashtagIcon,
+  HeartIcon as OutlineHeartIcon, // 空心爱心 (未收藏)
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import Image from "next/image";
 import { usePlayerStore } from "@/store/player-store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
+import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
+  const pathname = usePathname();
+  const { data: session } = useSession();
   const {
     play,
     togglePlay,
@@ -32,9 +39,73 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   } = usePlayerStore();
 
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
 
   const isCurrentEpisode = currentEpisode?.episodeid === episode.episodeid;
   const isPlayingThis = isCurrentEpisode && isPlaying;
+
+  // 1. 初始化检查收藏状态
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (session?.user?.userid && episode.episodeid) {
+        try {
+          const response = await fetch(
+            `/api/episode/favorite/find-unique?episodeid=${episode.episodeid}&userid=${session.user.userid}`,
+            { method: "GET" },
+          );
+          const data = await response.json();
+          if (data.success) {
+            setIsFavorited(true);
+          }
+        } catch (error) {
+          console.error("Failed to check episode favorite status", error);
+        }
+      }
+    };
+    checkFavoriteStatus();
+  }, [session, episode.episodeid]);
+
+  // 2. 处理收藏/取消收藏 (乐观更新)
+  const handleToggleFavorite = async (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // 防止冒泡触发其他点击事件
+
+    if (!session?.user) {
+      toast.error("请先登录后收藏");
+      return;
+    }
+
+    if (isLoadingFavorite) return;
+    setIsLoadingFavorite(true);
+
+    // 乐观更新：先切换 UI 状态
+    const prevIsFavorited = isFavorited;
+    setIsFavorited(!prevIsFavorited);
+
+    try {
+      const result = await toggleEpisodeFavorite(episode.episodeid, pathname);
+
+      if (!result.success) {
+        // 失败回滚
+        setIsFavorited(prevIsFavorited);
+        toast.error(result.message || "操作失败");
+      } else {
+        toast.success(result.isFavorited ? "收藏成功" : "已取消收藏");
+      }
+    } catch (error) {
+      console.error(error);
+      setIsFavorited(prevIsFavorited);
+      toast.error("网络错误，请重试");
+    } finally {
+      setIsLoadingFavorite(false);
+    }
+  };
+
+  // 3. 待开发功能提示
+  const handleFeatureUnderDev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    toast.info("功能开发中...");
+  };
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,8 +130,6 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     <>
       {/* =====================================================================================
           Mobile & Tablet Layout (< xl)
-          设计风格：紧凑型媒体卡片 (Compact Media Card)
-          目的：节省垂直空间，让用户快速看到下方的文稿，同时保留核心操作。
       ===================================================================================== */}
       <div className="xl:hidden bg-base-100 rounded-[1.5rem] p-4 sm:p-5 shadow-sm border border-base-200/60 mb-6">
         <div className="flex gap-4 sm:gap-6">
@@ -116,10 +185,30 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               </button>
 
               <div className="flex gap-1">
-                <button className="btn btn-ghost btn-sm btn-circle text-base-content/60">
-                  <HeartIcon className="w-5 h-5" />
+                {/* 移动端收藏按钮 */}
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isLoadingFavorite}
+                  className={`btn btn-sm btn-circle ${
+                    isFavorited
+                      ? "text-red-500 bg-red-50 hover:bg-red-100 border-red-100"
+                      : "text-base-content/60 btn-ghost"
+                  }`}
+                  aria-label={isFavorited ? "取消收藏" : "收藏"}
+                >
+                  {isLoadingFavorite ? (
+                    <span className="loading loading-spinner loading-xs"></span>
+                  ) : isFavorited ? (
+                    <SolidHeartIcon className="w-5 h-5" />
+                  ) : (
+                    <OutlineHeartIcon className="w-5 h-5" />
+                  )}
                 </button>
-                <button className="btn btn-ghost btn-sm btn-circle text-base-content/60">
+                {/* 移动端更多操作按钮 */}
+                <button
+                  onClick={handleFeatureUnderDev}
+                  className="btn btn-ghost btn-sm btn-circle text-base-content/60"
+                >
                   <EllipsisHorizontalIcon className="w-6 h-6" />
                 </button>
               </div>
@@ -149,8 +238,6 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
       {/* =====================================================================================
           Desktop Sidebar Layout (>= xl)
-          设计风格：沉浸式侧边栏 (Immersive Sidebar)
-          目的：利用宽屏优势，展示大幅封面，提供完整信息，作为阅读时的视觉锚点。
       ===================================================================================== */}
       <div className="hidden xl:flex flex-col gap-8 px-2">
         {/* 1. 封面区域 */}
@@ -223,13 +310,39 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
           </button>
 
           <div className="grid grid-cols-3 gap-3">
-            <button className="btn btn-ghost bg-base-100 border-base-200 hover:border-primary/30 hover:bg-base-100 rounded-xl text-base-content/60 flex flex-col gap-1 h-auto py-3 text-xs font-normal">
-              <HeartIcon className="w-6 h-6" /> 点赞
+            {/* 桌面端收藏按钮 */}
+            <button
+              onClick={handleToggleFavorite}
+              disabled={isLoadingFavorite}
+              className={`btn border-base-200 hover:border-primary/30 rounded-xl flex flex-col gap-1 h-auto py-3 text-xs font-normal transition-all ${
+                isFavorited
+                  ? "bg-red-50 text-red-500 border-red-100 hover:bg-red-100"
+                  : "bg-base-100 text-base-content/60 hover:bg-base-100 hover:text-red-500"
+              }`}
+            >
+              {isLoadingFavorite ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : isFavorited ? (
+                <SolidHeartIcon className="w-6 h-6" />
+              ) : (
+                <OutlineHeartIcon className="w-6 h-6" />
+              )}
+              {isFavorited ? "已收藏" : "收藏"}
             </button>
-            <button className="btn btn-ghost bg-base-100 border-base-200 hover:border-primary/30 hover:bg-base-100 rounded-xl text-base-content/60 flex flex-col gap-1 h-auto py-3 text-xs font-normal">
+
+            {/* 下载按钮 */}
+            <button
+              onClick={handleFeatureUnderDev}
+              className="btn btn-ghost bg-base-100 border-base-200 hover:border-primary/30 hover:bg-base-100 rounded-xl text-base-content/60 flex flex-col gap-1 h-auto py-3 text-xs font-normal"
+            >
               <ArrowDownTrayIcon className="w-6 h-6" /> 下载
             </button>
-            <button className="btn btn-ghost bg-base-100 border-base-200 hover:border-primary/30 hover:bg-base-100 rounded-xl text-base-content/60 flex flex-col gap-1 h-auto py-3 text-xs font-normal">
+
+            {/* 分享按钮 */}
+            <button
+              onClick={handleFeatureUnderDev}
+              className="btn btn-ghost bg-base-100 border-base-200 hover:border-primary/30 hover:bg-base-100 rounded-xl text-base-content/60 flex flex-col gap-1 h-auto py-3 text-xs font-normal"
+            >
               <ShareIcon className="w-6 h-6" /> 分享
             </button>
           </div>
