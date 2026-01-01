@@ -7,6 +7,7 @@ export const publicRoutes = [
   "/discover",
   "/podcast/:id",
   "/episode/:id",
+  "/series/:id",
   "/auth/user-agreement",
   "/auth/privacy-policy",
 ];

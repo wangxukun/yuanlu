@@ -28,7 +28,7 @@ export default function SideNav() {
         {status === "authenticated" && session && (
           <div className="flex flex-col space-y-2 pt-6 mt-4 border-t border-base-200">
             <span className="px-4 text-xs font-bold text-base-content/50 uppercase tracking-wider">
-              我的学习库
+              我的学习
             </span>
             <NavLinksLogined />
           </div>
