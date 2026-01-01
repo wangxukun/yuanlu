@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema } from "@/lib/form-schema";
 import {
   LockClosedIcon,
   ShieldCheckIcon,
   ArrowUturnLeftIcon,
   UserIcon,
-} from "@heroicons/react/24/outline";
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline"; // 引入新的图标用于反馈
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 
 export default function SignUpForm() {
   const checkedEmail = useAuthStore((state) => state.checkedEmail);
   const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [verificationCodeError, setVerificationCodeError] = useState("");
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
@@ -23,7 +22,18 @@ export default function SignUpForm() {
 
   // 是否同意协议
   const [agreed, setAgreed] = useState(false);
-  const [agreedError, setAgreedError] = useState("");
+
+  // 1. 密码安全要求状态 (实时计算)
+  const passwordCriteria = useMemo(() => {
+    return {
+      length: password.length >= 8,
+      hasLetter: /[a-zA-Z]/.test(password),
+      hasNumber: /\d/.test(password),
+    };
+  }, [password]);
+
+  // 密码是否完全合规
+  const isPasswordValid = Object.values(passwordCriteria).every(Boolean);
 
   // 验证码倒计时效果
   useEffect(() => {
@@ -38,29 +48,26 @@ export default function SignUpForm() {
       "email_check_modal_box",
     ) as HTMLDialogElement;
 
-    // 关闭当前弹窗 (兼容新旧ID)
     const currentModal = (document.getElementById("my_modal_register") ||
       document.getElementById("sign_up_modal_box")) as HTMLDialogElement;
 
     if (emailCheckBox) {
-      // 重置状态
       setPassword("");
-      setPasswordError("");
       setVerificationCode("");
       setVerificationCodeError("");
       setCodeSent(false);
-
       if (currentModal) currentModal.close();
       emailCheckBox.showModal();
     }
   };
 
   // 发送验证码
-  const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault(); // 防止触发表单提交
+  const handleSendCode = async () => {
+    // 2. 只有密码合规才能发送
+    if (!isPasswordValid) return;
+
     try {
       setVerificationCodeError("");
-      setPasswordError("");
       const response = await fetch("/api/auth/send-verification-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,38 +89,11 @@ export default function SignUpForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. 协议验证
-    if (!agreed) {
-      setAgreedError("请先阅读并同意用户协议");
-      return;
-    } else {
-      setAgreedError("");
-    }
-
-    // 2. 密码格式验证
-    // 注意：这里我们构造一个完整的对象来匹配 signInSchema 的要求
-    try {
-      const result = signInSchema.safeParse({
-        email: checkedEmail,
-        password,
-      });
-      if (!result.success) {
-        // 提取密码相关的错误
-        const error = result.error.errors.find((e) =>
-          e.path.includes("password"),
-        );
-        if (error) {
-          setPasswordError(error.message);
-          return;
-        }
-      }
-    } catch (err) {
-      console.log(err);
-    }
+    if (!isPasswordValid || !agreed || !verificationCode) return;
 
     setLoading(true);
     try {
-      // 3. 验证验证码
+      // 验证验证码
       const verifyResponse = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,7 +107,7 @@ export default function SignUpForm() {
         return;
       }
 
-      // 4. 创建用户
+      // 创建用户
       const createResponse = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,12 +117,11 @@ export default function SignUpForm() {
 
       if (!createData.success) throw new Error(createData.message);
 
-      // 5. 成功后处理
+      // 成功后处理
       const modal = (document.getElementById("my_modal_register") ||
         document.getElementById("sign_up_modal_box")) as HTMLDialogElement;
       if (modal) modal.close();
 
-      // 显示注册成功提示 (保持原有逻辑)
       const toast = document.createElement("div");
       toast.className = "toast toast-middle toast-center z-50";
       toast.innerHTML = `
@@ -154,25 +133,37 @@ export default function SignUpForm() {
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
 
-      // 这里可以触发登录弹窗，或者让用户手动点击
       const loginModal = (document.getElementById("my_modal_login") ||
         document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
       if (loginModal) loginModal.showModal();
     } catch (err) {
       console.error(err);
-      // 如果是通用错误，可以显示在某个地方，这里暂时借用验证码错误显示
       setVerificationCodeError("注册失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   };
 
+  // 辅助组件：密码要求项
+  const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
+    <div
+      className={`flex items-center gap-1.5 text-xs transition-colors duration-300 ${met ? "text-success" : "text-base-content/40"}`}
+    >
+      {met ? (
+        <CheckCircleIcon className="w-3.5 h-3.5" />
+      ) : (
+        <div className="w-3.5 h-3.5 rounded-full border border-current opacity-60" />
+      )}
+      <span>{text}</span>
+    </div>
+  );
+
   return (
     <div className="w-full">
       {/* 用户信息展示区 */}
       <div className="flex flex-col items-center justify-center mb-6">
         <div className="avatar placeholder mb-2">
-          <div className="bg-base-200 text-secondary rounded-full w-16 h-16 ring ring-secondary ring-offset-base-100 ring-offset-2  grid place-items-center">
+          <div className="bg-base-200 text-secondary rounded-full w-16 h-16 ring ring-secondary ring-offset-base-100 ring-offset-2 grid place-items-center">
             <UserIcon className="mt-4 block w-8 h-8" />
           </div>
         </div>
@@ -186,7 +177,7 @@ export default function SignUpForm() {
         onSubmit={handleSubmit}
         className="space-y-5"
       >
-        {/* 密码输入 */}
+        {/* 密码输入 - 包含动态反馈 */}
         <div className="form-control">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-secondary transition-colors">
@@ -195,24 +186,25 @@ export default function SignUpForm() {
             <input
               type="password"
               suppressHydrationWarning
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary transition-all rounded-xl h-12 ${passwordError ? "input-error" : ""}`}
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary transition-all rounded-xl h-12 
+                ${password && !isPasswordValid ? "input-warning" : ""} 
+                ${isPasswordValid ? "input-success" : ""}`}
               placeholder="设置登录密码"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (passwordError) setPasswordError("");
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-          {passwordError && (
-            <div className="text-error text-xs mt-1 ml-1 flex items-center gap-1">
-              <ExclamationCircleIcon className="w-3 h-3" /> {passwordError}
-            </div>
-          )}
+
+          {/* 1. 密码动态反馈区域 */}
+          <div className="mt-2 grid grid-cols-3 gap-2 px-1">
+            <RequirementItem met={passwordCriteria.length} text="8位以上" />
+            <RequirementItem met={passwordCriteria.hasLetter} text="包含字母" />
+            <RequirementItem met={passwordCriteria.hasNumber} text="包含数字" />
+          </div>
         </div>
 
-        {/* 验证码输入 (使用 Join 组件优化布局) */}
+        {/* 验证码输入 */}
         <div className="form-control">
           <div className="join w-full shadow-sm">
             <div className="relative w-full join-item">
@@ -231,14 +223,17 @@ export default function SignUpForm() {
                   );
                   if (verificationCodeError) setVerificationCodeError("");
                 }}
-                required
+                // 优化：虽然未点击发送前可以输入，但通常用户习惯是先点发送
               />
             </div>
+
+            {/* 2. 获取验证码按钮控制：密码不合规时禁用 */}
             <button
               type="button"
               onClick={handleSendCode}
-              className="btn btn-secondary join-item w-[110px] h-12 font-normal text-white"
-              disabled={countdown > 0}
+              className={`btn join-item w-[110px] h-12 font-normal text-white transition-all
+                ${!isPasswordValid ? "btn-disabled bg-base-300 text-base-content/30" : "btn-secondary"}`}
+              disabled={!isPasswordValid || countdown > 0}
             >
               {countdown > 0 ? `${countdown}s` : "获取验证码"}
             </button>
@@ -255,6 +250,12 @@ export default function SignUpForm() {
               {codeSent && !verificationCodeError && (
                 <span className="text-success text-xs">验证码已发送</span>
               )}
+              {/* 提示用户先输密码 */}
+              {!isPasswordValid && !verificationCodeError && (
+                <span className="text-warning/80 text-xs">
+                  请先设置合规的密码
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -265,12 +266,9 @@ export default function SignUpForm() {
             <input
               suppressHydrationWarning
               type="checkbox"
-              className={`checkbox checkbox-sm checkbox-secondary rounded-md ${agreedError ? "checkbox-error" : ""}`}
+              className="checkbox checkbox-sm checkbox-secondary rounded-md"
               checked={agreed}
-              onChange={(e) => {
-                setAgreed(e.target.checked);
-                if (agreedError) setAgreedError("");
-              }}
+              onChange={(e) => setAgreed(e.target.checked)}
             />
             <span className="label-text text-xs text-base-content/70">
               我已阅读并同意
@@ -291,9 +289,6 @@ export default function SignUpForm() {
               </a>
             </span>
           </label>
-          {agreedError && (
-            <p className="text-error text-xs mt-1 ml-8">{agreedError}</p>
-          )}
         </div>
 
         {/* 按钮组 */}
@@ -306,10 +301,13 @@ export default function SignUpForm() {
             <ArrowUturnLeftIcon className="w-4 h-4" />
           </button>
 
+          {/* 3. 注册按钮控制：所有条件必须满足 */}
           <button
             type="submit"
-            className="btn btn-secondary col-span-2 rounded-xl h-11 min-h-0 text-base font-semibold shadow-secondary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-white"
-            disabled={loading}
+            className="btn btn-secondary col-span-2 rounded-xl h-11 min-h-0 text-base font-semibold shadow-secondary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-white disabled:bg-base-300 disabled:text-base-content/30 disabled:shadow-none"
+            disabled={
+              loading || !isPasswordValid || !verificationCode || !agreed
+            }
           >
             {loading ? (
               <span className="loading loading-spinner loading-sm"></span>

@@ -425,9 +425,22 @@ export default function PodcastDetail({
                   currentEpisode?.episodeid === episode.episodeid && !isPlaying;
 
                 return (
+                  // <div
+                  //   key={episode.episodeid}
+                  //   className={`group flex items-center p-3 sm:p-4 rounded-xl border border-transparent hover:border-base-300 hover:bg-base-200/50 transition-all cursor-pointer relative overflow-hidden ${isCurrentPlaying || isCurrentPaused ? "bg-base-200/50 border-primary/20" : "bg-base-100/50 sm:bg-transparent"}`}
+                  //   onClick={() => handleRowClick(episode)}
+                  // >
                   <div
                     key={episode.episodeid}
-                    className={`group flex items-center p-3 sm:p-4 rounded-xl border border-transparent hover:border-base-300 hover:bg-base-200/50 transition-all cursor-pointer relative overflow-hidden ${isCurrentPlaying || isCurrentPaused ? "bg-base-200/50 border-primary/20" : "bg-base-100/50 sm:bg-transparent"}`}
+                    // [修改 1]: 删除了 "overflow-hidden"
+                    // [修改 2]: 新增了 z-index 逻辑，确保菜单展开时当前行层级最高，不会被下方列表项遮挡
+                    className={`group flex items-center p-3 sm:p-4 rounded-xl border border-transparent hover:border-base-300 hover:bg-base-200/50 transition-all cursor-pointer relative ${
+                      activeEpisodeMenu === episode.episodeid ? "z-20" : "z-0"
+                    } ${
+                      isCurrentPlaying || isCurrentPaused
+                        ? "bg-base-200/50 border-primary/20"
+                        : "bg-base-100/50 sm:bg-transparent"
+                    }`}
                     onClick={() => handleRowClick(episode)}
                   >
                     {/* Play Status Indicator (Left) - Hidden on mobile */}
