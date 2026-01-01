@@ -142,3 +142,93 @@ export async function getLatestPodcasts(limit: number = 1) {
     return [];
   }
 }
+
+/**
+ * 获取热门标签（按照关联的 Podcast 数量排序）
+ * @param limit 限制数量，默认为 6
+ */
+export async function getPopularTags(limit: number = 6) {
+  try {
+    const tags = await prisma.tag.findMany({
+      take: limit,
+      include: {
+        _count: {
+          select: { podcasts: true },
+        },
+      },
+      orderBy: {
+        podcasts: {
+          _count: Prisma.SortOrder.desc,
+        },
+      },
+    });
+
+    // 格式化返回数据，保留原有 UI 需要的结构
+    return tags.map((tag) => ({
+      id: tag.id.toString(),
+      name: tag.name,
+      count: tag._count.podcasts,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch popular tags:", error);
+    return [];
+  }
+}
+
+/**
+ * 根据关键词搜索播客 (搜索范围: 标题、描述、标签)
+ */
+export async function getPodcastsByQuery(query: string) {
+  if (!query || query.trim().length === 0) return [];
+
+  try {
+    const podcasts = await prisma.podcast.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+          {
+            tags: { some: { name: { contains: query, mode: "insensitive" } } },
+          },
+        ],
+      },
+      include: {
+        tags: true,
+        _count: {
+          select: { episode: true },
+        },
+      },
+      take: 20, // 限制返回数量
+    });
+
+    // 处理图片签名 (复用逻辑)
+    const processedPodcasts = await Promise.all(
+      podcasts.map(async (podcast) => {
+        let signedCoverUrl = podcast.coverUrl;
+        if (podcast.coverFileName && podcast.coverUrl !== "default_cover_url") {
+          try {
+            signedCoverUrl = await generateSignatureUrl(
+              podcast.coverFileName,
+              3600 * 3,
+            );
+          } catch (error) {
+            console.error(
+              `Failed to sign cover for podcast ${podcast.podcastid}`,
+              error,
+            );
+          }
+        }
+        return {
+          ...podcast,
+          coverUrl: signedCoverUrl,
+          episodeCount: podcast._count.episode,
+        };
+      }),
+    );
+
+    return processedPodcasts;
+  } catch (error) {
+    console.error("Failed to search podcasts:", error);
+    return [];
+  }
+}
