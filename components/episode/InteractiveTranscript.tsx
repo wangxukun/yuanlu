@@ -205,7 +205,8 @@ export default function InteractiveTranscript({
         toast.error("保存失败");
       }
     } catch (error) {
-      toast.error("网络错误", error);
+      console.error(error);
+      toast.error("网络错误");
     } finally {
       setIsSaving(false);
     }
