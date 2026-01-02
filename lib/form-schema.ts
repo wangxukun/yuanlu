@@ -51,5 +51,23 @@ export const signInSchema = z.object({
     }),
 });
 
+// 联系我们表单验证 Schema
+export const contactSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "邮箱不能为空" })
+    .email({ message: "请输入有效的邮箱地址" }),
+  subject: z
+    .string()
+    .min(1, { message: "主题不能为空" })
+    .max(50, { message: "主题不能超过50个字符" }), // 增加一个最大长度限制
+  message: z
+    .string()
+    .min(10, { message: "留言内容至少需要10个字符" })
+    .max(1000, { message: "留言内容不能超过1000个字符" }),
+});
+
+export type ContactFormValues = z.infer<typeof contactSchema>;
+
 // 导出类型
 export type SignInFormValues = z.infer<typeof signInSchema>;

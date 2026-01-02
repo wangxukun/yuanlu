@@ -35,6 +35,7 @@ model User {
   user_profile       user_profile?
   vocabulary         vocabulary[]
   daily_activities   user_daily_activity[]
+  VisitorLog         VisitorLog[]
 }
 
 ///用户资料模型，存储用户的个人信息
@@ -395,4 +396,22 @@ model user_daily_activity {
   @@unique([userid, date])
   // 添加索引以便快速查询最近7天/30天的数据
   @@index([userid, date(sort: Desc)])
+}
+
+/// 访客/用户访问日志表
+model VisitorLog {
+  id        String  @id @default(cuid())
+  ip        String? @db.VarChar(45) // 支持 IPv4 和 IPv6
+  location  String? @db.VarChar(100) // 预留地理位置字段
+  userAgent String? @db.Text // 浏览器/设备信息
+  path      String  @db.VarChar(255) // 访问路径
+  userid    String? // 如果是登录用户，关联 ID
+
+  createAt DateTime @default(now()) @db.Timestamptz(6)
+
+  User User? @relation(fields: [userid], references: [userid], onDelete: SetNull)
+
+  @@index([createAt(sort: Desc)]) // 按时间倒序查询优化
+  @@index([ip])
+  @@index([userid])
 }

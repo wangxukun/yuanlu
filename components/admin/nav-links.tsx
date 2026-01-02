@@ -11,6 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
 import { useEffect, useRef } from "react";
+import { ClipboardList } from "lucide-react";
 
 const links = [
   { name: "信息概况", href: "/admin", icon: HomeIcon },
@@ -24,8 +25,9 @@ const links = [
     href: "/admin/episodes",
     icon: DocumentDuplicateIcon,
   },
-  { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
+  { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
+  { name: "访问日志", href: "/admin/logs", icon: ClipboardList },
 ];
 
 const extractPathSegment = (path: string): string =>

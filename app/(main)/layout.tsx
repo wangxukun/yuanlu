@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import React from "react";
+import React, { Suspense } from "react";
 import { lusitana } from "@/components/fonts";
 import "@/app/globals.css";
 import Header from "@/components/header/Header";
@@ -13,6 +13,7 @@ import SignInDialog from "@/components/auth/sign-in-dialog";
 import SignUpDialog from "@/components/auth/sign-up-dialog";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
+import PageTracker from "@/components/main/PageTracker";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -37,6 +38,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            {/* 使用 Suspense 包裹 PageTracker */}
+            <Suspense fallback={null}>
+              <PageTracker />
+            </Suspense>
             <Toaster richColors />
             <div className="flex">
               {/* 左侧导航栏 */}
