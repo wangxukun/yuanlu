@@ -101,7 +101,9 @@ export default function ContactPage() {
       toast.success("留言已发送！我们会尽快回复您。");
       router.push("/");
     } catch (error) {
-      toast.error(error.message || "发送过程中出现错误");
+      // 将 error 断言为 Error 对象
+      const errorMessage = (error as Error).message || "发送过程中出现错误";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
