@@ -6,7 +6,10 @@ import { headers } from "next/headers";
 import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client"; // 引入签名函数
 import { revalidatePath } from "next/cache";
-import * as Searcher from "ip2region-ts";
+import { newWithFileOnly, defaultDbFile } from "ip2region-ts";
+
+// 核心技巧：通过 ReturnType 动态获取 Searcher 的实例类型
+type SearcherInstance = ReturnType<typeof newWithFileOnly>;
 export async function logVisit(path: string) {
   try {
     const session = await auth();
@@ -118,13 +121,13 @@ export async function getVisitorLogs(page = 1, pageSize = 20) {
   return { logs, total, totalPages: Math.ceil(total / pageSize) };
 }
 
-let searcher = null;
+let searcher: SearcherInstance | null = null;
 
 // 初始化搜索器 (单例模式)
 const getSearcher = () => {
   if (!searcher) {
     // ip2region-ts 自带了 xdb 数据文件
-    searcher = Searcher.newWithFileOnly(Searcher.defaultDbFile);
+    searcher = newWithFileOnly(defaultDbFile);
   }
   return searcher;
 };
@@ -135,6 +138,10 @@ const getLocation = async (ip: string) => {
   try {
     const s = getSearcher();
     const data = await s.search(ip);
+    // 添加空值检查
+    if (!data || !data.region) {
+      return "未知地理位置";
+    }
     // 格式化地域信息：中国|0|广东省|深圳市|电信 -> 广东省 深圳市
     const parts = data.region.split("|");
     const filtered = parts.filter((p: string) => p !== "0" && p !== "none");

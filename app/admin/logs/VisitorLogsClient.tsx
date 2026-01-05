@@ -25,7 +25,7 @@ import { toast } from "sonner";
 // 定义与后端 Action 匹配的类型
 interface VisitorLog {
   id: string;
-  ip: string;
+  ip: string | null;
   path: string;
   userAgent: string | null;
   createAt: Date | string;
@@ -34,9 +34,11 @@ interface VisitorLog {
     user_profile: {
       nickname: string | null;
       avatarUrl: string | null;
+      avatarFileName: string | null;
     } | null;
   } | null;
   location?: string | null;
+  userid: string | null;
 }
 export default function VisitorLogsClient({
   initialLogs,
