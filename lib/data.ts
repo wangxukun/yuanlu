@@ -32,6 +32,16 @@ export async function fetchUsers(): Promise<User[]> {
     throw new Error("Failed to fetch users");
   }
   const data = await res.json();
+  if (data.length > 0) {
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].user_profile) {
+        data[i].user_profile.avatarUrl = await generateSignatureUrl(
+          data[i].user_profile.avatarFileName,
+          3600 * 3,
+        );
+      }
+    }
+  }
   return data;
 }
 

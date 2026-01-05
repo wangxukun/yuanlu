@@ -26,16 +26,17 @@ interface ExtendedUser
     | "lastActiveAt"
     | "emailVerified"
     | "isCommentAllowed"
-    | "userProfile"
+    | "user_profile"
   > {
   createAt: string;
   updateAt: string;
   lastActiveAt: string | null;
   emailVerified: string | null;
   isCommentAllowed: boolean; // 我们在 page.tsx 中提供了默认值，所以这里是 boolean
-  userProfile?: {
+  user_profile?: {
     nickname: string | null;
     avatarFileName: string | null;
+    avatarUrl: string | null;
     learnLevel: string | null;
     dailyStudyGoalMins?: number | null;
   } | null;
@@ -72,7 +73,7 @@ export default function UserManagementClient({
   // 筛选逻辑
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
-      const nickname = user.userProfile?.nickname || "";
+      const nickname = user.user_profile?.nickname || "";
       const matchesSearch =
         user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         nickname.toLowerCase().includes(searchQuery.toLowerCase());
@@ -261,17 +262,18 @@ export default function UserManagementClient({
                           <div className="w-10 h-10 rounded-full mask mask-squircle">
                             <img
                               src={
-                                user.userProfile?.avatarFileName
-                                  ? `https://yuanlu-files.oss-cn-hangzhou.aliyuncs.com/${user.userProfile.avatarFileName}` // 假设 OSS URL 模式
+                                user.user_profile?.avatarFileName &&
+                                user.user_profile?.avatarUrl
+                                  ? user.user_profile?.avatarUrl
                                   : `https://ui-avatars.com/api/?name=${user.email}&background=random`
                               }
-                              alt={user.userProfile?.nickname || "User"}
+                              alt={user.user_profile?.nickname || "User"}
                             />
                           </div>
                         </div>
                         <div>
                           <div className="font-bold flex items-center gap-2">
-                            {user.userProfile?.nickname || "未设置昵称"}
+                            {user.user_profile?.nickname || "未设置昵称"}
                             {user.isCommentAllowed === false && (
                               <span className="badge badge-error badge-xs font-bold">
                                 BANNED
@@ -294,10 +296,10 @@ export default function UserManagementClient({
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">
-                          {user.userProfile?.learnLevel || "Beginner"}
+                          {user.user_profile?.learnLevel || "Beginner"}
                         </span>
                         <span className="text-xs opacity-50">
-                          目标: {user.userProfile?.dailyStudyGoalMins || 30}{" "}
+                          目标: {user.user_profile?.dailyStudyGoalMins || 30}{" "}
                           分钟/天
                         </span>
                       </div>

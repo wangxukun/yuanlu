@@ -17,15 +17,16 @@ export async function GET() {
         lastActiveAt: true,
         isCommentAllowed: true,
         emailVerified: true,
-        // userprofile: {
-        //   select: {
-        //     // 明确选择需要字段
-        //     nickname: true,
-        //     avatarUrl: true,
-        //     bio: true,
-        //     learnLevel: true,
-        //   },
-        // },
+        user_profile: {
+          select: {
+            // 明确选择需要字段
+            nickname: true,
+            avatarUrl: true,
+            avatarFileName: true,
+            bio: true,
+            learnLevel: true,
+          },
+        },
       },
     });
     return NextResponse.json(users);
