@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { episodeid, content } = await request.json();
+    const { episodeid, content, parentId } = await request.json();
 
     if (!episodeid || !content || !content.trim()) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
         episodeid: episodeid,
         commentText: content,
         commentAt: new Date(),
+        parentId: parentId ?? null,
       },
       // 创建后立即返回关联的用户信息，方便前端直接追加到列表，无需刷新
       include: {
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
               select: {
                 nickname: true,
                 avatarFileName: true,
+                avatarUrl: true,
+                learnLevel: true,
               },
             },
           },

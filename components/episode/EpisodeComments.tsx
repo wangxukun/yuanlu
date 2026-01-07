@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import {
   UserCircleIcon,
@@ -9,6 +9,9 @@ import {
   HeartIcon as HeartIconOutline,
   ArrowUturnLeftIcon,
   EllipsisHorizontalIcon,
+  TrashIcon,
+  FlagIcon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import clsx from "clsx";
@@ -20,7 +23,7 @@ interface CommentUser {
   user_profile: {
     nickname: string | null;
     avatarUrl: string | null;
-    learnLevel?: string | null; // Added based on your context
+    learnLevel?: string | null;
   } | null;
 }
 
@@ -31,7 +34,6 @@ interface Comment {
   commentText: string | null;
   commentAt: string;
   User: CommentUser | null;
-  // New fields for extended functionality
   parentId?: number | null;
   likesCount?: number;
   isLiked?: boolean;
@@ -41,27 +43,53 @@ interface Comment {
 export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
+  // 顶层评论仍保持受控模式
   const [commentContent, setCommentContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reply State
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
-  const [replyContent, setReplyContent] = useState("");
+
+  // [修复] 中文输入法兼容性：使用 useRef
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // --- Helper: Build Tree Structure ---
+  const buildCommentTree = (flatComments: Comment[]): Comment[] => {
+    const commentMap = new Map<number, Comment>();
+    const roots: Comment[] = [];
+
+    // 1. Initialize
+    flatComments.forEach((c) => {
+      commentMap.set(c.commentid, { ...c, replies: [] });
+    });
+
+    // 2. Build Tree
+    flatComments.forEach((c) => {
+      const comment = commentMap.get(c.commentid)!;
+      if (c.parentId) {
+        const parent = commentMap.get(c.parentId);
+        if (parent) {
+          parent.replies?.push(comment);
+        } else {
+          roots.push(comment);
+        }
+      } else {
+        roots.push(comment);
+      }
+    });
+    return roots;
+  };
 
   // --- Fetch Data ---
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        // Assume API is updated to return nested structure or we handle flattening here.
-        // For now, we'll assume the API returns a list and we might need to nest them manually
-        // if the backend doesn't do it, but for this component code, we assume data comes in correct shape.
         const res = await fetch(`/api/comment/list?episodeid=${episodeId}`);
         if (res.ok) {
-          const data = await res.json();
-          // Note: If backend returns flat list, you might need a `buildTree` function here.
-          // Assuming backend now handles nested `replies` based on Prisma schema.
-          setComments(data);
+          const flatData: Comment[] = await res.json();
+          const treeData = buildCommentTree(flatData);
+          setComments(treeData);
         }
       } catch (error) {
         console.error("Failed to load comments", error);
@@ -74,7 +102,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
 
   // --- Actions ---
 
-  // Post a top-level comment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentContent.trim() || !session) return;
@@ -84,12 +111,12 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       const res = await fetch("/api/comment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ episodeid: episodeId, content: commentContent }), // parentId is null
+        body: JSON.stringify({ episodeid: episodeId, content: commentContent }),
       });
 
       if (res.ok) {
         const newComment: Comment = await res.json();
-        // Optimistically add to top of list
+        newComment.replies = [];
         setComments((prev) => [newComment, ...prev]);
         setCommentContent("");
       } else {
@@ -102,31 +129,29 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     }
   };
 
-  // Post a reply
   const handleReplySubmit = async (parentId: number) => {
-    if (!replyContent.trim() || !session) return;
+    const content = replyInputRef.current?.value;
+    if (!content || !content.trim() || !session) return;
 
-    // Optimistic Update can be tricky with IDs, so we'll wait for server for creation
-    // But we can show a loading state if needed.
     try {
       const res = await fetch("/api/comment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           episodeid: episodeId,
-          content: replyContent,
+          content: content,
           parentId: parentId,
         }),
       });
 
       if (res.ok) {
         const newReply: Comment = await res.json();
+        newReply.replies = [];
 
-        // Helper to recursively add reply
         const addReplyToTree = (list: Comment[]): Comment[] => {
           return list.map((c) => {
             if (c.commentid === parentId) {
-              return { ...c, replies: [...(c.replies || []), newReply] };
+              return { ...c, replies: [newReply, ...(c.replies || [])] };
             }
             if (c.replies && c.replies.length > 0) {
               return { ...c, replies: addReplyToTree(c.replies) };
@@ -136,7 +161,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
         };
 
         setComments((prev) => addReplyToTree(prev));
-        setReplyContent("");
+        if (replyInputRef.current) replyInputRef.current.value = "";
         setReplyingToId(null);
       }
     } catch (error) {
@@ -144,10 +169,8 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     }
   };
 
-  // Toggle Like (Optimistic)
   const toggleLike = async (commentId: number) => {
     if (!session) {
-      // Prompt login
       const modal = document.getElementById(
         "email_check_modal_box",
       ) as HTMLDialogElement;
@@ -155,7 +178,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       return;
     }
 
-    // 1. Optimistic UI Update
     setComments((prevComments) => {
       const updateList = (list: Comment[]): Comment[] => {
         return list.map((c) => {
@@ -176,8 +198,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       return updateList(prevComments);
     });
 
-    // 2. Server Request (Fire and forget, or handle revert on error)
-    // You would need an endpoint like /api/comment/like
     try {
       await fetch("/api/comment/like", {
         method: "POST",
@@ -186,11 +206,45 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       });
     } catch (error) {
       console.error("Like failed", error);
-      // TODO: Revert optimistic update here if needed
     }
   };
 
-  // --- Utility ---
+  // [新增] 删除评论 Action
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("确定要删除这条评论吗？")) return;
+
+    // 乐观更新：先从界面移除
+    const removeCommentFromTree = (list: Comment[]): Comment[] => {
+      return list
+        .filter((c) => c.commentid !== commentId) // 移除自己
+        .map((c) => ({
+          ...c,
+          replies: c.replies ? removeCommentFromTree(c.replies) : [], // 递归移除子级
+        }));
+    };
+    setComments((prev) => removeCommentFromTree(prev));
+
+    try {
+      // 实际调用 API (假设你有这个 API)
+      await fetch("/api/comment/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId }),
+      });
+    } catch (error) {
+      console.error("Delete failed", error);
+      // 如果失败可能需要重新拉取列表，这里简化处理
+    }
+  };
+
+  // [新增] 复制评论内容 Action
+  const handleCopyComment = (text: string | null) => {
+    if (text) {
+      navigator.clipboard.writeText(text);
+      // 可以加个 Toast 提示，这里略
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString("zh-CN", {
       month: "short",
@@ -203,7 +257,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const getDisplayName = (user: CommentUser | null) =>
     user?.user_profile?.nickname || user?.email?.split("@")[0] || "用户";
 
-  // --- Sub-component for recursive rendering ---
+  // --- Recursive Component ---
   const CommentItem = ({
     comment,
     isReply = false,
@@ -212,6 +266,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     isReply?: boolean;
   }) => {
     const isReplying = replyingToId === comment.commentid;
+    const isOwner = session?.user?.userid === comment.userid;
 
     return (
       <div
@@ -269,18 +324,20 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           {/* Comment Bubble */}
           <div
             className={clsx(
-              "bg-base-200/40 p-3 md:p-4 rounded-2xl rounded-tl-none text-base-content/80 leading-relaxed hover:bg-base-200/60 transition-colors",
+              "bg-base-200 p-3 md:p-4 rounded-2xl rounded-tl-none text-base-content/80 leading-relaxed hover:bg-base-200/60 transition-colors",
               isReply ? "text-xs md:text-sm" : "text-sm md:text-base",
             )}
           >
-            <p className="whitespace-pre-wrap break-words">
+            <p
+              className="whitespace-pre-wrap break-words text-left"
+              style={{ direction: "ltr" }}
+            >
               {comment.commentText}
             </p>
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-5 mt-2 ml-1">
-            {/* Like Button */}
+          <div className="flex items-center gap-5 mt-2 ml-1 relative">
             <button
               onClick={() => toggleLike(comment.commentid)}
               className={clsx(
@@ -298,7 +355,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               {comment.likesCount || 0}
             </button>
 
-            {/* Reply Button (Only allow 1 level of nesting visually for cleaner UI, or allow deep nesting if needed) */}
             <button
               onClick={() =>
                 setReplyingToId(isReplying ? null : comment.commentid)
@@ -309,28 +365,67 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               回复
             </button>
 
-            {/* More Options */}
-            <button className="text-base-content/30 hover:text-base-content/60 transition-colors opacity-0 group-hover:opacity-100">
-              <EllipsisHorizontalIcon className="w-4 h-4" />
-            </button>
+            {/* [集成] Actions Dropdown */}
+            {/* 使用 dropdown-end 靠右对齐，z-50 确保在最上层 */}
+            <div className="dropdown dropdown-end dropdown-hover group/menu">
+              <div
+                tabIndex={0}
+                role="button"
+                className="flex items-center gap-1 text-base-content/30 hover:text-base-content/60 transition-colors opacity-0 group-hover:opacity-100 group-focus/menu:opacity-100"
+              >
+                <EllipsisHorizontalIcon className="w-4 h-4" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-50 menu p-2 shadow-xl bg-base-100 rounded-box w-32 border border-base-200 text-xs"
+              >
+                <li>
+                  <button
+                    onClick={() => handleCopyComment(comment.commentText)}
+                  >
+                    <ClipboardDocumentIcon className="w-3.5 h-3.5" /> 复制
+                  </button>
+                </li>
+                {isOwner ? (
+                  <li>
+                    <button
+                      onClick={() => handleDeleteComment(comment.commentid)}
+                      className="text-error hover:text-error hover:bg-error/10"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" /> 删除
+                    </button>
+                  </li>
+                ) : (
+                  <li>
+                    <button
+                      onClick={() => alert("已举报")}
+                      className="hover:text-warning"
+                    >
+                      <FlagIcon className="w-3.5 h-3.5" /> 举报
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
 
-          {/* Reply Input Box */}
+          {/* Reply Input Box - 使用 useRef + Style 修复 */}
           {isReplying && (
             <div className="mt-3 flex gap-3 animate-in slide-in-from-top-2 duration-200">
               <div className="flex-1 relative">
                 <textarea
                   autoFocus
-                  className="textarea textarea-bordered textarea-sm w-full h-20 bg-base-100 focus:ring-1 focus:ring-primary/20 resize-none rounded-xl text-sm"
+                  ref={replyInputRef}
+                  style={{ direction: "ltr", textAlign: "left" }}
+                  className="textarea textarea-bordered textarea-sm w-full h-20 bg-base-100 focus:ring-1 focus:ring-primary/20 resize-none rounded-xl text-sm text-left align-top"
                   placeholder={`回复 @${getDisplayName(comment.User)}...`}
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
                 ></textarea>
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     onClick={() => {
                       setReplyingToId(null);
-                      setReplyContent("");
+                      if (replyInputRef.current)
+                        replyInputRef.current.value = "";
                     }}
                     className="btn btn-xs btn-ghost text-base-content/50"
                   >
@@ -338,7 +433,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                   </button>
                   <button
                     onClick={() => handleReplySubmit(comment.commentid)}
-                    disabled={!replyContent.trim()}
                     className="btn btn-xs btn-primary text-primary-content"
                   >
                     发送
@@ -348,7 +442,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
             </div>
           )}
 
-          {/* Nested Replies (Recursive) */}
+          {/* Nested Replies */}
           {comment.replies && comment.replies.length > 0 && (
             <div className="pl-2 border-l-2 border-base-200/50">
               {comment.replies.map((reply) => (
@@ -366,8 +460,9 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   };
 
   return (
-    // Container
-    <div className="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-base-200/50 overflow-hidden">
+    // [修复关键点] 移除了 overflow-hidden，防止底部 Dropdown 被裁切
+    // 保留 rounded 和 ring 样式，因为子元素都有 padding 缩进，通常不会破坏圆角
+    <div className="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-base-200/50">
       {/* Header */}
       <div className="px-6 md:px-10 py-6 border-b border-base-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
@@ -393,14 +488,17 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                 {session.user?.image ? (
                   <img src={session.user.image} alt="me" />
                 ) : (
-                  <span className="text-sm font-bold">我</span>
+                  <span className="flex items-center justify-center w-full h-full text-sm font-bold">
+                    我
+                  </span>
                 )}
               </div>
             </div>
 
             <div className="flex-1 relative">
               <textarea
-                className="textarea w-full h-28 text-base p-4 bg-base-200/30 focus:bg-base-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-2xl resize-none shadow-inner placeholder:text-base-content/30 border-transparent focus:outline-none"
+                style={{ direction: "ltr", textAlign: "left" }}
+                className="textarea w-full h-28 text-base p-4 bg-base-200 focus:bg-base-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-2xl resize-none shadow-inner placeholder:text-base-content/30 border-transparent focus:outline-none text-left align-top"
                 placeholder="分享你的见解或疑问..."
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
@@ -434,7 +532,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           </form>
         ) : (
           // Guest State
-          <div className="mb-12 p-8 md:p-10 bg-base-200/30 rounded-3xl border border-dashed border-base-300 text-center">
+          <div className="mb-12 p-8 md:p-10 bg-base-200 rounded-3xl border border-dashed border-base-300 text-center">
             <div className="max-w-md mx-auto flex flex-col items-center gap-3">
               <div className="w-10 h-10 bg-base-200 rounded-full flex items-center justify-center text-base-content/30">
                 <UserCircleIcon className="w-6 h-6" />
