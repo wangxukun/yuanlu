@@ -36,6 +36,7 @@ model User {
   vocabulary         vocabulary[]
   daily_activities   user_daily_activity[]
   VisitorLog         VisitorLog[]
+  comment_likes      comment_likes[]
 }
 
 ///用户资料模型，存储用户的个人信息
@@ -106,13 +107,34 @@ model podcast {
 }
 
 model comments {
-  commentid   Int       @id @default(autoincrement())
+  commentid   Int        @id @default(autoincrement())
   userid      String?
   episodeid   String?
   commentText String?
-  commentAt   DateTime? @default(now()) @db.Timestamptz(6)
-  episode     episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
-  User        User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  commentAt   DateTime?  @default(now()) @db.Timestamptz(6)
+  // [新增] 回复功能支持 (自关联)
+  parentId    Int? // 父评论 ID
+  parent      comments?  @relation("CommentReplies", fields: [parentId], references: [commentid], onDelete: Cascade, onUpdate: NoAction)
+  replies     comments[] @relation("CommentReplies")
+
+  // [新增] 点赞关联
+  likes   comment_likes[]
+  episode episode?        @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User    User?           @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+// 3. [新增] 评论点赞模型
+model comment_likes {
+  likeid    Int      @id @default(autoincrement())
+  userid    String
+  commentid Int
+  likedAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  User    User     @relation(fields: [userid], references: [userid], onDelete: Cascade)
+  comment comments @relation(fields: [commentid], references: [commentid], onDelete: Cascade)
+
+  // 复合唯一索引，确保一个用户对一条评论只能点赞一次
+  @@unique([userid, commentid])
 }
 
 model discussion_threads {

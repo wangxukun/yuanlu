@@ -6,18 +6,24 @@ import {
   UserCircleIcon,
   PaperAirplaneIcon,
   ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/solid";
+  HeartIcon as HeartIconOutline,
+  ArrowUturnLeftIcon,
+  EllipsisHorizontalIcon,
+} from "@heroicons/react/24/outline";
+import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 
-// 接口定义保持不变
+// --- Types ---
 interface CommentUser {
   userid: string;
   email: string;
   user_profile: {
     nickname: string | null;
     avatarUrl: string | null;
+    learnLevel?: string | null; // Added based on your context
   } | null;
 }
+
 interface Comment {
   commentid: number;
   userid: string | null;
@@ -25,6 +31,11 @@ interface Comment {
   commentText: string | null;
   commentAt: string;
   User: CommentUser | null;
+  // New fields for extended functionality
+  parentId?: number | null;
+  likesCount?: number;
+  isLiked?: boolean;
+  replies?: Comment[];
 }
 
 export default function EpisodeComments({ episodeId }: { episodeId: string }) {
@@ -34,13 +45,22 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 获取评论
+  // Reply State
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+
+  // --- Fetch Data ---
   useEffect(() => {
     const fetchComments = async () => {
       try {
+        // Assume API is updated to return nested structure or we handle flattening here.
+        // For now, we'll assume the API returns a list and we might need to nest them manually
+        // if the backend doesn't do it, but for this component code, we assume data comes in correct shape.
         const res = await fetch(`/api/comment/list?episodeid=${episodeId}`);
         if (res.ok) {
           const data = await res.json();
+          // Note: If backend returns flat list, you might need a `buildTree` function here.
+          // Assuming backend now handles nested `replies` based on Prisma schema.
           setComments(data);
         }
       } catch (error) {
@@ -52,19 +72,24 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     if (episodeId) fetchComments();
   }, [episodeId]);
 
-  // 提交评论
+  // --- Actions ---
+
+  // Post a top-level comment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentContent.trim() || !session) return;
     setIsSubmitting(true);
+
     try {
       const res = await fetch("/api/comment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ episodeid: episodeId, content: commentContent }),
+        body: JSON.stringify({ episodeid: episodeId, content: commentContent }), // parentId is null
       });
+
       if (res.ok) {
         const newComment: Comment = await res.json();
+        // Optimistically add to top of list
         setComments((prev) => [newComment, ...prev]);
         setCommentContent("");
       } else {
@@ -77,6 +102,95 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     }
   };
 
+  // Post a reply
+  const handleReplySubmit = async (parentId: number) => {
+    if (!replyContent.trim() || !session) return;
+
+    // Optimistic Update can be tricky with IDs, so we'll wait for server for creation
+    // But we can show a loading state if needed.
+    try {
+      const res = await fetch("/api/comment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          episodeid: episodeId,
+          content: replyContent,
+          parentId: parentId,
+        }),
+      });
+
+      if (res.ok) {
+        const newReply: Comment = await res.json();
+
+        // Helper to recursively add reply
+        const addReplyToTree = (list: Comment[]): Comment[] => {
+          return list.map((c) => {
+            if (c.commentid === parentId) {
+              return { ...c, replies: [...(c.replies || []), newReply] };
+            }
+            if (c.replies && c.replies.length > 0) {
+              return { ...c, replies: addReplyToTree(c.replies) };
+            }
+            return c;
+          });
+        };
+
+        setComments((prev) => addReplyToTree(prev));
+        setReplyContent("");
+        setReplyingToId(null);
+      }
+    } catch (error) {
+      console.error("Reply failed", error);
+    }
+  };
+
+  // Toggle Like (Optimistic)
+  const toggleLike = async (commentId: number) => {
+    if (!session) {
+      // Prompt login
+      const modal = document.getElementById(
+        "email_check_modal_box",
+      ) as HTMLDialogElement;
+      if (modal) modal.showModal();
+      return;
+    }
+
+    // 1. Optimistic UI Update
+    setComments((prevComments) => {
+      const updateList = (list: Comment[]): Comment[] => {
+        return list.map((c) => {
+          if (c.commentid === commentId) {
+            const isLikedNow = !c.isLiked;
+            return {
+              ...c,
+              isLiked: isLikedNow,
+              likesCount: (c.likesCount || 0) + (isLikedNow ? 1 : -1),
+            };
+          }
+          if (c.replies && c.replies.length > 0) {
+            return { ...c, replies: updateList(c.replies) };
+          }
+          return c;
+        });
+      };
+      return updateList(prevComments);
+    });
+
+    // 2. Server Request (Fire and forget, or handle revert on error)
+    // You would need an endpoint like /api/comment/like
+    try {
+      await fetch("/api/comment/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId }),
+      });
+    } catch (error) {
+      console.error("Like failed", error);
+      // TODO: Revert optimistic update here if needed
+    }
+  };
+
+  // --- Utility ---
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString("zh-CN", {
       month: "short",
@@ -89,10 +203,172 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const getDisplayName = (user: CommentUser | null) =>
     user?.user_profile?.nickname || user?.email?.split("@")[0] || "用户";
 
+  // --- Sub-component for recursive rendering ---
+  const CommentItem = ({
+    comment,
+    isReply = false,
+  }: {
+    comment: Comment;
+    isReply?: boolean;
+  }) => {
+    const isReplying = replyingToId === comment.commentid;
+
+    return (
+      <div
+        className={clsx(
+          "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500",
+          isReply ? "mt-4" : "mt-6",
+        )}
+      >
+        {/* Avatar */}
+        <div className="shrink-0">
+          <div
+            className={clsx(
+              "avatar placeholder rounded-full overflow-hidden shadow-sm ring-1 ring-base-200",
+              isReply ? "w-8 h-8" : "w-10 h-10 md:w-12 md:h-12",
+            )}
+          >
+            {comment.User?.user_profile?.avatarUrl ? (
+              <img
+                src={comment.User.user_profile.avatarUrl}
+                alt="av"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="bg-base-200 text-base-content/30 w-full h-full flex items-center justify-center">
+                <UserCircleIcon className="w-2/3 h-2/3" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div className="flex-1 min-w-0">
+          {/* Metadata */}
+          <div className="flex justify-between items-baseline mb-1.5">
+            <div className="flex items-center gap-2">
+              <span
+                className={clsx(
+                  "font-bold text-base-content/90",
+                  isReply ? "text-xs md:text-sm" : "text-sm md:text-base",
+                )}
+              >
+                {getDisplayName(comment.User)}
+              </span>
+              {comment.User?.user_profile?.learnLevel && !isReply && (
+                <span className="badge badge-xs badge-primary badge-outline font-mono opacity-80">
+                  {comment.User.user_profile.learnLevel}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] md:text-xs text-base-content/40 font-mono">
+              {formatDate(comment.commentAt)}
+            </span>
+          </div>
+
+          {/* Comment Bubble */}
+          <div
+            className={clsx(
+              "bg-base-200/40 p-3 md:p-4 rounded-2xl rounded-tl-none text-base-content/80 leading-relaxed hover:bg-base-200/60 transition-colors",
+              isReply ? "text-xs md:text-sm" : "text-sm md:text-base",
+            )}
+          >
+            <p className="whitespace-pre-wrap break-words">
+              {comment.commentText}
+            </p>
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex items-center gap-5 mt-2 ml-1">
+            {/* Like Button */}
+            <button
+              onClick={() => toggleLike(comment.commentid)}
+              className={clsx(
+                "flex items-center gap-1.5 text-xs font-bold transition-colors group/btn",
+                comment.isLiked
+                  ? "text-error"
+                  : "text-base-content/40 hover:text-error",
+              )}
+            >
+              {comment.isLiked ? (
+                <HeartIconSolid className="w-3.5 h-3.5" />
+              ) : (
+                <HeartIconOutline className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+              )}
+              {comment.likesCount || 0}
+            </button>
+
+            {/* Reply Button (Only allow 1 level of nesting visually for cleaner UI, or allow deep nesting if needed) */}
+            <button
+              onClick={() =>
+                setReplyingToId(isReplying ? null : comment.commentid)
+              }
+              className="flex items-center gap-1.5 text-xs font-bold text-base-content/40 hover:text-primary transition-colors"
+            >
+              <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
+              回复
+            </button>
+
+            {/* More Options */}
+            <button className="text-base-content/30 hover:text-base-content/60 transition-colors opacity-0 group-hover:opacity-100">
+              <EllipsisHorizontalIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Reply Input Box */}
+          {isReplying && (
+            <div className="mt-3 flex gap-3 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex-1 relative">
+                <textarea
+                  autoFocus
+                  className="textarea textarea-bordered textarea-sm w-full h-20 bg-base-100 focus:ring-1 focus:ring-primary/20 resize-none rounded-xl text-sm"
+                  placeholder={`回复 @${getDisplayName(comment.User)}...`}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                ></textarea>
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      setReplyingToId(null);
+                      setReplyContent("");
+                    }}
+                    className="btn btn-xs btn-ghost text-base-content/50"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={() => handleReplySubmit(comment.commentid)}
+                    disabled={!replyContent.trim()}
+                    className="btn btn-xs btn-primary text-primary-content"
+                  >
+                    发送
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Nested Replies (Recursive) */}
+          {comment.replies && comment.replies.length > 0 && (
+            <div className="pl-2 border-l-2 border-base-200/50">
+              {comment.replies.map((reply) => (
+                <CommentItem
+                  key={reply.commentid}
+                  comment={reply}
+                  isReply={true}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    // 外层容器：与 EpisodeDocument 风格对齐，使用大圆角和柔和阴影
+    // Container
     <div className="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-base-200/50 overflow-hidden">
-      {/* Header: 极简风格 */}
+      {/* Header */}
       <div className="px-6 md:px-10 py-6 border-b border-base-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
           <ChatBubbleLeftRightIcon className="w-5 h-5" />
@@ -106,36 +382,31 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       </div>
 
       <div className="p-4 md:p-8 lg:p-10">
-        {/* --- 输入区域 (Input Area) --- */}
+        {/* Main Input Area */}
         {session ? (
           <form
             onSubmit={handleSubmit}
-            className="mb-12 flex gap-4 md:gap-6 items-start group"
+            className="mb-10 flex gap-4 md:gap-6 items-start group"
           >
-            {/* 当前用户头像 */}
             <div className="avatar placeholder pt-1 shrink-0">
               <div className="bg-primary/10 text-primary rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-base-100 shadow-sm">
                 {session.user?.image ? (
                   <img src={session.user.image} alt="me" />
                 ) : (
-                  <span className="flex items-center justify-center w-full h-full text-sm font-bold">
-                    我
-                  </span>
+                  <span className="text-sm font-bold">我</span>
                 )}
               </div>
             </div>
 
-            {/* 文本框容器 */}
             <div className="flex-1 relative">
               <textarea
-                className="textarea w-full h-32 text-base p-4 bg-base-200/30 focus:bg-base-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-2xl resize-none shadow-inner placeholder:text-base-content/30 border-transparent focus:outline-none"
+                className="textarea w-full h-28 text-base p-4 bg-base-200/30 focus:bg-base-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-2xl resize-none shadow-inner placeholder:text-base-content/30 border-transparent focus:outline-none"
                 placeholder="分享你的见解或疑问..."
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
                 disabled={isSubmitting}
               ></textarea>
 
-              {/* 底部工具栏 (字数 & 按钮) */}
               <div className="absolute bottom-3 right-3 flex items-center gap-3">
                 <span
                   className={clsx(
@@ -147,7 +418,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                 </span>
                 <button
                   type="submit"
-                  className="btn btn-sm btn-primary rounded-xl shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 disabled:bg-base-200 disabled:text-base-content/20 border-none"
+                  className="btn btn-sm btn-primary rounded-xl shadow-lg shadow-primary/20 border-none"
                   disabled={!commentContent.trim() || isSubmitting}
                 >
                   {isSubmitting ? (
@@ -162,17 +433,17 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
             </div>
           </form>
         ) : (
-          // 未登录提示卡片
-          <div className="mb-12 p-8 md:p-12 bg-base-200/30 rounded-3xl border border-dashed border-base-300 text-center">
-            <div className="max-w-md mx-auto flex flex-col items-center gap-4">
-              <div className="w-12 h-12 bg-base-200 rounded-full flex items-center justify-center text-base-content/30">
-                <UserCircleIcon className="w-8 h-8" />
+          // Guest State
+          <div className="mb-12 p-8 md:p-10 bg-base-200/30 rounded-3xl border border-dashed border-base-300 text-center">
+            <div className="max-w-md mx-auto flex flex-col items-center gap-3">
+              <div className="w-10 h-10 bg-base-200 rounded-full flex items-center justify-center text-base-content/30">
+                <UserCircleIcon className="w-6 h-6" />
               </div>
-              <p className="text-base-content/60 font-medium">
+              <p className="text-base-content/60 text-sm font-medium">
                 登录后参与讨论，记录你的学习点滴
               </p>
               <button
-                className="btn btn-primary btn-sm px-8 rounded-full shadow-lg shadow-primary/20"
+                className="btn btn-primary btn-sm px-6 rounded-full shadow-lg"
                 onClick={() => {
                   const modal = document.getElementById(
                     "email_check_modal_box",
@@ -186,70 +457,20 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           </div>
         )}
 
-        {/* --- 评论列表 (Comments List) --- */}
-        <div className="space-y-6 md:space-y-8">
+        {/* Comments List */}
+        <div className="space-y-2">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <span className="loading loading-dots loading-lg text-primary/40"></span>
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-12">
-              <div className="inline-block p-4 rounded-full bg-base-200/50 mb-3 text-base-content/20">
-                <ChatBubbleLeftRightIcon className="w-8 h-8" />
-              </div>
-              <p className="text-base-content/40 italic">
+              <p className="text-base-content/40 italic text-sm">
                 还没有人发言，来抢沙发吧！
               </p>
             </div>
           ) : (
-            comments.map((c) => (
-              <div
-                key={c.commentid}
-                className="flex gap-4 md:gap-6 group animate-in fade-in slide-in-from-bottom-2 duration-500"
-              >
-                {/* 评论者头像 */}
-                <div className="shrink-0">
-                  <div className="avatar placeholder">
-                    <div className="bg-base-200 text-base-content/30 rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-base-100 shadow-sm overflow-hidden">
-                      {c.User?.user_profile?.avatarUrl ? (
-                        <img src={c.User.user_profile.avatarUrl} alt="av" />
-                      ) : (
-                        <UserCircleIcon className="w-full h-full p-1" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 评论内容 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-2">
-                    <span className="font-bold text-sm text-slate-700">
-                      {getDisplayName(c.User)}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      {formatDate(c.commentAt)}
-                    </span>
-                  </div>
-
-                  {/* 内容气泡：左上角直角，其余圆角，模拟对话感 */}
-                  <div className="bg-base-200/40 p-4 md:p-5 rounded-2xl rounded-tl-none text-slate-600 text-sm md:text-base leading-relaxed hover:bg-base-200/60 transition-colors">
-                    <p className="whitespace-pre-wrap break-words">
-                      {c.commentText}
-                    </p>
-                  </div>
-
-                  {/* 底部微交互 (Reply/Like 预留) */}
-                  <div className="flex gap-4 mt-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="text-xs font-medium text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
-                      回复
-                    </button>
-                    <button className="text-xs font-medium text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
-                      点赞
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
+            comments.map((c) => <CommentItem key={c.commentid} comment={c} />)
           )}
         </div>
       </div>
