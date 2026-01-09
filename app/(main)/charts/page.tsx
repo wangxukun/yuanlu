@@ -1,4 +1,9 @@
-"use client";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "排行榜 | 远路",
+  description: "查看最受欢迎的播客系列。",
+};
 
 export default function Charts() {
   return (

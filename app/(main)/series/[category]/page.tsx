@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
 import SeriesListClient, { Series } from "./SeriesListClient";
@@ -35,6 +36,20 @@ function calculateSeriesLevel(
     return "Advanced";
   if (counts.Intermediate >= counts.Beginner) return "Intermediate";
   return "Beginner";
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  const { category } = await params;
+  const decodedCategory = decodeURIComponent(category);
+
+  return {
+    title: `${decodedCategory} 系列推荐 | 远路`,
+    description: `浏览 ${decodedCategory} 主题下的精选英语播客，提升你的听力水平。`,
+  };
 }
 
 export default async function Page({

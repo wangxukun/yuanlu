@@ -1,6 +1,7 @@
 // yuanlu/app/(main)/discover/page.tsx
 import React from "react";
 import Link from "next/link";
+import { Metadata } from "next";
 import {
   ArrowTrendingUpIcon,
   BriefcaseIcon,
@@ -82,6 +83,18 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   searchParams: Promise<{ query?: string }>;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const query = params.query;
+
+  return {
+    title: query ? `搜索结果: ${query} | 远路` : "发现 | 远路",
+    description: "探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。",
+  };
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {

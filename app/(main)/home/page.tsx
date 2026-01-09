@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { auth } from "@/auth";
 import HomeClient from "@/components/main/home/HomeClient";
 import { statsService } from "@/core/stats/stats.service";
@@ -6,6 +7,11 @@ import { ResumeData } from "@/components/main/home/ResumeButton";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import { episodeService } from "@/core/episode/episode.service";
+
+export const metadata: Metadata = {
+  title: "我的主页 | 远路",
+  description: "查看你的学习进度和个性化推荐。",
+};
 
 export default async function HomePage() {
   const session = await auth();
