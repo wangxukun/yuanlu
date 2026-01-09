@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import React, { Suspense } from "react";
-import { lusitana } from "@/components/fonts";
+import { inter, lusitana } from "@/components/fonts";
 import "@/app/globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
@@ -29,7 +29,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body
         suppressHydrationWarning
-        className={`${lusitana.className} antialiased flex flex-col h-full`}
+        className={`${inter.variable} ${lusitana.className} font-sans antialiased flex flex-col h-full`}
       >
         <AuthProvider>
           <ThemeProvider

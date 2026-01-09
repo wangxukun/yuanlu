@@ -353,7 +353,7 @@ export default function InteractiveTranscript({
                   >
                     <p
                       className={clsx(
-                        "font-sans text-sm sm:text-base leading-7",
+                        "font-sans text-sm sm:text-base leading-7 tracking-wider",
                         isActive
                           ? "text-slate-600 font-medium"
                           : "text-slate-400",
