@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body
         suppressHydrationWarning
         className={`${lusitana.className} antialiased flex flex-col h-full`}

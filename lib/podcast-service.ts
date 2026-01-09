@@ -3,8 +3,11 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss"; // 引入签名方法
+import { cache } from "react";
 
-export async function getPodcastDetail(id: string) {
+// 由于 getPodcastDetail 是直接调用数据库（Prisma），为了避免在一个请求中重复查询数据库（一次在 Metadata，一次在 Page），
+// 建议使用 React 的 cache 进行包裹。
+export const getPodcastDetail = cache(async (id: string) => {
   if (!id) return null;
 
   // 1. 获取当前用户 Session (Server Component 中可用)
@@ -176,4 +179,25 @@ export async function getPodcastDetail(id: string) {
     podcastFavorites: undefined,
     episode: processedEpisodes,
   };
+});
+
+/**
+ * [新增] 获取用于生成 Sitemap 的播客列表数据
+ * 直接查询数据库，避免构建时 fetch 失败
+ */
+export async function getPodcastsForSitemap() {
+  const podcasts = await prisma.podcast.findMany({
+    where: {
+      // 确保只收录公开或有效的播客
+      coverFileName: { not: null },
+    },
+    select: {
+      podcastid: true,
+      createAt: true,
+    },
+    orderBy: {
+      createAt: Prisma.SortOrder.desc,
+    },
+  });
+  return podcasts;
 }

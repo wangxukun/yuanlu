@@ -7,6 +7,18 @@ import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/admin/header/Header";
 import { lusitana } from "@/components/fonts";
 import { Toaster } from "sonner";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | 远路管理后台",
+    default: "管理后台",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function RootLayout({
   children,
