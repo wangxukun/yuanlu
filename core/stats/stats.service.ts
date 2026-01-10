@@ -22,6 +22,10 @@ export const statsService = {
    */
   async updateDailyActivity(dto: UpdateUserActivityDto): Promise<void> {
     const { userId, seconds = 0 } = dto;
+    // [健壮性修复] 确保秒数是整数。
+    // 因为 user_daily_activity 表的 listeningSeconds 是 Int 类型。
+    // 即使前端传来浮点数，这里也会安全地处理，避免 Prisma 报错。
+    const safeSeconds = Math.round(seconds);
     const today = startOfDay(new Date()); // 获取今天00:00:00.000
 
     // 1. 更新用户最后活跃时间 (User 表)
@@ -50,12 +54,12 @@ export const statsService = {
       create: {
         userid: userId,
         date: today,
-        listeningSeconds: seconds,
-        isActive: seconds >= 300,
+        listeningSeconds: safeSeconds,
+        isActive: safeSeconds >= 300,
         wordsLearned: 0,
       },
       update: {
-        listeningSeconds: { increment: seconds },
+        listeningSeconds: { increment: safeSeconds },
       },
     });
 

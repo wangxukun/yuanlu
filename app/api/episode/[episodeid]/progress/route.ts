@@ -34,6 +34,10 @@ export async function PATCH(
       );
     }
 
+    // [新增] 核心优化：保留 3 位小数 (毫秒级精度)，去除无用的微秒噪音
+    // 例如：10.123456 -> 10.123
+    const cleanProgress = Math.round(progressSeconds * 1000) / 1000;
+
     // 4. [稳健修改] 不使用 upsert，改为手动查找 -> 更新或创建
     // 这样可以避开复合唯一索引命名不匹配的问题
     const existingRecord = await prisma.listening_history.findFirst({
@@ -53,7 +57,7 @@ export async function PATCH(
           historyid: existingRecord.historyid,
         },
         data: {
-          progressSeconds: Math.floor(progressSeconds),
+          progressSeconds: cleanProgress,
           isFinished: isFinished || false,
           listenAt: now,
         },
@@ -64,7 +68,7 @@ export async function PATCH(
         data: {
           userid: userId,
           episodeid: episodeId,
-          progressSeconds: Math.floor(progressSeconds),
+          progressSeconds: cleanProgress,
           isFinished: isFinished || false,
           listenAt: now,
         },

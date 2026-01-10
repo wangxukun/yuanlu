@@ -110,7 +110,8 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    // [修改] 增加 Math.floor 去除秒数的小数部分
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 

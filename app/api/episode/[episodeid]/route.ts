@@ -76,7 +76,7 @@ export async function GET(
     // 4. 清理返回对象（移除冗余的数组结构，换上我们整理好的数据）
     const { listening_history, episode_favorites, ...baseEpisodeData } =
       episode;
-    console.log("清理的内容是：", listening_history, episode_favorites);
+    console.log("clear date: ", listening_history, episode_favorites);
 
     return NextResponse.json({
       ...baseEpisodeData,

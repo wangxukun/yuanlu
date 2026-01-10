@@ -13,7 +13,13 @@ export async function POST(request: NextRequest) {
 
     // 2. 参数解析
     const body = await request.json().catch(() => ({}));
-    const seconds = typeof body.seconds === "number" ? body.seconds : 0;
+
+    // [健壮性修复] 在这里也进行取整，作为第一道防线
+    // 如果前端传来 0.5s，我们为了 Daily Activity (Int) 的兼容性，将其视为 0 或 1
+    let seconds = 0;
+    if (typeof body.seconds === "number") {
+      seconds = Math.round(body.seconds);
+    }
 
     // 3. 构建 DTO
     const dto: UpdateUserActivityDto = {
@@ -22,6 +28,7 @@ export async function POST(request: NextRequest) {
     };
 
     // 4. 调用 Service
+    // 注意：如果 seconds 为 0，Service 层仍然会更新 lastActiveAt，这也是符合预期的（心跳保活）
     await statsService.updateDailyActivity(dto);
 
     return NextResponse.json({ ok: true });

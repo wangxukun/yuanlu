@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { usePlayerStore } from "@/store/player-store";
-import { useSession } from "next-auth/react"; // [新增] 引入 session 钩子
+import { useSession } from "next-auth/react";
 import {
   PlayCircleIcon,
   SpeakerWaveIcon,
@@ -12,7 +12,7 @@ import {
   PauseCircleIcon,
   ArrowsRightLeftIcon,
   CheckCircleIcon,
-  InformationCircleIcon, // [新增] 引入提示图标
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
@@ -55,14 +55,14 @@ export default function InteractiveTranscript({
   subtitles,
   episode,
 }: InteractiveTranscriptProps) {
-  // 1. Auth State [新增]
+  // 1. Auth State
   const { data: session } = useSession();
 
   // 2. Store State
   const {
-    currentTime,
+    currentTime, // 仅用于暂停时的静态定位
     setCurrentTime,
-    audioRef,
+    audioRef, // 直接操作 DOM 元素以获取高精度时间
     pause,
     play,
     isPlaying,
@@ -78,9 +78,11 @@ export default function InteractiveTranscript({
   const [showTranslation, setShowTranslation] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  // Refs for scrolling
+  // Refs
   const activeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null); // [新增] 用于存储 rAF ID
+  const activeIndexRef = useRef<number>(-1); // [新增] 用于在 rAF 中避免重复 setState
 
   // Modal State
   const [selectedWord, setSelectedWord] = useState<string>("");
@@ -107,19 +109,72 @@ export default function InteractiveTranscript({
     }));
   }, [subtitles]);
 
-  // 5. Sync Highlight
+  // 5. Sync Highlight (Core Logic - Modified)
+  // [修改] 将同步逻辑分为两部分：静态同步(seek/pause) 和 动态同步(playing)
+
+  // 5.1 动态同步：使用 requestAnimationFrame 实现 60fps 高频检测
   useEffect(() => {
-    if (!isPlayingThisEpisode) {
-      if (activeIndex !== -1) setActiveIndex(-1);
+    if (!isPlayingThisEpisode || !isPlaying || !audioRef) {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       return;
     }
-    const index = processedSubtitles.findIndex(
-      (sub) => currentTime >= sub.start && currentTime <= sub.end,
-    );
-    if (index !== -1 && index !== activeIndex) {
-      setActiveIndex(index);
+
+    const loop = () => {
+      // 直接读取 DOM 的 currentTime，不依赖 React 状态
+      const t = audioRef.currentTime;
+
+      // 查找匹配的字幕
+      // 优化：对于长列表，这里可以用二分查找，但考虑到字幕量通常 < 2000，findIndex 性能尚可
+      const index = processedSubtitles.findIndex(
+        (sub) => t >= sub.start && t <= sub.end,
+      );
+
+      // 只有当索引真正改变时才触发 React 更新，减少 Render
+      if (index !== activeIndexRef.current) {
+        setActiveIndex(index);
+        activeIndexRef.current = index;
+      }
+
+      rafRef.current = requestAnimationFrame(loop);
+    };
+
+    rafRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [isPlaying, isPlayingThisEpisode, audioRef, processedSubtitles]);
+
+  // 5.2 静态同步：当暂停或拖动进度条时，响应 store 的 currentTime 更新
+  useEffect(() => {
+    // 只有在非播放状态下，才依赖 currentTime 更新 UI
+    // 播放状态下由上面的 rAF 接管，避免冲突和性能浪费
+    if (isPlayingThisEpisode && !isPlaying) {
+      const index = processedSubtitles.findIndex(
+        (sub) => currentTime >= sub.start && currentTime <= sub.end,
+      );
+      if (index !== activeIndex) {
+        setActiveIndex(index);
+        activeIndexRef.current = index;
+      }
     }
-  }, [currentTime, processedSubtitles, activeIndex, isPlayingThisEpisode]);
+    // 如果切走了，重置高亮
+    if (!isPlayingThisEpisode && activeIndex !== -1) {
+      setActiveIndex(-1);
+      activeIndexRef.current = -1;
+    }
+  }, [
+    currentTime,
+    isPlaying,
+    isPlayingThisEpisode,
+    processedSubtitles,
+    activeIndex,
+  ]);
 
   // 6. Auto Scroll
   useEffect(() => {
@@ -136,10 +191,11 @@ export default function InteractiveTranscript({
     if (isPlayingThisEpisode && audioRef) {
       audioRef.currentTime = startTime;
       setCurrentTime(startTime);
-      play();
+      play(); // 确保开始播放，触发 rAF
     } else {
       setCurrentEpisode(episode);
       setCurrentAudioUrl(episode.audioUrl);
+      // 这里需要等待 Audio 加载，通常 Player 组件会自动处理自动播放
     }
   };
 
@@ -148,9 +204,6 @@ export default function InteractiveTranscript({
     contextEn: string,
     contextZh: string,
   ) => {
-    // [可选优化] 如果未登录，点击时也可以弹出提示，或者允许查词但不允许保存
-    // 这里保持原逻辑，允许查词，但在保存时后端会校验（或需要前端额外处理）
-
     if (isPlayingThisEpisode && isPlaying) pause();
 
     const cleanWord = word.replace(/[.,!?;:"()]/g, "").trim();
@@ -185,7 +238,6 @@ export default function InteractiveTranscript({
   const handleSaveVocabulary = async () => {
     if (!selectedWord) return;
 
-    // [新增] 登录检查
     if (!session?.user) {
       toast.error("请先登录后再保存生词");
       return;
@@ -202,7 +254,8 @@ export default function InteractiveTranscript({
           contextSentence: selectedContext,
           translation: selectedTranslation,
           episodeid: episode.episodeid,
-          timestamp: isPlayingThisEpisode ? currentTime : 0,
+          timestamp:
+            isPlayingThisEpisode && audioRef ? audioRef.currentTime : 0, // [优化] 使用精确时间
           speakUrl: wordDetails.speakUrl,
           dictUrl: wordDetails.dictUrl,
           webUrl: wordDetails.webUrl,
@@ -275,7 +328,7 @@ export default function InteractiveTranscript({
         </div>
       </div>
 
-      {/* --- [新增] 未登录提示条 --- */}
+      {/* --- 未登录提示条 --- */}
       {!session?.user && (
         <div className="mb-6 -mt-2 text-center animate-fade-in-down">
           <p className="text-xs font-medium text-base-content/60 bg-base-200/50 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-base-200 cursor-default hover:bg-base-200 transition-colors">
@@ -294,7 +347,8 @@ export default function InteractiveTranscript({
               key={sub.id || index}
               ref={isActive ? activeRef : null}
               className={clsx(
-                "group relative rounded-xl p-4 sm:p-6 transition-all duration-500 border-l-4",
+                // 保持 duration-200 以获得灵敏的视觉反馈
+                "group relative rounded-xl p-4 sm:p-6 transition-all duration-200 border-l-4",
                 isActive
                   ? "bg-orange-50/80 border-orange-400 shadow-sm"
                   : "bg-transparent border-transparent hover:bg-base-200/30",
@@ -304,7 +358,7 @@ export default function InteractiveTranscript({
                 <button
                   onClick={() => handleJump(sub.start)}
                   className={clsx(
-                    "mt-1.5 flex-shrink-0 transition-all duration-300 transform",
+                    "mt-1.5 flex-shrink-0 transition-all duration-200 transform",
                     isActive
                       ? "text-orange-500 scale-110 opacity-100"
                       : "text-base-content/20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
@@ -345,7 +399,7 @@ export default function InteractiveTranscript({
 
                   <div
                     className={clsx(
-                      "overflow-hidden transition-all duration-500 ease-in-out",
+                      "overflow-hidden transition-all duration-200 ease-in-out",
                       showTranslation
                         ? "max-h-40 opacity-100 mt-3"
                         : "max-h-0 opacity-0 mt-0",

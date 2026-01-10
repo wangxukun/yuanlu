@@ -250,7 +250,7 @@ model listening_history {
   listenAt  DateTime? @default(now()) @db.Timestamptz(6)
 
   // [新增] 精听必须具备的“断点续传”
-  progressSeconds Int     @default(0) // 听到第几秒
+  progressSeconds Float   @default(0) // 听到第几秒
   isFinished      Boolean @default(false) // 是否听完
 
   episode episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
