@@ -104,7 +104,7 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
 
   // 格式化时间显示
   const mins = Math.floor(latestHistory.progressSeconds / 60);
-  const secs = latestHistory.progressSeconds % 60;
+  const secs = Math.floor(latestHistory.progressSeconds % 60);
   const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
 
   // 根据状态决定文案和图标
