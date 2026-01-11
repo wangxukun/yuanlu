@@ -60,9 +60,7 @@ export const episodeRepository = {
     return episodes as unknown as Episode[];
   },
 
-  // ... 其它方法保持不变 ...
   async findById(id: string): Promise<Episode> {
-    // ...
     return (await prisma.episode.findUnique({
       where: { episodeid: id },
       select: {

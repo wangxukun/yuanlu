@@ -29,6 +29,7 @@ import {
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import clsx from "clsx";
+import { parseTimeStr } from "@/lib/tools";
 
 // --- 类型定义 ---
 interface MergedSubtitleItem {
@@ -47,25 +48,6 @@ interface InteractiveTranscriptProps {
 interface ProcessedSubtitle extends MergedSubtitleItem {
   start: number;
   end: number;
-}
-
-// --- 辅助函数 ---
-function parseTimeStr(timeStr: string): number {
-  if (!timeStr) return 0;
-  const parts = timeStr.trim().split(":");
-  if (parts.length < 2) return 0;
-  let seconds = 0,
-    minutes = 0,
-    hours = 0;
-  if (parts.length === 3) {
-    hours = parseInt(parts[0], 10);
-    minutes = parseInt(parts[1], 10);
-    seconds = parseFloat(parts[2].replace(",", "."));
-  } else {
-    minutes = parseInt(parts[0], 10);
-    seconds = parseFloat(parts[1].replace(",", "."));
-  }
-  return hours * 3600 + minutes * 60 + seconds;
 }
 
 // --- 独立子组件：字幕行 (性能优化关键) ---

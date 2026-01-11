@@ -66,6 +66,7 @@ model user_profile {
   User                     User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 成就模型，存储用户所获得的成就信息
 model achievements {
   achievementid   Int       @id @default(autoincrement())
   userid          String?
@@ -74,6 +75,7 @@ model achievements {
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 广告模型，存储用户所展示的广告信息
 model advertisements {
   adid      Int       @id @default(autoincrement())
   adTitle   String    @db.VarChar(255)
@@ -83,6 +85,7 @@ model advertisements {
   endAt     DateTime? @db.Timestamptz(6)
 }
 
+/// 播客模型，存储播客信息
 model podcast {
   podcastid         String              @id @default(cuid())
   title             String              @unique @db.VarChar(255)
@@ -106,6 +109,7 @@ model podcast {
   @@index([createAt(sort: Desc)])
 }
 
+/// 播客评论模型，存储播客评论信息
 model comments {
   commentid   Int        @id @default(autoincrement())
   userid      String?
@@ -123,7 +127,7 @@ model comments {
   User    User?           @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-// 3. [新增] 评论点赞模型
+/// 评论点赞模型
 model comment_likes {
   likeid    Int      @id @default(autoincrement())
   userid    String
@@ -137,6 +141,7 @@ model comment_likes {
   @@unique([userid, commentid])
 }
 
+/// 讨论模型，存储讨论信息
 model discussion_threads {
   threadid      Int       @id @default(autoincrement())
   episodeid     String?
@@ -148,6 +153,7 @@ model discussion_threads {
   User          User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 播客剧集模型，存储用户订阅的播客信息
 model episode {
   episodeid          String               @id @default(cuid())
   title              String               @db.VarChar(255)
@@ -185,6 +191,7 @@ model episode {
   vocabulary         vocabulary[]
 }
 
+/// 播客剧集收藏模型，存储用户收藏的剧集信息
 model episode_favorites {
   favoriteid   Int       @id @default(autoincrement())
   userid       String?
@@ -196,6 +203,7 @@ model episode_favorites {
   @@unique([userid, episodeid]) // 防止重复收藏
 }
 
+/// 播客收藏模型，存储用户收藏的播客信息
 model podcast_favorites {
   favoriteid   Int       @id @default(autoincrement())
   userid       String?
@@ -207,6 +215,7 @@ model podcast_favorites {
   @@unique([userid, podcastid]) // 防止重复收藏
 }
 
+/// 标签模型，存储标签信息
 model tag {
   id        Int       @id @default(autoincrement())
   name      String    @unique @db.VarChar(50) // 唯一名称，防止重复
@@ -218,6 +227,7 @@ model tag {
   @@map("tags")
 }
 
+/// 学习路径
 model learning_paths {
   pathid     Int       @id @default(autoincrement())
   userid     String?
@@ -261,6 +271,7 @@ model listening_history {
   @@unique([userid, episodeid])
 }
 
+/// 通知模型，存储用户通知信息
 model notifications {
   notificationid   Int       @id @default(autoincrement())
   userid           String?
@@ -270,7 +281,7 @@ model notifications {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-//  测验题
+///  测验题
 model quizzes {
   // 测验主键ID，自动递增
   quizid        Int      @id @default(autoincrement())
@@ -288,7 +299,7 @@ model quizzes {
   episode       episode? @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-/// This table contains check constraintsand requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// 评分模型，存储用户对剧集的评分信息
 model ratings {
   ratingid    Int       @id @default(autoincrement())
   userid      String?
@@ -330,6 +341,7 @@ model speech_recognition {
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 学习组模型，用于存储用户学习组信息
 model study_groups {
   groupid    Int       @id @default(autoincrement())
   groupName  String    @db.VarChar(255)
@@ -338,6 +350,7 @@ model study_groups {
   User       User?     @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 订阅模型，用于存储用户订阅信息
 model subscriptions {
   subscriptionid   Int       @id @default(autoincrement())
   userid           String?
@@ -347,6 +360,7 @@ model subscriptions {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 词汇模型，用于存储用户词汇信息
 model vocabulary {
   vocabularyid    Int       @id @default(autoincrement())
   userid          String?
@@ -369,6 +383,7 @@ model vocabulary {
   @@index([userid, episodeid])
 }
 
+///  验证码模型，用于存储用户验证码信息
 model captcha {
   id        String   @id @default(cuid())
   code      String
@@ -377,6 +392,7 @@ model captcha {
   createAt  DateTime @default(now()) @db.Timestamptz(3)
 }
 
+/// 短信验证码模型，用于存储用户短信验证码信息
 model sms_code {
   id       Int      @id @default(autoincrement())
   phone    String   @db.VarChar(15)
@@ -384,7 +400,7 @@ model sms_code {
   createAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 }
 
-// 电子邮件验证
+/// 电子邮件验证
 model verification_code {
   id        Int      @id @default(autoincrement())
   email     String   @unique

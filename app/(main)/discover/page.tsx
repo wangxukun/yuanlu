@@ -92,7 +92,7 @@ export async function generateMetadata({
   const query = params.query;
 
   return {
-    title: query ? `搜索结果: ${query} | 远路` : "发现 | 远路",
+    title: query ? `搜索结果: ${query} | 远路播客` : "发现 | 远路播客",
     description: "探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。",
   };
 }

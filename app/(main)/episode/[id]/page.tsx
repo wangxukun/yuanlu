@@ -77,7 +77,7 @@ export default async function EpisodePage({
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 xl:gap-16 items-start relative">
           {/* --- 左侧边栏 (Sidebar) --- */}
           {/* Desktop: Sticky 定位，随页面滚动但固定在视口 */}
-          <aside className="xl:col-span-3 xl:sticky xl:top-28 transition-all z-10 order-1">
+          <aside className="xl:col-span-3 xl:sticky xl:top-10 transition-all z-10 order-1">
             <EpisodeSummarize episode={episode} />
           </aside>
 

@@ -84,3 +84,22 @@ export function validatePassword(password: string): boolean {
   // 密码有效当且仅当包含至少两种字符类型
   return typeCount >= 2;
 }
+
+// 解析时间字符串,str -> num
+export function parseTimeStr(timeStr: string): number {
+  if (!timeStr) return 0;
+  const parts = timeStr.trim().split(":");
+  if (parts.length < 2) return 0;
+  let seconds = 0,
+    minutes = 0,
+    hours = 0;
+  if (parts.length === 3) {
+    hours = parseInt(parts[0], 10);
+    minutes = parseInt(parts[1], 10);
+    seconds = parseFloat(parts[2].replace(",", "."));
+  } else {
+    minutes = parseInt(parts[0], 10);
+    seconds = parseFloat(parts[1].replace(",", "."));
+  }
+  return hours * 3600 + minutes * 60 + seconds;
+}
