@@ -6,12 +6,14 @@ import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
+  audioUrl: string; // 接收音频文件地址
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (subtitleId: number, recordedText: string, score: number) => void;
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   subtitle,
+  audioUrl,
   previousResult,
   onEvaluate,
 }) => {
@@ -25,6 +27,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   // Simulation refs
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const audioIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioInstanceRef = useRef<HTMLAudioElement | null>(null); // 管理音频实例
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -32,10 +35,21 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       if (recordingTimeoutRef.current)
         clearTimeout(recordingTimeoutRef.current);
       if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
+      // 组件卸载时停止播放音频
+      if (audioInstanceRef.current) {
+        audioInstanceRef.current.pause();
+        audioInstanceRef.current = null;
+      }
     };
   }, []);
 
   const startRecording = () => {
+    // 停止正在播放的音频（如果用户一边听一边点录音）
+    if (audioInstanceRef.current) {
+      audioInstanceRef.current.pause();
+      setAudioProgress(0);
+    }
+
     setIsRecording(true);
     setResult(undefined); // Reset previous result while recording new
 
@@ -91,22 +105,66 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     }, 1500);
   };
 
+  // 实现真实的音频播放逻辑
   const playReferenceAudio = () => {
-    // Simulate audio playing
-    // TODO: Connect to real <audio> element or Howl.js with subtitle.startSeconds & endSeconds
+    // 1. 如果已有音频在播放，先停止
+    if (audioInstanceRef.current) {
+      audioInstanceRef.current.pause();
+      audioInstanceRef.current = null;
+    }
     if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
 
-    let p = 0;
-    setAudioProgress(0);
+    // 2. 创建新音频对象
+    const audio = new Audio(audioUrl);
+    audioInstanceRef.current = audio;
 
+    // 3. 计算播放区间
+    const startTime = subtitle.startSeconds;
+    // 如果没有 endSeconds，默认播放 3 秒或根据实际情况调整
+    const endTime = subtitle.endSeconds || startTime + 3;
+    const duration = endTime - startTime;
+
+    console.log(`Playing audio from ${startTime} to ${endTime}`);
+
+    // 4. 设置起始点并播放
+    audio.currentTime = startTime;
+
+    // 处理加载可能存在的延迟
+    audio.play().catch((err) => {
+      console.error("Audio playback failed:", err);
+      // 可以在这里加个 toast 提示音频无法播放
+    });
+
+    // 5. 开启进度检测
+    setAudioProgress(0);
     audioIntervalRef.current = setInterval(() => {
-      p += 5;
-      setAudioProgress(p);
-      if (p >= 100) {
+      if (!audio) return;
+
+      // 如果音频播放结束或人为暂停
+      if (audio.paused && audio.currentTime === 0) {
         if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
         setAudioProgress(0);
+        return;
       }
-    }, 50);
+
+      const current = audio.currentTime;
+
+      // 计算进度百分比 (0-100)
+      // 使用 Math.max(0) 防止起始稍微有偏差导致负数
+      const progress = Math.min(
+        100,
+        Math.max(0, ((current - startTime) / duration) * 100),
+      );
+      setAudioProgress(progress);
+
+      // 到达结束时间，停止播放
+      if (current >= endTime) {
+        audio.pause();
+        setAudioProgress(0);
+        if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
+        audioInstanceRef.current = null;
+      }
+    }, 50); // 50ms 更新一次以保证流畅
   };
 
   const getScoreColor = (score: number) => {
@@ -131,11 +189,13 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
           <button
             onClick={playReferenceAudio}
+            // 只要 audioProgress > 0 就视为正在播放，禁用按钮防止重复点击
             disabled={audioProgress > 0}
             className="shrink-0 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-colors disabled:opacity-50"
           >
             {audioProgress > 0 ? (
               <div className="w-10 h-10 relative flex items-center justify-center">
+                {/* 进度环 SVG */}
                 <svg className="w-full h-full -rotate-90">
                   <circle
                     cx="20"
@@ -244,7 +304,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               </button>
             </div>
             <p className="text-sm font-medium text-red-500 animate-pulse">
-              Recording... Click to stop
+              正在录音...点击停止
             </p>
             {/* Fake Visualizer */}
             <div className="flex items-center gap-1 h-6">

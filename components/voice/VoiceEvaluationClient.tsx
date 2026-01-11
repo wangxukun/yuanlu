@@ -94,7 +94,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
     }
   };
 
-  // Helper to get the *latest* result for a specific subtitle
+  // 用于获取特定字幕的*最新*结果的辅助函数。
   const getLatestResult = (subtitleId: number) => {
     const targetSub = subtitles.find((s) => s.id === subtitleId);
     if (!targetSub) return undefined;
@@ -200,6 +200,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                   <div className="flex-1 min-w-0">
                     <SpeechEvaluationCard
                       subtitle={sub}
+                      audioUrl={episode.audioUrl}
                       previousResult={getLatestResult(sub.id)}
                       onEvaluate={handleEvaluation}
                     />

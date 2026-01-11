@@ -53,24 +53,32 @@ export default async function PracticePage({ params }: PageProps) {
   let coverUrl = "";
   let subtitleEnUrl = "";
   let subtitleZhUrl = "";
+  let audioUrl = "";
   // 获取封面图片
   coverUrl = await generateSignatureUrl(
     episode.coverFileName || "",
     3600 * 3,
   ).catch(() => episode.coverUrl || "");
-
+  // 获取字幕
   if (episode.subtitleEnFileName) {
     subtitleEnUrl = await generateSignatureUrl(
       episode.subtitleEnFileName,
       3600 * 3,
     ).catch(() => episode.subtitleEnUrl || "");
   }
-
+  // 获取中文字幕
   if (episode.subtitleZhFileName) {
     subtitleZhUrl = await generateSignatureUrl(
       episode.subtitleZhFileName,
       3600 * 3,
     ).catch(() => episode.subtitleZhUrl || "");
+  }
+  // 获取音频
+  if (episode.audioFileName) {
+    audioUrl = await generateSignatureUrl(
+      episode.audioFileName,
+      3600 * 3,
+    ).catch(() => episode.audioUrl || "");
   }
 
   const voiceEpisode = {
@@ -100,6 +108,7 @@ export default async function PracticePage({ params }: PageProps) {
     id: episode.episodeid, // 兼容前端 id
     episodeid: episode.episodeid,
     author: episode.podcast?.title || "Unknown",
+    audioUrl: audioUrl,
     thumbnailUrl: coverUrl,
     tags: [], // 简化处理
     duration: String(episode.duration), // 确保类型匹配
