@@ -3,10 +3,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Mic, Square, RotateCcw, Volume2, Cpu } from "lucide-react";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
+import { evaluateSpeech } from "@/lib/actions/speech";
+import { toast } from "sonner";
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
 
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
-  audioUrl: string; // 接收音频文件地址
+  audioUrl: string;
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (subtitleId: number, recordedText: string, score: number) => void;
   currentPlayingId: number | null;
@@ -28,33 +36,31 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   );
   const [audioProgress, setAudioProgress] = useState(0);
 
-  // Simulation refs
-  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const audioInstanceRef = useRef<HTMLAudioElement | null>(null); // 管理音频实例
-  // 使用 requestAnimationFrame 的 ID，而不是 setInterval
+  // --- 录音相关 Refs ---
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioDataRef = useRef<Float32Array[]>([]);
+
+  // --- 播放相关 Refs ---
+  const audioInstanceRef = useRef<HTMLAudioElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  // [新增] 监听 currentPlayingId 的变化
-  // 如果父组件告诉我们“现在的播放主角不是我”，则立即停止
+  // 监听 currentPlayingId 变化
   useEffect(() => {
     if (currentPlayingId !== null && currentPlayingId !== subtitle.id) {
       stopAudio();
     }
   }, [currentPlayingId, subtitle.id]);
 
-  // 组件卸载时清理
+  // 组件卸载清理
   useEffect(() => {
     return () => {
-      // 直接调用封装好的停止函数
       stopAudio();
-      // 录音的定时器是独立的，这里单独清理（或者你也可以把录音清理逻辑也封装进 stopAudio，看你喜好，但通常录音和播放互斥，分开写清晰点）
-      if (recordingTimeoutRef.current) {
-        clearTimeout(recordingTimeoutRef.current);
-      }
+      stopRecordingCleanup();
     };
   }, []);
 
-  // 抽离停止音频的逻辑，方便复用
   const stopAudio = () => {
     if (audioInstanceRef.current) {
       audioInstanceRef.current.pause();
@@ -67,72 +73,152 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     setAudioProgress(0);
   };
 
-  const startRecording = () => {
-    stopAudio();
-    setIsRecording(true);
-    setResult(undefined); // Reset previous result while recording new
-
-    // Simulate recording duration (auto-stop after 4 seconds)
-    // TODO: Replace with real MediaRecorder API or Azure Speech SDK start
-    recordingTimeoutRef.current = setTimeout(() => {
-      stopRecording();
-    }, 4000);
+  const stopRecordingCleanup = () => {
+    // 停止处理节点
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    // 停止上下文
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    // 停止流
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
   };
 
-  const stopRecording = () => {
-    if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+  const startRecording = async () => {
+    stopAudio();
+    setResult(undefined);
+    audioDataRef.current = []; // 清空之前的录音数据
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      // 创建 AudioContext，强制采样率 16000 (有道 API 要求)
+      const audioContext = new (window.AudioContext ||
+        window.webkitAudioContext!)({ sampleRate: 16000 });
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      // 使用 ScriptProcessorNode 获取音频数据
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        const inputData = e.inputBuffer.getChannelData(0);
+        // 必须深拷贝数据
+        audioDataRef.current.push(new Float32Array(inputData));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      toast.error("无法访问麦克风，请检查权限设置");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!isRecording) return;
     setIsRecording(false);
     setIsProcessing(true);
 
-    // Simulate AI Processing delay
-    // TODO: Replace with real API call to STT service
-    setTimeout(() => {
-      setIsProcessing(false);
+    // 1. 停止录音并清理硬件占用
+    stopRecordingCleanup();
 
-      // Mock random "AI" logic for demonstration
-      // 70% chance of high score, 30% random low score
-      const randomScore =
-        Math.random() > 0.3
-          ? Math.floor(Math.random() * (100 - 85) + 85)
-          : Math.floor(Math.random() * (85 - 50) + 50);
-
-      // Simulate slight misrecognition if score is low
-      let recognized = subtitle.textEn;
-      if (randomScore < 90) {
-        // Rudimentary "error" simulation: drop the last word
-        const words = recognized.split(" ");
-        if (words.length > 3) {
-          words.pop();
-          recognized = words.join(" ");
-        }
+    try {
+      // 2. 合并音频数据
+      const buffers = audioDataRef.current;
+      if (buffers.length === 0) {
+        throw new Error("No audio recorded");
+      }
+      const totalLength = buffers.reduce((acc, curr) => acc + curr.length, 0);
+      const mergedBuffer = new Float32Array(totalLength);
+      let offset = 0;
+      for (const buffer of buffers) {
+        mergedBuffer.set(buffer, offset);
+        offset += buffer.length;
       }
 
-      // 构造临时结果对象 (ID 使用时间戳模拟)
-      const newResult: SpeechPracticeRecord = {
-        recognitionid: Date.now(),
-        userid: "current",
-        episodeid: "current",
-        speechText: recognized,
-        accuracyScore: randomScore,
-        targetText: subtitle.textEn,
-        targetStartTime: subtitle.startSeconds,
-        recognitionDate: new Date().toISOString(),
-      };
+      // 3. 编码为 WAV (16kHz, 16bit, Mono)
+      const wavBlob = encodeWAV(mergedBuffer, 16000);
 
-      setResult(newResult);
-      onEvaluate(subtitle.id, recognized, randomScore);
-    }, 1500);
+      // 4. 转 Base64
+      const reader = new FileReader();
+      reader.readAsDataURL(wavBlob);
+      reader.onloadend = async () => {
+        const base64String = (reader.result as string).split(",")[1];
+
+        // 5. 调用 Server Action
+        const response = await evaluateSpeech(
+          base64String,
+          subtitle.textEn,
+          16000,
+        );
+
+        setIsProcessing(false);
+
+        if (response.error) {
+          toast.error(response.error);
+          return;
+        }
+
+        const score = Math.round(response.score || 0);
+
+        // --- 核心修改部分 Start ---
+        // 解析 response.details.words 来获取评测返回的单词序列
+        let speechText = "";
+
+        if (response.details && Array.isArray(response.details.words)) {
+          // 将单词数组拼接成字符串
+          // 可以在这里根据 word.score 判断是否需要标记颜色（例如低分词用红字），
+          // 但这里先仅提取纯文本用于存储和展示。
+          speechText = response.details.words
+            .map((w: { word: string; score?: number }) => w.word)
+            .join(" ");
+        }
+
+        console.log("Speech Text:", speechText);
+
+        // 兜底逻辑：如果解析结果为空（例如API结构变动或静音），回退到原文
+        if (!speechText || speechText.trim().length === 0) {
+          speechText = subtitle.textEn;
+        }
+        // --- 核心修改部分 End ---
+
+        const newResult: SpeechPracticeRecord = {
+          recognitionid: Date.now(),
+          userid: "current",
+          episodeid: "current",
+          speechText: speechText,
+          accuracyScore: score,
+          targetText: subtitle.textEn,
+          targetStartTime: subtitle.startSeconds,
+          recognitionDate: new Date().toISOString(),
+        };
+
+        setResult(newResult);
+        onEvaluate(subtitle.id, speechText, score);
+      };
+    } catch (err) {
+      console.error("Processing error:", err);
+      setIsProcessing(false);
+      toast.error("评测处理失败");
+    }
   };
 
-  // 实现真实的音频播放逻辑
   const playReferenceAudio = () => {
-    // 1. 无论我是谁，先停止自己当前的播放（如果有）
     stopAudio();
-
-    // 2. [关键] 通知父组件：我现在要开始播放了，请让其他人闭嘴
     onPlayStart(subtitle.id);
 
-    // 3. 创建并播放新音频
     const audio = new Audio(audioUrl);
     audioInstanceRef.current = audio;
 
@@ -140,45 +226,32 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     const endTime = subtitle.endSeconds || startTime + 3;
     const duration = endTime - startTime;
 
-    // 4. 设置起始点
     audio.currentTime = startTime;
-
-    // 5. 开始播放
     audio.play().catch((err) => console.error("Play error:", err));
 
-    // 6. [关键修改] 使用 requestAnimationFrame 进行高频检测
     const tick = () => {
       if (!audio) return;
-
-      // 如果音频被人为暂停或结束
       if (audio.paused && audio.currentTime === 0) {
         stopAudio();
         return;
       }
 
       const current = audio.currentTime;
-
-      // [核心修复] 高精度检测：一旦超过结束时间，立即暂停
-      // 这里可以加一个极小的 buffer，比如 endTime - 0.05，如果你发现还是有轻微杂音
       if (current >= endTime) {
         audio.pause();
         setAudioProgress(0);
         audioInstanceRef.current = null;
-        return; // 停止循环
+        return;
       }
 
-      // 计算进度
       const progress = Math.min(
         100,
         Math.max(0, ((current - startTime) / duration) * 100),
       );
       setAudioProgress(progress);
-
-      // 继续下一帧检测
       rafIdRef.current = requestAnimationFrame(tick);
     };
 
-    // 启动循环
     rafIdRef.current = requestAnimationFrame(tick);
   };
 
@@ -204,12 +277,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
           <button
             onClick={playReferenceAudio}
-            // 只要 audioProgress > 0 就视为正在播放，禁用按钮防止重复点击
             className="shrink-0 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-colors disabled:opacity-50"
           >
             {audioProgress > 0 ? (
               <div className="w-10 h-10 relative flex items-center justify-center">
-                {/* 进度环 SVG */}
                 <svg className="w-full h-full -rotate-90">
                   <circle
                     cx="20"
@@ -243,12 +314,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
       {/* 2. Recording & Result Section */}
       <div className="p-6 bg-slate-50/50 min-h-[140px] flex flex-col justify-center">
-        {/* State: IDLE or RESULT present */}
         {!isRecording && !isProcessing && (
           <div className="flex items-center justify-between">
             {result ? (
               <div className="flex-1 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-                {/* Score Badge */}
                 <div
                   className={`w-16 h-16 rounded-full flex flex-col items-center justify-center border-4 ${getScoreColor(
                     result.accuracyScore || 0,
@@ -262,11 +331,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </span>
                 </div>
 
-                {/* Recognized Text */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold uppercase text-slate-400">
-                      AI Heard:
+                      You said:
                     </span>
                   </div>
                   <p
@@ -278,11 +346,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   >
                     {result.speechText}
                   </p>
-                  {result.speechText !== subtitle.textEn && (
-                    <p className="text-xs text-rose-500 mt-1 flex items-center">
-                      检测到单词不匹配
-                    </p>
-                  )}
                 </div>
               </div>
             ) : (
@@ -291,7 +354,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               </div>
             )}
 
-            {/* Mic Action */}
             <button
               onClick={startRecording}
               className={`ml-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 ${
@@ -305,7 +367,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           </div>
         )}
 
-        {/* State: RECORDING */}
         {isRecording && (
           <div className="flex flex-col items-center justify-center py-2 space-y-4">
             <div className="relative">
@@ -336,7 +397,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           </div>
         )}
 
-        {/* State: PROCESSING */}
         {isProcessing && (
           <div className="flex flex-col items-center justify-center py-4 space-y-3">
             <Cpu className="text-indigo-600 animate-spin" size={32} />
@@ -347,5 +407,55 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     </div>
   );
 };
+
+// ----------------------------------------------------------------------
+// 工具函数：将 Float32Array PCM 数据编码为 WAV Blob (16bit, 16000Hz, Mono)
+// ----------------------------------------------------------------------
+function encodeWAV(samples: Float32Array, sampleRate: number) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+
+  const writeString = (view: DataView, offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+
+  // RIFF identifier
+  writeString(view, 0, "RIFF");
+  // file length
+  view.setUint32(4, 36 + samples.length * 2, true);
+  // RIFF type
+  writeString(view, 8, "WAVE");
+  // format chunk identifier
+  writeString(view, 12, "fmt ");
+  // format chunk length
+  view.setUint32(16, 16, true);
+  // sample format (raw)
+  view.setUint16(20, 1, true);
+  // channel count (1)
+  view.setUint16(22, 1, true);
+  // sample rate
+  view.setUint32(24, sampleRate, true);
+  // byte rate (sampleRate * blockAlign)
+  view.setUint32(28, sampleRate * 2, true);
+  // block align (channel count * bytes per sample)
+  view.setUint16(32, 2, true);
+  // bits per sample
+  view.setUint16(34, 16, true);
+  // data chunk identifier
+  writeString(view, 36, "data");
+  // data chunk length
+  view.setUint32(40, samples.length * 2, true);
+
+  // 写 PCM 数据
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+}
 
 export default SpeechEvaluationCard;
