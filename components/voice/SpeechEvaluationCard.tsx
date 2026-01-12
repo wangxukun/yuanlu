@@ -9,6 +9,8 @@ interface SpeechEvaluationCardProps {
   audioUrl: string; // 接收音频文件地址
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (subtitleId: number, recordedText: string, score: number) => void;
+  currentPlayingId: number | null;
+  onPlayStart: (id: number) => void;
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
@@ -16,6 +18,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   audioUrl,
   previousResult,
   onEvaluate,
+  currentPlayingId,
+  onPlayStart,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,30 +30,45 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
   // Simulation refs
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const audioIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioInstanceRef = useRef<HTMLAudioElement | null>(null); // 管理音频实例
+  // 使用 requestAnimationFrame 的 ID，而不是 setInterval
+  const rafIdRef = useRef<number | null>(null);
 
-  // Clean up timers on unmount
+  // [新增] 监听 currentPlayingId 的变化
+  // 如果父组件告诉我们“现在的播放主角不是我”，则立即停止
+  useEffect(() => {
+    if (currentPlayingId !== null && currentPlayingId !== subtitle.id) {
+      stopAudio();
+    }
+  }, [currentPlayingId, subtitle.id]);
+
+  // 组件卸载时清理
   useEffect(() => {
     return () => {
-      if (recordingTimeoutRef.current)
+      // 直接调用封装好的停止函数
+      stopAudio();
+      // 录音的定时器是独立的，这里单独清理（或者你也可以把录音清理逻辑也封装进 stopAudio，看你喜好，但通常录音和播放互斥，分开写清晰点）
+      if (recordingTimeoutRef.current) {
         clearTimeout(recordingTimeoutRef.current);
-      if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
-      // 组件卸载时停止播放音频
-      if (audioInstanceRef.current) {
-        audioInstanceRef.current.pause();
-        audioInstanceRef.current = null;
       }
     };
   }, []);
 
-  const startRecording = () => {
-    // 停止正在播放的音频（如果用户一边听一边点录音）
+  // 抽离停止音频的逻辑，方便复用
+  const stopAudio = () => {
     if (audioInstanceRef.current) {
       audioInstanceRef.current.pause();
-      setAudioProgress(0);
+      audioInstanceRef.current = null;
     }
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    setAudioProgress(0);
+  };
 
+  const startRecording = () => {
+    stopAudio();
     setIsRecording(true);
     setResult(undefined); // Reset previous result while recording new
 
@@ -107,64 +126,60 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
   // 实现真实的音频播放逻辑
   const playReferenceAudio = () => {
-    // 1. 如果已有音频在播放，先停止
-    if (audioInstanceRef.current) {
-      audioInstanceRef.current.pause();
-      audioInstanceRef.current = null;
-    }
-    if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
+    // 1. 无论我是谁，先停止自己当前的播放（如果有）
+    stopAudio();
 
-    // 2. 创建新音频对象
+    // 2. [关键] 通知父组件：我现在要开始播放了，请让其他人闭嘴
+    onPlayStart(subtitle.id);
+
+    // 3. 创建并播放新音频
     const audio = new Audio(audioUrl);
     audioInstanceRef.current = audio;
 
-    // 3. 计算播放区间
     const startTime = subtitle.startSeconds;
-    // 如果没有 endSeconds，默认播放 3 秒或根据实际情况调整
     const endTime = subtitle.endSeconds || startTime + 3;
     const duration = endTime - startTime;
 
-    console.log(`Playing audio from ${startTime} to ${endTime}`);
-
-    // 4. 设置起始点并播放
+    // 4. 设置起始点
     audio.currentTime = startTime;
 
-    // 处理加载可能存在的延迟
-    audio.play().catch((err) => {
-      console.error("Audio playback failed:", err);
-      // 可以在这里加个 toast 提示音频无法播放
-    });
+    // 5. 开始播放
+    audio.play().catch((err) => console.error("Play error:", err));
 
-    // 5. 开启进度检测
-    setAudioProgress(0);
-    audioIntervalRef.current = setInterval(() => {
+    // 6. [关键修改] 使用 requestAnimationFrame 进行高频检测
+    const tick = () => {
       if (!audio) return;
 
-      // 如果音频播放结束或人为暂停
+      // 如果音频被人为暂停或结束
       if (audio.paused && audio.currentTime === 0) {
-        if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
-        setAudioProgress(0);
+        stopAudio();
         return;
       }
 
       const current = audio.currentTime;
 
-      // 计算进度百分比 (0-100)
-      // 使用 Math.max(0) 防止起始稍微有偏差导致负数
+      // [核心修复] 高精度检测：一旦超过结束时间，立即暂停
+      // 这里可以加一个极小的 buffer，比如 endTime - 0.05，如果你发现还是有轻微杂音
+      if (current >= endTime) {
+        audio.pause();
+        setAudioProgress(0);
+        audioInstanceRef.current = null;
+        return; // 停止循环
+      }
+
+      // 计算进度
       const progress = Math.min(
         100,
         Math.max(0, ((current - startTime) / duration) * 100),
       );
       setAudioProgress(progress);
 
-      // 到达结束时间，停止播放
-      if (current >= endTime) {
-        audio.pause();
-        setAudioProgress(0);
-        if (audioIntervalRef.current) clearInterval(audioIntervalRef.current);
-        audioInstanceRef.current = null;
-      }
-    }, 50); // 50ms 更新一次以保证流畅
+      // 继续下一帧检测
+      rafIdRef.current = requestAnimationFrame(tick);
+    };
+
+    // 启动循环
+    rafIdRef.current = requestAnimationFrame(tick);
   };
 
   const getScoreColor = (score: number) => {
@@ -190,7 +205,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           <button
             onClick={playReferenceAudio}
             // 只要 audioProgress > 0 就视为正在播放，禁用按钮防止重复点击
-            disabled={audioProgress > 0}
             className="shrink-0 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-colors disabled:opacity-50"
           >
             {audioProgress > 0 ? (

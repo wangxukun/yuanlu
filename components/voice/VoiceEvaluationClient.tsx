@@ -32,6 +32,10 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
   // Local state to store new attempts in this session
   const [sessionRecords, setSessionRecords] =
     useState<SpeechPracticeRecord[]>(previousRecords);
+  // 状态：当前正在播放音频的字幕 ID
+  const [playingSubtitleId, setPlayingSubtitleId] = useState<number | null>(
+    null,
+  );
 
   const stats = useMemo(() => {
     // 简单的统计逻辑，可以根据需求优化去重逻辑
@@ -203,6 +207,9 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                       audioUrl={episode.audioUrl}
                       previousResult={getLatestResult(sub.id)}
                       onEvaluate={handleEvaluation}
+                      // [新增] 传入当前播放状态和控制函数
+                      currentPlayingId={playingSubtitleId}
+                      onPlayStart={(id) => setPlayingSubtitleId(id)}
                     />
                   </div>
                 </div>
