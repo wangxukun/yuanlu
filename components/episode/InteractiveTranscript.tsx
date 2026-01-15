@@ -306,18 +306,57 @@ export default function InteractiveTranscript({
     activeIndex,
   ]);
 
-  // 6. Auto Scroll
-  // 使用 ref 直接操作 DOM，避免重新渲染
+  // --- 新增辅助函数：查找最近的滚动容器 ---
+  // (可以放在组件外部或 useEffect 内部)
+  const getScrollParent = (node: HTMLElement): HTMLElement | Window => {
+    let parent = node.parentElement;
+    while (parent) {
+      const { overflowY } = window.getComputedStyle(parent);
+      if (overflowY.includes("auto") || overflowY.includes("scroll")) {
+        return parent;
+      }
+      parent = parent.parentElement;
+    }
+    return window;
+  };
+
+  // 6. Auto Scroll (Robust Version)
   useEffect(() => {
-    if (autoScroll && activeIndex !== -1) {
-      // 通过 ID 查找 DOM 节点，比 ref 数组更轻量
-      const activeEl = document.getElementById(
-        `subtitle-${processedSubtitles[activeIndex]?.id}`,
-      );
-      if (activeEl) {
-        activeEl.scrollIntoView({
+    if (!autoScroll || activeIndex === -1) return;
+
+    const activeEl = document.getElementById(
+      `subtitle-${processedSubtitles[activeIndex]?.id}`,
+    );
+
+    if (activeEl) {
+      // 1. 动态查找真正的滚动容器 (在您的布局中应该是 main 标签)
+      const container = getScrollParent(activeEl);
+
+      // 如果回退到 window (body没有滚动条的情况下)，则不做操作
+      if (container === window) return;
+      const scrollContainer = container as HTMLElement;
+
+      // 2. 获取位置信息
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const activeRect = activeEl.getBoundingClientRect();
+
+      // 3. 定义“舒适阅读区” (相对于容器可视区域)
+      // 顶部安全区：容器顶部 + 120px (避开可能的 Header 或粘性工具栏)
+      const safetyTop = containerRect.top + 120;
+      // 底部安全区：容器底部 - 35% 的高度 (给下方留出预览空间)
+      const safetyBottom = containerRect.bottom - containerRect.height * 0.35;
+
+      // 4. 判断是否需要滚动
+      // 只有当元素 跑出 安全区域时才触发
+      if (activeRect.top < safetyTop || activeRect.bottom > safetyBottom) {
+        // 5. 计算目标滚动位置 (将元素置于容器顶部往下 30% 的位置)
+        // 算法：当前滚动高度 + (元素当前相对视口位置 - 容器顶部位置) - 目标视觉偏移
+        const targetScreenPos = containerRect.height * 0.3; // 屏幕 30% 处
+        const offset = activeRect.top - containerRect.top - targetScreenPos;
+
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollTop + offset,
           behavior: "smooth",
-          block: "center",
         });
       }
     }
