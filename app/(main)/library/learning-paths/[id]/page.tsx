@@ -55,7 +55,7 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
         thumbnailUrl:
           item.episode.coverUrl || "/static/images/episode-light.png",
         author: item.episode.podcast?.title || "",
-        audioUrl: item.episode.audioUrl,
+        audioUrl: item.episode.audioUrl ?? "",
         duration: item.episode.duration,
       },
     })),
