@@ -17,6 +17,7 @@ export const userRoutes = [
   "/library/favorites",
   "/library/history",
   "/library/vocabulary",
+  "/library/learning-paths",
 ];
 
 export const adminRoutes = [

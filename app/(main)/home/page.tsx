@@ -47,6 +47,8 @@ export default async function HomePage() {
       .getRecommendedEpisodes(user.userid) // 获取推荐
       .catch(() => ({ level: "General", items: [] }));
 
+    console.log("STATS_PROMISE: ", statsPromise);
+
     userStats = await statsPromise;
     const history = await historyPromise;
     recommendedData = await recommendedPromise;

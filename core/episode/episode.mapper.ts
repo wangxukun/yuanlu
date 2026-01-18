@@ -38,6 +38,7 @@ export class EpisodeMapper {
       id: e.episodeid,
       title: e.title,
       coverUrl: e.coverUrl,
+      podcastTitle: e.podcast?.title || "",
       publishDate: formatDate(e.publishAt),
       status: e.status === "published" ? Status.PUBLISHED : Status.REVIEWING,
       access: e.isExclusive ? Access.MEMBER : Access.FREE,

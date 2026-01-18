@@ -34,6 +34,7 @@ const generateMockData = (): EpisodeManagementItem[] => {
       status: statuses[i % statuses.length],
       access: accesses[i % accesses.length],
       duration: `${hours}:${minutes}`,
+      podcastTitle: "Business English Podcast",
       stats: {
         likes: likes,
         plays: plays,

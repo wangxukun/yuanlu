@@ -37,10 +37,11 @@ model User {
   daily_activities   user_daily_activity[]
   VisitorLog         VisitorLog[]
   comment_likes      comment_likes[]
+  group_members      group_members[]
 }
 
 ///用户资料模型，存储用户的个人信息
-/// 
+///
 /// 该模型包含了用户的详细个人资料信息，如昵称、头像、个人简介等。
 /// 通过 userid 与 User 模型建立一对一关系，实现用户基础信息与个人资料的分离。
 /// 当用户被删除时，其个人资料也会被级联删除。
@@ -155,40 +156,41 @@ model discussion_threads {
 
 /// 播客剧集模型，存储用户订阅的播客信息
 model episode {
-  episodeid          String               @id @default(cuid())
-  title              String               @db.VarChar(255)
-  coverUrl           String               @default("default_cover_url") @db.VarChar(255)
-  coverFileName      String?              @db.VarChar(255)
-  description        String?
-  audioUrl           String               @db.VarChar(255)
-  audioFileName      String?              @db.VarChar(255)
-  subtitleEnUrl      String?              @db.VarChar(255)
-  subtitleEnFileName String?              @db.VarChar(255)
-  subtitleZhUrl      String?              @db.VarChar(255)
-  subtitleZhFileName String?              @db.VarChar(255)
-  duration           Int                  @default(0)
-  playCount          Int                  @default(0) // 单集播放次数
-  podcastid          String?
-  uploaderid         String?
-  publishAt          DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
-  createAt           DateTime?            @default(now()) @db.Timestamptz(6)
-  updateAt           DateTime?            @db.Timestamptz(6)
-  status             String?              @default("unpublished") @db.VarChar(50)
-  isExclusive        Boolean?             @default(false)
-  isCommentEnabled   Boolean?             @default(true)
+  episodeid           String                @id @default(cuid())
+  title               String                @db.VarChar(255)
+  coverUrl            String                @default("default_cover_url") @db.VarChar(255)
+  coverFileName       String?               @db.VarChar(255)
+  description         String?
+  audioUrl            String                @db.VarChar(255)
+  audioFileName       String?               @db.VarChar(255)
+  subtitleEnUrl       String?               @db.VarChar(255)
+  subtitleEnFileName  String?               @db.VarChar(255)
+  subtitleZhUrl       String?               @db.VarChar(255)
+  subtitleZhFileName  String?               @db.VarChar(255)
+  duration            Int                   @default(0)
+  playCount           Int                   @default(0) // 单集播放次数
+  podcastid           String?
+  uploaderid          String?
+  publishAt           DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
+  createAt            DateTime?             @default(now()) @db.Timestamptz(6)
+  updateAt            DateTime?             @db.Timestamptz(6)
+  status              String?               @default("unpublished") @db.VarChar(50)
+  isExclusive         Boolean?              @default(false)
+  isCommentEnabled    Boolean?              @default(true)
   // [新增] CEFR 难度等级 (e.g. A1, A2, B1, B2, C1, C2, General)
-  difficulty         String?              @default("General") @db.VarChar(50)
-  comments           comments[]
-  discussion_threads discussion_threads[]
-  podcast            podcast?             @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
-  User               User?                @relation(fields: [uploaderid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-  episode_favorites  episode_favorites[]
-  listening_history  listening_history[]
-  quizzes            quizzes[]
-  ratings            ratings[]
-  speech_recognition speech_recognition[]
-  tags               tag[]
-  vocabulary         vocabulary[]
+  difficulty          String?               @default("General") @db.VarChar(50)
+  comments            comments[]
+  discussion_threads  discussion_threads[]
+  podcast             podcast?              @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
+  User                User?                 @relation(fields: [uploaderid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  episode_favorites   episode_favorites[]
+  listening_history   listening_history[]
+  quizzes             quizzes[]
+  ratings             ratings[]
+  speech_recognition  speech_recognition[]
+  tags                tag[]
+  vocabulary          vocabulary[]
+  learning_path_items learning_path_items[]
 }
 
 /// 播客剧集收藏模型，存储用户收藏的剧集信息
@@ -229,19 +231,36 @@ model tag {
 
 /// 学习路径
 model learning_paths {
-  pathid     Int       @id @default(autoincrement())
-  userid     String?
-  pathName   String    @db.VarChar(255)
-  creationAt DateTime? @default(now()) @db.Timestamptz(6)
-  User       User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  pathid      Int                   @id @default(autoincrement())
+  userid      String?
+  pathName    String                @db.VarChar(255)
+  description String?               @db.Text // 增加描述，说明这个路径适合谁
+  isPublic    Boolean               @default(false) // 是否公开分享
+  creationAt  DateTime?             @default(now()) @db.Timestamptz(6)
+  User        User?                 @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  items       learning_path_items[]
+}
+
+/// 路径内容表
+model learning_path_items {
+  id        Int      @id @default(autoincrement())
+  pathid    Int
+  episodeid String
+  order     Int      @default(0) // 学习顺序
+  addedAt   DateTime @default(now())
+
+  path    learning_paths @relation(fields: [pathid], references: [pathid], onDelete: Cascade)
+  episode episode        @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
+
+  @@index([pathid, order])
 }
 
 /// 听播历史记录模型，用于追踪用户收听剧集的历史
-/// 
+///
 /// 该模型记录用户对剧集的收听情况，包括收听时间、进度等信息。
 /// 支持断点续传功能，允许用户暂停后继续收听，同时确保
 /// 每个用户对每集只有一条记录。
-/// 
+///
 /// 字段说明：
 /// - historyid: 历史记录唯一标识符，自动递增
 /// - userid:关联的用户ID
@@ -250,7 +269,7 @@ model learning_paths {
 /// - progressSeconds: 已收听的秒数，用于断点续传功能// <--- [修复关键点] 传入 userStats
 /// - isFinished: 标识是否已完成收听/// - episode: 关联的剧集对象
 /// - User: 关联的用户对象
-/// 
+///
 /// 约束说明：
 /// - 在userid和episodeid上创建复合唯一索引，确保每个用户对每集只有一条记录
 model listening_history {
@@ -311,10 +330,10 @@ model ratings {
 }
 
 ///语音识别结果模型，用于存储用户语音识别的记录和评估
-/// 
+///
 /// 该模型保存用户语音输入的识别结果及其准确度评分，
 /// 并关联到相应的剧集和原文内容，用于语言学习中的发音练习。
-/// 
+///
 /// 字段说明：
 /// - recognitionid: 识别记录唯一标识符，自动递增
 /// - userid: 关联的用户ID
@@ -343,11 +362,28 @@ model speech_recognition {
 
 /// 学习组模型，用于存储用户学习组信息
 model study_groups {
-  groupid    Int       @id @default(autoincrement())
-  groupName  String    @db.VarChar(255)
-  creatorid  String?
-  creationAt DateTime? @default(now()) @db.Timestamptz(6)
-  User       User?     @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  groupid       Int             @id @default(autoincrement())
+  groupName     String          @db.VarChar(255)
+  creatorid     String?
+  description   String? // 组规/简介
+  inviteCode    String?         @unique // 邀请码，方便分享加入
+  creationAt    DateTime?       @default(now()) @db.Timestamptz(6)
+  User          User?           @relation(fields: [creatorid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  group_members group_members[]
+}
+
+/// 小组成员表
+model group_members {
+  id       Int      @id @default(autoincrement())
+  groupid  Int
+  userid   String
+  role     String   @default("MEMBER") // ADMIN, MEMBER
+  joinedAt DateTime @default(now())
+
+  group study_groups @relation(fields: [groupid], references: [groupid], onDelete: Cascade)
+  User  User         @relation(fields: [userid], references: [userid], onDelete: Cascade)
+
+  @@unique([groupid, userid]) // 防止重复加入
 }
 
 /// 订阅模型，用于存储用户订阅信息

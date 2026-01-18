@@ -4,6 +4,7 @@ import {
   BookOpenIcon, // 生词本图标
   ClockIcon, // 历史记录图标
   HeartIcon, // 收藏图标
+  MapIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,11 +12,9 @@ import clsx from "clsx";
 import { useSession } from "next-auth/react";
 
 const links = [
-  // [新增] 英语学习最核心的功能
+  { name: "学习路径", href: "/library/learning-paths", icon: MapIcon },
   { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
-  // [新增] 方便回溯复习
   { name: "收听历史", href: "/library/history", icon: ClockIcon },
-  // 将“剧集”改为“收藏”，语意更明确
   { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
 ];
 

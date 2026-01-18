@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   ClockIcon,
   HeartIcon,
+  MapIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,6 +12,7 @@ import clsx from "clsx";
 
 // 保持与 Desktop NavLinksLogined 一致
 const links = [
+  { name: "学习路径", href: "/library/learning-paths", icon: MapIcon },
   { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
   { name: "收听历史", href: "/library/history", icon: ClockIcon },
   { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },

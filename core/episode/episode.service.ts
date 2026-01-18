@@ -44,7 +44,10 @@ export const episodeService = {
     }
 
     if (query) {
-      where.OR = [{ title: { contains: query, mode: "insensitive" } }];
+      where.OR = [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+      ];
     }
 
     const episodes = await episodeRepository.findAll(where);

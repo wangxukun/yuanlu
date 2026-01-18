@@ -20,6 +20,7 @@ export interface EpisodeManagementItem {
   id: string;
   title: string;
   coverUrl: string;
+  podcastTitle: string;
   publishDate: string;
   status: Status;
   access: Access;

@@ -4,7 +4,7 @@ import VocabularyNotebook from "./VocabularyNotebook";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "生词本 | 远路",
+  title: "生词本 | 远路播客",
 };
 
 export default async function VocabularyPage() {
