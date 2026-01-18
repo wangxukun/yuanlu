@@ -334,7 +334,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                             onClick={handleOpenEdit}
                             className="w-full text-left px-4 py-2.5 text-sm text-base-content/80 hover:bg-base-200 flex items-center gap-2"
                           >
-                            <Edit size={16} /> 编辑细节
+                            <Edit size={16} /> 编辑路径
                           </button>
                           <button
                             onClick={handleDeletePath}
@@ -428,9 +428,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-base-300/60 backdrop-blur-sm">
           <div className="bg-base-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh] h-auto border border-base-200">
             <div className="p-4 border-b border-base-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-base-content">
-                Add Episode
-              </h2>
+              <h2 className="text-lg font-bold text-base-content">添加剧集</h2>
               <button
                 onClick={() => setIsAddEpisodeModalOpen(false)}
                 className="p-2 hover:bg-base-200 rounded-full text-base-content/60"
@@ -448,7 +446,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Search..."
+                  placeholder="搜索..."
                   // [Refactor] bg-gray-50 -> bg-base-200
                   className="w-full pl-9 pr-4 py-2.5 bg-base-200 border border-transparent focus:bg-base-100 focus:border-primary rounded-xl focus:outline-none focus:ring-0 transition-all text-sm text-base-content placeholder:text-base-content/40"
                   value={episodeSearchQuery}
@@ -514,8 +512,8 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   <Search size={32} className="mx-auto mb-2 opacity-20" />
                   <p className="text-sm">
                     {episodeSearchQuery
-                      ? "No episodes found."
-                      : "Type to search..."}
+                      ? "没有剧集被找到"
+                      : "输入文字进行搜索..."}
                   </p>
                 </div>
               )}
@@ -529,7 +527,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-base-300/60 backdrop-blur-sm">
           <div className="bg-base-100 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-200 border border-base-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-base-content">Edit Path</h2>
+              <h2 className="text-xl font-bold text-base-content">编辑路径</h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="p-2 hover:bg-base-200 rounded-full text-base-content/60"
@@ -541,7 +539,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
             <form onSubmit={handleUpdatePath} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-base-content/50 uppercase mb-1">
-                  Name
+                  名称
                 </label>
                 <input
                   required
@@ -554,7 +552,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-base-content/50 uppercase mb-1">
-                  Description
+                  描述
                 </label>
                 <textarea
                   rows={3}
@@ -581,10 +579,10 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 </div>
                 <div>
                   <span className="block text-sm font-bold text-base-content">
-                    Make Public
+                    公开
                   </span>
                   <span className="block text-xs text-base-content/60">
-                    Allow others to see this path.
+                    允许其他看这条学习路径
                   </span>
                 </div>
               </div>
@@ -595,7 +593,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   onClick={() => setIsEditModalOpen(false)}
                   className="btn btn-ghost flex-1 rounded-xl text-base-content/80"
                 >
-                  Cancel
+                  取消
                 </button>
                 <button
                   type="submit"
@@ -605,7 +603,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   {isSaving && (
                     <Loader2 className="animate-spin w-4 h-4 mr-2" />
                   )}
-                  Save
+                  保存
                 </button>
               </div>
             </form>
