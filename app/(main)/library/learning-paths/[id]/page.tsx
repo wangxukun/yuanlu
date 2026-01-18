@@ -3,10 +3,26 @@ import { learningPathService } from "@/core/learning-path/learning-path.service"
 import { notFound } from "next/navigation";
 import LearningPathDetailClient from "@/components/main/library/learning-paths/LearningPathDetailClient";
 import prisma from "@/lib/prisma";
+import { Metadata } from "next";
 
 // Next.js 15+ 动态路由参数类型定义
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+// 动态生成 Metadata
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const pathId = parseInt(id);
+  if (isNaN(pathId)) return { title: "Learning Path Not Found" };
+
+  const path = await learningPathService.getById(pathId);
+  return {
+    title: path ? `${path.pathName} | yuanlu` : "Learning Path",
+    description: path?.description || "Learning path details",
+  };
 }
 
 export default async function LearningPathDetailPage({ params }: PageProps) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   PlayCircle,
   MoreHorizontal,
@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   X,
   Search,
-  Clock,
   Plus,
   CheckCircle2,
   Edit,
@@ -30,7 +29,7 @@ import {
   SearchResultEpisode,
 } from "@/lib/actions/learning-path-actions";
 import { useDebounce } from "use-debounce";
-import { Episode } from "@/core/episode/episode.entity"; // 如果没有安装，可以使用 useEffect 手写防抖
+import { Episode } from "@/core/episode/episode.entity";
 
 // --- 辅助函数：格式化时长 ---
 const formatDuration = (seconds: number) => {
@@ -49,7 +48,7 @@ export interface DetailPathData {
   isPublic: boolean;
   creatorName: string;
   itemCount: number;
-  userid: string | null; // 用于权限判断
+  userid: string | null;
   items: {
     id: number;
     episode: {
@@ -62,9 +61,6 @@ export interface DetailPathData {
   }[];
 }
 
-/**
- * 播放列表详情页
- */
 type EpisodeLP = {
   id: string;
   title: string;
@@ -85,7 +81,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   const router = useRouter();
   const { playEpisode } = usePlayerStore();
 
-  // Local State for UI updates (optimistic UI mostly handled by router.refresh, but good for modals)
   const selectedPath = initialPath;
 
   // Modal States
@@ -112,8 +107,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Handlers ---
-
-  // 1. Play Episode
   const onPlayEpisode = (episode: EpisodeLP) => {
     const playedEpisode: Episode = {
       episodeid: episode.id,
@@ -128,7 +121,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
     playEpisode(playedEpisode);
   };
 
-  // 2. Remove Episode
   const handleRemoveItem = async (e: React.MouseEvent, itemId: number) => {
     e.stopPropagation();
     if (confirm("Remove this episode from the playlist?")) {
@@ -140,7 +132,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
     }
   };
 
-  // 3. Delete Path
   const handleDeletePath = async () => {
     if (
       confirm(
@@ -156,7 +147,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
     }
   };
 
-  // 4. Update Path
   const handleOpenEdit = () => {
     setEditPathName(selectedPath.pathName);
     setEditPathDesc(selectedPath.description || "");
@@ -179,15 +169,13 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
 
     if (res?.success) {
       setIsEditModalOpen(false);
-      // router.refresh() handles the UI update
+      router.refresh();
     } else {
       alert(res?.error || "更新失败");
     }
   };
 
-  // 5. Search & Add Episode
-  // Fetch episodes when search query changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!debouncedSearchQuery.trim()) {
       setAvailableEpisodes([]);
       return;
@@ -197,7 +185,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       setIsSearching(true);
       const results = await searchEpisodesAction(debouncedSearchQuery);
       setAvailableEpisodes(results);
-      console.log("SearchEpisodes: ", results);
       setIsSearching(false);
     };
 
@@ -205,48 +192,47 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   }, [debouncedSearchQuery]);
 
   const handleAddEpisode = async (episodeId: string) => {
-    // 检查是否已存在 (简单前端检查，后端也有校验)
     if (selectedPath.items.some((i) => i.episode.id === episodeId)) {
       alert("该剧集已在列表中");
       return;
     }
-
     const res = await addEpisodeToPathAction(selectedPath.pathid, episodeId);
     if (res?.success) {
       router.refresh();
-      // 可选：添加成功后关闭弹窗或显示 Toast
-      // setIsAddEpisodeModalOpen(false);
     } else {
       alert(res?.error || "添加失败");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+    <div className="min-h-screen bg-gray-50 pb-20 font-sans w-full overflow-x-hidden">
       {/* Detail Header */}
-      <div className="bg-slate-900 text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10">
+      <div className="bg-slate-900 text-white pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
           <Map size={400} />
         </div>
+
         <div className="max-w-4xl mx-auto relative z-10">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-gray-400 hover:text-white transition-colors mb-8 group"
+            className="flex items-center text-gray-400 hover:text-white transition-colors mb-6 md:mb-8 group"
           >
             <ArrowLeft size={16} className="mr-2" /> Back to Paths
           </button>
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-40 h-40 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0">
+
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0">
               <img
                 src={
                   selectedPath.coverUrl ||
                   `https://ui-avatars.com/api/?name=${selectedPath.pathName}&background=random&color=fff`
                 }
                 className="w-full h-full object-cover"
+                alt={selectedPath.pathName}
               />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
+            <div className="flex-1 w-full min-w-0">
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-2 flex-wrap">
                 {selectedPath.isOfficial && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500 text-white">
                     Official Course
@@ -261,13 +247,13 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   {selectedPath.isPublic ? "Public" : "Private"}
                 </span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold mb-3 leading-tight">
+              <h1 className="text-2xl md:text-4xl font-extrabold mb-3 leading-tight break-words">
                 {selectedPath.pathName}
               </h1>
-              <p className="text-lg text-gray-300 leading-relaxed max-w-2xl">
+              <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto md:mx-0 break-words">
                 {selectedPath.description}
               </p>
-              <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-6 text-sm text-gray-400">
                 <span>
                   By{" "}
                   <strong className="text-white">
@@ -283,76 +269,75 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       </div>
 
       {/* Action Bar & List */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 flex items-center justify-between mb-6">
-          <div className="flex gap-2">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-8 relative z-20">
+        {/* Action Bar Container */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 mb-6">
+          <div className="flex gap-2 w-full md:w-auto">
             <button
               onClick={() =>
                 selectedPath.items.length > 0 &&
                 onPlayEpisode(selectedPath.items[0].episode)
               }
-              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 text-sm md:text-base whitespace-nowrap"
             >
               <PlayCircle size={20} /> Play All
             </button>
             <button
-              className="p-3 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-3 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors flex-none"
               title="Shuffle"
             >
               <Shuffle size={20} />
             </button>
           </div>
 
-          <div className="flex gap-2 relative">
-            {/* Add Episode Button */}
+          <div className="flex gap-2 justify-end w-full md:w-auto relative">
             {!selectedPath.isOfficial &&
               selectedPath.userid === currentUserId && (
-                <button
-                  onClick={() => setIsAddEpisodeModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ListPlus size={18} /> Add Episode
-                </button>
-              )}
-
-            {/* More Options Menu */}
-            {!selectedPath.isOfficial &&
-              selectedPath.userid === currentUserId && (
-                <div className="relative">
+                <>
                   <button
-                    onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    className={`p-3 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors ${isMoreMenuOpen ? "bg-gray-100 text-indigo-600" : ""}`}
+                    onClick={() => setIsAddEpisodeModalOpen(true)}
+                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 md:py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border md:border-none border-gray-100 whitespace-nowrap"
                   >
-                    <MoreHorizontal size={20} />
+                    <ListPlus size={18} />
+                    <span>Add Episode</span>
                   </button>
 
-                  {isMoreMenuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setIsMoreMenuOpen(false)}
-                      ></div>
-                      <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-200">
-                        <button
-                          onClick={handleOpenEdit}
-                          className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <Edit size={16} /> Edit Details
-                        </button>
-                        <button
-                          onClick={handleDeletePath}
-                          className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                        >
-                          <Trash2 size={16} /> Delete Path
-                        </button>
-                        <div className="h-px bg-gray-100 my-1"></div>
-                        <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                          <Globe size={16} /> Share Path
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                  <div className="relative flex-none">
+                    <button
+                      onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                      className={`p-3 w-full md:w-auto flex justify-center text-gray-500 hover:bg-gray-100 rounded-lg transition-colors ${isMoreMenuOpen ? "bg-gray-100 text-indigo-600" : ""}`}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+
+                    {isMoreMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setIsMoreMenuOpen(false)}
+                        ></div>
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-200">
+                          <button
+                            onClick={handleOpenEdit}
+                            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Edit size={16} /> Edit Details
+                          </button>
+                          <button
+                            onClick={handleDeletePath}
+                            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <Trash2 size={16} /> Delete Path
+                          </button>
+                          <div className="h-px bg-gray-100 my-1"></div>
+                          <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <Globe size={16} /> Share Path
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
           </div>
         </div>
@@ -364,38 +349,55 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
               <div
                 key={item.id}
                 onClick={() => onPlayEpisode(item.episode)}
-                className="group bg-white p-4 rounded-xl border border-gray-100 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer flex items-center gap-4"
+                className="group bg-white p-2 md:p-4 rounded-xl border border-gray-100 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
               >
-                <div className="w-8 text-center font-bold text-gray-300 group-hover:text-indigo-600 transition-colors">
+                {/* Index */}
+                <div className="w-5 md:w-8 text-center font-bold text-gray-300 group-hover:text-indigo-600 transition-colors text-xs md:text-base shrink-0">
                   {index + 1}
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+
+                {/* Image & Overlay Play Icon */}
+                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                   <img
                     src={item.episode.thumbnailUrl}
                     className="w-full h-full object-cover"
+                    alt={item.episode.title}
                   />
+                  {/* Play Overlay: 居中显示，group-hover时出现 */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <PlayCircle
+                      size={20}
+                      className="text-white drop-shadow-md"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+
+                {/* Text Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <h3
+                    className="font-bold text-gray-900 line-clamp-2 break-words group-hover:text-indigo-600 transition-colors text-sm md:text-base leading-snug mb-0.5"
+                    title={item.episode.title}
+                  >
                     {item.episode.title}
                   </h3>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate">
                     {item.episode.author} •{" "}
                     {formatDuration(item.episode.duration)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <PlayCircle size={24} className="text-indigo-600" />
-                  {!selectedPath.isOfficial &&
-                    selectedPath.userid === currentUserId && (
+
+                {/* Actions: Removed PlayCircle, kept Trash2 for owners */}
+                {!selectedPath.isOfficial &&
+                  selectedPath.userid === currentUserId && (
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => handleRemoveItem(e, item.id)}
-                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0"
                       >
                         <Trash2 size={18} />
                       </button>
-                    )}
-                </div>
+                    </div>
+                  )}
               </div>
             ))
           ) : (
@@ -410,7 +412,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       {/* --- ADD EPISODE MODAL --- */}
       {isAddEpisodeModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh] h-auto">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Add Episode</h2>
               <button
@@ -430,7 +432,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Search available episodes..."
+                  placeholder="Search..."
                   className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                   value={episodeSearchQuery}
                   onChange={(e) => setEpisodeSearchQuery(e.target.value)}
@@ -438,7 +440,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto p-2 min-h-[200px]">
               {isSearching ? (
                 <div className="py-8 flex justify-center">
                   <Loader2 className="animate-spin text-indigo-600" size={24} />
@@ -448,7 +450,6 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   const isAdded = selectedPath.items.some(
                     (i) => i.episode.id === episode.id,
                   );
-                  console.log("Episode thumbnailUrl: ", episode.thumbnailUrl);
                   return (
                     <button
                       key={episode.id}
@@ -463,6 +464,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                             "/static/images/episode-light.png"
                           }
                           className="w-full h-full object-cover"
+                          alt={episode.title}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -470,12 +472,10 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                           {episode.title}
                         </h4>
                         <p className="text-xs text-gray-500 flex items-center mt-0.5">
-                          {episode.author} •{" "}
-                          <Clock size={10} className="mx-1" />{" "}
-                          {episode.duration}
+                          {episode.author}
                         </p>
                       </div>
-                      <div className="p-2 text-indigo-600">
+                      <div className="p-2 text-indigo-600 shrink-0">
                         {isAdded ? (
                           <CheckCircle2 size={20} className="text-gray-400" />
                         ) : (
@@ -491,7 +491,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   <p className="text-sm">
                     {episodeSearchQuery
                       ? "No episodes found."
-                      : "Type to search episodes..."}
+                      : "Type to search..."}
                   </p>
                 </div>
               )}
@@ -505,9 +505,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Edit Path Details
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Path</h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
@@ -519,7 +517,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
             <form onSubmit={handleUpdatePath} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  Path Name
+                  Name
                 </label>
                 <input
                   required
@@ -547,7 +545,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 onClick={() => setIsEditPathPublic(!isEditPathPublic)}
               >
                 <div
-                  className={`w-6 h-6 rounded-md border flex items-center justify-center ${isEditPathPublic ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"}`}
+                  className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 ${isEditPathPublic ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"}`}
                 >
                   {isEditPathPublic && (
                     <CheckCircle2 size={16} className="text-white" />
@@ -558,7 +556,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                     Make Public
                   </span>
                   <span className="block text-xs text-gray-500">
-                    Allow other users to discover and follow this path.
+                    Allow others to see this path.
                   </span>
                 </div>
               </div>
@@ -579,7 +577,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   {isSaving && (
                     <Loader2 className="animate-spin w-4 h-4 mr-2" />
                   )}
-                  Save Changes
+                  Save
                 </button>
               </div>
             </form>
