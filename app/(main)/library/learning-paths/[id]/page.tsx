@@ -69,7 +69,7 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
         id: item.episodeid,
         title: item.episode.title,
         thumbnailUrl:
-          item.episode.coverUrl || "/static/images/episode-light.png",
+          item.episode.coverUrl || "/static/images/episode-dark.png",
         author: item.episode.podcast?.title || "",
         audioUrl: item.episode.audioUrl ?? "",
         duration: item.episode.duration,
@@ -78,9 +78,11 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
   };
 
   return (
-    <LearningPathDetailClient
-      path={transformedPath}
-      currentUserId={session?.user?.userid}
-    />
+    <main className="min-h-screen bg-base-100">
+      <LearningPathDetailClient
+        path={transformedPath}
+        currentUserId={session?.user?.userid}
+      />
+    </main>
   );
 }

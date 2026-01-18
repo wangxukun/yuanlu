@@ -21,7 +21,8 @@ export default async function LearningPathsPage() {
   ])) as [LearningPath[], LearningPath[]];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    // 使用 bg-base-200 适配模式切换
+    <div className="min-h-screen bg-base-200/50 pb-20 transition-colors duration-300">
       <LearningPathsClient myPaths={myPaths} publicPaths={publicPaths} />
     </div>
   );

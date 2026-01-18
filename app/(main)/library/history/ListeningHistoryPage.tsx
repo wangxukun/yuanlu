@@ -201,7 +201,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
 
       {/* Hero 区域 */}
       {latestUnfinished && filter !== "finished" && (
-        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 dark:border dark:border-slate-800 rounded-3xl p-6 xl:p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none group">
+        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 bg-gradient-to-br from-indigo-600 to-purple-700 dark:border dark:border-slate-800 rounded-3xl p-6 xl:p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
           {/* Mobile: Flex-col (Vertical), Desktop: Flex-row (Horizontal) */}
           <div className="relative z-10 flex flex-col xl:flex-row items-center gap-6 xl:gap-8">
@@ -238,7 +238,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                   <span className="text-indigo-300">
                     上次听到 {formatTime(latestUnfinished.progressSeconds)}
                   </span>
-                  <span className="text-slate-500">
+                  <span className="text-slate-400">
                     总时长 {latestUnfinished.episode.duration}
                   </span>
                 </div>
