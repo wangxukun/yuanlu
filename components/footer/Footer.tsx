@@ -14,6 +14,15 @@ export default function Footer() {
 
           {/* 链接区域 */}
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+            <a
+              href="https://space.bilibili.com/1439010402"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lg:block transition-colors font-medium hover:text-primary"
+            >
+              B站号：（远路漫漫）1439010402
+            </a>
+            <div className="hidden lg:block w-px h-3 bg-base-300"></div>
             <Link
               href="/contact"
               className="hover:text-primary transition-colors font-medium"
