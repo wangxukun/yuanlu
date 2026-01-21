@@ -143,7 +143,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
 
         {/* Series Grid */}
         {filteredSeries.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredSeries.map((series) => (
               <div
                 key={series.id}
@@ -151,7 +151,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
                 className="group bg-base-100 rounded-3xl border border-base-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
               >
                 {/* Thumbnail */}
-                <div className="relative aspect-[16/9] overflow-hidden bg-base-200">
+                <div className="relative aspect-square overflow-hidden bg-base-200">
                   <img
                     src={series.thumbnailUrl}
                     alt={series.title}
