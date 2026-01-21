@@ -1,8 +1,3 @@
-/**
- * type: uploaded file
- * fileName: yuanlu/components/episode/InteractiveTranscript.tsx
- * content:
- */
 "use client";
 
 import React, {
@@ -25,6 +20,7 @@ import {
   ArrowsRightLeftIcon,
   CheckCircleIcon,
   InformationCircleIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
@@ -50,8 +46,17 @@ interface ProcessedSubtitle extends MergedSubtitleItem {
   end: number;
 }
 
+// 新增：划词菜单状态
+interface SelectionMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  text: string;
+  contextEn: string;
+  contextZh: string;
+}
+
 // --- 独立子组件：字幕行 (性能优化关键) ---
-// 使用 React.memo 确保只有 isActive 或显示设置改变时才重渲染
 const SubtitleItem = memo(function SubtitleItem({
   sub,
   isActive,
@@ -59,6 +64,7 @@ const SubtitleItem = memo(function SubtitleItem({
   showTranslation,
   onJump,
   onWordClick,
+  onTextSelection, // 新增回调
 }: {
   sub: ProcessedSubtitle;
   isActive: boolean;
@@ -66,23 +72,30 @@ const SubtitleItem = memo(function SubtitleItem({
   showTranslation: boolean;
   onJump: (time: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onTextSelection: (
+    text: string,
+    rect: DOMRect,
+    contextEn: string,
+    contextZh: string,
+  ) => void;
 }) {
-  const itemRef = useRef<HTMLDivElement>(null);
+  // 处理鼠标抬起，检测划词
+  const handleMouseUp = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
 
-  // 自动滚动的 ref 暴露逻辑，通过 isActive 判断是否需要滚动
-  useEffect(() => {
-    if (isActive && itemRef.current) {
-      // 将 ref 传给父组件处理滚动，或者在这里处理滚动 (这里选择在这里触发自定义事件或由父组件统一处理ref)
-      // 为了不破坏原有的 activeRef 逻辑，我们在父组件通过 key 或 index 获取 ref 会更复杂。
-      // 这里采用简单策略：加上 id 方便父组件查询，或者复用原有的 activeRef 逻辑（父组件渲染时挂载 ref）。
-      // 鉴于 memo 组件不能直接透传 ref 除非用 forwardRef，我们这里只需渲染内容。
-      // 滚动逻辑在父组件通过 data-active 属性查找更解耦，或者由父组件传递 ref callback。
+    const text = selection.toString().trim();
+    if (text.length > 0) {
+      // 获取选区坐标
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      onTextSelection(text, rect, sub.textEn, sub.textZh);
     }
-  }, [isActive]);
+  };
 
   return (
     <div
-      id={`subtitle-${sub.id}`} // 添加 ID 方便滚动定位
+      id={`subtitle-${sub.id}`}
       data-active={isActive}
       className={clsx(
         "group relative rounded-xl p-4 sm:p-6 transition-all duration-200 border-l-4",
@@ -90,6 +103,7 @@ const SubtitleItem = memo(function SubtitleItem({
           ? "bg-orange-50/80 border-orange-400 shadow-sm"
           : "bg-transparent border-transparent hover:bg-base-200/30",
       )}
+      onMouseUp={handleMouseUp} // 绑定划词检测
     >
       <div className="flex gap-4 sm:gap-6 items-start">
         <button
@@ -119,16 +133,23 @@ const SubtitleItem = memo(function SubtitleItem({
             )}
           >
             {sub.textEn.split(" ").map((word, i) => (
-              <span
-                key={i}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onWordClick(word, sub.textEn, sub.textZh);
-                }}
-                className="cursor-pointer rounded hover:bg-primary/20 hover:text-primary-focus transition-colors px-0.5 inline-block active:scale-95 select-text"
-              >
-                {word}{" "}
-              </span>
+              <React.Fragment key={i}>
+                <span
+                  onClick={(e) => {
+                    // 防止划词时触发单次点击
+                    const selection = window.getSelection();
+                    if (selection && !selection.isCollapsed) {
+                      return;
+                    }
+                    e.stopPropagation();
+                    onWordClick(word, sub.textEn, sub.textZh);
+                  }}
+                  className="cursor-pointer rounded transition-colors px-0.5 -mx-0.5 inline-block active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
+                >
+                  {word}
+                </span>
+                {/* 将空格移到 span 外部，确保划词时包含空格 */}{" "}
+              </React.Fragment>
             ))}
           </p>
 
@@ -163,8 +184,6 @@ export default function InteractiveTranscript({
   const { data: session } = useSession();
 
   // 2. Store State
-  // 即使解构了 currentTime，由于 SubtitleItem 被 memo 化，
-  // 只要 activeIndex 不变，列表的大部分就不会重渲染，从而消除卡顿。
   const {
     currentTime,
     setCurrentTime,
@@ -184,10 +203,21 @@ export default function InteractiveTranscript({
   const [showTranslation, setShowTranslation] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
 
+  // 划词菜单 State
+  const [selectionMenu, setSelectionMenu] = useState<SelectionMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    text: "",
+    contextEn: "",
+    contextZh: "",
+  });
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const activeIndexRef = useRef<number>(-1);
+  const menuRef = useRef<HTMLDivElement>(null); // 菜单 Ref
 
   // Modal State
   const [selectedWord, setSelectedWord] = useState<string>("");
@@ -215,8 +245,6 @@ export default function InteractiveTranscript({
   }, [subtitles]);
 
   // 5. Sync Highlight (Core Logic Optimized)
-
-  // 5.1 动态同步：使用 requestAnimationFrame
   useEffect(() => {
     if (!isPlayingThisEpisode || !isPlaying || !audioRef) {
       if (rafRef.current) {
@@ -226,39 +254,30 @@ export default function InteractiveTranscript({
       return;
     }
 
-    // 优化：记录上一次找到的索引，减少遍历次数
     let lastFoundIndex =
       activeIndexRef.current >= 0 ? activeIndexRef.current : 0;
 
     const loop = () => {
       const t = audioRef.currentTime;
-
-      // 智能搜索算法：优先检查当前索引及后续索引
       let foundIndex = -1;
 
-      // 1. 检查当前缓存索引是否仍匹配（最常见情况）
       const currentSub = processedSubtitles[lastFoundIndex];
       if (currentSub && t >= currentSub.start && t <= currentSub.end) {
         foundIndex = lastFoundIndex;
       } else {
-        // 2. 如果时间前进了，尝试向后搜索
         if (currentSub && t > currentSub.end) {
-          // 快速向后查找，通常就在下一个
           for (let i = lastFoundIndex + 1; i < processedSubtitles.length; i++) {
             if (
               t >= processedSubtitles[i].start &&
               t <= processedSubtitles[i].end
             ) {
               foundIndex = i;
-              lastFoundIndex = i; // 更新缓存
+              lastFoundIndex = i;
               break;
             }
-            // 如果当前时间还小于字幕开始时间，说明在间隙中，没必要继续找了
             if (t < processedSubtitles[i].start) break;
           }
         } else {
-          // 3. 时间后退了（用户回跳），或者还没找到，执行全局二分查找或 findIndex
-          // 这里用 findIndex 足够快，因为是异常路径
           foundIndex = processedSubtitles.findIndex(
             (sub) => t >= sub.start && t <= sub.end,
           );
@@ -283,7 +302,7 @@ export default function InteractiveTranscript({
     };
   }, [isPlaying, isPlayingThisEpisode, audioRef, processedSubtitles]);
 
-  // 5.2 静态同步：当暂停或拖动进度条时
+  // Static Sync
   useEffect(() => {
     if (isPlayingThisEpisode && !isPlaying) {
       const index = processedSubtitles.findIndex(
@@ -306,8 +325,7 @@ export default function InteractiveTranscript({
     activeIndex,
   ]);
 
-  // --- 新增辅助函数：查找最近的滚动容器 ---
-  // (可以放在组件外部或 useEffect 内部)
+  // Scroll Helper
   const getScrollParent = (node: HTMLElement): HTMLElement | Window => {
     let parent = node.parentElement;
     while (parent) {
@@ -320,7 +338,7 @@ export default function InteractiveTranscript({
     return window;
   };
 
-  // 6. Auto Scroll (Robust Version)
+  // Auto Scroll
   useEffect(() => {
     if (!autoScroll || activeIndex === -1) return;
 
@@ -329,29 +347,17 @@ export default function InteractiveTranscript({
     );
 
     if (activeEl) {
-      // 1. 动态查找真正的滚动容器 (在您的布局中应该是 main 标签)
       const container = getScrollParent(activeEl);
-
-      // 如果回退到 window (body没有滚动条的情况下)，则不做操作
       if (container === window) return;
       const scrollContainer = container as HTMLElement;
-
-      // 2. 获取位置信息
       const containerRect = scrollContainer.getBoundingClientRect();
       const activeRect = activeEl.getBoundingClientRect();
 
-      // 3. 定义“舒适阅读区” (相对于容器可视区域)
-      // 顶部安全区：容器顶部 + 120px (避开可能的 Header 或粘性工具栏)
       const safetyTop = containerRect.top + 120;
-      // 底部安全区：容器底部 - 35% 的高度 (给下方留出预览空间)
       const safetyBottom = containerRect.bottom - containerRect.height * 0.35;
 
-      // 4. 判断是否需要滚动
-      // 只有当元素 跑出 安全区域时才触发
       if (activeRect.top < safetyTop || activeRect.bottom > safetyBottom) {
-        // 5. 计算目标滚动位置 (将元素置于容器顶部往下 30% 的位置)
-        // 算法：当前滚动高度 + (元素当前相对视口位置 - 容器顶部位置) - 目标视觉偏移
-        const targetScreenPos = containerRect.height * 0.3; // 屏幕 30% 处
+        const targetScreenPos = containerRect.height * 0.3;
         const offset = activeRect.top - containerRect.top - targetScreenPos;
 
         scrollContainer.scrollTo({
@@ -362,20 +368,20 @@ export default function InteractiveTranscript({
     }
   }, [activeIndex, autoScroll, processedSubtitles]);
 
-  // 7. Interactions
-  // 使用 useCallback 避免传递给 Memo 子组件时失效
+  // --- 交互逻辑 ---
+
   const handleJump = useCallback(
     (startTime: number) => {
-      console.log("Jump to", startTime);
+      // 如果菜单打开，跳转时关闭菜单
+      setSelectionMenu((prev) => ({ ...prev, visible: false }));
+
       if (isPlayingThisEpisode && audioRef) {
         audioRef.currentTime = startTime;
-        setCurrentTime(startTime); // 立即更新 store
+        setCurrentTime(startTime);
         play();
       } else {
         setCurrentEpisode(episode);
         setCurrentAudioUrl(episode.audioUrl);
-        // 注意：这里可能需要设置 initialTime，但 Player 组件通常会处理 0，如果需要精确跳转到某处，
-        // 可能需要修改 Player Store 的 setAudio 逻辑以接受 startTime
       }
     },
     [
@@ -389,9 +395,13 @@ export default function InteractiveTranscript({
     ],
   );
 
+  // 单击单词 (现有逻辑)
   const handleWordClick = useCallback(
     async (word: string, contextEn: string, contextZh: string) => {
-      if (isPlayingThisEpisode && isPlaying && pause) pause(); // 安全调用
+      // 点击单词时，关闭之前的划词菜单
+      setSelectionMenu((prev) => ({ ...prev, visible: false }));
+
+      if (isPlayingThisEpisode && isPlaying && pause) pause();
 
       const cleanWord = word.replace(/[.,!?;:"()]/g, "").trim();
       if (!cleanWord) return;
@@ -423,6 +433,41 @@ export default function InteractiveTranscript({
     },
     [isPlayingThisEpisode, isPlaying, pause],
   );
+
+  // 划词处理回调
+  const handleTextSelection = useCallback(
+    (text: string, rect: DOMRect, contextEn: string, contextZh: string) => {
+      setSelectionMenu({
+        visible: true,
+        // 居中显示在选区上方
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+        text,
+        contextEn,
+        contextZh,
+      });
+    },
+    [],
+  );
+
+  // 全局点击监听，用于关闭划词菜单
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      // 如果点击的是菜单内部，不关闭
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      // 否则关闭菜单
+      setSelectionMenu((prev) =>
+        prev.visible ? { ...prev, visible: false } : prev,
+      );
+    };
+
+    window.addEventListener("mousedown", handleGlobalClick);
+    return () => {
+      window.removeEventListener("mousedown", handleGlobalClick);
+    };
+  }, []);
 
   const handleSaveVocabulary = async () => {
     if (!selectedWord) return;
@@ -517,7 +562,6 @@ export default function InteractiveTranscript({
         </div>
       </div>
 
-      {/* --- 未登录提示条 --- */}
       {!session?.user && (
         <div className="mb-6 -mt-2 text-center animate-fade-in-down">
           <p className="text-xs font-medium text-base-content/60 bg-base-200/50 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-base-200 cursor-default hover:bg-base-200 transition-colors">
@@ -538,14 +582,53 @@ export default function InteractiveTranscript({
             showTranslation={showTranslation}
             onJump={handleJump}
             onWordClick={handleWordClick}
+            onTextSelection={handleTextSelection} // 传入回调
           />
         ))}
       </div>
 
+      {/* --- Step 1 新增: 悬浮菜单 (Floating Menu) --- */}
+      {selectionMenu.visible && (
+        <div
+          ref={menuRef}
+          className="fixed z-50 animate-in fade-in zoom-in-95 duration-200"
+          style={{
+            left: selectionMenu.x,
+            top: selectionMenu.y,
+            transform: "translate(-50%, -120%)", // 向上偏移显示在文字上方
+          }}
+        >
+          <div className="bg-slate-900 text-white rounded-lg shadow-xl px-2 py-1.5 flex items-center gap-2 text-sm pointer-events-auto">
+            <span className="px-1 max-w-[150px] truncate font-serif italic border-r border-slate-700 mr-1">
+              {selectionMenu.text}
+            </span>
+            <button
+              className="hover:text-primary transition-colors flex items-center gap-1"
+              onClick={() => {
+                // 暂时直接调用查词逻辑（Step 2 将完善这里）
+                handleWordClick(
+                  selectionMenu.text,
+                  selectionMenu.contextEn,
+                  selectionMenu.contextZh,
+                );
+                // 关闭菜单
+                setSelectionMenu((prev) => ({ ...prev, visible: false }));
+                // 清除选区
+                window.getSelection()?.removeAllRanges();
+              }}
+            >
+              <PlusCircleIcon className="w-4 h-4" />
+              查词/翻译
+            </button>
+          </div>
+          {/* 小箭头 */}
+          <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-slate-900"></div>
+        </div>
+      )}
+
       {/* --- 生词弹窗 (保持原样) --- */}
       <dialog className={clsx("modal", isModalOpen && "modal-open")}>
         <div className="modal-box bg-base-100 max-w-lg rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
-          {/* Modal 内容省略，保持原逻辑不变 */}
           <div className="bg-primary/5 px-6 py-4 flex justify-between items-center border-b border-primary/10">
             <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
               <BookOpenIcon className="w-5 h-5" /> 查词助手
@@ -591,7 +674,6 @@ export default function InteractiveTranscript({
                 onChange={(e) => setDefinition(e.target.value)}
               ></textarea>
 
-              {/* 链接按钮逻辑保持不变 */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {wordDetails.webUrl && (
                   <a
