@@ -46,7 +46,7 @@ interface ProcessedSubtitle extends MergedSubtitleItem {
   end: number;
 }
 
-// 新增：划词菜单状态
+// 划词菜单状态
 interface SelectionMenuState {
   visible: boolean;
   x: number;
@@ -56,7 +56,7 @@ interface SelectionMenuState {
   contextZh: string;
 }
 
-// --- 独立子组件：字幕行 (性能优化关键) ---
+// --- 独立子组件：字幕行 ---
 const SubtitleItem = memo(function SubtitleItem({
   sub,
   isActive,
@@ -64,7 +64,6 @@ const SubtitleItem = memo(function SubtitleItem({
   showTranslation,
   onJump,
   onWordClick,
-  onTextSelection, // 新增回调
 }: {
   sub: ProcessedSubtitle;
   isActive: boolean;
@@ -72,30 +71,10 @@ const SubtitleItem = memo(function SubtitleItem({
   showTranslation: boolean;
   onJump: (time: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
-  onTextSelection: (
-    text: string,
-    rect: DOMRect,
-    contextEn: string,
-    contextZh: string,
-  ) => void;
 }) {
-  // 处理鼠标抬起，检测划词
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
-
-    const text = selection.toString().trim();
-    if (text.length > 0) {
-      // 获取选区坐标
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      onTextSelection(text, rect, sub.textEn, sub.textZh);
-    }
-  };
-
   return (
     <div
-      id={`subtitle-${sub.id}`}
+      id={`subtitle-${sub.id}`} // 关键：ID 用于反向查找数据
       data-active={isActive}
       className={clsx(
         "group relative rounded-xl p-4 sm:p-6 transition-all duration-200 border-l-4",
@@ -103,7 +82,6 @@ const SubtitleItem = memo(function SubtitleItem({
           ? "bg-orange-50/80 border-orange-400 shadow-sm"
           : "bg-transparent border-transparent hover:bg-base-200/30",
       )}
-      onMouseUp={handleMouseUp} // 绑定划词检测
     >
       <div className="flex gap-4 sm:gap-6 items-start">
         <button
@@ -136,8 +114,8 @@ const SubtitleItem = memo(function SubtitleItem({
               <React.Fragment key={i}>
                 <span
                   onClick={(e) => {
-                    // 防止划词时触发单次点击
                     const selection = window.getSelection();
+                    // 移动端兼容：如果正在选中文本，不触发单词点击
                     if (selection && !selection.isCollapsed) {
                       return;
                     }
@@ -147,8 +125,7 @@ const SubtitleItem = memo(function SubtitleItem({
                   className="cursor-pointer rounded transition-colors px-0.5 -mx-0.5 inline-block active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
                 >
                   {word}
-                </span>
-                {/* 将空格移到 span 外部，确保划词时包含空格 */}{" "}
+                </span>{" "}
               </React.Fragment>
             ))}
           </p>
@@ -217,7 +194,8 @@ export default function InteractiveTranscript({
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const activeIndexRef = useRef<number>(-1);
-  const menuRef = useRef<HTMLDivElement>(null); // 菜单 Ref
+  const menuRef = useRef<HTMLDivElement>(null);
+  const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Modal State
   const [selectedWord, setSelectedWord] = useState<string>("");
@@ -244,7 +222,7 @@ export default function InteractiveTranscript({
     }));
   }, [subtitles]);
 
-  // 5. Sync Highlight (Core Logic Optimized)
+  // 5. Sync Highlight Logic (Keep Existing)
   useEffect(() => {
     if (!isPlayingThisEpisode || !isPlaying || !audioRef) {
       if (rafRef.current) {
@@ -302,7 +280,6 @@ export default function InteractiveTranscript({
     };
   }, [isPlaying, isPlayingThisEpisode, audioRef, processedSubtitles]);
 
-  // Static Sync
   useEffect(() => {
     if (isPlayingThisEpisode && !isPlaying) {
       const index = processedSubtitles.findIndex(
@@ -325,7 +302,6 @@ export default function InteractiveTranscript({
     activeIndex,
   ]);
 
-  // Scroll Helper
   const getScrollParent = (node: HTMLElement): HTMLElement | Window => {
     let parent = node.parentElement;
     while (parent) {
@@ -338,7 +314,6 @@ export default function InteractiveTranscript({
     return window;
   };
 
-  // Auto Scroll
   useEffect(() => {
     if (!autoScroll || activeIndex === -1) return;
 
@@ -368,11 +343,94 @@ export default function InteractiveTranscript({
     }
   }, [activeIndex, autoScroll, processedSubtitles]);
 
+  // --- 移动端兼容的核心：全局 Selection 监听 ---
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      // 防抖处理：等待用户手指离开或停止拖动 handles
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+
+      selectionTimeoutRef.current = setTimeout(() => {
+        const selection = window.getSelection();
+
+        // 1. 基础校验：无选区或选区收起时，隐藏菜单
+        if (!selection || selection.isCollapsed || !selection.rangeCount) {
+          setSelectionMenu((prev) =>
+            prev.visible ? { ...prev, visible: false } : prev,
+          );
+          return;
+        }
+
+        const text = selection.toString().trim();
+        if (!text) return;
+
+        // 2. 校验选区是否在当前组件容器内
+        // 使用 anchorNode (开始点) 来判断
+        const anchorNode = selection.anchorNode;
+        if (!anchorNode || !containerRef.current?.contains(anchorNode)) {
+          return;
+        }
+
+        // 3. 反向查找：通过 DOM 结构找到对应的字幕数据
+        // 我们在 SubtitleItem 上设置了 id="subtitle-{id}"
+        const parentElement =
+          anchorNode.nodeType === Node.TEXT_NODE
+            ? anchorNode.parentElement
+            : (anchorNode as HTMLElement);
+
+        const subtitleRow = parentElement?.closest('[id^="subtitle-"]');
+
+        if (subtitleRow) {
+          const idStr = subtitleRow.id.split("-")[1];
+          const subId = parseInt(idStr, 10);
+          const subData = processedSubtitles.find((s) => s.id === subId);
+
+          if (subData) {
+            // 4. 计算菜单位置
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+
+            // 移动端优化：如果 rect.width 为 0 (异常情况)，则不显示
+            if (rect.width === 0 && rect.height === 0) return;
+
+            setSelectionMenu({
+              visible: true,
+              x: rect.left + rect.width / 2, // 水平居中
+              y: rect.top, // 显示在选区顶部
+              text: text,
+              contextEn: subData.textEn,
+              contextZh: subData.textZh,
+            });
+          }
+        }
+      }, 300); // 延迟 300ms，给予移动端 selection handles 动画时间
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+
+    // 监听滚动事件，滚动时隐藏菜单，避免位置错乱
+    document.addEventListener(
+      "scroll",
+      () => {
+        setSelectionMenu((prev) =>
+          prev.visible ? { ...prev, visible: false } : prev,
+        );
+      },
+      { capture: true, passive: true },
+    );
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      if (selectionTimeoutRef.current)
+        clearTimeout(selectionTimeoutRef.current);
+    };
+  }, [processedSubtitles]);
+
   // --- 交互逻辑 ---
 
   const handleJump = useCallback(
     (startTime: number) => {
-      // 如果菜单打开，跳转时关闭菜单
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
       if (isPlayingThisEpisode && audioRef) {
@@ -395,10 +453,8 @@ export default function InteractiveTranscript({
     ],
   );
 
-  // 单击单词 (现有逻辑)
   const handleWordClick = useCallback(
     async (word: string, contextEn: string, contextZh: string) => {
-      // 点击单词时，关闭之前的划词菜单
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
       if (isPlayingThisEpisode && isPlaying && pause) pause();
@@ -434,38 +490,27 @@ export default function InteractiveTranscript({
     [isPlayingThisEpisode, isPlaying, pause],
   );
 
-  // 划词处理回调
-  const handleTextSelection = useCallback(
-    (text: string, rect: DOMRect, contextEn: string, contextZh: string) => {
-      setSelectionMenu({
-        visible: true,
-        // 居中显示在选区上方
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-        text,
-        contextEn,
-        contextZh,
-      });
-    },
-    [],
-  );
-
-  // 全局点击监听，用于关闭划词菜单
+  // 全局点击监听 (辅助关闭)
   useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      // 如果点击的是菜单内部，不关闭
+    const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
       if (menuRef.current && menuRef.current.contains(e.target as Node)) {
         return;
       }
-      // 否则关闭菜单
-      setSelectionMenu((prev) =>
-        prev.visible ? { ...prev, visible: false } : prev,
-      );
+      // 只有当有菜单且选区为空时才关闭，否则 selectionchange 会负责处理
+      // 实际上直接关闭比较安全，因为点击空白处通常意味着取消选择
+      const selection = window.getSelection();
+      if (selection?.isCollapsed) {
+        setSelectionMenu((prev) =>
+          prev.visible ? { ...prev, visible: false } : prev,
+        );
+      }
     };
 
     window.addEventListener("mousedown", handleGlobalClick);
+    window.addEventListener("touchstart", handleGlobalClick);
     return () => {
       window.removeEventListener("mousedown", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
     };
   }, []);
 
@@ -518,7 +563,7 @@ export default function InteractiveTranscript({
 
   return (
     <div className="relative w-full max-w-5xl mx-auto">
-      {/* --- 工具栏 (Toolbar) --- */}
+      {/* --- 工具栏 --- */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200/60 sticky top-0 bg-base-100/95 backdrop-blur z-10 py-2">
         <div className="flex items-center gap-2">
           {isPlayingThisEpisode ? (
@@ -571,7 +616,7 @@ export default function InteractiveTranscript({
         </div>
       )}
 
-      {/* --- 字幕内容区 (Transcript Content) --- */}
+      {/* --- 字幕内容区 --- */}
       <div className="space-y-6 pb-20" ref={containerRef}>
         {processedSubtitles.map((sub, index) => (
           <SubtitleItem
@@ -582,53 +627,85 @@ export default function InteractiveTranscript({
             showTranslation={showTranslation}
             onJump={handleJump}
             onWordClick={handleWordClick}
-            onTextSelection={handleTextSelection} // 传入回调
           />
         ))}
       </div>
 
-      {/* --- Step 1 新增: 悬浮菜单 (Floating Menu) --- */}
+      {/* --- 悬浮菜单 (针对移动端优化位置) --- */}
       {selectionMenu.visible && (
         <div
           ref={menuRef}
-          className="fixed z-50 animate-in fade-in zoom-in-95 duration-200"
-          style={{
-            left: selectionMenu.x,
-            top: selectionMenu.y,
-            transform: "translate(-50%, -120%)", // 向上偏移显示在文字上方
-          }}
+          // 1. 使用 CSS 变量传递坐标，避免内联样式覆盖 CSS 类
+          style={
+            {
+              "--x": `${selectionMenu.x}px`,
+              "--y": `${selectionMenu.y}px`,
+            } as React.CSSProperties
+          }
+          className={clsx(
+            // --- 通用样式 ---
+            "fixed z-[100] flex justify-center pointer-events-auto",
+            // --- 移动端样式 (手机) ---
+            // 固定在底部，左右撑开或居中，避开原生系统菜单
+            "bottom-6 left-0 right-0 px-4",
+            "animate-in slide-in-from-bottom-2 fade-in duration-200", // 底部滑入动画
+
+            // --- 桌面端样式 (平板/PC) ---
+            // 恢复跟随选区，位置由 CSS 变量控制
+            "md:bottom-auto md:left-[var(--x)] md:top-[var(--y)] md:right-auto md:px-0",
+            "md:-translate-x-1/2 md:-translate-y-full md:-mt-3", // 向上偏移，显示在文字上方
+            "md:animate-in md:zoom-in-95 md:fade-in md:slide-in-from-bottom-0", // 桌面端缩放动画
+          )}
         >
-          <div className="bg-slate-900 text-white rounded-lg shadow-xl px-2 py-1.5 flex items-center gap-2 text-sm pointer-events-auto">
-            <span className="px-1 max-w-[150px] truncate font-serif italic border-r border-slate-700 mr-1">
+          {/* 菜单容器 */}
+          <div className="bg-slate-900/90 backdrop-blur-md text-white rounded-full md:rounded-xl shadow-2xl px-4 py-3 md:py-2 flex items-center gap-3 text-sm border border-slate-700 w-full md:w-auto max-w-sm mx-auto">
+            {/* 选中的文本 (移动端显示省略号) */}
+            <span className="flex-1 md:flex-none max-w-[150px] md:max-w-[180px] truncate font-serif italic border-r border-slate-600 mr-1 select-none text-slate-300">
               {selectionMenu.text}
             </span>
+
+            {/* 按钮组 */}
             <button
-              className="hover:text-primary transition-colors flex items-center gap-1"
-              onClick={() => {
-                // 暂时直接调用查词逻辑（Step 2 将完善这里）
+              className="hover:text-primary active:scale-95 transition-all flex items-center gap-1.5 font-bold whitespace-nowrap text-white"
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
                 handleWordClick(
                   selectionMenu.text,
                   selectionMenu.contextEn,
                   selectionMenu.contextZh,
                 );
-                // 关闭菜单
-                setSelectionMenu((prev) => ({ ...prev, visible: false }));
-                // 清除选区
                 window.getSelection()?.removeAllRanges();
+                setSelectionMenu((prev) => ({ ...prev, visible: false }));
+              }}
+              onClick={() => {
+                handleWordClick(
+                  selectionMenu.text,
+                  selectionMenu.contextEn,
+                  selectionMenu.contextZh,
+                );
+                window.getSelection()?.removeAllRanges();
+                setSelectionMenu((prev) => ({ ...prev, visible: false }));
               }}
             >
-              <PlusCircleIcon className="w-4 h-4" />
-              查词/翻译
+              <PlusCircleIcon className="w-5 h-5 text-primary" />
+              <span>查词/翻译</span>
             </button>
           </div>
-          {/* 小箭头 */}
-          <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-slate-900"></div>
+
+          {/* 小箭头 (仅在桌面端显示) */}
+          <div className="hidden md:block absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-[40%] rotate-45 w-3 h-3 bg-slate-900/90 border-r border-b border-slate-700"></div>
         </div>
       )}
 
       {/* --- 生词弹窗 (保持原样) --- */}
-      <dialog className={clsx("modal", isModalOpen && "modal-open")}>
-        <div className="modal-box bg-base-100 max-w-lg rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
+      <dialog
+        className={clsx(
+          "modal modal-bottom sm:modal-middle",
+          isModalOpen && "modal-open",
+        )}
+      >
+        <div className="modal-box bg-base-100 sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
           <div className="bg-primary/5 px-6 py-4 flex justify-between items-center border-b border-primary/10">
             <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
               <BookOpenIcon className="w-5 h-5" /> 查词助手
@@ -644,13 +721,13 @@ export default function InteractiveTranscript({
           <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-3">
-                <h2 className="text-3xl font-serif font-black text-slate-800">
+                <h2 className="text-3xl font-serif font-black text-slate-800 break-all">
                   {selectedWord}
                 </h2>
                 {wordDetails.speakUrl && (
                   <button
                     onClick={playWordAudio}
-                    className="btn btn-circle btn-sm btn-primary btn-outline"
+                    className="btn btn-circle btn-sm btn-primary btn-outline flex-shrink-0"
                   >
                     <SpeakerWaveIcon className="w-4 h-4" />
                   </button>
@@ -696,7 +773,7 @@ export default function InteractiveTranscript({
             </div>
           </div>
 
-          <div className="p-4 bg-base-200/50 flex justify-end gap-3 border-t border-base-200">
+          <div className="p-4 bg-base-200/50 flex justify-end gap-3 border-t border-base-200 safe-pb-4">
             <button
               className="btn btn-ghost rounded-xl"
               onClick={() => setIsModalOpen(false)}
