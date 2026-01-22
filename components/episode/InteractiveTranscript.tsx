@@ -79,8 +79,8 @@ const SubtitleItem = memo(function SubtitleItem({
       className={clsx(
         "group relative rounded-xl p-4 sm:p-6 transition-all duration-200 border-l-4",
         isActive
-          ? "bg-orange-50/80 border-orange-400 shadow-sm"
-          : "bg-transparent border-transparent hover:bg-base-200/30",
+          ? "bg-orange-50 bg-opacity-80 border-orange-400 shadow-sm"
+          : "bg-transparent border-transparent hover:bg-base-200 hover:bg-opacity-30",
       )}
     >
       <div className="flex gap-4 sm:gap-6 items-start">
@@ -90,7 +90,7 @@ const SubtitleItem = memo(function SubtitleItem({
             "mt-1.5 flex-shrink-0 transition-all duration-200 transform",
             isActive
               ? "text-orange-500 scale-110 opacity-100"
-              : "text-base-content/20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
+              : "text-base-content text-opacity-20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
           )}
           aria-label="Play segment"
         >
@@ -110,24 +110,27 @@ const SubtitleItem = memo(function SubtitleItem({
               isActive ? "text-slate-900 font-medium" : "text-slate-700",
             )}
           >
-            {sub.textEn.split(" ").map((word, i) => (
-              <React.Fragment key={i}>
-                <span
-                  onClick={(e) => {
-                    const selection = window.getSelection();
-                    // 移动端兼容：如果正在选中文本，不触发单词点击
-                    if (selection && !selection.isCollapsed) {
-                      return;
-                    }
-                    e.stopPropagation();
-                    onWordClick(word, sub.textEn, sub.textZh);
-                  }}
-                  className="cursor-pointer rounded transition-colors px-0.5 -mx-0.5 inline-block active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
-                >
-                  {word}
-                </span>{" "}
-              </React.Fragment>
-            ))}
+            {sub.textEn
+              .trim()
+              .split(" ")
+              .map((word, i) => (
+                <React.Fragment key={i}>
+                  <span
+                    onClick={(e) => {
+                      const selection = window.getSelection();
+                      // 移动端兼容：如果正在选中文本，不触发单词点击
+                      if (selection && !selection.isCollapsed) {
+                        return;
+                      }
+                      e.stopPropagation();
+                      onWordClick(word, sub.textEn, sub.textZh);
+                    }}
+                    className="cursor-pointer rounded transition-colors px-0.5 -mx-0.5 inline-block active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
+                  >
+                    {word}
+                  </span>{" "}
+                </React.Fragment>
+              ))}
           </p>
 
           <div
@@ -144,7 +147,7 @@ const SubtitleItem = memo(function SubtitleItem({
                 isActive ? "text-slate-600 font-medium" : "text-slate-400",
               )}
             >
-              {sub.textZh}
+              {sub.textZh.trim()}
             </p>
           </div>
         </div>
@@ -564,7 +567,7 @@ export default function InteractiveTranscript({
   return (
     <div className="relative w-full max-w-5xl mx-auto">
       {/* --- 工具栏 --- */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200/60 sticky top-0 bg-base-100/95 backdrop-blur z-10 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200 border-opacity-60 sticky top-0 bg-base-100 bg-opacity-95 backdrop-blur z-10 py-2">
         <div className="flex items-center gap-2">
           {isPlayingThisEpisode ? (
             <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">
@@ -582,7 +585,9 @@ export default function InteractiveTranscript({
             onClick={() => setAutoScroll(!autoScroll)}
             className={clsx(
               "btn btn-xs sm:btn-sm btn-ghost gap-1.5 transition-colors",
-              autoScroll ? "text-primary bg-primary/5" : "text-base-content/40",
+              autoScroll
+                ? "text-primary bg-primary/5 "
+                : "text-base-content text-opacity-40",
             )}
             title="开启/关闭自动跟随滚动"
           >
