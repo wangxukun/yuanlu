@@ -30,7 +30,6 @@ export async function generateMetadata({
 
 export default async function LearningPathDetailPage({ params }: PageProps) {
   const session = await auth();
-  console.log("session USER ID: ", session?.user?.userid);
 
   // 关键修复：解包 Promise 参数
   const { id } = await params;

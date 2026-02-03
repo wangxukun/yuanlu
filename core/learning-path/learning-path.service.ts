@@ -101,8 +101,6 @@ export const learningPathService = {
 
     // 权限检查：如果是私有的且不是创建者，拒绝访问
     if (!path.isPublic && path.userid !== currentUserId) {
-      console.log("无权访问此学习路径", path.pathid, path.userid);
-      console.log("当前用户Id：", currentUserId);
       throw new Error("无权访问此学习路径");
     }
 
