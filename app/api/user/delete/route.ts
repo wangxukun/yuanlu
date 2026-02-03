@@ -3,8 +3,10 @@ import prisma from "@/lib/prisma";
 
 export async function DELETE(request: NextRequest) {
   try {
-    // 解析请求体获取 userid
-    const { userid } = await request.json();
+    // 1. 从 URL 查询参数中获取 id
+    // URL 示例: /api/user/delete?id=cmjuubnk...
+    const { searchParams } = new URL(request.url);
+    const userid = searchParams.get("id");
 
     // 验证参数有效性
     if (!userid) {
