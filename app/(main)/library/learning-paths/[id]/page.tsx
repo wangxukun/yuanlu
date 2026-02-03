@@ -18,7 +18,10 @@ export async function generateMetadata({
   const pathId = parseInt(id);
   if (isNaN(pathId)) return { title: "Learning Path Not Found" };
 
-  const path = await learningPathService.getById(pathId);
+  // 1. 获取 Session
+  const session = await auth();
+
+  const path = await learningPathService.getById(pathId, session?.user?.userid);
   return {
     title: path ? `${path.pathName} | yuanlu` : "Learning Path",
     description: path?.description || "Learning path details",
@@ -27,6 +30,7 @@ export async function generateMetadata({
 
 export default async function LearningPathDetailPage({ params }: PageProps) {
   const session = await auth();
+  console.log("session USER ID: ", session?.user?.userid);
 
   // 关键修复：解包 Promise 参数
   const { id } = await params;
