@@ -213,27 +213,36 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const handleDeleteComment = async (commentId: number) => {
     if (!confirm("确定要删除这条评论吗？")) return;
 
-    // 乐观更新：先从界面移除
+    // 1. 备份当前的评论列表（用于回滚）
+    const previousComments = [...comments];
+
+    // 2. 乐观更新：先从界面移除
     const removeCommentFromTree = (list: Comment[]): Comment[] => {
       return list
-        .filter((c) => c.commentid !== commentId) // 移除自己
+        .filter((c) => c.commentid !== commentId)
         .map((c) => ({
           ...c,
-          replies: c.replies ? removeCommentFromTree(c.replies) : [], // 递归移除子级
+          replies: c.replies ? removeCommentFromTree(c.replies) : [],
         }));
     };
     setComments((prev) => removeCommentFromTree(prev));
 
     try {
-      // 实际调用 API (假设你有这个 API)
-      await fetch("/api/comment/delete", {
+      // 3. 实际调用 API
+      const res = await fetch("/api/comment/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId }),
       });
+
+      if (!res.ok) {
+        throw new Error("删除失败");
+      }
     } catch (error) {
       console.error("Delete failed", error);
-      // 如果失败可能需要重新拉取列表，这里简化处理
+      alert("删除失败，请稍后重试");
+      // 4. 如果失败，回滚状态
+      setComments(previousComments);
     }
   };
 
