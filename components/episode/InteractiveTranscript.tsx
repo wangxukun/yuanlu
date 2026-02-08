@@ -743,7 +743,7 @@ export default function InteractiveTranscript({
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-xs font-bold text-base-content/40 uppercase tracking-wider">
-                  Definition
+                  定义
                 </label>
                 {isLoadingDefinition && (
                   <span className="loading loading-spinner loading-xs text-primary"></span>
@@ -762,7 +762,7 @@ export default function InteractiveTranscript({
                     href={wordDetails.webUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hidden md:inline-flex items-center gap-1 btn btn-xs btn-outline btn-accent"
+                    className="inline-flex items-center gap-1 btn btn-xs btn-outline btn-accent"
                   >
                     <span>查看详情</span>
                   </a>
