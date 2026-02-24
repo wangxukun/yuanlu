@@ -271,7 +271,10 @@ export default function VisitorLogsClient({
                               <div className="w-9 h-9 rounded-full">
                                 <Image
                                   src={
-                                    profile?.avatarUrl || "/default-avatar.png"
+                                    profile?.avatarUrl &&
+                                    profile.avatarUrl !== "default_avatar_url"
+                                      ? profile.avatarUrl
+                                      : "/static/images/default-avatar.png"
                                   }
                                   alt="avatar"
                                   width={36}
@@ -281,7 +284,7 @@ export default function VisitorLogsClient({
                             </div>
                             <div>
                               <div className="font-black text-sm">
-                                {profile?.nickname}
+                                {profile?.nickname || user.email.split("@")[0]}
                               </div>
                               <div className="text-[10px] opacity-50 font-mono">
                                 {log.ip}

@@ -34,11 +34,14 @@ export async function fetchUsers(): Promise<User[]> {
   const data = await res.json();
   if (data.length > 0) {
     for (let i = 0; i < data.length; i++) {
-      if (data[i].user_profile) {
+      if (data[i].user_profile && data[i].user_profile.avatarFileName) {
         data[i].user_profile.avatarUrl = await generateSignatureUrl(
           data[i].user_profile.avatarFileName,
           3600 * 3,
         );
+      } else if (data[i].user_profile) {
+        data[i].user_profile.avatarUrl =
+          "/static/images/apple-touch-icon-dark.png";
       }
     }
   }

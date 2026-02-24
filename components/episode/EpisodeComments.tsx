@@ -23,6 +23,7 @@ interface CommentUser {
   user_profile: {
     nickname: string | null;
     avatarUrl: string | null;
+    avatarFileName: string | null;
     learnLevel?: string | null;
   } | null;
 }
@@ -292,16 +293,22 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               isReply ? "w-8 h-8" : "w-10 h-10 md:w-12 md:h-12",
             )}
           >
-            {comment.User?.user_profile?.avatarUrl ? (
+            {comment.User?.user_profile?.avatarFileName &&
+            comment.User.user_profile.avatarUrl ? (
               <img
                 src={comment.User.user_profile.avatarUrl}
                 alt="av"
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="bg-base-200 text-base-content/30 w-full h-full flex items-center justify-center">
-                <UserCircleIcon className="w-2/3 h-2/3" />
-              </div>
+              // <div className="bg-base-200 text-base-content/30 w-full h-full flex items-center justify-center">
+              //   <UserCircleIcon className="w-2/3 h-2/3" />
+              // </div>
+              <img
+                src="/static/images/default-avatar.png"
+                alt="av"
+                className="w-full h-full object-cover"
+              />
             )}
           </div>
         </div>

@@ -8,7 +8,12 @@ export async function POST(request: Request) {
     // 1. 权限校验
     const session = await auth();
     console.log("POST /api/podcast/create", session);
-    if (!session || !session.user) {
+    const internalSecret = request.headers.get("x-internal-secret");
+
+    if (
+      (!session || !session.user) &&
+      internalSecret !== process.env.YUANLU_INTERNAL_SECRET
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

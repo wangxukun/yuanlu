@@ -145,9 +145,7 @@ export default async function Page(props: PageProps) {
           <div className="text-sm text-gray-500 mb-2 flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded-lg w-fit">
             <span>
               正在筛选播客ID:{" "}
-              <span className="font-mono font-bold">
-                {podcastId.slice(0, 8)}...
-              </span>
+              <span className="font-mono font-bold">{podcastId}</span>
             </span>
             <Link
               href="/admin/episodes"
