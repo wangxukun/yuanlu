@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       subtitleEnUrl,
       subtitleZhUrl,
       publishStatus,
+      difficulty,
       isExclusive,
       publishDate,
       tags,
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
           publishStatus: publishStatus,
           isExclusive: isExclusive,
           publishDate: publishDate,
+          difficulty: difficulty,
           tags: tags,
           podcastId: podcastId,
         },
@@ -96,6 +98,7 @@ export async function POST(request: Request) {
         publishAt: new Date(publishDate),
         duration: parseInt(audioDuration, 10),
         status: publishStatus,
+        difficulty: difficulty || "General",
         uploaderid: uploaderId,
         tags: tagsConnect
           ? {
