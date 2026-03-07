@@ -126,6 +126,11 @@ jobs:
         env:
           A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
           A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
+          # 必须加上下面这 4 行，让 GitHub 虚拟机在 build 的时候能读到！
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
 
   # CD job for deployment to production environment
   deploy-prod:
