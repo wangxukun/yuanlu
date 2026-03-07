@@ -80,35 +80,52 @@ jobs:
 
       - name: Deploy to Development Server
         run: |
-          echo "Deploying to development server..."
+          echo "1. 🚀 开始在 GitHub Runner 上构建项目（彻底解决 ECS OOM 问题）..."
+          # 利用 GitHub 服务器的强大性能进行依赖安装和项目构建
+          npm install
+          npx prisma generate
+          npm run build
+            
+          echo "2. 🗜️ 压缩编译产物..."
+          # 将构建好的 .next 文件夹打包，极大提升传输速度
+          tar -czf next-build.tar.gz .next
+
+          echo "3. 📤 通过 SCP 传输满血版产物到阿里云 ECS..."
+          # 利用上一步配置好的密钥，将压缩包直接推送到服务器
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no next-build.tar.gz ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }}:/home/yuanlu/yuanlu/
+
+          echo "4. 🔄 登录 ECS 进行代码同步与服务重启..."
+          # 依然使用原生 SSH 登录服务器执行收尾工作
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "
             source ~/.bashrc
-            cd /home/yuanlu/yuanlu/ && 
-            git checkout develop && 
-            git pull origin develop && 
-            npm install && 
-            npx prisma generate && 
-            npm run build && 
-            # 添加构建验证
-            if [ -d '.next' ]; then
-              pm2 restart yuanlu --update-env || pm2 start npm --name "yuanlu" -- start
-              pm2 save
-              echo 'Deployment successful!'
-            else
-              echo 'Build failed!' &&
-              exit 1
-            fi
-          "
-        env:
-          A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
-          A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
-        # 使用 SSH 连接到开发环境服务器，执行部署任务：
-        # 1. `cd /home/yuanlu/yuanlu/`: 切换到应用程序目录。
-        # 2. `git pull`: 拉取最新的代码。
-        # 3. `npm install`: 安装依赖。
-        # 4. `npx prisma generate`: 生成 Prisma 客户端。
-        # 5. `npm run build`: 构建项目。
-        # 6. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
+            cd /home/yuanlu/yuanlu/
+
+          # 1. 同步最新的业务源代码
+            git fetch origin develop
+            git reset --hard origin/develop
+
+          # 2. 在 ECS 上安装底层依赖并生成 Prisma
+          # (确保服务器上的 canvas 等 C++ 扩展正确适配 Alibaba Linux)
+            npm install
+            npx prisma generate
+            
+            # 3. 解压 GitHub 传过来的编译产物
+              tar -xzf next-build.tar.gz
+              rm next-build.tar.gz # 用完即删，节省空间
+            
+            # 4. 验证目录并无缝重启 PM2
+              if [ -d '.next' ]; then
+                pm2 restart yuanlu --update-env || pm2 start npm --name 'yuanlu' -- start
+                pm2 save
+                echo '🚀 部署完美成功！Deployment successful!'
+              else
+                echo '❌ 产物解压失败！Build transfer failed!' &&
+                exit 1
+              fi
+            "
+          env:
+            A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
+            A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
 
   # CD job for deployment to production environment
   deploy-prod:
