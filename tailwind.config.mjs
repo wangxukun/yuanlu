@@ -31,6 +31,15 @@ export default {
           "serif",
         ],
       },
+      keyframes: {
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-15deg)" },
+          "50%": { transform: "rotate(15deg)" },
+        },
+      },
+      animation: {
+        wiggle: "wiggle 0.6s ease-in-out infinite",
+      },
     },
   },
   plugins: [daisyui],

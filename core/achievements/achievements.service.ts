@@ -1,7 +1,9 @@
 import prisma from "@/lib/prisma";
 import { statsService } from "@/core/stats/stats.service";
-import { ACHIEVEMENT_LIST } from "./constants";
+import { ACHIEVEMENT_LIST, ACHIEVEMENT_RULES } from "./constants";
 import { AchievementItemDto } from "./dto";
+import { notificationService } from "@/core/notification/notification.service";
+import { NotificationType } from "@/core/notification/notification.entity";
 
 export const achievementsService = {
   /**
@@ -60,6 +62,25 @@ export const achievementsService = {
 
       // 更新内存中的已拥有列表，以便立即返回给前端
       newAchievements.forEach((key) => earnedKeys.add(key));
+
+      // 异步发送成就解锁通知，不阻塞主流程
+      void Promise.all(
+        newAchievements.map((key) => {
+          const def = ACHIEVEMENT_RULES[key];
+          if (!def) return Promise.resolve();
+          return notificationService.createNotification({
+            userid: userId,
+            notificationText: `🏆 成就解锁：${def.icon} ${def.name} — ${def.description}`,
+            type: NotificationType.ACHIEVEMENT,
+            targetUrl: "/charts",
+          });
+        }),
+      ).catch((err) =>
+        console.error(
+          "[notification] Failed to send achievement notification:",
+          err,
+        ),
+      );
     }
 
     // 5. 组装返回数据 (合并静态定义与动态状态)

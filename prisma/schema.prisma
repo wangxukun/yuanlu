@@ -297,6 +297,10 @@ model notifications {
   notificationText String?
   notificationAt   DateTime? @default(now()) @db.Timestamptz(6)
   isRead           Boolean?  @default(false)
+  /// 通知类型，例如：COMMENT（评论）、LIKE（点赞）、SYSTEM（系统）、ACHIEVEMENT（成就）等
+  type             String?   @default("SYSTEM") @db.VarChar(50)
+  /// 通知关联的目标页面 URL，点击通知后跳转的路径
+  targetUrl        String?   @db.VarChar(500)
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 

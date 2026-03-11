@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import ThemeSwitcher from "@/components/theme-switcher";
 import PhoneAcmeLogo from "@/components/phone-acme-logo";
+import NotificationBell from "@/components/header/NotificationBell";
 
 export default function Header() {
   const { data: session, status } = useSession();
@@ -64,6 +65,7 @@ export default function Header() {
           {/* 右侧：工具栏 */}
           <div className="flex items-center space-x-1 z-20">
             <ThemeSwitcher />
+            {status === "authenticated" && <NotificationBell />}
             <div className="scale-90 origin-right">
               <LoginHomeBtn />
             </div>
@@ -113,6 +115,7 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
             <ThemeSwitcher />
+            {status === "authenticated" && <NotificationBell />}
 
             {status === "authenticated" &&
               (session as Session).user.role === "ADMIN" && (
