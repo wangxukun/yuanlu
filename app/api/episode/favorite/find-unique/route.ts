@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { favoritesService } from "@/core/favorites/favorites.service";
 
 export async function GET(req: NextRequest) {
   const episodeid = req.nextUrl.searchParams.get("episodeid");
@@ -16,38 +16,25 @@ export async function GET(req: NextRequest) {
     });
   }
   try {
-    const episode_favorite = await prisma.episode_favorites.findFirst({
-      where: {
-        episodeid: episodeid,
-        userid: userid,
-      },
-      select: {
-        // 明确选择需要字段
-        favoriteid: true,
-        userid: true,
-        episodeid: true,
-        favoriteDate: true,
-      },
+    const result = await favoritesService.checkEpisodeFavorite({
+      userId: userid,
+      targetId: episodeid,
     });
-    if (!episode_favorite) {
+
+    if (!result.data?.isFavorited) {
       return NextResponse.json({
         success: false,
         message: "Podcast favorite not found",
-        episode_favorite: null,
+        episode_favorite: null, // 为了保持向下兼容
       });
     }
     return NextResponse.json({
       success: true,
       message: "Episode favorite found:",
-      episode_favorite: episode_favorite,
+      episode_favorite: { isFavorited: true }, // 为了保持向下兼容
     });
   } catch (error) {
-    // 确保异常时也释放连接
-    await prisma.$disconnect();
     console.error("[GET /api/episode/favorite/find-unique]", error);
     return NextResponse.json({ error: "Internal Server Error", status: 500 });
-  } finally {
-    // 最佳实践：在finally块中执行清理操作
-    await prisma.$disconnect();
   }
 }

@@ -2,7 +2,14 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss";
-import { FavoriteSeries, FavoriteEpisode } from "./dto";
+import {
+  FavoriteSeries,
+  FavoriteEpisode,
+  ToggleFavoriteDTO,
+  BaseResponse,
+  ToggleFavoriteResult,
+  CheckFavoriteDTO,
+} from "./dto";
 
 // 简单的辅助函数：秒 -> MM:SS
 const formatDuration = (seconds: number) => {
@@ -177,26 +184,240 @@ export const favoritesService = {
   },
 
   /**
-   * 移除播客收藏
+   * 移除播客收藏 (支持内部通用删除，保留返回 BaseResponse 以适配新结构)
    */
-  async removePodcastFavorite(userId: string, podcastId: string) {
-    return await prisma.podcast_favorites.deleteMany({
-      where: {
-        userid: userId,
-        podcastid: podcastId,
-      },
-    });
+  async removePodcastFavorite(
+    userId: string,
+    podcastId: string,
+  ): Promise<BaseResponse> {
+    try {
+      await prisma.$transaction([
+        prisma.podcast_favorites.deleteMany({
+          where: {
+            userid: userId,
+            podcastid: podcastId,
+          },
+        }),
+        prisma.podcast.update({
+          where: { podcastid: podcastId },
+          data: { followerCount: { decrement: 1 } },
+        }),
+      ]);
+      return { success: true, message: "取消收藏播客成功" };
+    } catch (error) {
+      console.error("Failed to remove podcast favorite:", error);
+      return { success: false, message: "取消收藏播客失败" };
+    }
   },
 
   /**
    * 移除单集收藏
    */
-  async removeEpisodeFavorite(userId: string, episodeId: string) {
-    return await prisma.episode_favorites.deleteMany({
-      where: {
-        userid: userId,
-        episodeid: episodeId,
-      },
-    });
+  async removeEpisodeFavorite(
+    userId: string,
+    episodeId: string,
+  ): Promise<BaseResponse> {
+    try {
+      await prisma.episode_favorites.deleteMany({
+        where: {
+          userid: userId,
+          episodeid: episodeId,
+        },
+      });
+      return { success: true, message: "取消收藏单集成功" };
+    } catch (error) {
+      console.error("Failed to remove episode favorite:", error);
+      return { success: false, message: "取消收藏单集失败" };
+    }
+  },
+
+  /**
+   * 检查播客是否已收藏
+   */
+  async checkPodcastFavorite(
+    dto: CheckFavoriteDTO,
+  ): Promise<BaseResponse<{ isFavorited: boolean }>> {
+    try {
+      const existing = await prisma.podcast_favorites.findUnique({
+        where: {
+          userid_podcastid: {
+            userid: dto.userId,
+            podcastid: dto.targetId,
+          },
+        },
+      });
+      return { success: true, data: { isFavorited: !!existing } };
+    } catch (error) {
+      console.error("Failed to check podcast favorite:", error);
+      return { success: false, message: "检查播客收藏状态失败" };
+    }
+  },
+
+  /**
+   * 切换播客收藏状态 (新增/取消)
+   */
+  async togglePodcastFavorite(
+    dto: ToggleFavoriteDTO,
+  ): Promise<BaseResponse<ToggleFavoriteResult>> {
+    try {
+      // 先查询当前状态
+      const existing = await prisma.podcast_favorites.findUnique({
+        where: {
+          userid_podcastid: {
+            userid: dto.userId,
+            podcastid: dto.targetId,
+          },
+        },
+      });
+
+      if (existing) {
+        // 取消收藏
+        await prisma.$transaction([
+          prisma.podcast_favorites.delete({
+            where: { favoriteid: existing.favoriteid },
+          }),
+          prisma.podcast.update({
+            where: { podcastid: dto.targetId },
+            data: { followerCount: { decrement: 1 } },
+          }),
+        ]);
+        return {
+          success: true,
+          data: { isFavorited: false },
+          message: "取消收藏播客成功",
+        };
+      } else {
+        // 添加收藏
+        await prisma.$transaction([
+          prisma.podcast_favorites.create({
+            data: {
+              userid: dto.userId,
+              podcastid: dto.targetId,
+            },
+          }),
+          prisma.podcast.update({
+            where: { podcastid: dto.targetId },
+            data: { followerCount: { increment: 1 } },
+          }),
+        ]);
+        return {
+          success: true,
+          data: { isFavorited: true },
+          message: "收藏播客成功",
+        };
+      }
+    } catch (error) {
+      console.error("Toggle podcast favorite error:", error);
+      return { success: false, message: "操作失败" };
+    }
+  },
+
+  /**
+   * 添加播客收藏（单纯新增）
+   */
+  async addPodcastFavorite(dto: ToggleFavoriteDTO): Promise<BaseResponse> {
+    try {
+      await prisma.$transaction([
+        prisma.podcast_favorites.create({
+          data: {
+            userid: dto.userId,
+            podcastid: dto.targetId,
+          },
+        }),
+        prisma.podcast.update({
+          where: { podcastid: dto.targetId },
+          data: { followerCount: { increment: 1 } },
+        }),
+      ]);
+      return { success: true, message: "收藏播客成功" };
+    } catch (error) {
+      // 捕获唯一键冲突
+      console.error("Add podcast favorite error:", error);
+      return { success: false, message: "收藏播客失败" };
+    }
+  },
+
+  /**
+   * 检查单集是否已收藏
+   */
+  async checkEpisodeFavorite(
+    dto: CheckFavoriteDTO,
+  ): Promise<BaseResponse<{ isFavorited: boolean }>> {
+    try {
+      const existing = await prisma.episode_favorites.findUnique({
+        where: {
+          userid_episodeid: {
+            userid: dto.userId,
+            episodeid: dto.targetId,
+          },
+        },
+      });
+      return { success: true, data: { isFavorited: !!existing } };
+    } catch (error) {
+      console.error("Failed to check episode favorite:", error);
+      return { success: false, message: "检查单集收藏状态失败" };
+    }
+  },
+
+  /**
+   * 切换单集收藏状态 (新增/取消)
+   */
+  async toggleEpisodeFavorite(
+    dto: ToggleFavoriteDTO,
+  ): Promise<BaseResponse<ToggleFavoriteResult>> {
+    try {
+      const existing = await prisma.episode_favorites.findUnique({
+        where: {
+          userid_episodeid: {
+            userid: dto.userId,
+            episodeid: dto.targetId,
+          },
+        },
+      });
+
+      if (existing) {
+        await prisma.episode_favorites.delete({
+          where: { favoriteid: existing.favoriteid },
+        });
+        return {
+          success: true,
+          data: { isFavorited: false },
+          message: "取消收藏单集成功",
+        };
+      } else {
+        await prisma.episode_favorites.create({
+          data: {
+            userid: dto.userId,
+            episodeid: dto.targetId,
+          },
+        });
+        return {
+          success: true,
+          data: { isFavorited: true },
+          message: "收藏单集成功",
+        };
+      }
+    } catch (error) {
+      console.error("Toggle episode favorite error:", error);
+      return { success: false, message: "操作失败" };
+    }
+  },
+
+  /**
+   * 添加单集收藏（单纯新增）
+   */
+  async addEpisodeFavorite(dto: ToggleFavoriteDTO): Promise<BaseResponse> {
+    try {
+      await prisma.episode_favorites.create({
+        data: {
+          userid: dto.userId,
+          episodeid: dto.targetId,
+        },
+      });
+      return { success: true, message: "收藏单集成功" };
+    } catch (error) {
+      console.error("Add episode favorite error:", error);
+      return { success: false, message: "收藏单集失败" };
+    }
   },
 };

@@ -1,6 +1,5 @@
 "use server";
 
-import prisma from "@/lib/prisma";
 import { auth } from "@/auth"; // 假设这是 NextAuth v5 的配置
 import { revalidatePath } from "next/cache";
 import { favoritesService } from "@/core/favorites/favorites.service";
@@ -17,45 +16,17 @@ export async function togglePodcastFavorite(
   if (!userId) return { success: false, message: "请先登录" };
 
   try {
-    // 检查是否已收藏
-    const existing = await prisma.podcast_favorites.findUnique({
-      where: {
-        userid_podcastid: {
-          userid: userId,
-          podcastid: podcastId,
-        },
-      },
+    const result = await favoritesService.togglePodcastFavorite({
+      userId,
+      targetId: podcastId,
     });
 
-    if (existing) {
-      // 取消收藏：删除记录 + 计数减 1
-      await prisma.$transaction([
-        prisma.podcast_favorites.delete({
-          where: { favoriteid: existing.favoriteid },
-        }),
-        prisma.podcast.update({
-          where: { podcastid: podcastId },
-          data: { followerCount: { decrement: 1 } },
-        }),
-      ]);
-    } else {
-      // 添加收藏：创建记录 + 计数加 1
-      await prisma.$transaction([
-        prisma.podcast_favorites.create({
-          data: {
-            userid: userId,
-            podcastid: podcastId,
-          },
-        }),
-        prisma.podcast.update({
-          where: { podcastid: podcastId },
-          data: { followerCount: { increment: 1 } },
-        }),
-      ]);
-    }
-
-    if (pathname) revalidatePath(pathname);
-    return { success: true, isFavorited: !existing };
+    if (pathname && result.success) revalidatePath(pathname);
+    return {
+      success: result.success,
+      isFavorited: result.data?.isFavorited,
+      message: result.message,
+    };
   } catch (error) {
     console.error("Toggle podcast favorite error:", error);
     return { success: false, message: "操作失败" };
@@ -74,30 +45,17 @@ export async function toggleEpisodeFavorite(
   if (!userId) return { success: false, message: "请先登录" };
 
   try {
-    const existing = await prisma.episode_favorites.findUnique({
-      where: {
-        userid_episodeid: {
-          userid: userId,
-          episodeid: episodeId,
-        },
-      },
+    const result = await favoritesService.toggleEpisodeFavorite({
+      userId,
+      targetId: episodeId,
     });
 
-    if (existing) {
-      await prisma.episode_favorites.delete({
-        where: { favoriteid: existing.favoriteid },
-      });
-    } else {
-      await prisma.episode_favorites.create({
-        data: {
-          userid: userId,
-          episodeid: episodeId,
-        },
-      });
-    }
-
-    if (pathname) revalidatePath(pathname);
-    return { success: true, isFavorited: !existing };
+    if (pathname && result.success) revalidatePath(pathname);
+    return {
+      success: result.success,
+      isFavorited: result.data?.isFavorited,
+      message: result.message,
+    };
   } catch (error) {
     console.error("Toggle episode favorite error:", error);
     return { success: false, message: "操作失败" };

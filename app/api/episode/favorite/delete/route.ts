@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { favoritesService } from "@/core/favorites/favorites.service";
 import { auth } from "@/auth";
 
 export async function DELETE(request: NextRequest) {
@@ -32,25 +32,23 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 执行删除操作
-    const deletedFavorite = await prisma.episode_favorites.deleteMany({
-      where: {
-        episodeid: episodeid,
-        userid: userid,
-      },
-    });
+    const result = await favoritesService.removeEpisodeFavorite(
+      userid,
+      episodeid,
+    );
 
     // 检查是否成功删除
-    if (deletedFavorite.count === 0) {
+    if (!result.success) {
       return NextResponse.json({
         success: false,
-        message: "Favorite episode not found",
+        message: result.message || "Favorite episode not found",
         status: 404,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: "取消剧集收藏成功",
+      message: result.message || "取消剧集收藏成功",
       status: 200,
     });
   } catch (error) {

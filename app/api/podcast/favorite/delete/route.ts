@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { favoritesService } from "@/core/favorites/favorites.service";
 import { auth } from "@/auth";
 
 export async function DELETE(request: NextRequest) {
@@ -33,25 +33,23 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 执行删除操作
-    const deletedFavorite = await prisma.podcast_favorites.deleteMany({
-      where: {
-        podcastid: podcastid,
-        userid: userid,
-      },
-    });
+    const result = await favoritesService.removePodcastFavorite(
+      userid,
+      podcastid,
+    );
 
     // 检查是否成功删除
-    if (deletedFavorite.count === 0) {
+    if (!result.success) {
       return NextResponse.json({
         success: false,
-        message: "Favorite podcast not found",
+        message: result.message || "Favorite podcast not found",
         status: 404,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: "取消播客收藏成功",
+      message: result.message || "取消播客收藏成功",
       status: 200,
     });
   } catch (error) {

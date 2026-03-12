@@ -24,3 +24,27 @@ export interface FavoriteEpisode {
   playCount: number;
   podcastId: string; // 用于跳转
 }
+
+// 基础响应结构，用于规范化 Service 层向上的返回格式
+export interface BaseResponse<T = unknown> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  code?: number;
+}
+
+// 播客/单集操作通用 DTO
+export interface ToggleFavoriteDTO {
+  userId: string;
+  targetId: string; // podcastId 或 episodeId
+}
+
+export interface CheckFavoriteDTO {
+  userId: string;
+  targetId: string;
+}
+
+// 附加一些业务专用的返回体
+export interface ToggleFavoriteResult {
+  isFavorited: boolean;
+}

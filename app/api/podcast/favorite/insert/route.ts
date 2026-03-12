@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { favoritesService } from "@/core/favorites/favorites.service";
 import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
@@ -32,23 +32,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const favorite = await prisma.podcast_favorites.create({
-      data: {
-        podcastid: podcastid,
-        userid: userid,
-      },
+    const result = await favoritesService.addPodcastFavorite({
+      userId: userid,
+      targetId: podcastid,
     });
-    if (!favorite) {
+
+    if (!result.success) {
       return NextResponse.json({
         success: false,
-        message: "收藏播客失败",
+        message: result.message || "收藏播客失败",
         status: 500,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: "收藏播客成功",
+      message: result.message || "收藏播客成功",
       status: 200,
     });
   } catch (error) {
