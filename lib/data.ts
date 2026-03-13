@@ -1,5 +1,5 @@
 import { generateSignatureUrl } from "@/lib/oss";
-import axios from "axios";
+
 import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
 import { Episode } from "@/core/episode/episode.entity";
@@ -250,10 +250,27 @@ async function data(subtitleUrl: string) {
     return [];
   } else {
     try {
-      const response = await axios.get(subtitleUrl);
-      return parseSrt(response.data);
+      console.log("Fetching subtitle from:", subtitleUrl);
+      const res = await fetch(subtitleUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        console.error(
+          `Failed to fetch subtitle. Status: ${res.status} ${res.statusText}`,
+        );
+        const text = await res.text();
+        console.error("Response body:", text.substring(0, 200));
+        return [];
+      }
+
+      const srtData = await res.text();
+      return parseSrt(srtData);
     } catch (err) {
-      console.error("Failed to fetch subtitles:", err);
+      console.error("Failed to fetch subtitles. URL:", subtitleUrl);
+      console.error(err);
+      return [];
     }
   }
 }
