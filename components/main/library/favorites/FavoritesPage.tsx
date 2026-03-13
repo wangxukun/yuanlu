@@ -39,8 +39,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
   const [podcasts, setPodcasts] = useState(initialPodcasts);
   const [episodes, setEpisodes] = useState(initialEpisodes);
 
-  const [isPending, startTransition] = useTransition();
-  console.log("isPending holed space", isPending);
+  const [, startTransition] = useTransition();
 
   // 过滤逻辑
   const filteredPodcasts = useMemo(() => {
@@ -106,25 +105,25 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 animate-in fade-in duration-500 font-sans overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-6 mb-6 xl:mb-8 border-b border-gray-100 dark:border-slate-800 pb-6 xl:pb-8 transition-colors">
+      <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-6 mb-6 xl:mb-8 border-b border-base-200 pb-6 xl:pb-8 transition-colors">
         <div>
-          <h1 className="text-2xl xl:text-3xl font-extrabold text-gray-900 dark:text-slate-100 flex items-center">
-            <Heart className="mr-3 text-red-500 fill-red-500" size={28} />
+          <h1 className="text-2xl xl:text-3xl font-extrabold text-base-content flex items-center">
+            <Heart className="mr-3 text-error fill-error" size={28} />
             我的收藏
           </h1>
-          <p className="text-gray-500 dark:text-slate-400 mt-2 text-sm xl:text-base">
+          <p className="text-base-content/60 mt-2 text-sm xl:text-base">
             这里汇集了你精心挑选的播客系列和高价值单集。
           </p>
         </div>
 
-        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-2xl w-full xl:w-auto transition-colors">
+        <div className="flex bg-base-200 p-1 rounded-2xl w-full xl:w-auto transition-colors">
           <div className="grid grid-cols-2 w-full xl:flex xl:w-auto gap-1 xl:gap-0">
             <button
               onClick={() => setActiveTab("podcasts")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "podcasts"
-                  ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+                  ? "bg-base-100 text-primary shadow-sm"
+                  : "text-base-content/60 hover:text-base-content"
               }`}
             >
               播客系列 ({podcasts.length})
@@ -133,8 +132,8 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               onClick={() => setActiveTab("episodes")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "episodes"
-                  ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+                  ? "bg-base-100 text-primary shadow-sm"
+                  : "text-base-content/60 hover:text-base-content"
               }`}
             >
               单集 ({episodes.length})
@@ -144,23 +143,23 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 xl:mb-8 sticky top-0 z-10 xl:static bg-white/95 dark:bg-black/95 xl:bg-transparent backdrop-blur-md xl:backdrop-blur-none py-2 xl:py-0">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 xl:mb-8 sticky top-0 z-10 xl:static bg-base-100/95 xl:bg-transparent backdrop-blur-md xl:backdrop-blur-none py-2 xl:py-0">
         <div className="relative flex-1">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
           />
           <input
             type="text"
             placeholder={`搜索收藏的${
               activeTab === "podcasts" ? "播客" : "单集"
             }...`}
-            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-gray-50 xl:bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm text-sm text-gray-900 dark:text-slate-100 dark:placeholder-slate-500"
+            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-base-200/50 border border-base-200 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm text-sm text-base-content placeholder-base-content/40"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="hidden sm:flex items-center space-x-2 px-6 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl text-gray-600 dark:text-slate-300 font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm text-sm shrink-0">
+        <button className="hidden sm:flex items-center space-x-2 px-6 py-3 bg-base-100 border border-base-200 rounded-2xl text-base-content/70 font-bold hover:bg-base-200 transition-colors shadow-sm text-sm shrink-0">
           <Filter size={18} />
           <span>排序</span>
         </button>
@@ -168,17 +167,17 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
 
       {/* Content Grid */}
       {activeTab === "podcasts" ? (
-        // --- 播客系列 Tab (保持你满意的状态) ---
+        // --- 播客系列 Tab ---
         filteredPodcasts.length > 0 ? (
           <div className="flex flex-col gap-4 xl:grid xl:grid-cols-4 xl:gap-6">
             {filteredPodcasts.map((series) => (
               <div
                 key={series.id}
                 onClick={() => handleSelectSeries(series.id)}
-                className="group bg-white dark:bg-slate-900 rounded-2xl xl:rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl xl:hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-row xl:flex-col items-center xl:items-stretch p-3 xl:p-0 relative"
+                className="group bg-base-100 rounded-2xl xl:rounded-3xl border border-base-200 overflow-hidden shadow-sm hover:shadow-xl xl:hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-row xl:flex-col items-center xl:items-stretch p-3 xl:p-0 relative"
               >
                 {/* Image Section */}
-                <div className="relative w-24 h-24 xl:w-full xl:h-auto xl:aspect-square shrink-0 rounded-xl xl:rounded-none overflow-hidden bg-gray-100 dark:bg-slate-800">
+                <div className="relative w-24 h-24 xl:w-full xl:h-auto xl:aspect-square shrink-0 rounded-xl xl:rounded-none overflow-hidden bg-base-300">
                   <img
                     src={series.thumbnailUrl}
                     alt={series.title}
@@ -190,7 +189,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   <div className="hidden xl:flex absolute top-3 right-3 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => handleRemove(e, "podcast", series.id)}
-                      className="p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full text-red-500 hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-colors"
+                      className="p-2 bg-base-100/90 backdrop-blur rounded-full text-error hover:bg-base-100 shadow-sm transition-colors"
                       title="取消收藏"
                     >
                       <Heart size={16} fill="currentColor" />
@@ -206,7 +205,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       {series.category.slice(0, 3).map((category) => (
                         <span
                           key={category.id}
-                          className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded uppercase tracking-wider"
+                          className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded uppercase tracking-wider"
                         >
                           {category.name}
                         </span>
@@ -215,24 +214,24 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                     {/* Mobile: Single Category Tag */}
                     <div className="xl:hidden flex items-center mb-1">
                       {series.category[0] && (
-                        <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded uppercase">
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">
                           {series.category[0].name}
                         </span>
                       )}
                     </div>
 
                     <h3
-                      className="font-bold text-base xl:text-lg text-gray-900 dark:text-slate-100 line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                      className="font-bold text-base xl:text-lg text-base-content line-clamp-1 group-hover:text-primary transition-colors"
                       title={series.title}
                     >
                       {series.title}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 xl:mt-1 flex items-center line-clamp-1">
+                    <p className="text-xs text-base-content/60 mt-0.5 xl:mt-1 flex items-center line-clamp-1">
                       {series.author || "Unknown Author"}
                     </p>
 
                     {/* Mobile Stats Row */}
-                    <div className="xl:hidden flex items-center gap-3 mt-2 text-[10px] text-gray-400 dark:text-slate-500">
+                    <div className="xl:hidden flex items-center gap-3 mt-2 text-[10px] text-base-content/40">
                       <span className="flex items-center">
                         <Layers size={12} className="mr-1" />
                         {series.episodeCount}
@@ -251,7 +250,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   </div>
 
                   {/* Desktop Stats */}
-                  <div className="hidden xl:flex items-center justify-between pt-3 border-t border-gray-50 dark:border-slate-800 text-[11px] text-gray-400 dark:text-slate-500 font-medium">
+                  <div className="hidden xl:flex items-center justify-between pt-3 border-t border-base-200 text-[11px] text-base-content/40 font-medium">
                     <div className="flex items-center">
                       <Layers size={12} className="mr-1" />
                       {series.episodeCount} 集
@@ -270,7 +269,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                 {/* Mobile Action Button (Right Aligned) */}
                 <button
                   onClick={(e) => handleRemove(e, "podcast", series.id)}
-                  className="xl:hidden p-2 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-full transition-colors self-center shrink-0 mr-1"
+                  className="xl:hidden p-2 text-error bg-error/10 rounded-full transition-colors self-center shrink-0 mr-1"
                 >
                   <Heart size={18} fill="currentColor" />
                 </button>
@@ -280,13 +279,13 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
         ) : (
           <EmptyState type="podcasts" />
         )
-      ) : // --- 单集 Tab (重构：Mobile为网格卡片, Desktop为列表) ---
+      ) : // --- 单集 Tab ---
       filteredEpisodes.length > 0 ? (
         <div
           className={`
             w-full transition-all
             // Desktop: List Container Styles
-            xl:bg-white xl:dark:bg-slate-900 xl:rounded-3xl xl:border xl:border-gray-100 xl:dark:border-slate-800 xl:shadow-sm xl:overflow-hidden xl:divide-y xl:divide-gray-50 xl:dark:divide-slate-800
+            xl:bg-base-100 xl:rounded-3xl xl:border xl:border-base-200 xl:shadow-sm xl:overflow-hidden xl:divide-y xl:divide-base-200
             // Mobile: Grid Container Styles
             grid grid-cols-1 sm:grid-cols-2 gap-4 xl:block
           `}
@@ -298,9 +297,9 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               className={`
                 group relative cursor-pointer transition-all
                 // Mobile Styles (Card)
-                bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden
+                bg-base-100 rounded-2xl border border-base-200 shadow-sm flex flex-col overflow-hidden
                 // Desktop Styles (List Row Override)
-                xl:bg-transparent xl:rounded-none xl:border-none xl:shadow-none xl:flex-row xl:items-center xl:p-6 xl:hover:bg-indigo-50/30 xl:dark:hover:bg-indigo-900/20 xl:overflow-visible
+                xl:bg-transparent xl:rounded-none xl:border-none xl:shadow-none xl:flex-row xl:items-center xl:p-6 xl:hover:bg-base-200/50 xl:overflow-visible
               `}
             >
               {/* Image Section */}
@@ -310,7 +309,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   // Mobile: Full width, Aspect Video
                   w-full aspect-video
                   // Desktop: Fixed size
-                  xl:w-32 xl:h-18 xl:aspect-auto xl:rounded-2xl xl:bg-gray-100 xl:dark:bg-slate-800
+                  xl:w-32 xl:h-18 xl:aspect-auto xl:rounded-2xl xl:bg-base-300
                 `}
               >
                 <img
@@ -328,27 +327,27 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               <div className="flex-1 min-w-0 p-4 xl:p-0 xl:ml-6 xl:pr-8 flex flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2 xl:mb-1">
-                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded xl:bg-transparent xl:px-0 xl:py-0">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded xl:bg-transparent xl:px-0 xl:py-0">
                       {episode.category}
                     </span>
-                    <span className="hidden xl:inline text-gray-300 dark:text-slate-600">
+                    <span className="hidden xl:inline text-base-content/30">
                       •
                     </span>
-                    <span className="hidden xl:inline text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                    <span className="hidden xl:inline text-[10px] text-base-content/40 font-medium">
                       {episode.date}
                     </span>
                   </div>
-                  <h4 className="text-base xl:text-lg font-bold text-gray-900 dark:text-slate-100 line-clamp-2 xl:truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h4 className="text-base xl:text-lg font-bold text-base-content line-clamp-2 xl:truncate group-hover:text-primary transition-colors">
                     {episode.title}
                   </h4>
-                  <p className="text-xs xl:text-sm text-gray-500 dark:text-slate-400 truncate mt-1 xl:mt-0">
+                  <p className="text-xs xl:text-sm text-base-content/60 truncate mt-1 xl:mt-0">
                     系列: {episode.author}
                   </p>
                 </div>
 
                 {/* Mobile Bottom Bar for Stats & Actions */}
-                <div className="xl:hidden flex items-center justify-between mt-4 pt-3 border-t border-gray-50 dark:border-slate-800/50 w-full">
-                  <div className="flex items-center space-x-3 text-xs text-gray-400 dark:text-slate-500">
+                <div className="xl:hidden flex items-center justify-between mt-4 pt-3 border-t border-base-200 w-full">
+                  <div className="flex items-center space-x-3 text-xs text-base-content/40">
                     <div className="flex items-center whitespace-nowrap">
                       <Clock size={12} className="mr-1" />
                       {episode.duration}
@@ -360,7 +359,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   </div>
                   <button
                     onClick={(e) => handleRemove(e, "episode", episode.id)}
-                    className="p-1.5 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 transition-colors"
+                    className="p-1.5 text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -368,9 +367,9 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               </div>
 
               {/* Desktop Only Stats */}
-              <div className="hidden xl:flex items-center space-x-8 mr-12 text-gray-500 dark:text-slate-400">
+              <div className="hidden xl:flex items-center space-x-8 mr-12 text-base-content/40">
                 <div className="flex flex-col items-end">
-                  <span className="text-xs font-bold text-gray-900 dark:text-slate-200">
+                  <span className="text-xs font-bold text-base-content">
                     {episode.duration}
                   </span>
                   <div className="flex items-center text-[10px] mt-1">
@@ -378,7 +377,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-xs font-bold text-gray-900 dark:text-slate-200">
+                  <span className="text-xs font-bold text-base-content">
                     {episode.playCount?.toLocaleString()}
                   </span>
                   <div className="flex items-center text-[10px] mt-1">
@@ -391,13 +390,13 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               <div className="hidden xl:flex items-center gap-2">
                 <button
                   onClick={(e) => handleRemove(e, "episode", episode.id)}
-                  className="p-3 text-red-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  className="p-3 text-error/70 hover:text-error hover:bg-error/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
                   title="取消收藏"
                 >
                   <Trash2 size={20} />
                 </button>
                 <ChevronRight
-                  className="text-gray-300 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                  className="text-base-content/30 group-hover:text-primary transition-colors"
                   size={24}
                 />
               </div>
@@ -412,20 +411,20 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
 };
 
 const EmptyState = ({ type }: { type: "podcasts" | "episodes" }) => (
-  <div className="py-20 text-center bg-white dark:bg-slate-900 rounded-[32px] border-2 border-dashed border-gray-100 dark:border-slate-800 transition-colors w-full max-w-full overflow-hidden">
-    <div className="mx-auto w-24 h-24 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-      <Heart className="text-gray-200 dark:text-slate-600" size={48} />
+  <div className="py-20 text-center bg-base-100 rounded-[32px] border-2 border-dashed border-base-200 transition-colors w-full max-w-full overflow-hidden">
+    <div className="mx-auto w-24 h-24 bg-base-200 rounded-full flex items-center justify-center mb-6">
+      <Heart className="text-base-content/20" size={48} />
     </div>
-    <h3 className="text-xl xl:text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2 px-4">
+    <h3 className="text-xl xl:text-2xl font-bold text-base-content mb-2 px-4">
       还没有收藏任何{type === "podcasts" ? "播客" : "单集"}
     </h3>
-    <p className="text-gray-500 dark:text-slate-400 max-w-sm mx-auto mb-8 text-sm xl:text-base px-4">
+    <p className="text-base-content/60 max-w-sm mx-auto mb-8 text-sm xl:text-base px-4">
       开始探索并点击心形图标，将你喜欢的
       {type === "podcasts" ? "播客系列" : "精彩单集"}保存到这里以便稍后学习。
     </p>
     <a
       href="/discover"
-      className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none inline-block text-sm xl:text-base"
+      className="btn btn-primary rounded-full px-8 shadow-lg shadow-primary/20 text-sm xl:text-base"
     >
       去发现
     </a>
