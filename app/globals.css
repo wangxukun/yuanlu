@@ -1,3 +1,25 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --header-height-mobile: 60px;
+  --header-height-desktop: 72px;
+  --sidebar-width: 260px;
+  --player-bar-height: 64px;
+  /* 新增底部导航栏高度 */
+  --bottom-nav-height: 64px;
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}

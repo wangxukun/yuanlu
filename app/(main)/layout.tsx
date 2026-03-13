@@ -1,3 +1,4 @@
+// app/(main)/layout.tsx
 import type { Metadata } from "next";
 import React, { Suspense } from "react";
 import { inter, lusitana } from "@/components/fonts";
@@ -8,12 +9,12 @@ import AuthProvider from "@/app/AuthProvider";
 import "@/lib/sessionCleaner";
 import SideNav from "@/components/main/sidenav";
 import PlayControlBar from "@/components/controls/PlayControlBar";
-import EmailCheckDialog from "@/components/auth/email-check-dialog";
-import SignInDialog from "@/components/auth/sign-in-dialog";
-import SignUpDialog from "@/components/auth/sign-up-dialog";
+import BottomNav from "@/components/main/BottomNav";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import PageTracker from "@/components/main/PageTracker";
+import { ModalProvider } from "@/components/providers/ModalProvider";
+import GlobalAudio from "@/components/player/GlobalAudio"; // <--- 新增引入
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -26,10 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body
-        suppressHydrationWarning
-        className={`${inter.variable} ${lusitana.className} font-sans antialiased flex flex-col h-full`}
+        className={`${inter.variable} ${lusitana.variable} font-sans antialiased bg-base-200 text-base-content min-h-screen flex flex-col`}
       >
         <AuthProvider>
           <ThemeProvider
@@ -38,32 +38,41 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {/* 使用 Suspense 包裹 PageTracker */}
             <Suspense fallback={null}>
               <PageTracker />
             </Suspense>
             <Toaster richColors />
-            <div className="flex">
-              {/* 左侧导航栏 */}
-              <SideNav />
-              {/* 右侧内容区域 */}
-              <div className="relative flex flex-1 flex-col h-screen pt-[58px]">
-                {/* 顶部导航栏 */}
+            <ModalProvider />
+
+            {/* 挂载全局音频引擎，不随页面切换销毁 */}
+            <GlobalAudio />
+
+            <div className="drawer lg:drawer-open min-h-screen w-full">
+              <input
+                id="main-drawer"
+                type="checkbox"
+                className="drawer-toggle"
+              />
+
+              <div className="drawer-content flex flex-col relative w-full transition-all duration-300">
                 <Header />
-                {/* ✅ 全局模态登录框 */}
-                <EmailCheckDialog />
-                <SignInDialog />
-                <SignUpDialog />
-                {/* 主体内容区域 */}
-                <main className="flex-1 lg:pl-[260px] bg-base-200 overflow-y-auto">
-                  <div className="w-full min-h-[calc(100vh-8rem)]">
-                    {children}
-                  </div>
-                  {/* 底部播放器控制栏 */}
-                  <PlayControlBar />
-                  {/* 底部页脚 */}
+
+                <main className="flex-1 flex flex-col w-full pt-[var(--header-height-mobile)] lg:pt-[var(--header-height-desktop)] pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:pb-0">
+                  <div className="flex-1 w-full">{children}</div>
                   <Footer />
                 </main>
+
+                <PlayControlBar />
+                <BottomNav />
+              </div>
+
+              <div className="drawer-side z-[100]">
+                <label
+                  htmlFor="main-drawer"
+                  aria-label="close sidebar"
+                  className="drawer-overlay"
+                ></label>
+                <SideNav />
               </div>
             </div>
           </ThemeProvider>

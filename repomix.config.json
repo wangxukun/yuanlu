@@ -1,0 +1,23 @@
+{
+  "output": {
+    "filePath": "yuanlu-project-context.xml",
+    "headerText": "This is the structured codebase for 'Yuanlu English Podcast' (远路播客). Optimized for Gemini 1.5 Pro."
+  },
+  "include": ["**/*"],
+  "ignore": {
+    "customPatterns": [
+      "node_modules/**",
+      ".next/**",
+      ".git/**",
+      "public/audio/**",
+      "public/images/**",
+      "public/fonts/**",
+      "*.log",
+      "package-lock.json",
+      "yarn.lock",
+      "pnpm-lock.yaml",
+      ".env*",
+      "dist/**"
+    ]
+  }
+}

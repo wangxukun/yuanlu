@@ -1,3 +1,4 @@
+// components/main/sidenav.tsx
 "use client";
 
 import Link from "next/link";
@@ -10,9 +11,8 @@ export default function SideNav() {
   const { data: session, status } = useSession();
 
   return (
-    // [修改] hidden sm:block -> hidden lg:block
-    // 只有在 Large (1024px+) 屏幕上才显示侧边栏
-    <aside className="hidden lg:block w-[260px] border-r border-base-300 h-screen flex flex-col justify-between bg-base-100 fixed left-0 top-0 overflow-y-auto z-50">
+    // 移除 fixed 和 hidden lg:flex，因为 drawer-side 已经处理了这些
+    <aside className="w-[var(--sidebar-width)] min-h-full bg-base-100 border-r border-base-300 flex flex-col justify-between overflow-y-auto">
       <Link
         className="mb-2 flex h-24 flex-col items-center justify-center gap-2 p-4"
         href="/"

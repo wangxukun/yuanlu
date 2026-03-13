@@ -1,9 +1,10 @@
+// components/main/nav-links-logined.tsx
 "use client";
 
 import {
-  BookOpenIcon, // 生词本图标
-  ClockIcon, // 历史记录图标
-  HeartIcon, // 收藏图标
+  BookOpenIcon,
+  ClockIcon,
+  HeartIcon,
   MapIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -22,10 +23,14 @@ export default function NavLinksLogined() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  const closeDrawer = () => {
+    const drawer = document.getElementById("main-drawer") as HTMLInputElement;
+    if (drawer) drawer.checked = false;
+  };
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col space-y-1">
       {links.map((link) => {
-        // 权限控制逻辑保持不变
         if (
           "/library/premiums" === link.href &&
           session &&
@@ -39,8 +44,10 @@ export default function NavLinksLogined() {
           <Link
             key={link.name}
             href={link.href}
+            onClick={closeDrawer}
             className={clsx(
-              "flex ml-6 mr-6 h-10 grow items-center justify-center gap-2 rounded-md p-3 text-sm font-medium md:flex-none md:justify-start md:p-2 md:px-3",
+              // 修复：移除 justify-center，统一使用 justify-start；增加 px-4 和 gap-3
+              "flex mx-4 h-12 items-center justify-start gap-3 rounded-xl px-4 text-base font-medium transition-colors",
               {
                 "bg-base-200 text-base-content": pathname === link.href,
                 "text-base-content/70 hover:bg-base-200/50 hover:text-base-content":
@@ -48,8 +55,9 @@ export default function NavLinksLogined() {
               },
             )}
           >
-            <LinkIcon className="w-5 text-primary" />
-            <p className="hidden md:block">{link.name}</p>
+            <LinkIcon className="w-6 text-primary" />
+            {/* 修复：移除 hidden md:block，始终显示文字 */}
+            <p className="block">{link.name}</p>
           </Link>
         );
       })}
