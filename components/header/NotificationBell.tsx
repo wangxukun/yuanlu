@@ -137,7 +137,7 @@ export default function NotificationBell() {
 
       {/* 下拉面板 */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 z-50 rounded-2xl shadow-2xl border border-base-300 bg-base-100 overflow-hidden">
+        <div className="fixed inset-x-4 top-[calc(var(--header-height-mobile)+0.5rem)] mx-auto w-auto max-w-sm z-[100] rounded-2xl shadow-2xl border border-base-300 bg-base-100 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none">
           {/* 面板头部 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-base-200">
             <span className="font-semibold text-sm text-base-content">
