@@ -57,6 +57,15 @@ export default function UserManagementClient({
     "ALL" | "ONLINE" | "OFFLINE"
   >("ALL");
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // 当搜索或筛选条件改变时，重置回第一页
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter]);
+
   // 统计数据计算
   const stats = useMemo(() => {
     const todayStr = new Date().toDateString();
@@ -86,6 +95,12 @@ export default function UserManagementClient({
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
 
   // 处理封禁/解封
   const handleToggleBan = async (userid: string, currentStatus: boolean) => {
@@ -250,8 +265,8 @@ export default function UserManagementClient({
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
                   <tr key={user.userid} className="hover">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -396,25 +411,37 @@ export default function UserManagementClient({
           </table>
         </div>
 
-        {/* 分页占位符 */}
+        {/* 分页 */}
         <div className="bg-base-100 px-6 py-4 border-t border-base-200 flex items-center justify-between">
           <span className="text-xs text-base-content/60">
             显示{" "}
             <span className="font-bold">
-              {filteredUsers.length > 0 ? 1 : 0}
+              {filteredUsers.length > 0
+                ? (currentPage - 1) * itemsPerPage + 1
+                : 0}
             </span>{" "}
             到{" "}
             <span className="font-bold">
-              {Math.min(filteredUsers.length, 10)}
+              {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
             </span>{" "}
             条，共 <span className="font-bold">{filteredUsers.length}</span>{" "}
             条结果
           </span>
           <div className="join">
-            <button className="join-item btn btn-sm btn-outline btn-disabled">
+            <button
+              className={`join-item btn btn-sm btn-outline ${currentPage <= 1 ? "btn-disabled" : "hover:bg-base-200"}`}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage <= 1}
+            >
               上一页
             </button>
-            <button className="join-item btn btn-sm btn-outline hover:bg-base-200">
+            <button
+              className={`join-item btn btn-sm btn-outline ${currentPage >= totalPages ? "btn-disabled" : "hover:bg-base-200"}`}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage >= totalPages || totalPages === 0}
+            >
               下一页
             </button>
           </div>
