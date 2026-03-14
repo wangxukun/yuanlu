@@ -1,92 +1,88 @@
-"use client";
-
-import React from "react";
-import { PlayCircleIcon, HeartIcon } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
-import { usePlayerStore } from "@/store/player-store";
-import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
-import { usePathname } from "next/navigation";
+import React, { useState } from "react";
+import { MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
+import EpisodeCard from "./EpisodeCard";
 
-// 扩展 Episode 类型以包含收藏状态
-interface EpisodeWithFav extends Episode {
-  isFavorited?: boolean;
+interface EpisodeWithProgress extends Episode {
+  progressSeconds?: number;
+  isFinished?: boolean;
 }
 
 interface EpisodeListProps {
-  episodes: EpisodeWithFav[];
+  episodes: EpisodeWithProgress[];
+  podcastCoverUrl: string;
+  currentPlayingId?: string;
+  isPlaying: boolean;
+  onPlayClick: (e: React.MouseEvent, episode: Episode) => void;
+  onRowClick: (episode: Episode) => void;
 }
 
-export default function EpisodeList({ episodes }: EpisodeListProps) {
-  const { playEpisode } = usePlayerStore();
-  const pathname = usePathname();
+export default function EpisodeList({
+  episodes,
+  podcastCoverUrl,
+  currentPlayingId,
+  isPlaying,
+  onPlayClick,
+  onRowClick,
+}: EpisodeListProps) {
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // 处理单集收藏
-  const handleToggleFav = async (e: React.MouseEvent, epId: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    await toggleEpisodeFavorite(epId, pathname);
-    // 注意：这里没有做复杂的乐观更新，直接等待 revalidatePath 刷新
-  };
+  const sortedEpisodes = [...(episodes || [])].sort((a, b) => {
+    const dateA = new Date(a.publishAt).getTime();
+    const dateB = new Date(b.publishAt).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">包含剧集 ({episodes.length})</h2>
+    <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-base-200/50">
+      <div className="flex items-center justify-between mb-6 px-1 sm:px-2 gap-2">
+        <h2 className="text-base sm:text-xl lg:text-2xl font-bold text-base-content flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
+          <span className="sm:hidden">剧集</span>
+          <span className="hidden sm:inline">剧集列表</span>
+          <span className="bg-primary/10 text-primary text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold">
+            {episodes?.length || 0}
+          </span>
+        </h2>
+        <select
+          className="select select-sm select-bordered rounded-xl bg-base-100 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-base-content/70 w-32 min-w-0 text-xs sm:text-sm px-2 sm:px-3"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+        >
+          <option value="desc">最新发布</option>
+          <option value="asc">最早发布</option>
+        </select>
       </div>
 
-      <div className="bg-base-100 rounded-2xl border border-base-200 overflow-hidden">
-        {episodes.map((episode, index) => (
-          <div
-            key={episode.episodeid}
-            className="group flex items-center p-4 hover:bg-base-200/50 transition-colors border-b border-base-200 last:border-0 cursor-pointer"
-            onClick={() => playEpisode(episode)}
-          >
-            {/* 序号 */}
-            <span className="w-8 text-center text-base-content/40 font-medium group-hover:text-primary">
-              {index + 1}
-            </span>
-
-            {/* 列表项其余部分... */}
-            <div className="flex-1 px-4 min-w-0">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold truncate pr-2 text-base-content group-hover:text-primary transition-colors">
-                  {episode.title}
-                </h3>
-              </div>
-              <div className="text-xs text-base-content/50 mt-1 flex gap-3">
-                <span>{formatDuration(episode.duration)}</span>
-                {/* 新增：播放量 */}
-                <span>{(episode.playCount || 0).toLocaleString()} 次播放</span>
-                <span>{new Date(episode.publishAt).toLocaleDateString()}</span>
-              </div>
+      <div className="space-y-3 sm:space-y-4">
+        {sortedEpisodes.length > 0 ? (
+          sortedEpisodes.map((episode) => (
+            <EpisodeCard
+              key={episode.episodeid}
+              episode={episode}
+              podcastCoverUrl={podcastCoverUrl}
+              isCurrentPlaying={
+                currentPlayingId === episode.episodeid && isPlaying
+              }
+              isCurrentPaused={
+                currentPlayingId === episode.episodeid && !isPlaying
+              }
+              activeMenuId={activeMenuId}
+              onMenuToggle={setActiveMenuId}
+              onPlayClick={onPlayClick}
+              onRowClick={onRowClick}
+            />
+          ))
+        ) : (
+          <div className="py-20 text-center flex flex-col items-center border-2 border-dashed border-base-200 rounded-3xl">
+            <div className="w-16 h-16 bg-base-200 rounded-full flex items-center justify-center mb-4">
+              <MusicalNoteIcon className="w-8 h-8 text-base-content/30" />
             </div>
-
-            {/* 播放按钮 */}
-            <button className="btn btn-ghost btn-circle btn-sm text-primary opacity-0 group-hover:opacity-100 transition-all mr-2">
-              <PlayCircleIcon className="w-8 h-8" />
-            </button>
-
-            {/* 新增：收藏按钮 */}
-            <button
-              className="btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-red-500 z-10"
-              onClick={(e) => handleToggleFav(e, episode.episodeid)}
-            >
-              {episode.isFavorited ? (
-                <HeartSolid className="w-5 h-5 text-red-500" />
-              ) : (
-                <HeartIcon className="w-5 h-5" />
-              )}
-            </button>
+            <h3 className="text-lg font-bold text-base-content">暂无剧集</h3>
+            <p className="text-base-content/50 mt-1">该播客尚未发布任何内容</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
-}
-
-function formatDuration(seconds: number) {
-  const min = Math.floor(seconds / 60);
-  const sec = seconds % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
 }
