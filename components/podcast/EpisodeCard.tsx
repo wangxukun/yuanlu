@@ -78,7 +78,7 @@ export default function EpisodeCard({
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="hidden sm:flex absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
           <button
             onClick={(e) => onPlayClick(e, episode as Episode)}
             className="w-12 h-12 bg-white/90 text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
