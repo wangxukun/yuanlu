@@ -93,14 +93,18 @@ export const notificationService = {
   ): Promise<void> {
     if (userIds.length === 0) return;
 
-    const notifications = userIds.map((userid) => ({
-      userid,
-      type: NotificationType.EPISODE_UPDATE,
-      notificationText: `你关注的播客「${podcastTitle}」更新了新单集「${episodeTitle}」`,
-      targetUrl,
-      referenceId: episodeId,
-      referenceType: "EPISODE",
-    }));
+    const notifications = userIds
+      .filter(id => !!id)
+      .map((userid) => ({
+        userid,
+        type: NotificationType.EPISODE_UPDATE,
+        notificationText: `你关注的播客「${podcastTitle}」更新了新单集「${episodeTitle}」`,
+        targetUrl,
+        referenceId: episodeId,
+        referenceType: "EPISODE",
+      }));
+
+    if (notifications.length === 0) return;
 
     await notificationRepository.createMany(notifications);
   },
@@ -115,12 +119,18 @@ export const notificationService = {
   ): Promise<void> {
     if (userIds.length === 0) return;
 
-    const notifications = userIds.map((userid) => ({
-      userid,
-      type: NotificationType.SYSTEM,
-      notificationText: message,
-      targetUrl,
-    }));
+    console.log(`[NotificationService] Triggering system notification for ${userIds.length} users. Message preview: ${message.slice(0, 20)}...`);
+    
+    const notifications = userIds
+      .filter(id => !!id)
+      .map((userid) => ({
+        userid,
+        type: NotificationType.SYSTEM,
+        notificationText: message,
+        targetUrl,
+      }));
+
+    if (notifications.length === 0) return;
 
     await notificationRepository.createMany(notifications);
   },

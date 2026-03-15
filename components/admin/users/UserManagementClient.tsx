@@ -257,6 +257,7 @@ export default function UserManagementClient({
             <thead>
               <tr className="bg-base-200/50 text-base-content/70">
                 <th className="px-6 py-4">用户</th>
+                <th className="px-6 py-4">用户ID</th>
                 <th className="px-6 py-4">角色</th>
                 <th className="px-6 py-4">学习进度</th>
                 <th className="px-6 py-4">验证状态</th>
@@ -298,6 +299,11 @@ export default function UserManagementClient({
                           <div className="text-xs opacity-50">{user.email}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="text-xs bg-base-200 px-2 py-1 rounded opacity-70">
+                        {user.userid}
+                      </code>
                     </td>
                     <td className="px-6 py-4">
                       {user.role === "ADMIN" ? (
@@ -397,7 +403,7 @@ export default function UserManagementClient({
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-base-content/50"
                   >
                     <div className="flex flex-col items-center gap-3">

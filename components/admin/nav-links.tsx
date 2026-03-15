@@ -5,6 +5,7 @@ import {
   HomeIcon,
   DocumentDuplicateIcon,
   TagIcon,
+  BellAlertIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ const links = [
   },
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
+  { name: "系统通知", href: "/admin/notifications", icon: BellAlertIcon },
   { name: "访问日志", href: "/admin/logs", icon: ClipboardList },
 ];
 

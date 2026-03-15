@@ -111,30 +111,30 @@ export default function ContactClient() {
 
   // 辅助函数：获取输入框的样式类名
   const getInputClass = (fieldName: keyof ContactFormValues) => {
-    const baseClass = "w-full transition-all";
+    const baseClass = "w-full px-4 py-3 rounded-xl border outline-none transition-all placeholder:text-gray-300";
     if (errors[fieldName]) {
-      return `${baseClass} input input-bordered input-error focus:input-error bg-error/5`;
+      return `${baseClass} border-red-300 focus:ring-2 focus:ring-red-500 bg-red-50/30 text-gray-900`;
     }
-    return `${baseClass} input input-bordered focus:input-primary`;
+    return `${baseClass} border-gray-200 focus:ring-2 focus:ring-indigo-500 text-gray-900`;
   };
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-2xl">
-      <div className="bg-base-100 border border-base-200 rounded-2xl shadow-sm p-6 md:p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-base-content mb-2">
+      <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
+        <div className="text-center px-8 py-8 border-b border-gray-50">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             联系我们
           </h1>
-          <p className="text-base-content/70">
+          <p className="text-sm text-gray-500">
             如果您有任何建议、问题或合作意向，欢迎发送邮件与我联系。
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
           {/* 邮箱字段 */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-medium">您的邮箱</span>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-500 uppercase block">
+              您的邮箱 <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -147,24 +147,22 @@ export default function ContactClient() {
                 onBlur={handleBlur}
               />
               {errors.email && (
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-error">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-red-500">
                   <AlertCircle size={18} />
                 </div>
               )}
             </div>
             {errors.email && (
-              <label className="label py-1">
-                <span className="label-text-alt text-error">
-                  {errors.email}
-                </span>
-              </label>
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                {errors.email}
+              </p>
             )}
           </div>
 
           {/* 主题字段 */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-medium">主题</span>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-500 uppercase block">
+              主题 <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -177,60 +175,49 @@ export default function ContactClient() {
                 onBlur={handleBlur}
               />
               {errors.subject && (
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-error">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-red-500">
                   <AlertCircle size={18} />
                 </div>
               )}
             </div>
             {errors.subject && (
-              <label className="label py-1">
-                <span className="label-text-alt text-error">
-                  {errors.subject}
-                </span>
-              </label>
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                {errors.subject}
+              </p>
             )}
           </div>
 
           {/* 留言内容字段 */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-medium">留言内容</span>
-            </label>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline mb-1">
+              <label className="text-xs font-bold text-gray-500 uppercase block">
+                留言内容 <span className="text-red-500">*</span>
+              </label>
+              <span className={`text-[10px] font-medium ${formData.message.length > 1000 ? "text-red-500" : "text-gray-400"}`}>
+                {formData.message.length}/1000
+              </span>
+            </div>
             <textarea
               name="message"
               placeholder="请输入您想说的内容（至少10个字符）..."
-              className={`textarea textarea-bordered h-32 text-base transition-all ${
-                errors.message
-                  ? "textarea-error focus:textarea-error bg-error/5"
-                  : "focus:textarea-primary"
-              }`}
+              className={`${getInputClass("message")} h-32 resize-none`}
               value={formData.message}
               onChange={handleChange}
               onBlur={handleBlur}
             ></textarea>
-            <div className="flex justify-between items-start mt-1">
-              {errors.message ? (
-                <span className="label-text-alt text-error flex items-center gap-1">
-                  <AlertCircle size={14} /> {errors.message}
-                </span>
-              ) : (
-                <span></span>
-              )}
-              <span
-                className={`label-text-alt ${formData.message.length > 1000 ? "text-error" : "text-base-content/50"}`}
-              >
-                {formData.message.length}/1000
-              </span>
-            </div>
+            {errors.message && (
+              <p className="text-xs text-red-500 mt-1 font-medium flex items-center gap-1">
+                <AlertCircle size={14} /> {errors.message}
+              </p>
+            )}
           </div>
 
           {/* 提交按钮 */}
-          <div className="pt-2">
+          <div className="pt-6 border-t border-gray-50 flex flex-col items-center">
             <button
               type="submit"
-              // 按钮禁用条件：正在加载 OR 表单无效
               disabled={isLoading || !isFormValid}
-              className="btn btn-primary w-full text-lg disabled:bg-base-300 disabled:text-base-content/50 disabled:cursor-not-allowed"
+              className="w-full px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -245,8 +232,8 @@ export default function ContactClient() {
               )}
             </button>
             {!isFormValid && Object.keys(touched).length > 0 && (
-              <p className="text-center text-xs text-base-content/40 mt-2">
-                请完整填写所有字段后提交
+              <p className="text-center text-xs text-gray-400 mt-2 font-medium">
+                请完整填写所有必填字段后提交
               </p>
             )}
           </div>
