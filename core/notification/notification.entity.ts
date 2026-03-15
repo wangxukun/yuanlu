@@ -10,6 +10,8 @@ export interface NotificationEntity {
   isRead: boolean | null;
   type: string | null;
   targetUrl: string | null;
+  referenceId: string | null;
+  referenceType: string | null;
 }
 
 /**
@@ -25,6 +27,12 @@ export const NotificationType = {
   LIKE: "LIKE",
   /** 获得新成就 */
   ACHIEVEMENT: "ACHIEVEMENT",
+  /** 评论回复通知 */
+  REPLY: "REPLY",
+  /** 剧集更新通知 */
+  EPISODE_UPDATE: "EPISODE_UPDATE",
+  /** 学习提醒（如复习生词） */
+  STUDY: "STUDY",
 } as const;
 
 export type NotificationTypeValue =

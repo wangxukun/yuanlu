@@ -22,6 +22,7 @@ import { Prisma } from "@prisma/client";
 import { EditEpisodeResponse } from "@/app/types/podcast";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import prisma from "@/lib/prisma";
+import { notificationService } from "@/core/notification/notification.service";
 
 // [新增] 难度映射表：将用户配置的粗粒度等级映射为剧集的细粒度 CEFR 标准
 const LEVEL_MAPPING: Record<string, string[]> = {
@@ -77,6 +78,38 @@ export const episodeService = {
     data: Prisma.episodeUpdateInput,
   ): Promise<EditEpisodeResponse> {
     const updateEpisode = await episodeRepository.update(id, data);
+
+    // [新增] 检查剧集发布状态，触发播客更新通知
+    // Note: Prisma 动态 update 的 input 可能是 string 或其它包装对象，这里简单判断等于 'published'
+    if (data.status === "published" || (data.status as any)?.set === "published") {
+      // 查询关注该播客的所有用户
+      if (updateEpisode.podcastid) {
+        const favorites = await prisma.podcast_favorites.findMany({
+          where: { podcastid: updateEpisode.podcastid },
+          select: { userid: true },
+        });
+
+        const userIds = favorites
+          .map((f) => f.userid)
+          .filter((id): id is string => id !== null);
+
+        if (userIds.length > 0) {
+          // 为了不阻塞主流程，可以不 await 或 catch 错误
+          notificationService
+            .triggerEpisodePublishEvent(
+              userIds,
+              "远路 English Podcast", // 理想情况下需要连表查播客的 title
+              updateEpisode.title,
+              `/episode/${updateEpisode.episodeid}`, // 目标页面
+              updateEpisode.episodeid,
+            )
+            .catch((err) => {
+              console.error("[Notification Error] Failed to trigger episode publish event", err);
+            });
+        }
+      }
+    }
+
     return EpisodeMapper.toUpdateState(updateEpisode);
   },
 

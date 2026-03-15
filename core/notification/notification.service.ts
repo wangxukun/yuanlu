@@ -4,7 +4,7 @@
  */
 import { notificationRepository } from "./notification.repository";
 import { NotificationMapper, NotificationListDto } from "./notification.mapper";
-import { NotificationTypeValue } from "./notification.entity";
+import { NotificationTypeValue, NotificationType } from "./notification.entity";
 
 export const notificationService = {
   /**
@@ -56,7 +56,107 @@ export const notificationService = {
     notificationText: string;
     type?: NotificationTypeValue;
     targetUrl?: string;
+    referenceId?: string;
+    referenceType?: string;
   }): Promise<void> {
     await notificationRepository.create(data);
+  },
+
+  /**
+   * 触发评论回复通知
+   */
+  async triggerReplyNotification(
+    targetUserId: string,
+    replyUserName: string,
+    targetUrl: string,
+    commentId: string,
+  ): Promise<void> {
+    await this.createNotification({
+      userid: targetUserId,
+      type: NotificationType.REPLY,
+      notificationText: `用户 ${replyUserName} 回复了你的评论`,
+      targetUrl,
+      referenceId: commentId,
+      referenceType: "COMMENT",
+    });
+  },
+
+  /**
+   * 触发剧集发布通知（群发给所有收藏该播客的用户）
+   */
+  async triggerEpisodePublishEvent(
+    userIds: string[],
+    podcastTitle: string,
+    episodeTitle: string,
+    targetUrl: string,
+    episodeId: string,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+
+    const notifications = userIds.map((userid) => ({
+      userid,
+      type: NotificationType.EPISODE_UPDATE,
+      notificationText: `你关注的播客「${podcastTitle}」更新了新单集「${episodeTitle}」`,
+      targetUrl,
+      referenceId: episodeId,
+      referenceType: "EPISODE",
+    }));
+
+    await notificationRepository.createMany(notifications);
+  },
+
+  /**
+   * 触发系统全局通知（群发给指定用户或所有人）
+   */
+  async triggerSystemNotification(
+    userIds: string[],
+    message: string,
+    targetUrl?: string,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+
+    const notifications = userIds.map((userid) => ({
+      userid,
+      type: NotificationType.SYSTEM,
+      notificationText: message,
+      targetUrl,
+    }));
+
+    await notificationRepository.createMany(notifications);
+  },
+
+  /**
+   * 触发成就解锁通知
+   */
+  async triggerAchievementNotification(
+    userId: string,
+    achievementName: string,
+    targetUrl: string,
+    achievementId: string,
+  ): Promise<void> {
+    await this.createNotification({
+      userid: userId,
+      type: NotificationType.ACHIEVEMENT,
+      notificationText: `恭喜解锁新成就：「${achievementName}」！`,
+      targetUrl,
+      referenceId: achievementId,
+      referenceType: "ACHIEVEMENT",
+    });
+  },
+
+  /**
+   * 触发学习提醒（如复习生词）
+   */
+  async triggerStudyReminder(
+    userId: string,
+    message: string,
+    targetUrl: string,
+  ): Promise<void> {
+    await this.createNotification({
+      userid: userId,
+      type: NotificationType.STUDY,
+      notificationText: message,
+      targetUrl,
+    });
   },
 };

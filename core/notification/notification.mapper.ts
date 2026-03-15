@@ -10,6 +10,8 @@ export interface NotificationDto {
   isRead: boolean;
   type: string;
   targetUrl: string | null;
+  referenceId: string | null;
+  referenceType: string | null;
 }
 
 export interface NotificationListDto {
@@ -29,6 +31,8 @@ export const NotificationMapper = {
       isRead: notification.isRead ?? false,
       type: notification.type ?? "SYSTEM",
       targetUrl: notification.targetUrl,
+      referenceId: notification.referenceId,
+      referenceType: notification.referenceType,
     };
   },
 

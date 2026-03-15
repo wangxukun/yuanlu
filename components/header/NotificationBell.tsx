@@ -27,6 +27,9 @@ const TYPE_BADGE: Record<string, string> = {
   LIKE: "badge-warning",
   ACHIEVEMENT: "badge-success",
   SYSTEM: "badge-neutral",
+  REPLY: "badge-primary",
+  EPISODE_UPDATE: "badge-accent",
+  STUDY: "badge-secondary",
 };
 
 /** 通知类型对应的中文标签 */
@@ -35,6 +38,9 @@ const TYPE_LABEL: Record<string, string> = {
   LIKE: "点赞",
   ACHIEVEMENT: "成就",
   SYSTEM: "系统",
+  REPLY: "回复",
+  EPISODE_UPDATE: "更新",
+  STUDY: "学习",
 };
 
 export default function NotificationBell() {

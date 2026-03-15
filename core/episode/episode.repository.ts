@@ -122,7 +122,7 @@ export const episodeRepository = {
   async update(id: string, data: Prisma.episodeUpdateInput) {
     return prisma.episode.update({
       where: { episodeid: id },
-      select: { title: true, description: true },
+      select: { title: true, description: true, podcastid: true, episodeid: true },
       data,
     });
   },

@@ -53,8 +53,26 @@ export const notificationRepository = {
     notificationText: string;
     type?: string;
     targetUrl?: string;
+    referenceId?: string;
+    referenceType?: string;
   }) {
     return prisma.notifications.create({ data });
+  },
+
+  /**
+   * 批量创建多条通知（例如系统公告或剧集更新）
+   */
+  async createMany(
+    data: {
+      userid: string;
+      notificationText: string;
+      type?: string;
+      targetUrl?: string;
+      referenceId?: string;
+      referenceType?: string;
+    }[],
+  ) {
+    return prisma.notifications.createMany({ data });
   },
 
   /**
