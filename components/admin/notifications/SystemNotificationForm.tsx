@@ -57,8 +57,10 @@ export default function SystemNotificationForm() {
       if (targetType === "specific") {
         setUserIdsInput("");
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "发生未知错误";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -88,7 +90,9 @@ export default function SystemNotificationForm() {
                 checked={targetType === "all"}
                 onChange={() => setTargetType("all")}
               />
-              <span className="text-sm font-medium text-gray-700">所有人 (全站广播)</span>
+              <span className="text-sm font-medium text-gray-700">
+                所有人 (全站广播)
+              </span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <input
@@ -98,7 +102,9 @@ export default function SystemNotificationForm() {
                 checked={targetType === "specific"}
                 onChange={() => setTargetType("specific")}
               />
-              <span className="text-sm font-medium text-gray-700">指定用户</span>
+              <span className="text-sm font-medium text-gray-700">
+                指定用户
+              </span>
             </label>
           </div>
         </div>
@@ -107,8 +113,12 @@ export default function SystemNotificationForm() {
         {targetType === "specific" && (
           <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
             <label className="flex justify-between items-baseline">
-              <span className="text-xs font-bold text-gray-500 uppercase">指定用户 IDs</span>
-              <span className="text-[10px] text-gray-400 font-medium">使用英文逗号分隔</span>
+              <span className="text-xs font-bold text-gray-500 uppercase">
+                指定用户 IDs
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium">
+                使用英文逗号分隔
+              </span>
             </label>
             <textarea
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-mono text-sm"

@@ -45,7 +45,9 @@ export async function POST(req: Request) {
     }
 
     if (targetUserIds.length > 0) {
-      console.log(`[Admin Notification] Attempting to send notifications to ${targetUserIds.length} users.`);
+      console.log(
+        `[Admin Notification] Attempting to send notifications to ${targetUserIds.length} users.`,
+      );
       // 这里的 P2003 错误可能是因为某些用户 ID 已经不存在了，或者 specific 模式下输入了错误 ID
       try {
         await notificationService.triggerSystemNotification(
@@ -53,21 +55,31 @@ export async function POST(req: Request) {
           message,
           targetUrl || undefined,
         );
-      } catch (err: any) {
-        if (err.code === 'P2003') {
-          console.error("[Admin Notification] FK Violation (P2003). Checking if all target user IDs exist...");
+      } catch (err: unknown) {
+        if (
+          err &&
+          typeof err === "object" &&
+          "code" in err &&
+          err.code === "P2003"
+        ) {
+          console.error(
+            "[Admin Notification] FK Violation (P2003). Checking if all target user IDs exist...",
+          );
           // 进行更细致的排查：找出哪些 ID 是无效的
           const existingUsers = await prisma.user.findMany({
             where: { userid: { in: targetUserIds } },
-            select: { userid: true }
+            select: { userid: true },
           });
-          const existingIds = new Set(existingUsers.map(u => u.userid));
-          const invalidIds = targetUserIds.filter(id => !existingIds.has(id));
-          
+          const existingIds = new Set(existingUsers.map((u) => u.userid));
+          const invalidIds = targetUserIds.filter((id) => !existingIds.has(id));
+
           if (invalidIds.length > 0) {
             return NextResponse.json(
-              { error: `Foreign key violation: ${invalidIds.length} IDs are invalid.`, invalidIds: invalidIds.slice(0, 10) },
-              { status: 400 }
+              {
+                error: `Foreign key violation: ${invalidIds.length} IDs are invalid.`,
+                invalidIds: invalidIds.slice(0, 10),
+              },
+              { status: 400 },
             );
           }
         }
@@ -79,11 +91,10 @@ export async function POST(req: Request) {
       success: true,
       message: `Successfully sent to ${targetUserIds.length} users.`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
     console.error("[POST /api/admin/notification/send] Full Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
