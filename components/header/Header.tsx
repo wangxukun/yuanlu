@@ -1,9 +1,7 @@
 // components/header/Header.tsx
 "use client";
 import LoginHomeBtn from "@/components/auth/login-home-btn";
-import Player from "@/components/player/Player";
-import PlayControls from "@/components/controls/PlayControls";
-import SoundControls from "@/components/controls/SoundControls";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bars3Icon } from "@heroicons/react/24/outline";
@@ -70,22 +68,11 @@ export default function Header() {
           scrolled ? "bg-base-100/80 backdrop-blur-lg shadow-sm" : "bg-base-100"
         }`}
       >
-        {/* 左区域：播放控制 */}
-        <div className="flex-none w-[180px] flex items-center justify-start">
-          <PlayControls />
-        </div>
+        {/* 中间区域（由于移除了之前的播放器相关组件，这里可根据需要留白或作为其他用途，目前保留为空） */}
+        <div className="flex-1 max-w-3xl px-4 flex justify-center"></div>
 
-        {/* 中间区域：进度条与信息 */}
-        <div className="flex-1 max-w-3xl px-4 flex justify-center">
-          <Player />
-        </div>
-
-        {/* 右区域：音量与设置 */}
+        {/* 右区域：设置等 */}
         <div className="flex-none w-[300px] flex items-center justify-end gap-4">
-          <div className="hidden xl:block">
-            <SoundControls />
-          </div>
-
           <div className="h-6 w-px bg-base-300 mx-2"></div>
 
           <div className="flex items-center gap-2">
