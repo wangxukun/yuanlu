@@ -81,10 +81,9 @@ export const episodeService = {
     // 检查状态是否为已发布
     const isPublished =
       data.status === "published" ||
-      (typeof data.status === "object" &&
-        data.status !== null &&
-        "set" in data.status &&
-        data.status.set === "published");
+      (data.status &&
+        typeof data.status === "object" &&
+        (data.status as unknown as { set?: string }).set === "published");
 
     if (isPublished) {
       // 查询关注该播客的所有用户
@@ -136,10 +135,9 @@ export const episodeService = {
     // 检查状态是否为已发布
     const isPublished =
       data.status === "published" ||
-      (typeof data.status === "object" &&
-        data.status !== null &&
-        "set" in data.status &&
-        data.status.set === "published");
+      (data.status &&
+        typeof data.status === "object" &&
+        (data.status as unknown as { set?: string }).set === "published");
 
     if (isPublished) {
       // 查询关注该播客的所有用户
