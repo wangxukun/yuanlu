@@ -7,7 +7,6 @@ import {
   Users,
   Shield,
   UserX,
-  CheckCircle,
   Clock,
   Mail,
   Edit3,
@@ -153,6 +152,7 @@ export default function UserManagementClient({
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "从未";
     return new Date(dateStr).toLocaleDateString("zh-CN", {
+      year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -256,12 +256,12 @@ export default function UserManagementClient({
             {/* 表头 */}
             <thead>
               <tr className="bg-base-200/50 text-base-content/70">
-                <th className="px-6 py-4">用户</th>
+                <th className="px-6 py-4">用户昵称</th>
                 <th className="px-6 py-4">用户ID</th>
                 <th className="px-6 py-4">角色</th>
                 <th className="px-6 py-4">学习进度</th>
-                <th className="px-6 py-4">验证状态</th>
                 <th className="px-6 py-4">最后活动</th>
+                <th className="px-6 py-4">创建日期</th>
                 <th className="px-6 py-4 text-right">操作</th>
               </tr>
             </thead>
@@ -326,17 +326,6 @@ export default function UserManagementClient({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {user.emailVerified ? (
-                        <div className="flex items-center text-success text-xs font-medium gap-1">
-                          <CheckCircle size={14} /> 已验证
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-warning text-xs font-medium gap-1">
-                          <Clock size={14} /> 待验证
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
                       <div className="text-sm">
                         {user.lastActiveAt ? (
                           <>{formatDate(user.lastActiveAt)}</>
@@ -344,6 +333,9 @@ export default function UserManagementClient({
                           <span className="opacity-50">从未</span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">{formatDate(user.createAt)}</div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="join">
