@@ -323,34 +323,29 @@ export async function createEpisode(
     const tagsConnect = generateTagConnectOrCreate(tags);
 
     // 4. 写入数据库
-    await prisma.episode.create({
-      data: {
-        title,
-        description,
-        audioFileName,
-        audioUrl,
-        coverFileName,
-        coverUrl,
-        subtitleEnFileName,
-        subtitleZhFileName,
-        subtitleEnUrl,
-        subtitleZhUrl,
-        podcastid: podcastId,
-        isExclusive,
-        publishAt: new Date(publishDate),
-        duration: audioDuration,
-        status: publishStatus,
-        difficulty: difficulty || "General",
-        uploaderid: uploaderId,
-        tags: tagsConnect
-          ? {
-              connectOrCreate: tagsConnect,
-            }
-          : undefined,
-      },
-      include: {
-        tags: true, // 添加此选项以返回关联的标签
-      },
+    await episodeService.create({
+      title,
+      description,
+      audioFileName,
+      audioUrl,
+      coverFileName,
+      coverUrl,
+      subtitleEnFileName,
+      subtitleZhFileName,
+      subtitleEnUrl,
+      subtitleZhUrl,
+      podcastid: podcastId,
+      isExclusive,
+      publishAt: new Date(publishDate),
+      duration: audioDuration,
+      status: publishStatus,
+      difficulty: difficulty || "General",
+      uploaderid: uploaderId,
+      tags: tagsConnect
+        ? {
+            connectOrCreate: tagsConnect,
+          }
+        : undefined,
     });
 
     console.log("Server Action: 创建剧集成功:");

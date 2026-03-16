@@ -73,21 +73,32 @@ export const episodeService = {
     return EpisodeMapper.toEditItem(episode);
   },
 
-  async update(
-    id: string,
-    data: Prisma.episodeUpdateInput,
-  ): Promise<EditEpisodeResponse> {
-    const updateEpisode = await episodeRepository.update(id, data);
+  async create(
+    data: Prisma.episodeUncheckedCreateInput | Prisma.episodeCreateInput,
+  ) {
+    const createEpisode = await episodeRepository.create(data);
 
-    // [新增] 检查剧集发布状态，触发播客更新通知
-    // Note: Prisma 动态 update 的 input 可能是 string 或其它包装对象，这里简单判断等于 'published'
-    if (data.status === "published" || (data.status as any)?.set === "published") {
+    // 检查状态是否为已发布
+    const isPublished =
+      data.status === "published" ||
+      (typeof data.status === "object" &&
+        data.status !== null &&
+        "set" in data.status &&
+        data.status.set === "published");
+
+    if (isPublished) {
       // 查询关注该播客的所有用户
-      if (updateEpisode.podcastid) {
-        const favorites = await prisma.podcast_favorites.findMany({
-          where: { podcastid: updateEpisode.podcastid },
-          select: { userid: true },
-        });
+      if (createEpisode.podcastid) {
+        const [favorites, podcast] = await Promise.all([
+          prisma.podcast_favorites.findMany({
+            where: { podcastid: createEpisode.podcastid },
+            select: { userid: true },
+          }),
+          prisma.podcast.findUnique({
+            where: { podcastid: createEpisode.podcastid },
+            select: { title: true },
+          }),
+        ]);
 
         const userIds = favorites
           .map((f) => f.userid)
@@ -98,13 +109,71 @@ export const episodeService = {
           notificationService
             .triggerEpisodePublishEvent(
               userIds,
-              "远路 English Podcast", // 理想情况下需要连表查播客的 title
+              podcast?.title || "远路 English Podcast",
+              createEpisode.title,
+              `/episode/${createEpisode.episodeid}`, // 目标页面
+              createEpisode.episodeid,
+            )
+            .catch((err) => {
+              console.error(
+                "[Notification Error] Failed to trigger episode publish event",
+                err,
+              );
+            });
+        }
+      }
+    }
+
+    return createEpisode;
+  },
+
+  async update(
+    id: string,
+    data: Prisma.episodeUpdateInput,
+  ): Promise<EditEpisodeResponse> {
+    const updateEpisode = await episodeRepository.update(id, data);
+
+    // 检查状态是否为已发布
+    const isPublished =
+      data.status === "published" ||
+      (typeof data.status === "object" &&
+        data.status !== null &&
+        "set" in data.status &&
+        data.status.set === "published");
+
+    if (isPublished) {
+      // 查询关注该播客的所有用户
+      if (updateEpisode.podcastid) {
+        const [favorites, podcast] = await Promise.all([
+          prisma.podcast_favorites.findMany({
+            where: { podcastid: updateEpisode.podcastid },
+            select: { userid: true },
+          }),
+          prisma.podcast.findUnique({
+            where: { podcastid: updateEpisode.podcastid },
+            select: { title: true },
+          }),
+        ]);
+
+        const userIds = favorites
+          .map((f) => f.userid)
+          .filter((id): id is string => id !== null);
+
+        if (userIds.length > 0) {
+          // 为了不阻塞主流程，可以不 await 或 catch 错误
+          notificationService
+            .triggerEpisodePublishEvent(
+              userIds,
+              podcast?.title || "远路 English Podcast",
               updateEpisode.title,
               `/episode/${updateEpisode.episodeid}`, // 目标页面
               updateEpisode.episodeid,
             )
             .catch((err) => {
-              console.error("[Notification Error] Failed to trigger episode publish event", err);
+              console.error(
+                "[Notification Error] Failed to trigger episode publish event",
+                err,
+              );
             });
         }
       }

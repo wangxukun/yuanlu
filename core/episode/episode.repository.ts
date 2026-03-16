@@ -112,9 +112,10 @@ export const episodeRepository = {
     })) as unknown as Episode;
   },
 
-  async create(data: Prisma.episodeCreateInput) {
+  async create(
+    data: Prisma.episodeUncheckedCreateInput | Prisma.episodeCreateInput,
+  ) {
     return prisma.episode.create({
-      omit: { episodeid: true },
       data,
     });
   },
@@ -122,7 +123,12 @@ export const episodeRepository = {
   async update(id: string, data: Prisma.episodeUpdateInput) {
     return prisma.episode.update({
       where: { episodeid: id },
-      select: { title: true, description: true, podcastid: true, episodeid: true },
+      select: {
+        title: true,
+        description: true,
+        podcastid: true,
+        episodeid: true,
+      },
       data,
     });
   },

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateTagConnectOrCreate } from "@/lib/tools";
+import { episodeService } from "@/core/episode/episode.service";
 
 export async function POST(request: Request) {
   try {
@@ -81,34 +81,29 @@ export async function POST(request: Request) {
     const tagsConnect = generateTagConnectOrCreate(tags);
 
     // 4. 写入数据库
-    const episode = await prisma.episode.create({
-      data: {
-        title: title,
-        description: description,
-        audioFileName: audioFileName,
-        audioUrl: audioUrl,
-        coverFileName: coverFileName,
-        coverUrl: coverUrl,
-        subtitleEnFileName: subtitleEnFileName,
-        subtitleZhFileName: subtitleZhFileName,
-        subtitleEnUrl: subtitleEnUrl,
-        subtitleZhUrl: subtitleZhUrl,
-        podcastid: podcastId,
-        isExclusive: isExclusive,
-        publishAt: new Date(publishDate),
-        duration: parseInt(audioDuration, 10),
-        status: publishStatus,
-        difficulty: difficulty || "General",
-        uploaderid: uploaderId,
-        tags: tagsConnect
-          ? {
-              connectOrCreate: tagsConnect,
-            }
-          : undefined,
-      },
-      include: {
-        tags: true, // 添加此选项以返回关联的标签
-      },
+    const episode = await episodeService.create({
+      title: title,
+      description: description,
+      audioFileName: audioFileName,
+      audioUrl: audioUrl,
+      coverFileName: coverFileName,
+      coverUrl: coverUrl,
+      subtitleEnFileName: subtitleEnFileName,
+      subtitleZhFileName: subtitleZhFileName,
+      subtitleEnUrl: subtitleEnUrl,
+      subtitleZhUrl: subtitleZhUrl,
+      podcastid: podcastId,
+      isExclusive: isExclusive,
+      publishAt: new Date(publishDate),
+      duration: parseInt(audioDuration, 10),
+      status: publishStatus,
+      difficulty: difficulty || "General",
+      uploaderid: uploaderId,
+      tags: tagsConnect
+        ? {
+            connectOrCreate: tagsConnect,
+          }
+        : undefined,
     });
     if (!episode) {
       return NextResponse.json({
