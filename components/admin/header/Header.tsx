@@ -3,6 +3,9 @@
 import Breadcrumbs from "@/components/admin/breadcrumbs";
 import React from "react";
 import { usePathname } from "next/navigation";
+import { Bars3Icon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import PhoneAcmeLogo from "@/components/phone-acme-logo";
 
 export default function Header() {
   const pathname = usePathname();
@@ -87,6 +90,14 @@ export default function Header() {
             });
           }
           break;
+
+        case "notifications":
+          breadcrumbs.push({ label: "通知管理", href: "/admin/notifications" });
+          break;
+
+        case "logs":
+          breadcrumbs.push({ label: "日志管理", href: "/admin/logs" });
+          break;
       }
     }
 
@@ -112,12 +123,26 @@ export default function Header() {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div>
-      {/* 桌面浏览器下Header */}
-      <div className="hidden sm:block fixed h-16 top-0 lg:left-[260px] lg:w-[calc(100%-260px)] shadow-xs border-b border-base-300 bg-base-100 z-50">
-        <div className="flex items-center h-full pl-6 pt-6">
-          {breadcrumbs.length > 0 && <Breadcrumbs breadcrumbs={breadcrumbs} />}
-        </div>
+    <div className="shrink-0 sticky top-0 z-30 flex h-16 w-full items-center gap-4 border-b border-base-300 bg-base-100/95 backdrop-blur px-4 shadow-sm sm:px-6">
+      {/* 汉堡按钮（仅在小于 lg 的屏幕显示） */}
+      <label
+        htmlFor="admin-drawer"
+        aria-label="open sidebar"
+        className="btn btn-square btn-ghost btn-sm drawer-button lg:hidden"
+      >
+        <Bars3Icon className="h-6 w-6" />
+      </label>
+
+      {/* 移动端 Logo */}
+      <div className="lg:hidden flex items-center shrink-0 pr-2">
+        <Link href="/" title="返回首页">
+          <PhoneAcmeLogo />
+        </Link>
+      </div>
+
+      {/* 面包屑区域 */}
+      <div className="flex-1 flex items-center h-full overflow-x-auto whitespace-nowrap scrollbar-hide">
+        {breadcrumbs.length > 0 && <Breadcrumbs breadcrumbs={breadcrumbs} />}
       </div>
     </div>
   );

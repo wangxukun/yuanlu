@@ -26,15 +26,13 @@ export default async function Page() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <CardWrapper />
       </div>
-      <div className="bg-gray-50 rounded-xl p-6 w-full max-w-7xl mx-auto mt-40">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Podcasts</h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Create a new podcast or manage existing podcasts.
-          </p>
+      <div className="bg-base-100 rounded-xl p-6 w-full max-w-7xl mx-auto mt-10 lg:mt-40 shadow-sm border border-base-200">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center">
+          <h1 className="text-4xl font-bold mb-4">远路播客后台管理系统</h1>
+          <p className="text-lg text-gray-600 mb-8">创建或管理一档播客</p>
           <h2 className="text-lg font-bold text-slate-500">
             欢迎，
-            {session.user?.email?.split("@")[0]}
+            {session.user?.nickname}
           </h2>
         </div>
       </div>

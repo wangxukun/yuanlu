@@ -12,9 +12,9 @@ export default async function SideNav() {
   }
 
   return (
-    <div className="flex h-full flex-col px-3 py-4 md:px-2">
+    <div className="flex h-full flex-col px-4 py-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <Link
-        className="mb-2 flex h-32 flex-col items-center justify-center gap-5 rounded-md bg-gray-50 p-4 md:h-40"
+        className="mb-6 flex h-32 flex-col items-center justify-center gap-5 rounded-xl bg-base-200/50 p-4 shadow-sm transition-colors hover:bg-base-200"
         href="/"
       >
         <div className="w-32 text-gray-600 md:w-48">
@@ -23,12 +23,13 @@ export default async function SideNav() {
         <div className="text-xs font-bold">
           欢迎，
           {/*{session.user.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2") || ""}*/}
-          {session.user?.email?.split("@")[0]}
+          {/* {session.user?.email?.split("@")[0]} */}
+          {session.user?.nickname}
         </div>
       </Link>
-      <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
+      <div className="flex grow flex-col space-y-2">
         <NavLinks />
-        <div className="hidden h-auto w-full grow rounded-md bg-gray-50 md:block"></div>
+        <div className="h-auto w-full grow rounded-md"></div>
 
         <LoginBtn />
       </div>

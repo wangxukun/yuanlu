@@ -179,6 +179,36 @@ export const statsService = {
     };
   },
 
+  /**
+   * 获取全局内容统计数据（如：总播客数、总音频数）
+   */
+  async getGlobalContentStats() {
+    const [podcastCount, episodeCount] = await Promise.all([
+      prisma.podcast.count(),
+      prisma.episode.count(),
+    ]);
+
+    return {
+      podcastCount,
+      episodeCount,
+    };
+  },
+
+  /**
+   * 获取全局用户统计数据（如：总注册人数、付费会员数）
+   */
+  async getGlobalUserStats() {
+    const [totalUsers, vipUsers] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: "PREMIUM" } }),
+    ]);
+
+    return {
+      totalUsers,
+      vipUsers,
+    };
+  },
+
   // --- 私有辅助方法 (Private Helpers) ---
 
   async calculateStreak(userId: string): Promise<number> {

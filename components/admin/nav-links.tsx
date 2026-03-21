@@ -2,8 +2,9 @@
 
 import {
   UserGroupIcon,
-  HomeIcon,
-  DocumentDuplicateIcon,
+  Squares2X2Icon,
+  RectangleStackIcon,
+  MicrophoneIcon,
   TagIcon,
   BellAlertIcon,
 } from "@heroicons/react/24/outline";
@@ -15,16 +16,16 @@ import { useEffect, useRef } from "react";
 import { ClipboardList } from "lucide-react";
 
 const links = [
-  { name: "信息概况", href: "/admin", icon: HomeIcon },
+  { name: "信息概况", href: "/admin", icon: Squares2X2Icon },
   {
     name: "合集管理",
     href: "/admin/podcasts",
-    icon: DocumentDuplicateIcon,
+    icon: RectangleStackIcon,
   },
   {
     name: "音频管理",
     href: "/admin/episodes",
-    icon: DocumentDuplicateIcon,
+    icon: MicrophoneIcon,
   },
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
@@ -46,6 +47,10 @@ export default function NavLinks() {
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string,
   ) => {
+    // 关闭抽屉（移动端）
+    const drawer = document.getElementById("admin-drawer") as HTMLInputElement;
+    if (drawer) drawer.checked = false;
+
     if (needConfirm) {
       e.preventDefault(); // 阻止 Link 默认行为
       pendingNavigation.current = href;
@@ -92,15 +97,17 @@ export default function NavLinks() {
             href={link.href}
             onClick={(e) => handleNavClick(e, link.href)}
             className={clsx(
-              "flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3",
+              "flex h-[48px] items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary",
               {
-                "bg-sky-100 text-blue-600":
+                "bg-primary/10 text-primary":
                   extractPathSegment(pathname) === link.href,
+                "text-base-content/70":
+                  extractPathSegment(pathname) !== link.href,
               },
             )}
           >
             <LinkIcon className="w-6" />
-            <p className="hidden md:block">{link.name}</p>
+            <p className="block">{link.name}</p>
           </Link>
         );
       })}

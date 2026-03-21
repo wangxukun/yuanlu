@@ -11,25 +11,25 @@ export default function LoginBtn() {
   if (session) {
     return (
       <button
-        className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
+        className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-error/10 hover:text-error text-base-content/70"
         onClick={async () => {
           await signOut({ redirect: false });
           router.push("/home");
         }}
       >
         <PowerIcon className="w-6" />
-        <div className="hidden md:block">退出</div>
+        <p className="block">退出</p>
       </button>
     );
   }
 
   return (
     <button
-      className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
+      className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary text-base-content/70"
       onClick={() => router.push("/home")}
     >
       <PowerIcon className="w-6" />
-      <div className="hidden md:block">登录</div>
+      <p className="block">登录</p>
     </button>
   );
 }

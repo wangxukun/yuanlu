@@ -3,30 +3,38 @@ import {
   ClockIcon,
   UserGroupIcon,
   InboxIcon,
+  MicrophoneIcon,
 } from "@heroicons/react/24/outline";
 import { lusitana } from "@/components/fonts";
 import { fetchOnlineUsers } from "@/lib/data";
+import { statsService } from "@/core/stats/stats.service";
 
 const iconMap = {
   onlineUser: BanknotesIcon,
   registrationUser: UserGroupIcon,
   vip: ClockIcon,
   audios: InboxIcon,
+  podcast: MicrophoneIcon,
 };
 
 export default async function CardWrapper() {
-  const { numberOfOnlineUsers } = await fetchOnlineUsers();
+  const [
+    { numberOfOnlineUsers },
+    { podcastCount, episodeCount },
+    { totalUsers, vipUsers },
+  ] = await Promise.all([
+    fetchOnlineUsers(),
+    statsService.getGlobalContentStats(),
+    statsService.getGlobalUserStats(),
+  ]);
 
   return (
     <>
+      <Card title="播客合计" value={podcastCount} type="podcast" />
+      <Card title="音频合计" value={episodeCount} type="audios" />
       <Card title="在线人数" value={numberOfOnlineUsers} type="onlineUser" />
-      <Card
-        title="注册人数"
-        value={numberOfOnlineUsers}
-        type="registrationUser"
-      />
-      <Card title="会员人数" value={numberOfOnlineUsers} type="vip" />
-      <Card title="音频合计" value={numberOfOnlineUsers} type="audios" />
+      <Card title="注册人数" value={totalUsers} type="registrationUser" />
+      <Card title="会员人数" value={vipUsers} type="vip" />
     </>
   );
 }
@@ -38,7 +46,7 @@ export function Card({
 }: {
   title: string;
   value: number | string;
-  type: "onlineUser" | "registrationUser" | "vip" | "audios";
+  type: "onlineUser" | "registrationUser" | "vip" | "audios" | "podcast";
 }) {
   const Icon = iconMap[type];
 

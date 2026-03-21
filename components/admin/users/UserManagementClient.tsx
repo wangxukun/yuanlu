@@ -410,7 +410,7 @@ export default function UserManagementClient({
         </div>
 
         {/* 分页 */}
-        <div className="bg-base-100 px-6 py-4 border-t border-base-200 flex items-center justify-between">
+        <div className="bg-base-100 p-4 sm:px-6 sm:py-4 border-t border-base-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-xs text-base-content/60">
             显示{" "}
             <span className="font-bold">

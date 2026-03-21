@@ -14,7 +14,7 @@ export default function AcmeLogo() {
     <div>
       <div className="flex items-center space-x-4">
         <Image src={logoSrc} alt="远路播客 Logo" width={80} height={80} />
-        <p className="text-xl font-bold italic">远路播客</p>
+        <p className="hidden lg:block text-xl font-bold italic">远路播客</p>
       </div>
     </div>
   );

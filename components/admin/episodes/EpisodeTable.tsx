@@ -254,7 +254,7 @@ export default function EpisodeTable({
 
         {/* Pagination */}
         {episodeManagementItems.length > 0 && (
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <div className="p-4 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-sm text-slate-500">
               显示{" "}
               <span className="font-medium text-slate-900">

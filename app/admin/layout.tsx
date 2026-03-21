@@ -31,16 +31,26 @@ export default function RootLayout({
         <body className={lusitana.className}>
           <Toaster richColors />
           <LeaveConfirmProvider>
-            <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
-              <div className="w-full flex-none md:w-64">
-                <SideNav />
-              </div>
-              {/* 右侧内容区域 */}
-              <div className="relative flex flex-1 flex-col h-screen pt-[58px]">
-                {/* 顶部面包 */}
+            <div className="drawer lg:drawer-open h-screen overflow-hidden">
+              <input
+                id="admin-drawer"
+                type="checkbox"
+                className="drawer-toggle"
+              />
+              <div className="drawer-content flex flex-1 flex-col h-screen overflow-hidden relative">
                 <Header />
-                <div className="grow p-6 md:overflow-y-auto md:p-12">
+                <div className="grow p-4 md:p-6 lg:p-12 overflow-y-auto">
                   {children}
+                </div>
+              </div>
+              <div className="drawer-side z-[100] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <label
+                  htmlFor="admin-drawer"
+                  aria-label="close sidebar"
+                  className="drawer-overlay"
+                ></label>
+                <div className="w-[260px] h-full bg-base-100 border-r border-base-200">
+                  <SideNav />
                 </div>
               </div>
             </div>

@@ -13,8 +13,8 @@ export default function Breadcrumbs({
   breadcrumbs: Breadcrumb[];
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-6 block">
-      <ol className="flex text-xl md:text-2xl">
+    <nav aria-label="Breadcrumb" className="flex items-center">
+      <ol className="flex items-center text-xl md:text-2xl">
         {breadcrumbs.map((breadcrumb, index) => (
           <li
             key={breadcrumb.href}

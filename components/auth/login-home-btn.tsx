@@ -13,6 +13,7 @@ import {
   QuestionMarkCircleIcon,
   ChevronDownIcon,
   UserIcon,
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/outline";
 
 export default function LoginHomeBtn() {
@@ -123,6 +124,17 @@ export default function LoginHomeBtn() {
 
           {/* 菜单项 */}
           <div className="space-y-1 p-1">
+            {user.role === "ADMIN" && (
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
+              >
+                <ComputerDesktopIcon className="w-5 h-5" />
+                <span>控制台</span>
+              </Link>
+            )}
+
             <Link
               href="/auth/personal-center"
               onClick={() => setIsOpen(false)}

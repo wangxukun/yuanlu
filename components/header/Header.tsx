@@ -6,13 +6,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
-import type { Session } from "next-auth";
 import ThemeSwitcher from "@/components/theme-switcher";
 import PhoneAcmeLogo from "@/components/phone-acme-logo";
 import NotificationBell from "@/components/header/NotificationBell";
 
 export default function Header() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -78,15 +77,6 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <ThemeSwitcher />
             {status === "authenticated" && <NotificationBell />}
-
-            {status === "authenticated" &&
-              (session as Session).user.role === "ADMIN" && (
-                <Link href="/admin">
-                  <button className="btn btn-xs btn-ghost whitespace-nowrap">
-                    控制台
-                  </button>
-                </Link>
-              )}
             <LoginHomeBtn />
           </div>
         </div>
