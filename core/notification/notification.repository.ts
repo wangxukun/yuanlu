@@ -83,4 +83,26 @@ export const notificationRepository = {
       where: { notificationid: notificationId },
     });
   },
+
+  /**
+   * 删除单条通知
+   */
+  async delete(notificationId: number) {
+    return prisma.notifications.delete({
+      where: { notificationid: notificationId },
+    });
+  },
+
+  /**
+   * 批量删除指定用户的通知（提供 ids 删指定，不提供删所有）
+   */
+  async deleteMany(userId: string, notificationIds?: number[]) {
+    const whereClause: Prisma.notificationsWhereInput = { userid: userId };
+    if (notificationIds && notificationIds.length > 0) {
+      whereClause.notificationid = { in: notificationIds };
+    }
+    return prisma.notifications.deleteMany({
+      where: whereClause,
+    });
+  },
 };

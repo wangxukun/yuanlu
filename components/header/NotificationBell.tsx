@@ -146,14 +146,18 @@ export default function NotificationBell() {
         <div className="fixed inset-x-4 top-[calc(var(--header-height-mobile)+0.5rem)] mx-auto w-auto max-w-sm z-[100] rounded-2xl shadow-2xl border border-base-300 bg-base-100 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none">
           {/* 面板头部 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-base-200">
-            <span className="font-semibold text-sm text-base-content">
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="font-semibold text-sm text-base-content hover:text-primary transition-colors flex items-center"
+            >
               通知
               {unreadCount > 0 && (
                 <span className="ml-2 badge badge-primary badge-sm">
                   {unreadCount} 条未读
                 </span>
               )}
-            </span>
+            </Link>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}

@@ -7,7 +7,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   UserCircleIcon,
-  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   CreditCardIcon,
   QuestionMarkCircleIcon,
@@ -142,15 +141,6 @@ export default function LoginHomeBtn() {
             >
               <UserCircleIcon className="w-5 h-5" />
               <span>个人中心</span>
-            </Link>
-
-            <Link
-              href="/auth/personal-center" // 暂时指向个人中心
-              onClick={() => setIsOpen(false)}
-              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
-            >
-              <Cog6ToothIcon className="w-5 h-5" />
-              <span>设置</span>
             </Link>
 
             <button

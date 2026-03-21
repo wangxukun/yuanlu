@@ -48,6 +48,42 @@ export const notificationService = {
   },
 
   /**
+   * 删除单条通知
+   * 包含权限校验：只有所有者可以删除
+   */
+  async deleteNotification(
+    notificationId: number,
+    userId: string,
+  ): Promise<{ success: boolean }> {
+    const notification = await notificationRepository.findById(notificationId);
+
+    if (!notification) {
+      throw new Error("NOTIFICATION_NOT_FOUND");
+    }
+    if (notification.userid !== userId) {
+      throw new Error("FORBIDDEN");
+    }
+
+    await notificationRepository.delete(notificationId);
+    return { success: true };
+  },
+
+  /**
+   * 批量删除当前用户的通知
+   */
+  async deleteMultipleNotifications(
+    userId: string,
+    notificationIds?: number[],
+  ): Promise<{ success: boolean; count: number }> {
+    // 权限校验由 Repository 中的 where: { userid: userId } 保证
+    const result = await notificationRepository.deleteMany(
+      userId,
+      notificationIds,
+    );
+    return { success: true, count: result.count };
+  },
+
+  /**
    * 创建一条新通知
    * 供其他 Service（如 commentService）在触发事件时调用
    */
@@ -94,7 +130,7 @@ export const notificationService = {
     if (userIds.length === 0) return;
 
     const notifications = userIds
-      .filter(id => !!id)
+      .filter((id) => !!id)
       .map((userid) => ({
         userid,
         type: NotificationType.EPISODE_UPDATE,
@@ -119,10 +155,12 @@ export const notificationService = {
   ): Promise<void> {
     if (userIds.length === 0) return;
 
-    console.log(`[NotificationService] Triggering system notification for ${userIds.length} users. Message preview: ${message.slice(0, 20)}...`);
-    
+    console.log(
+      `[NotificationService] Triggering system notification for ${userIds.length} users. Message preview: ${message.slice(0, 20)}...`,
+    );
+
     const notifications = userIds
-      .filter(id => !!id)
+      .filter((id) => !!id)
       .map((userid) => ({
         userid,
         type: NotificationType.SYSTEM,
