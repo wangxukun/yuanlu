@@ -61,11 +61,17 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // 初始加载 + 轮询（每 60 秒刷新一次）
+  // 初始加载 + 轮询（每 60 秒刷新一次）及全局事件监听
   useEffect(() => {
     fetchNotifications();
     const timer = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(timer);
+
+    window.addEventListener("notifications_updated", fetchNotifications);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("notifications_updated", fetchNotifications);
+    };
   }, [fetchNotifications]);
 
   // 点击外部关闭下拉
@@ -97,6 +103,7 @@ export default function NotificationBell() {
       const unreadCount = updated.filter((n) => !n.isRead).length;
       return { unreadCount, notifications: updated };
     });
+    window.dispatchEvent(new Event("notifications_updated"));
   };
 
   /** 全部标记已读 */
@@ -115,6 +122,7 @@ export default function NotificationBell() {
       };
     });
     setLoading(false);
+    window.dispatchEvent(new Event("notifications_updated"));
   };
 
   const unreadCount = data?.unreadCount ?? 0;

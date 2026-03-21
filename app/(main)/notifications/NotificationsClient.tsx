@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { TrashIcon, BellIcon } from "@heroicons/react/24/outline";
@@ -50,6 +50,47 @@ export default function NotificationsClient({
     (n) => activeTab === "ALL" || n.type === activeTab,
   );
 
+  useEffect(() => {
+    const handleUpdate = async () => {
+      try {
+        const res = await fetch("/api/notification/list");
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (e) {
+        console.error("Failed to fetch notifications on update", e);
+      }
+    };
+    window.addEventListener("notifications_updated", handleUpdate);
+    return () =>
+      window.removeEventListener("notifications_updated", handleUpdate);
+  }, []);
+
+  const handleRead = async (id: number) => {
+    const item = data.notifications.find((n) => n.notificationid === id);
+    if (!item || item.isRead) return;
+
+    // 乐观更新
+    setData((prev) => ({
+      ...prev,
+      notifications: prev.notifications.map((n) =>
+        n.notificationid === id ? { ...n, isRead: true } : n,
+      ),
+    }));
+
+    try {
+      await fetch("/api/notification/read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId: id }),
+      });
+      window.dispatchEvent(new Event("notifications_updated"));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
@@ -81,6 +122,7 @@ export default function NotificationsClient({
           ),
         }));
         setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+        window.dispatchEvent(new Event("notifications_updated"));
       }
     } catch (error) {
       console.error(error);
@@ -196,12 +238,16 @@ export default function NotificationsClient({
                   {n.targetUrl ? (
                     <Link
                       href={n.targetUrl}
+                      onClick={() => handleRead(n.notificationid)}
                       className="text-base text-base-content font-medium hover:text-primary transition-colors block leading-relaxed"
                     >
                       {n.notificationText}
                     </Link>
                   ) : (
-                    <p className="text-base text-base-content font-medium leading-relaxed">
+                    <p
+                      onClick={() => handleRead(n.notificationid)}
+                      className="text-base text-base-content font-medium leading-relaxed cursor-pointer hover:text-primary transition-colors"
+                    >
                       {n.notificationText}
                     </p>
                   )}
