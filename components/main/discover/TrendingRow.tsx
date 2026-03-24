@@ -76,7 +76,17 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
         </h3>
         <div className="flex items-center space-x-2 text-xs text-base-content/60 mt-0.5 xl:mt-0">
           <span className="truncate max-w-[80px] sm:max-w-none">
-            {podcast.platform || "Yuanlu"}
+            {podcast.platform ? (
+              <Link
+                href={`/channel/${encodeURIComponent(podcast.platform)}`}
+                className="hover:text-primary hover:underline transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {podcast.platform}
+              </Link>
+            ) : (
+              "Yuanlu"
+            )}
           </span>
           <span>•</span>
           <span>{podcast.category}</span>

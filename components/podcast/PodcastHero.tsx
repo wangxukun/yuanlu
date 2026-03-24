@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ShareIcon, HeartIcon } from "@heroicons/react/24/outline";
 import {
   PlayIcon as PlaySolidIcon,
@@ -60,7 +61,16 @@ export default function PodcastHero({
         {podcast.title}
       </h1>
       <p className="text-base sm:text-lg text-base-content/60 font-medium mb-6">
-        {podcast.platform || "Yuanlu Official"}
+        {podcast.platform ? (
+          <Link
+            href={`/channel/${encodeURIComponent(podcast.platform)}`}
+            className="hover:text-primary hover:underline underline-offset-4 transition-colors"
+          >
+            {podcast.platform}
+          </Link>
+        ) : (
+          "Yuanlu Official"
+        )}
       </p>
 
       {/* 操作按钮 */}
