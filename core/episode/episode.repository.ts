@@ -43,6 +43,7 @@ export const episodeRepository = {
         isExclusive: true,
         isCommentEnabled: true,
         difficulty: true,
+        playCount: true,
         podcast: {
           select: {
             podcastid: true,
@@ -85,6 +86,7 @@ export const episodeRepository = {
         uploaderid: true,
         updateAt: true,
         difficulty: true,
+        playCount: true,
         episode_favorites: {
           select: {
             userid: true,

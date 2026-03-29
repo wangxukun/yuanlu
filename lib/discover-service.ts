@@ -31,10 +31,13 @@ const trendingQuery = {
 // 这里的 T 会自动包含 tags, episode, _count
 type TrendingPodcastRaw = Prisma.podcastGetPayload<typeof trendingQuery>;
 
-export async function getTrendingPodcasts() {
+export async function getTrendingPodcasts(limit: number = 20) {
   try {
-    // 3. 使用定义好的查询对象
-    const podcasts = await prisma.podcast.findMany(trendingQuery);
+    // 3. 使用定义好的查询对象，覆盖 take
+    const podcasts = await prisma.podcast.findMany({
+      ...trendingQuery,
+      take: limit,
+    });
     // 4. 处理图片签名
     const processedPodcasts = await Promise.all(
       // 显式告知 map 函数，p 的类型是 TrendingPodcastRaw
@@ -232,3 +235,77 @@ export async function getPodcastsByQuery(query: string) {
     return [];
   }
 }
+
+/**
+ * 获取推荐频道（按照 platform 聚合）
+ * 返回每个 platform 的名称、播客数量以及代表封面
+ */
+export async function getRecommendedChannels() {
+  try {
+    // Group podcasts by platform and get counts
+    const platformGroups = await prisma.podcast.groupBy({
+      by: ["platform"],
+      where: {
+        platform: { not: null },
+      },
+      _count: { podcastid: true },
+      _sum: { totalPlays: true },
+      orderBy: {
+        _sum: { totalPlays: Prisma.SortOrder.desc },
+      },
+    });
+
+    // For each platform, get a representative podcast cover
+    const channels = await Promise.all(
+      platformGroups
+        .filter((g) => g.platform !== null)
+        .map(async (group) => {
+          // Fetch the top podcast in this platform for its cover
+          const topPodcast = await prisma.podcast.findFirst({
+            where: { platform: group.platform! },
+            orderBy: { totalPlays: Prisma.SortOrder.desc },
+            select: {
+              coverUrl: true,
+              coverFileName: true,
+              description: true,
+            },
+          });
+
+          let coverUrl = topPodcast?.coverUrl || "default_cover_url";
+          if (
+            topPodcast?.coverFileName &&
+            topPodcast.coverUrl !== "default_cover_url"
+          ) {
+            try {
+              coverUrl = await generateSignatureUrl(
+                topPodcast.coverFileName,
+                3600 * 3,
+              );
+            } catch (e) {
+              console.error(
+                `Failed to sign cover for channel ${group.platform}`,
+                e,
+              );
+            }
+          }
+
+          return {
+            name: group.platform!,
+            podcastCount: group._count.podcastid,
+            totalPlays: group._sum.totalPlays || 0,
+            coverUrl,
+            description: topPodcast?.description || "",
+          };
+        }),
+    );
+
+    return channels;
+  } catch (error) {
+    console.error("Failed to fetch recommended channels:", error);
+    return [];
+  }
+}
+
+export type RecommendedChannel = Awaited<
+  ReturnType<typeof getRecommendedChannels>
+>[number];

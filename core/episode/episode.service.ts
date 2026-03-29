@@ -316,6 +316,8 @@ export const episodeService = {
           duration: `${durationMins} min`,
           coverUrl: coverUrl,
           difficulty: ep.difficulty || "General",
+          isExclusive: ep.isExclusive || false,
+          playCount: ep.playCount || 0,
         };
       }),
     );

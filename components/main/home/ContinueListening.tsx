@@ -31,11 +31,11 @@ export default function ContinueListening({
           查看历史
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex sm:grid gap-4 xl:gap-5 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 snap-x sm:snap-none scrollbar-hide sm:grid-cols-2 lg:grid-cols-3">
         {history.map((item) => (
           <div
             key={item.historyId}
-            className="bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer flex items-center space-x-4 group"
+            className="bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer flex items-center space-x-4 group relative overflow-hidden flex-shrink-0 w-[300px] snap-center sm:w-full sm:flex-shrink sm:snap-none"
             onClick={() => onPlay(item.episodeId)}
           >
             <div className="relative flex-shrink-0 w-32 aspect-[16/9] rounded-lg overflow-hidden bg-base-300">
