@@ -11,6 +11,7 @@ export interface User {
   isOnline: boolean;
   lastActiveAt?: Date; // 最后登录日期
   isCommentAllowed: boolean;
+  loginCount: number; // 累计登录次数
   emailVerified: Date;
   userProfile: UserProfile;
 }

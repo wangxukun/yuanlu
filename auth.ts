@@ -97,7 +97,68 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   // [新增] 在这里覆盖 authConfig 的 callbacks
   callbacks: {
-    ...authConfig.callbacks, // 继承 jwt 回调
+    async jwt({
+      token,
+      user,
+      trigger,
+      session,
+    }: {
+      token: JWT;
+      user: User;
+      trigger?: "signIn" | "signUp" | "update";
+      session?: Session;
+    }) {
+      // 1. 首次登录：将用户信息写入 token（继承自 authConfig 的逻辑）
+      if (user) {
+        token.userid = user.userid;
+        token.email = user.email;
+        token.role = user.role;
+        token.emailVerified = user.emailVerified || null;
+        token.nickname = user.nickname;
+        token.avatarFileName = user.avatarFileName;
+        token.lastSeenAt = Date.now(); // 标记首次登录时间
+      }
+
+      // 2. 处理客户端的 update() 调用
+      if (trigger === "update" && session?.user) {
+        console.log("Updating session token:", session.user);
+        if (session.user.nickname) token.nickname = session.user.nickname;
+        if (session.user.avatarFileName)
+          token.avatarFileName = session.user.avatarFileName;
+      }
+
+      // 3. [核心修复] 检测浏览器会话恢复（cookie 自动登录）
+      // 当 token 中已有 userid（非首次登录）且距上次访问超过30分钟时，
+      // 认为这是一次新的浏览器会话恢复，递增 loginCount
+      if (!user && token.userid) {
+        const SESSION_GAP_THRESHOLD = 30 * 60 * 1000; // 30 minutes in ms
+        const lastSeenAt = (token.lastSeenAt as number) || 0;
+        const now = Date.now();
+
+        if (now - lastSeenAt > SESSION_GAP_THRESHOLD) {
+          try {
+            await prisma.user.update({
+              where: { userid: token.userid as string },
+              data: {
+                isOnline: true,
+                lastActiveAt: new Date(),
+                loginCount: { increment: 1 },
+              },
+            });
+          } catch (e) {
+            console.error(
+              "Failed to increment loginCount on session restore:",
+              e,
+            );
+          }
+        }
+
+        // 更新 lastSeenAt 为当前时间
+        token.lastSeenAt = now;
+      }
+
+      return token;
+    },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (token && session.user) {
         session.user.userid = token.userid as string;
@@ -133,7 +194,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // 用户登录时标记为在线
       await prisma.user.update({
         where: { userid: user.userid },
-        data: { isOnline: true, lastActiveAt: new Date() },
+        data: {
+          isOnline: true,
+          lastActiveAt: new Date(),
+          loginCount: { increment: 1 },
+        },
       });
     },
     async signOut(

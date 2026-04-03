@@ -13,6 +13,7 @@ import {
   Trash2,
   Ban,
   UserCheck,
+  LogIn,
 } from "lucide-react";
 import { User } from "@/core/user/user.entity";
 
@@ -32,12 +33,11 @@ interface ExtendedUser
   lastActiveAt: string | null;
   emailVerified: string | null;
   isCommentAllowed: boolean; // 我们在 page.tsx 中提供了默认值，所以这里是 boolean
+  loginCount: number;
   user_profile?: {
     nickname: string | null;
     avatarFileName: string | null;
     avatarUrl: string | null;
-    learnLevel: string | null;
-    dailyStudyGoalMins?: number | null;
   } | null;
 }
 
@@ -259,7 +259,7 @@ export default function UserManagementClient({
                 <th className="px-6 py-4">用户昵称</th>
                 <th className="px-6 py-4">用户ID</th>
                 <th className="px-6 py-4">角色</th>
-                <th className="px-6 py-4">学习进度</th>
+                <th className="px-6 py-4">登录次数</th>
                 <th className="px-6 py-4">最后活动</th>
                 <th className="px-6 py-4">创建日期</th>
                 <th className="px-6 py-4 text-right">操作</th>
@@ -315,14 +315,12 @@ export default function UserManagementClient({
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {user.user_profile?.learnLevel || "Beginner"}
+                      <div className="flex items-center gap-2">
+                        <LogIn size={14} className="text-base-content/40" />
+                        <span className="text-sm font-medium tabular-nums">
+                          {user.loginCount ?? 0}
                         </span>
-                        <span className="text-xs opacity-50">
-                          目标: {user.user_profile?.dailyStudyGoalMins || 30}{" "}
-                          分钟/天
-                        </span>
+                        <span className="text-xs opacity-50">次</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
