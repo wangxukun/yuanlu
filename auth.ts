@@ -137,11 +137,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (now - lastSeenAt > SESSION_GAP_THRESHOLD) {
           try {
-            await prisma.user.update({
-              where: { userid: token.userid as string },
+            await prisma.user.updateMany({
+              where: {
+                userid: token.userid as string,
+                OR: [
+                  { lastActiveAt: null },
+                  {
+                    lastActiveAt: { lt: new Date(now - SESSION_GAP_THRESHOLD) },
+                  },
+                ],
+              },
               data: {
                 isOnline: true,
-                lastActiveAt: new Date(),
+                lastActiveAt: new Date(now),
                 loginCount: { increment: 1 },
               },
             });
