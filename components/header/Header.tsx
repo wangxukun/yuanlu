@@ -72,7 +72,7 @@ export default function Header() {
 
         {/* 右区域：设置等 */}
         <div className="flex-none w-[300px] flex items-center justify-end gap-4">
-          <div className="h-6 w-px bg-base-300 mx-2"></div>
+          {/* <div className="h-6 w-px bg-base-300 mx-2"></div> */}
 
           <div className="flex items-center gap-2">
             <ThemeSwitcher />
