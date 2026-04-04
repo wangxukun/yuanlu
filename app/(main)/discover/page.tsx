@@ -139,7 +139,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
                     href="/discover/channels"
                     className="flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-primary transition-colors"
                   >
-                    全部
+                    更多
                     <ChevronRightIcon className="w-4 h-4 gap-0" />
                   </Link>
                 </div>
