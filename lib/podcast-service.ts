@@ -65,6 +65,10 @@ export const getPodcastDetail = cache(async (id: string) => {
           createAt: true,
           status: true,
           isExclusive: true,
+          difficulty: true,
+          tags: {
+            select: { id: true, name: true },
+          },
           // 检查单集收藏状态
           episode_favorites: userId
             ? {

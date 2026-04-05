@@ -14,6 +14,7 @@ import {
   CheckCircleIcon as CheckCircleSolidIcon,
   PauseIcon,
 } from "@heroicons/react/24/solid";
+import { Headphones } from "lucide-react";
 import { formatTime } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 
@@ -78,7 +79,62 @@ export default function EpisodeCard({
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="hidden sm:flex absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
+
+        {/* PRO and Play count badges (top left) */}
+        <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
+          {episode.isExclusive && (
+            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] tracking-widest flex items-center">
+              👑 PRO
+            </div>
+          )}
+          {episode.playCount !== undefined && (
+            <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded shadow-sm text-[11px] font-medium flex items-center tracking-wide">
+              <Headphones className="w-3 h-3 mr-1 opacity-80" />
+              {episode.playCount.toLocaleString()}
+            </div>
+          )}
+        </div>
+
+        {/* Difficulty badge (top right) */}
+        {episode.difficulty && (
+          <div className="absolute top-2 right-2 z-10">
+            <div
+              className={`bg-white/95 px-2 py-0.5 rounded shadow-sm font-extrabold text-sm tracking-wide ${
+                episode.difficulty.includes("A")
+                  ? "text-emerald-600"
+                  : episode.difficulty.includes("B1")
+                    ? "text-blue-600"
+                    : episode.difficulty.includes("B2")
+                      ? "text-purple-600"
+                      : episode.difficulty.includes("C")
+                        ? "text-rose-600"
+                        : "text-gray-700"
+              }`}
+            >
+              {episode.difficulty}
+            </div>
+          </div>
+        )}
+
+        {/* Category badge (bottom left) */}
+        {episode.tags && episode.tags.length > 0 && (
+          <div className="absolute bottom-2 left-2 z-10">
+            <div className="flex bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded shadow-sm font-bold text-xs items-center">
+              <PlaySolidIcon className="w-3 h-3 mr-1" />
+              {episode.tags[0].name}
+            </div>
+          </div>
+        )}
+
+        {/* Duration badge (bottom right) */}
+        <div className="absolute bottom-2 right-2 z-10">
+          <div className="flex bg-black/70 text-white backdrop-blur-sm px-2 py-0.5 rounded shadow-sm text-xs font-medium items-center">
+            <ClockIcon className="w-3 h-3 mr-1" />
+            {formatTime(episode.duration)}
+          </div>
+        </div>
+
+        <div className="hidden sm:flex absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center z-20">
           <button
             onClick={(e) => onPlayClick(e, episode as Episode)}
             className="w-12 h-12 bg-white/90 text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
@@ -90,11 +146,11 @@ export default function EpisodeCard({
             )}
           </button>
         </div>
-        {/* 移动端常显播放按钮 */}
-        <div className="sm:hidden absolute bottom-2 right-2">
+        {/* 移动端常显播放按钮 - 居中显示以避免遮挡右下角 badge */}
+        <div className="sm:hidden absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <button
             onClick={(e) => onPlayClick(e, episode as Episode)}
-            className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            className="w-10 h-10 bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform backdrop-blur-sm pointer-events-auto"
           >
             {isCurrentPlaying ? (
               <PauseIcon className="w-5 h-5" />
@@ -105,7 +161,7 @@ export default function EpisodeCard({
         </div>
         {/* 移动端进度条 */}
         {progressPercentage > 0 && (
-          <div className="sm:hidden absolute bottom-0 left-0 w-full h-1 bg-base-300/50">
+          <div className="sm:hidden absolute bottom-0 left-0 w-full h-1 bg-base-300/50 z-30">
             <div
               className={`h-full ${isFinished ? "bg-success" : "bg-primary"}`}
               style={{ width: `${progressPercentage}%` }}
@@ -189,10 +245,10 @@ export default function EpisodeCard({
               <CalendarIcon className="w-3.5 h-3.5" />
               {new Date(episode.publishAt).toLocaleDateString()}
             </span>
-            <span className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-lg border border-base-200/50">
+            {/* <span className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-lg border border-base-200/50">
               <ClockIcon className="w-3.5 h-3.5" />
               {formatTime(episode.duration)}
-            </span>
+            </span> */}
           </div>
 
           {/* 桌面端进度条 */}
