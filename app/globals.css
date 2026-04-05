@@ -22,4 +22,12 @@
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom);
   }
+  /* 隐藏滚动条但保留滚动功能 */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }

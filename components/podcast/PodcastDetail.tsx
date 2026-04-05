@@ -15,6 +15,8 @@ import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
 
 import PodcastHero from "./PodcastHero";
 import EpisodeList from "./EpisodeList";
+import ChannelPodcasts from "./ChannelPodcasts";
+import type { ChannelPodcastItem } from "./ChannelPodcasts";
 
 // ---------------------- Types ----------------------
 interface PodcastDetailData {
@@ -56,6 +58,7 @@ interface PodcastDetailData {
     progressSeconds: number;
     isFinished: boolean;
   }>;
+  channelPodcasts: ChannelPodcastItem[];
 }
 
 interface EpisodeWithProgress extends Episode {
@@ -229,11 +232,22 @@ export default function PodcastDetail({
             <EpisodeList
               episodes={podcast.episode as unknown as EpisodeWithProgress[]}
               podcastCoverUrl={podcast.coverUrl}
+              podcastId={podcast.podcastid}
               currentPlayingId={currentEpisode?.episodeid}
               isPlaying={isPlaying}
               onPlayClick={handlePlayClick}
               onRowClick={handleRowClick}
             />
+
+            {/* 同频道其他播客 */}
+            {podcast.platform && podcast.channelPodcasts?.length > 0 && (
+              <div className="mt-8">
+                <ChannelPodcasts
+                  channelName={podcast.platform}
+                  podcasts={podcast.channelPodcasts}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

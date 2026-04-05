@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { MusicalNoteIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { MusicalNoteIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import EpisodeCard from "./EpisodeCard";
 
@@ -11,6 +12,8 @@ interface EpisodeWithProgress extends Episode {
 interface EpisodeListProps {
   episodes: EpisodeWithProgress[];
   podcastCoverUrl: string;
+  podcastId: string;
+  maxCount?: number;
   currentPlayingId?: string;
   isPlaying: boolean;
   onPlayClick: (e: React.MouseEvent, episode: Episode) => void;
@@ -20,6 +23,8 @@ interface EpisodeListProps {
 export default function EpisodeList({
   episodes,
   podcastCoverUrl,
+  podcastId,
+  maxCount = 5,
   currentPlayingId,
   isPlaying,
   onPlayClick,
@@ -28,11 +33,16 @@ export default function EpisodeList({
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  const sortedEpisodes = [...(episodes || [])].sort((a, b) => {
+  const allSortedEpisodes = [...(episodes || [])].sort((a, b) => {
     const dateA = new Date(a.publishAt).getTime();
     const dateB = new Date(b.publishAt).getTime();
     return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
+
+  const hasMore = allSortedEpisodes.length > maxCount;
+  const displayedEpisodes = hasMore
+    ? allSortedEpisodes.slice(0, maxCount)
+    : allSortedEpisodes;
 
   return (
     <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-base-200/50">
@@ -55,8 +65,8 @@ export default function EpisodeList({
       </div>
 
       <div className="space-y-3 sm:space-y-4">
-        {sortedEpisodes.length > 0 ? (
-          sortedEpisodes.map((episode) => (
+        {displayedEpisodes.length > 0 ? (
+          displayedEpisodes.map((episode) => (
             <EpisodeCard
               key={episode.episodeid}
               episode={episode}
@@ -83,6 +93,19 @@ export default function EpisodeList({
           </div>
         )}
       </div>
+
+      {/* 查看所有链接 */}
+      {hasMore && (
+        <div className="mt-6 flex justify-center">
+          <Link
+            href={`/podcast/${podcastId}/episodes`}
+            className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group"
+          >
+            查看所有 {episodes?.length || 0} 集
+            <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

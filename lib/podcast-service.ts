@@ -170,7 +170,76 @@ export const getPodcastDetail = cache(async (id: string) => {
     }),
   );
 
-  // 4. 返回最终结果
+  // 4. 查询同频道的其他播客（排除当前播客）
+  let channelPodcasts: Array<{
+    podcastid: string;
+    title: string;
+    coverUrl: string;
+    platform: string | null;
+    totalPlays: number;
+    episodeCount: number;
+    tags: Array<{ id: number; name: string }>;
+  }> = [];
+
+  if (podcastRaw.platform) {
+    const rawChannelPodcasts = await prisma.podcast.findMany({
+      where: {
+        platform: {
+          equals: podcastRaw.platform,
+          mode: "insensitive",
+        },
+        podcastid: {
+          not: podcastRaw.podcastid,
+        },
+      },
+      orderBy: {
+        totalPlays: Prisma.SortOrder.desc,
+      },
+      take: 6, // fetch 6 to determine if "more" navigation is needed
+      select: {
+        podcastid: true,
+        title: true,
+        coverUrl: true,
+        coverFileName: true,
+        platform: true,
+        totalPlays: true,
+        tags: {
+          take: 2,
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: { episode: true },
+        },
+      },
+    });
+
+    channelPodcasts = await Promise.all(
+      rawChannelPodcasts.map(async (p) => {
+        let coverUrl = p.coverUrl;
+        if (p.coverFileName) {
+          try {
+            coverUrl = await generateSignatureUrl(p.coverFileName, 3600 * 3);
+          } catch (e) {
+            console.error(
+              `Failed to sign cover for channel podcast ${p.podcastid}`,
+              e,
+            );
+          }
+        }
+        return {
+          podcastid: p.podcastid,
+          title: p.title,
+          coverUrl,
+          platform: p.platform,
+          totalPlays: p.totalPlays,
+          episodeCount: p._count.episode,
+          tags: p.tags,
+        };
+      }),
+    );
+  }
+
+  // 5. 返回最终结果
   return {
     ...podcastRaw,
     isFavorited: podcastRaw.podcast_favorites
@@ -178,6 +247,7 @@ export const getPodcastDetail = cache(async (id: string) => {
       : false,
     podcastFavorites: undefined,
     episode: processedEpisodes,
+    channelPodcasts,
   };
 });
 
