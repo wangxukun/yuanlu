@@ -17,9 +17,9 @@ model User {
   isOnline           Boolean               @default(false)
   lastActiveAt       DateTime?             @db.Timestamptz(6)
   isCommentAllowed   Boolean               @default(true)
-  loginCount         Int                   @default(0)
   email              String                @unique @db.VarChar(255)
   emailVerified      DateTime?             @db.Timestamptz(6)
+  loginCount         Int                   @default(0)
   VisitorLog         VisitorLog[]
   achievements       achievements[]
   comment_likes      comment_likes[]
@@ -37,8 +37,10 @@ model User {
   study_groups       study_groups[]
   subscriptions      subscriptions[]
   daily_activities   user_daily_activity[]
-  user_profile       user_profile?
-  vocabulary         vocabulary[]
+  user_profile              user_profile?
+  vocabulary                vocabulary[]
+  proofread_submissions     subtitle_proofread[]      @relation("ProofreadSubmitter")
+  proofread_reviews         subtitle_proofread[]      @relation("ProofreadReviewer")
 }
 
 /// 用户资料模型，存储用户的个人信息
@@ -180,8 +182,9 @@ model episode {
   quizzes             quizzes[]
   ratings             ratings[]
   speech_recognition  speech_recognition[]
-  vocabulary          vocabulary[]
-  tags                tag[]                 @relation("episodeTotag")
+  vocabulary            vocabulary[]
+  tags                  tag[]                 @relation("episodeTotag")
+  subtitle_proofreads   subtitle_proofread[]
 }
 
 /// 播客剧集收藏模型，存储用户收藏的剧集信息
@@ -458,3 +461,28 @@ model VisitorLog {
   @@index([ip])
   @@index([userid])
 }
+
+/// 字幕校对请求模型
+/// 存储用户提交的字幕校对修改，支持管理员审核流程
+model subtitle_proofread {
+  id              Int       @id @default(autoincrement())
+  episodeid       String
+  subtitleIndex   Int       /// 字幕段落索引 (对应 SRT 文件中的 id)
+  originalTextEn  String    /// 原始英文内容
+  originalTextZh  String    /// 原始中文内容
+  modifiedTextEn  String    /// 修改后的英文内容
+  modifiedTextZh  String    /// 修改后的中文内容
+  status          String    @default("PENDING") @db.VarChar(20) /// PENDING | APPROVED | REJECTED
+  submitterId     String    /// 提交者用户ID
+  reviewerId      String?   /// 审核者用户ID
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  reviewedAt      DateTime? @db.Timestamptz(6)
+
+  episode         episode   @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
+  submitter       User      @relation("ProofreadSubmitter", fields: [submitterId], references: [userid], onDelete: Cascade)
+  reviewer        User?     @relation("ProofreadReviewer", fields: [reviewerId], references: [userid], onDelete: SetNull)
+
+  @@index([episodeid])
+  @@index([status])
+}
+

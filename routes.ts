@@ -28,6 +28,7 @@ export const adminRoutes = [
   "/admin/episodes/create",
   "/admin/users",
   "/admin/tags",
+  "/admin/proofread",
 ];
 
 export const premiumRoutes = ["/library/premiums"];

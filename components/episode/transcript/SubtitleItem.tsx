@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { PlayCircleIcon } from "@heroicons/react/24/outline";
+import { PlayCircleIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { ProcessedSubtitle } from "./types";
 
@@ -10,8 +10,10 @@ interface SubtitleItemProps {
   isActive: boolean;
   isPlaying: boolean;
   showTranslation: boolean;
+  isLoggedIn: boolean;
   onJump: (time: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onProofread?: (sub: ProcessedSubtitle) => void;
 }
 
 export const SubtitleItem = memo(function SubtitleItem({
@@ -19,8 +21,10 @@ export const SubtitleItem = memo(function SubtitleItem({
   isActive,
   isPlaying,
   showTranslation,
+  isLoggedIn,
   onJump,
   onWordClick,
+  onProofread,
 }: SubtitleItemProps) {
   return (
     <div
@@ -33,6 +37,22 @@ export const SubtitleItem = memo(function SubtitleItem({
           : "bg-transparent border-transparent hover:bg-base-200 hover:bg-opacity-30",
       )}
     >
+      {/* Proofread icon — appears on hover in top-right corner */}
+      {isLoggedIn && onProofread && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onProofread(sub);
+          }}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 btn btn-xs btn-ghost text-violet-400 hover:text-violet-600 hover:bg-violet-50 gap-1"
+          aria-label="校对字幕"
+          title="校对字幕"
+        >
+          <PencilSquareIcon className="w-4 h-4" />
+          <span className="hidden sm:inline text-[11px]">校对</span>
+        </button>
+      )}
+
       <div className="flex gap-4 sm:gap-6 items-start">
         <button
           onClick={() => onJump(sub.start)}

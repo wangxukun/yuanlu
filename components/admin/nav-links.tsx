@@ -7,12 +7,13 @@ import {
   MicrophoneIcon,
   TagIcon,
   BellAlertIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClipboardList } from "lucide-react";
 
 const links = [
@@ -30,6 +31,12 @@ const links = [
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
   { name: "系统通知", href: "/admin/notifications", icon: BellAlertIcon },
+  {
+    name: "审核中心",
+    href: "/admin/proofread",
+    icon: ShieldCheckIcon,
+    hasBadge: true,
+  },
   { name: "访问日志", href: "/admin/logs", icon: ClipboardList },
 ];
 
@@ -42,6 +49,27 @@ export default function NavLinks() {
   const { needConfirm, setNeedConfirm } = useLeaveConfirm();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pendingNavigation = useRef<string | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Fetch pending proofread count for badge
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const res = await fetch("/api/proofread/pending-count");
+        if (res.ok) {
+          const data = await res.json();
+          setPendingCount(data.data?.count || 0);
+        }
+      } catch {
+        // Silent fail for badge count
+      }
+    };
+
+    fetchPendingCount();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchPendingCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -108,6 +136,12 @@ export default function NavLinks() {
           >
             <LinkIcon className="w-6" />
             <p className="block">{link.name}</p>
+            {/* Red badge for review center */}
+            {"hasBadge" in link && link.hasBadge && pendingCount > 0 && (
+              <span className="ml-auto badge badge-sm bg-red-500 text-white border-red-500 font-bold">
+                {pendingCount > 99 ? "99+" : pendingCount}
+              </span>
+            )}
           </Link>
         );
       })}

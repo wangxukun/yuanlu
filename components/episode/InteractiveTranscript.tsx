@@ -14,6 +14,7 @@ import { SubtitleItem } from "./transcript/SubtitleItem";
 import { TranscriptToolbar } from "./transcript/TranscriptToolbar";
 import { SelectionMenu } from "./transcript/SelectionMenu";
 import { VocabularyModal } from "./transcript/VocabularyModal";
+import { ProofreadModal } from "./transcript/ProofreadModal";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 
@@ -66,6 +67,15 @@ export default function InteractiveTranscript({
     webUrl?: string;
     mobileUrl?: string;
   }>({});
+
+  // Proofread Modal State
+  const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
+    null,
+  );
+  const [isProofreadOpen, setIsProofreadOpen] = useState(false);
+
+  const userRole = session?.user?.role || "USER";
+  const isLoggedIn = !!session?.user;
 
   // 4. Process Subtitles
   const processedSubtitles: ProcessedSubtitle[] = useMemo(() => {
@@ -155,6 +165,11 @@ export default function InteractiveTranscript({
     [isPlayingThisEpisode, isPlaying, pause, setSelectionMenu],
   );
 
+  const handleProofread = useCallback((sub: ProcessedSubtitle) => {
+    setProofreadSub(sub);
+    setIsProofreadOpen(true);
+  }, []);
+
   // --- Save Logic ---
   const handleSaveVocabulary = async () => {
     if (!selectedWord) return;
@@ -231,8 +246,10 @@ export default function InteractiveTranscript({
             isActive={index === activeIndex}
             isPlaying={isPlaying}
             showTranslation={showTranslation}
+            isLoggedIn={isLoggedIn}
             onJump={handleJump}
             onWordClick={handleWordClick}
+            onProofread={handleProofread}
           />
         ))}
       </div>
@@ -259,6 +276,14 @@ export default function InteractiveTranscript({
         isSaving={isSaving}
         onSave={handleSaveVocabulary}
         onPlayAudio={playWordAudio}
+      />
+
+      <ProofreadModal
+        isOpen={isProofreadOpen}
+        onClose={() => setIsProofreadOpen(false)}
+        subtitle={proofreadSub}
+        episodeid={episode.episodeid}
+        userRole={userRole}
       />
     </div>
   );
