@@ -101,9 +101,9 @@ export function ProofreadModal({
         isOpen && "modal-open",
       )}
     >
-      <div className="modal-box bg-base-100 sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
+      <div className="modal-box flex flex-col max-h-[85vh] bg-base-100 sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 px-6 py-4 flex justify-between items-center border-b border-purple-100">
+        <div className="shrink-0 bg-gradient-to-r from-violet-500/10 to-purple-500/10 px-6 py-4 flex justify-between items-center border-b border-purple-100">
           <h3 className="text-lg font-bold flex items-center gap-2 text-violet-700">
             <PencilSquareIcon className="w-5 h-5" /> 校对字幕
           </h3>
@@ -113,7 +113,7 @@ export function ProofreadModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           {/* English */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-base-content/50 uppercase tracking-wider">
@@ -141,7 +141,7 @@ export function ProofreadModal({
           </div>
 
           {/* Original preview */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-40 overflow-y-auto">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
               原始内容参考
             </p>
@@ -155,7 +155,7 @@ export function ProofreadModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-base-200/50 flex justify-end gap-3 border-t border-base-200">
+        <div className="shrink-0 p-4 bg-base-200/50 flex justify-end gap-3 border-t border-base-200">
           <button className="btn btn-ghost rounded-xl" onClick={onClose}>
             取消
           </button>
