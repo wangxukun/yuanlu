@@ -23,7 +23,7 @@ export function TranscriptToolbar({
   setShowTranslation,
 }: TranscriptToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200 border-opacity-60 sticky top-0 bg-base-100 bg-opacity-95 backdrop-blur z-10 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-300 border-opacity-60 sticky top-0 bg-base-100 bg-opacity-95 backdrop-blur z-10 py-2">
       <div className="flex items-center gap-2">
         {isPlayingThisEpisode ? (
           <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">

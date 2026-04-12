@@ -123,7 +123,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     // Mobile/Tablet: bg-white -> dark:bg-slate-900 (Deep card background)
     // Desktop: transparent (retains original logic)
     // Border colors adjusted for dark mode separation
-    <div className="flex flex-col md:flex-row xl:flex-col gap-6 md:gap-8 bg-white dark:bg-slate-900 xl:bg-transparent xl:dark:bg-transparent p-4 md:p-6 xl:p-0 rounded-3xl xl:rounded-none shadow-sm xl:shadow-none border border-slate-100 dark:border-slate-800 xl:border-none transition-colors duration-300">
+    <div className="flex flex-col md:flex-row xl:flex-col gap-4 md:gap-8 dark:bg-slate-900 xl:bg-transparent xl:dark:bg-transparent md:p-6 xl:p-0 xl:rounded-none xl:shadow-none xl:border-none ">
       {/* --- Cover Area --- */}
       <div className="shrink-0 w-full md:w-64 xl:w-full">
         <div className="group relative w-full aspect-[16/9] overflow-hidden rounded-2xl shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
@@ -150,10 +150,10 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       </div>
 
       {/* --- Info Area --- */}
-      <div className="flex flex-col justify-center flex-1 min-w-0 space-y-4">
+      <div className="flex flex-col justify-center flex-1 min-w-0 space-y-2 sm:space-y-4">
         {/* Title & Platform */}
         <div>
-          <h1 className="text-2xl font-bold leading-tight mb-3 text-slate-900 dark:text-slate-50 break-words transition-colors">
+          <h1 className="text-lg font-bold leading-tight mb-3 text-slate-900 dark:text-slate-50 break-words transition-colors">
             {episode.title}
           </h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">

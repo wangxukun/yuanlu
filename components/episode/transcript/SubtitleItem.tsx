@@ -31,7 +31,7 @@ export const SubtitleItem = memo(function SubtitleItem({
       id={`subtitle-${sub.id}`} // 关键：ID 用于反向查找数据
       data-active={isActive}
       className={clsx(
-        "group relative rounded-xl p-4 sm:p-6 transition-all duration-200 border-l-4",
+        "group relative rounded-xl p-2 pl-0 pr-0 sm:p-4 transition-all duration-200 sm:border-l-4",
         isActive
           ? "bg-orange-50 bg-opacity-80 border-orange-400 shadow-sm"
           : "bg-transparent border-transparent hover:bg-base-200 hover:bg-opacity-30",
@@ -44,7 +44,7 @@ export const SubtitleItem = memo(function SubtitleItem({
             e.stopPropagation();
             onProofread(sub);
           }}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 btn btn-xs btn-ghost text-violet-400 hover:text-violet-600 hover:bg-violet-50 gap-1"
+          className="absolute bottom-2 sm:top-2 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 btn btn-xs btn-ghost text-violet-400 hover:text-violet-600 hover:bg-violet-50 gap-1"
           aria-label="校对字幕"
           title="校对字幕"
         >
@@ -53,7 +53,7 @@ export const SubtitleItem = memo(function SubtitleItem({
         </button>
       )}
 
-      <div className="flex gap-4 sm:gap-6 items-start">
+      <div className="flex gap-2 sm:gap-4 items-start">
         <button
           onClick={() => onJump(sub.start)}
           className={clsx(
@@ -76,7 +76,7 @@ export const SubtitleItem = memo(function SubtitleItem({
         <div className="flex-1 min-w-0">
           <p
             className={clsx(
-              "font-serif text-lg sm:text-xl leading-8 sm:leading-9 tracking-wide transition-colors",
+              "font-serif text-base sm:text-lg leading-6 sm:leading-7 tracking-wide transition-colors",
               isActive ? "text-slate-900 font-medium" : "text-slate-700",
             )}
           >
@@ -107,13 +107,13 @@ export const SubtitleItem = memo(function SubtitleItem({
             className={clsx(
               "overflow-hidden transition-all duration-200 ease-in-out",
               showTranslation
-                ? "max-h-40 opacity-100 mt-3"
+                ? "max-h-40 opacity-100 mt-2"
                 : "max-h-0 opacity-0 mt-0",
             )}
           >
             <p
               className={clsx(
-                "font-sans text-sm sm:text-base leading-7 tracking-wider",
+                "font-sans text-xs sm:text-sm leading-5 tracking-wider",
                 isActive ? "text-slate-600 font-medium" : "text-slate-400",
               )}
             >

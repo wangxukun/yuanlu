@@ -23,7 +23,7 @@ export default function EpisodeDocument({
     // [UI Polish] 营造“纸张”质感
     <div className="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-base-200/50 overflow-hidden">
       {/* Header: 极简设计，类似文章标题栏 */}
-      <div className="px-6 md:px-10 py-6 border-b border-base-100 flex justify-between items-center bg-base-100/80 backdrop-blur sticky top-0 z-20">
+      <div className="px-6 md:px-10 py-6 border-b border-base-300 flex justify-between items-center bg-base-100/80 backdrop-blur sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary">
             <BookOpenIcon className="w-5 h-5" />
@@ -49,7 +49,7 @@ export default function EpisodeDocument({
 
       {/* Content Area */}
       {/* 增加内边距，让文字呼吸 */}
-      <div className="p-4 md:p-8 lg:p-12 min-h-[500px]">
+      <div className="p-1 md:p-2 lg:p-4 min-h-[500px]">
         <InteractiveTranscript subtitles={subtitle} episode={episode} />
       </div>
     </div>

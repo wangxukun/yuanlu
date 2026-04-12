@@ -46,7 +46,7 @@ export default function InteractiveTranscript({
   const isPlayingThisEpisode = currentEpisode?.episodeid === episode.episodeid;
 
   // 3. Local State
-  const [showTranslation, setShowTranslation] = useState(true);
+  const [showTranslation, setShowTranslation] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
 
   // Refs
@@ -238,7 +238,7 @@ export default function InteractiveTranscript({
       )}
 
       {/* --- 字幕内容区 --- */}
-      <div className="space-y-6 pb-20" ref={containerRef}>
+      <div className="space-y-1 pb-20" ref={containerRef}>
         {processedSubtitles.map((sub, index) => (
           <SubtitleItem
             key={sub.id || index}
