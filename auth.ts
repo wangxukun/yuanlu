@@ -21,6 +21,7 @@ type UserFromPrisma = {
   isOnline: boolean;
   lastActiveAt: Date | null;
   isCommentAllowed: boolean;
+  isLoginAllowed: boolean;
   emailVerified: Date | null;
   user_profile: {
     avatarFileName: string | null;
@@ -56,6 +57,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (!user) {
             throw new Error("Invalid credentials.");
+          }
+
+          // [新增] 检查登录权限限制功能
+          if (user.isLoginAllowed === false) {
+            throw new Error("由于违反相关规定，您的账号已被禁止登录！");
           }
 
           // 验证密码

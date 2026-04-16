@@ -9,7 +9,10 @@ export default async function UserPermissionInfo({ user }: { user: User }) {
           <ul className="space-y-3 pl-4 text-slate-400">
             <li>用户账号：{user.email}</li>
             <li>用户角色：{user.role}</li>
-            <li>评论权限：{user.isCommentAllowed ? "允许" : "禁止"}</li>
+            <li>
+              登录权限：{(user.isLoginAllowed ?? true) ? "允许" : "已禁止"}
+            </li>
+            <li>评论权限：{user.isCommentAllowed ? "允许" : "已禁止"}</li>
           </ul>
         </div>
       </div>

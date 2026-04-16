@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         isOnline: true,
         lastActiveAt: true,
         isCommentAllowed: true,
+        isLoginAllowed: true,
         emailVerified: true,
       },
     });

@@ -16,6 +16,7 @@ export async function GET() {
         isOnline: true,
         lastActiveAt: true,
         isCommentAllowed: true,
+        isLoginAllowed: true,
         loginCount: true,
         emailVerified: true,
         user_profile: {

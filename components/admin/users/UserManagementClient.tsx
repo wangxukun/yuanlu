@@ -11,9 +11,9 @@ import {
   Mail,
   Edit3,
   Trash2,
-  Ban,
   UserCheck,
   LogIn,
+  MessageSquareOff,
 } from "lucide-react";
 import { User } from "@/core/user/user.entity";
 
@@ -26,6 +26,7 @@ interface ExtendedUser
     | "lastActiveAt"
     | "emailVerified"
     | "isCommentAllowed"
+    | "isLoginAllowed"
     | "user_profile"
   > {
   createAt: string;
@@ -33,6 +34,7 @@ interface ExtendedUser
   lastActiveAt: string | null;
   emailVerified: string | null;
   isCommentAllowed: boolean; // 我们在 page.tsx 中提供了默认值，所以这里是 boolean
+  isLoginAllowed: boolean;
   loginCount: number;
   user_profile?: {
     nickname: string | null;
@@ -53,7 +55,7 @@ export default function UserManagementClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "USER">("ALL");
   const [statusFilter, setStatusFilter] = useState<
-    "ALL" | "ONLINE" | "OFFLINE"
+    "ALL" | "ONLINE" | "OFFLINE" | "BANNED_LOGIN"
   >("ALL");
 
   // 分页状态
@@ -74,7 +76,9 @@ export default function UserManagementClient({
         if (!u.lastActiveAt) return false;
         return new Date(u.lastActiveAt).toDateString() === todayStr;
       }).length,
-      banned: users.filter((u) => u.isCommentAllowed === false).length,
+      banned: users.filter(
+        (u) => u.isCommentAllowed === false || u.isLoginAllowed === false,
+      ).length,
     };
   }, [users]);
 
@@ -89,7 +93,13 @@ export default function UserManagementClient({
       const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
       const matchesStatus =
         statusFilter === "ALL" ||
-        (statusFilter === "ONLINE" ? user.isOnline : !user.isOnline);
+        (statusFilter === "ONLINE"
+          ? user.isOnline
+          : statusFilter === "OFFLINE"
+            ? !user.isOnline
+            : statusFilter === "BANNED_LOGIN"
+              ? user.isLoginAllowed === false
+              : true);
 
       return matchesSearch && matchesRole && matchesStatus;
     });
@@ -102,26 +112,58 @@ export default function UserManagementClient({
   }, [filteredUsers, currentPage, itemsPerPage]);
 
   // 处理封禁/解封
-  const handleToggleBan = async (userid: string, currentStatus: boolean) => {
+  const handleToggleBan = async (
+    userid: string,
+    type: "comment" | "login",
+    currentStatus: boolean,
+  ) => {
     // 乐观更新
     setUsers((prev) =>
-      prev.map((u) =>
-        u.userid === userid ? { ...u, isCommentAllowed: !currentStatus } : u,
-      ),
+      prev.map((u) => {
+        if (u.userid === userid) {
+          if (type === "comment")
+            return { ...u, isCommentAllowed: !currentStatus };
+          else
+            return {
+              ...u,
+              isLoginAllowed: !currentStatus,
+              isOnline: !currentStatus ? u.isOnline : false,
+            };
+        }
+        return u;
+      }),
     );
 
     try {
-      // TODO: 替换为真实的 Server Action 调用
-      // await toggleUserBanAction(userid);
-      console.log(`Toggling ban for user ${userid}`);
+      interface UpdatePayload {
+        userid: string;
+        isCommentAllowed?: boolean;
+        isLoginAllowed?: boolean;
+      }
+      const payload: UpdatePayload = { userid };
+      if (type === "comment") payload.isCommentAllowed = !currentStatus;
+      if (type === "login") payload.isLoginAllowed = !currentStatus;
+
+      const res = await fetch(`/api/user/setting`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed");
+      console.log(`Toggling ${type} ban for user ${userid}`);
     } catch (error) {
       // 回滚
       setUsers((prev) =>
-        prev.map((u) =>
-          u.userid === userid ? { ...u, isCommentAllowed: currentStatus } : u,
-        ),
+        prev.map((u) => {
+          if (u.userid === userid) {
+            if (type === "comment")
+              return { ...u, isCommentAllowed: currentStatus };
+            else return { ...u, isLoginAllowed: currentStatus };
+          }
+          return u;
+        }),
       );
-      console.error("Failed to toggle ban", error);
+      console.error(`Failed to toggle ${type} ban`, error);
     }
   };
 
@@ -202,7 +244,7 @@ export default function UserManagementClient({
           </div>
           <div className="stat-title">受限用户</div>
           <div className="stat-value text-error">{stats.banned}</div>
-          <div className="stat-desc">评论权限被封禁</div>
+          <div className="stat-desc">存在权限封禁记录</div>
         </div>
       </div>
 
@@ -238,12 +280,19 @@ export default function UserManagementClient({
               className="select select-bordered"
               value={statusFilter}
               onChange={(e) =>
-                setStatusFilter(e.target.value as "ALL" | "ONLINE" | "OFFLINE")
+                setStatusFilter(
+                  e.target.value as
+                    | "ALL"
+                    | "ONLINE"
+                    | "OFFLINE"
+                    | "BANNED_LOGIN",
+                )
               }
             >
               <option value="ALL">所有状态</option>
               <option value="ONLINE">在线</option>
               <option value="OFFLINE">离线</option>
+              <option value="BANNED_LOGIN">禁止登录</option>
             </select>
           </div>
         </div>
@@ -290,9 +339,14 @@ export default function UserManagementClient({
                         <div>
                           <div className="font-bold flex items-center gap-2">
                             {user.user_profile?.nickname || "未设置昵称"}
-                            {user.isCommentAllowed === false && (
+                            {user.isLoginAllowed === false && (
                               <span className="badge badge-error badge-xs font-bold">
-                                BANNED
+                                BANNED (Login)
+                              </span>
+                            )}
+                            {user.isCommentAllowed === false && (
+                              <span className="badge badge-warning badge-xs font-bold text-warning-content">
+                                BANNED (Comm)
                               </span>
                             )}
                           </div>
@@ -339,26 +393,52 @@ export default function UserManagementClient({
                       <div className="join">
                         <button
                           className={`btn btn-square btn-sm join-item ${
-                            user.isCommentAllowed === false
+                            user.isLoginAllowed === false
                               ? "btn-error btn-outline"
                               : "btn-ghost text-error"
                           }`}
                           onClick={() =>
                             handleToggleBan(
                               user.userid,
+                              "login",
+                              user.isLoginAllowed ?? true,
+                            )
+                          }
+                          title={
+                            user.isLoginAllowed === false
+                              ? "解除登录限制"
+                              : "禁止登录"
+                          }
+                        >
+                          {user.isLoginAllowed === false ? (
+                            <UserCheck size={16} />
+                          ) : (
+                            <UserX size={16} />
+                          )}
+                        </button>
+                        <button
+                          className={`btn btn-square btn-sm join-item ${
+                            user.isCommentAllowed === false
+                              ? "btn-warning btn-outline"
+                              : "btn-ghost text-warning"
+                          }`}
+                          onClick={() =>
+                            handleToggleBan(
+                              user.userid,
+                              "comment",
                               user.isCommentAllowed ?? true,
                             )
                           }
                           title={
                             user.isCommentAllowed === false
-                              ? "解封用户"
-                              : "封禁用户"
+                              ? "解封评论"
+                              : "封禁评论"
                           }
                         >
                           {user.isCommentAllowed === false ? (
                             <UserCheck size={16} />
                           ) : (
-                            <Ban size={16} />
+                            <MessageSquareOff size={16} />
                           )}
                         </button>
                         <button

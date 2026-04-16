@@ -8,6 +8,9 @@ export default function UserPermissionForm({ user }: { user: User }) {
   const [isCommentAllowed, setIsCommentAllowed] = useState(
     user.isCommentAllowed,
   );
+  const [isLoginAllowed, setIsLoginAllowed] = useState(
+    user.isLoginAllowed ?? true,
+  );
   const roles = ["USER", "ADMIN", "PREMIUM"];
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -16,6 +19,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
       userid: user.userid,
       role: formData.get("role"),
       isCommentAllowed: isCommentAllowed,
+      isLoginAllowed: isLoginAllowed,
     };
     try {
       const res = await fetch(`/api/user/setting`, {
@@ -74,7 +78,50 @@ export default function UserPermissionForm({ user }: { user: User }) {
               </div>
             </div>
 
-            <fieldset className="flex flex-row items-center justify-start space-x-9">
+            <fieldset className="flex flex-row items-center justify-start space-x-9 mt-4">
+              <label className="block text-sm font-medium text-gray-700">
+                登录权限
+              </label>
+              <div className="rounded-md border border-gray-200 bg-white px-4 py-1">
+                <div className="flex gap-9 min-w-48">
+                  <div className="flex items-center">
+                    <input
+                      id="login-no"
+                      name="login-status"
+                      type="radio"
+                      value="no"
+                      checked={isLoginAllowed === false}
+                      onChange={() => setIsLoginAllowed(false)}
+                      className="text-white-600 h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
+                    />
+                    <label
+                      htmlFor="login-no"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
+                    >
+                      禁止 <ClockIcon className="h-4 w-4" />
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="login-yes"
+                      name="login-status"
+                      type="radio"
+                      checked={isLoginAllowed === true}
+                      onChange={() => setIsLoginAllowed(true)}
+                      value="yes"
+                      className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                    />
+                    <label
+                      htmlFor="login-yes"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
+                    >
+                      允许 <CheckIcon className="h-4 w-4" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset className="flex flex-row items-center justify-start space-x-9 mt-4">
               <label className="block text-sm font-medium text-gray-700">
                 评论权限
               </label>

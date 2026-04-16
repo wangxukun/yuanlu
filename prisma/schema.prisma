@@ -17,6 +17,7 @@ model User {
   isOnline           Boolean               @default(false)
   lastActiveAt       DateTime?             @db.Timestamptz(6)
   isCommentAllowed   Boolean               @default(true)
+  isLoginAllowed     Boolean               @default(true)
   email              String                @unique @db.VarChar(255)
   emailVerified      DateTime?             @db.Timestamptz(6)
   loginCount         Int                   @default(0)
