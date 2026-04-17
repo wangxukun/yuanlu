@@ -21,6 +21,7 @@ export default function GlobalAudio() {
     setCurrentEpisode,
     currentAudioUrl,
     setCurrentAudioUrl,
+    playbackRate,
   } = usePlayerStore();
 
   const resumeTimeRef = useRef<number | null>(null);
@@ -142,8 +143,11 @@ export default function GlobalAudio() {
 
   // 4. Audio 实例绑定与事件监听
   useEffect(() => {
-    if (audioRef.current) setAudioRef(audioRef.current);
-  }, [setAudioRef]);
+    if (audioRef.current) {
+      setAudioRef(audioRef.current);
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [setAudioRef, playbackRate, currentAudioUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;

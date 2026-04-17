@@ -9,6 +9,9 @@ import {
   SkipBack,
   SkipForward,
   FileText,
+  Check,
+  Rabbit,
+  Turtle,
 } from "lucide-react";
 
 const formatTime = (seconds: number) => {
@@ -33,6 +36,8 @@ export default function MobilePlayerPage() {
     setCurrentTime,
     forward,
     backward,
+    playbackRate,
+    setPlaybackRate,
   } = usePlayerStore();
 
   // If user refreshes and store is empty, or ID mismatch, redirect back to episode reading page
@@ -107,29 +112,99 @@ export default function MobilePlayerPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex justify-between items-center w-full mb-8 shrink-0 px-4">
-        <button
-          onClick={backward}
-          className="text-base-content/70 hover:text-base-content transition-colors p-2 active:scale-95"
-        >
-          <SkipBack size={32} />
-        </button>
-        <button
-          onClick={togglePlay}
-          className="btn btn-circle btn-primary w-20 h-20 shadow-xl border-none active:scale-95 transition-transform"
-        >
-          {isPlaying ? (
-            <Pause size={36} fill="currentColor" />
-          ) : (
-            <Play size={36} fill="currentColor" className="ml-2" />
-          )}
-        </button>
-        <button
-          onClick={forward}
-          className="text-base-content/70 hover:text-base-content transition-colors p-2 active:scale-95"
-        >
-          <SkipForward size={32} />
-        </button>
+      <div className="flex justify-between items-center w-full mb-8 shrink-0 px-2 relative">
+        {/* Left Side: Speed Control */}
+        <div className="flex-1 flex justify-start">
+          <div className="dropdown dropdown-top">
+            <div
+              tabIndex={0}
+              role="button"
+              className="text-primary hover:text-primary-focus font-bold text-sm active:scale-95 transition-colors p-2"
+            >
+              {playbackRate}x
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content z-[200] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-40 mb-4 border border-base-200"
+            >
+              {[0.8, 1, 1.3, 1.5, 1.8, 2].map((rate) => (
+                <li key={rate}>
+                  <button
+                    onClick={() => {
+                      setPlaybackRate(rate);
+                      const elem = document.activeElement as HTMLElement;
+                      if (elem) elem.blur();
+                    }}
+                    className={`flex justify-between items-center px-4 py-2 rounded-xl transition-colors ${
+                      playbackRate === rate
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-base-200 text-base-content/80"
+                    }`}
+                  >
+                    <span>{rate === 1 ? "1x" : `${rate}x`}</span>
+                    {playbackRate === rate && <Check size={16} />}
+                  </button>
+                </li>
+              ))}
+              <div className="divider my-1"></div>
+              <li>
+                <button
+                  onClick={() => {
+                    const newRate = playbackRate + 0.1;
+                    if (newRate <= 3)
+                      setPlaybackRate(Number(newRate.toFixed(1)));
+                  }}
+                  className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
+                >
+                  Faster <Rabbit size={16} className="text-base-content/60" />
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    const newRate = playbackRate - 0.1;
+                    if (newRate >= 0.5)
+                      setPlaybackRate(Number(newRate.toFixed(1)));
+                  }}
+                  className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
+                >
+                  Slower <Turtle size={16} className="text-base-content/60" />
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Center: Main Playback Controls */}
+        <div className="flex items-center gap-6 justify-center flex-shrink-0">
+          <button
+            onClick={backward}
+            className="text-base-content/70 hover:text-base-content transition-colors p-2 active:scale-95"
+          >
+            <SkipBack size={32} />
+          </button>
+          <button
+            onClick={togglePlay}
+            className="btn btn-circle btn-primary w-20 h-20 shadow-xl border-none active:scale-95 transition-transform"
+          >
+            {isPlaying ? (
+              <Pause size={36} fill="currentColor" />
+            ) : (
+              <Play size={36} fill="currentColor" className="ml-2" />
+            )}
+          </button>
+          <button
+            onClick={forward}
+            className="text-base-content/70 hover:text-base-content transition-colors p-2 active:scale-95"
+          >
+            <SkipForward size={32} />
+          </button>
+        </div>
+
+        {/* Right Side: Spacer to keep center exact */}
+        <div className="flex-1 flex justify-end">
+          {/* Future controls can go here */}
+        </div>
       </div>
 
       {/* Actions (Go to reading mode) */}

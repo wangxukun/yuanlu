@@ -29,6 +29,8 @@ interface PlayerState {
   setDuration: (duration: number) => void;
   setCurrentAudioUrl: (url: string) => void;
   setInitialTime: (time: number | null) => void;
+  playbackRate: number;
+  setPlaybackRate: (rate: number) => void;
 
   // 确保这一行存在
   setAudio: (audio: AudioTrack) => void;
@@ -58,6 +60,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setDuration: (duration: number) => set({ duration: duration }),
   setCurrentAudioUrl: (url: string) => set({ currentAudioUrl: url }),
   setInitialTime: (time) => set({ initialTime: time }),
+  playbackRate: 1.0,
+  setPlaybackRate: (rate: number) => {
+    const audio = get().audioRef;
+    if (audio) {
+      audio.playbackRate = rate;
+    }
+    set({ playbackRate: rate });
+  },
   volume: 1,
   setVolume: (volume: number) => {
     const audio = get().audioRef;

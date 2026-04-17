@@ -2,7 +2,16 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { usePlayerStore } from "../../store/player-store";
-import { Play, Pause, X, SkipBack, SkipForward } from "lucide-react";
+import {
+  Play,
+  Pause,
+  X,
+  SkipBack,
+  SkipForward,
+  Check,
+  Rabbit,
+  Turtle,
+} from "lucide-react";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -23,6 +32,8 @@ export default function PlayControlBar() {
     setCurrentTime,
     forward,
     backward,
+    playbackRate,
+    setPlaybackRate,
   } = usePlayerStore();
 
   if (!currentEpisode) return null;
@@ -71,6 +82,68 @@ export default function PlayControlBar() {
 
         <div className="hidden lg:flex flex-col absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md justify-center gap-1">
           <div className="flex items-center justify-center gap-4">
+            {/* Speed Control */}
+            <div className="dropdown dropdown-top">
+              <div
+                tabIndex={0}
+                role="button"
+                className="text-primary hover:text-primary-focus font-bold text-xs active:scale-95 transition-colors px-1"
+              >
+                {playbackRate}x
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-[200] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-40 mb-4 border border-base-200"
+              >
+                {[0.8, 1, 1.3, 1.5, 1.8, 2].map((rate) => (
+                  <li key={rate}>
+                    <button
+                      onClick={() => {
+                        setPlaybackRate(rate);
+                        const elem = document.activeElement as HTMLElement;
+                        if (elem) elem.blur();
+                      }}
+                      className={`flex justify-between items-center px-4 py-2 rounded-xl transition-colors ${
+                        playbackRate === rate
+                          ? "bg-primary/10 text-primary font-bold"
+                          : "hover:bg-base-200 text-base-content/80 text-sm"
+                      }`}
+                    >
+                      <span className={playbackRate === rate ? "text-sm" : ""}>
+                        {rate}x
+                      </span>
+                      {playbackRate === rate && <Check size={16} />}
+                    </button>
+                  </li>
+                ))}
+                <div className="divider my-1"></div>
+                <li>
+                  <button
+                    onClick={() => {
+                      const newRate = playbackRate + 0.1;
+                      if (newRate <= 3)
+                        setPlaybackRate(Number(newRate.toFixed(1)));
+                    }}
+                    className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
+                  >
+                    Faster <Rabbit size={16} className="text-base-content/60" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      const newRate = playbackRate - 0.1;
+                      if (newRate >= 0.5)
+                        setPlaybackRate(Number(newRate.toFixed(1)));
+                    }}
+                    className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
+                  >
+                    Slower <Turtle size={16} className="text-base-content/60" />
+                  </button>
+                </li>
+              </ul>
+            </div>
+
             <button
               onClick={backward}
               className="text-base-content/60 hover:text-primary"
