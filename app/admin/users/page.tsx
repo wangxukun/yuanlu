@@ -21,6 +21,7 @@ export default async function Page() {
     // 确保可选字段存在，防止 undefined 报错
     isCommentAllowed: (user as User).isCommentAllowed ?? true,
     isLoginAllowed: (user as User).isLoginAllowed ?? true,
+    registerIp: user.registerIp ?? null,
   }));
 
   return (
