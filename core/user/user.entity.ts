@@ -13,6 +13,7 @@ export interface User {
   isCommentAllowed: boolean;
   isLoginAllowed: boolean; // 新增：是否允许登录
   loginCount: number; // 累计登录次数
+  registerIp?: string | null; // 注册IP地址
   emailVerified: Date;
   userProfile: UserProfile;
 }

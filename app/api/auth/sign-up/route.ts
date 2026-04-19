@@ -6,6 +6,12 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
+    // 获取注册IP地址（支持反向代理）
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const registerIp = forwardedFor
+      ? forwardedFor.split(",")[0].trim()
+      : request.headers.get("x-real-ip") || "unknown";
+
     // 检查email是否已存在
     const userExists = await prisma.user.findFirst({
       where: { email },
@@ -28,6 +34,7 @@ export async function POST(request: Request) {
       data: {
         email,
         password: hashedPassword, // 存储哈希后的密码
+        registerIp,
       },
     });
 

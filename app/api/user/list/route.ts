@@ -18,6 +18,7 @@ export async function GET() {
         isCommentAllowed: true,
         isLoginAllowed: true,
         loginCount: true,
+        registerIp: true,
         emailVerified: true,
         user_profile: {
           select: {

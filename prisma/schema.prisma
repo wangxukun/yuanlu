@@ -21,6 +21,7 @@ model User {
   email              String                @unique @db.VarChar(255)
   emailVerified      DateTime?             @db.Timestamptz(6)
   loginCount         Int                   @default(0)
+  registerIp         String?               @db.VarChar(45)
   VisitorLog         VisitorLog[]
   achievements       achievements[]
   comment_likes      comment_likes[]

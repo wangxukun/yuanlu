@@ -14,6 +14,7 @@ import {
   UserCheck,
   LogIn,
   MessageSquareOff,
+  Globe,
 } from "lucide-react";
 import { User } from "@/core/user/user.entity";
 
@@ -36,6 +37,7 @@ interface ExtendedUser
   isCommentAllowed: boolean; // 我们在 page.tsx 中提供了默认值，所以这里是 boolean
   isLoginAllowed: boolean;
   loginCount: number;
+  registerIp: string | null;
   user_profile?: {
     nickname: string | null;
     avatarFileName: string | null;
@@ -309,6 +311,7 @@ export default function UserManagementClient({
                 <th className="px-6 py-4">用户ID</th>
                 <th className="px-6 py-4">角色</th>
                 <th className="px-6 py-4">登录次数</th>
+                <th className="px-6 py-4">注册IP</th>
                 <th className="px-6 py-4">最后活动</th>
                 <th className="px-6 py-4">创建日期</th>
                 <th className="px-6 py-4 text-right">操作</th>
@@ -375,6 +378,17 @@ export default function UserManagementClient({
                           {user.loginCount ?? 0}
                         </span>
                         <span className="text-xs opacity-50">次</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <Globe
+                          size={14}
+                          className="text-base-content/40 shrink-0"
+                        />
+                        <code className="text-xs bg-base-200 px-1.5 py-0.5 rounded">
+                          {user.registerIp || "未记录"}
+                        </code>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -473,7 +487,7 @@ export default function UserManagementClient({
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-12 text-center text-base-content/50"
                   >
                     <div className="flex flex-col items-center gap-3">
