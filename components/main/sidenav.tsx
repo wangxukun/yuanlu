@@ -11,31 +11,51 @@ export default function SideNav() {
   const { data: session, status } = useSession();
 
   return (
-    // 移除 fixed 和 hidden lg:flex，因为 drawer-side 已经处理了这些
-    <aside className="w-[var(--sidebar-width)] min-h-full bg-base-100 border-r border-base-300 flex flex-col justify-between overflow-y-auto">
-      <Link
-        className="mb-2 flex h-24 flex-col items-center justify-center gap-2 p-4"
-        href="/"
-      >
-        <div className="w-full text-base-content flex justify-center">
-          <AcmeLogo />
+    <aside className="py-8 px-6 w-72 min-h-full flex flex-col bg-slate-50 dark:bg-slate-900 z-50 overflow-hidden">
+      <div className="flex flex-col grow">
+        <div className="mb-12">
+          <Link href="/">
+            <AcmeLogo />
+          </Link>
         </div>
-      </Link>
 
-      <div className="flex grow flex-col px-2 space-y-2">
-        <NavLinks />
+        <nav className="flex flex-col gap-2 grow overflow-y-auto no-scrollbar">
+          <NavLinks />
 
-        {status === "authenticated" && session && (
-          <div className="flex flex-col space-y-2 pt-6 mt-4 border-t border-base-200">
-            <span className="px-4 text-xs font-bold text-base-content/50 uppercase tracking-wider">
-              我的学习
-            </span>
-            <NavLinksLogined />
-          </div>
-        )}
+          {status === "authenticated" && session && (
+            <div className="flex flex-col gap-2 mt-4">
+              <span
+                className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                我的学习
+              </span>
+              <NavLinksLogined />
+            </div>
+          )}
+        </nav>
       </div>
 
-      <div className="p-4"></div>
+      <div className="mt-auto pt-8">
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-[2rem]">
+          <p
+            className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-2"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            专业版会员
+          </p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            探索无限人声，开启深度旅程。
+          </p>
+          <Link
+            href="/library/premiums"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            className="block w-full bg-indigo-600 text-white py-2 px-4 rounded-[2rem] font-bold text-xs text-center hover:bg-indigo-700 transition-colors"
+          >
+            立即升级
+          </Link>
+        </div>
+      </div>
     </aside>
   );
 }

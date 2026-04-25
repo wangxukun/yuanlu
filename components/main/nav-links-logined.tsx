@@ -1,22 +1,16 @@
 // components/main/nav-links-logined.tsx
 "use client";
 
-import {
-  BookOpenIcon,
-  ClockIcon,
-  HeartIcon,
-  MapIcon,
-} from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
 
 const links = [
-  { name: "学习路径", href: "/library/learning-paths", icon: MapIcon },
-  { name: "生词本", href: "/library/vocabulary", icon: BookOpenIcon },
-  { name: "收听历史", href: "/library/history", icon: ClockIcon },
-  { name: "我的收藏", href: "/library/favorites", icon: HeartIcon },
+  { name: "学习路径", href: "/library/learning-paths", iconName: "school" },
+  { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
+  { name: "收听历史", href: "/library/history", iconName: "history" },
+  { name: "我的收藏", href: "/library/favorites", iconName: "favorite" },
 ];
 
 export default function NavLinksLogined() {
@@ -39,25 +33,33 @@ export default function NavLinksLogined() {
         ) {
           return null;
         }
-        const LinkIcon = link.icon;
         return (
           <Link
             key={link.name}
             href={link.href}
             onClick={closeDrawer}
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             className={clsx(
-              // 修复：移除 justify-center，统一使用 justify-start；增加 px-4 和 gap-3
-              "flex mx-4 h-12 items-center justify-start gap-3 rounded-xl px-4 text-base font-medium transition-colors",
+              "flex items-center gap-4 px-4 py-3 text-sm transition-all duration-200 scale-95 active:scale-90 transition-transform",
               {
-                "bg-base-200 text-base-content": pathname === link.href,
-                "text-base-content/70 hover:bg-base-200/50 hover:text-base-content":
+                "font-bold text-indigo-700 border-r-4 border-indigo-600 bg-indigo-50/50":
+                  pathname === link.href,
+                "font-medium text-slate-500 rounded-[1rem] hover:text-indigo-500 hover:bg-indigo-50/50":
                   pathname !== link.href,
               },
             )}
           >
-            <LinkIcon className="w-6 text-primary" />
-            {/* 修复：移除 hidden md:block，始终显示文字 */}
-            <p className="block">{link.name}</p>
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontVariationSettings:
+                  pathname === link.href ? "'FILL' 1" : "'FILL' 0",
+                color: pathname === link.href ? "#4338ca" : "#94a3b8",
+              }}
+            >
+              {link.iconName}
+            </span>
+            <span className="">{link.name}</span>
           </Link>
         );
       })}

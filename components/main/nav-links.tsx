@@ -1,17 +1,16 @@
 // components/main/nav-links.tsx
 "use client";
 
-import { HomeIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
 const links = [
-  { name: "主页", href: "/home", icon: HomeIcon },
+  { name: "主页", href: "/home", iconName: "home" },
   {
     name: "发现",
     href: "/discover",
-    icon: Squares2X2Icon,
+    iconName: "explore",
   },
 ];
 
@@ -26,25 +25,33 @@ export default function NavLinks() {
   return (
     <div className="flex flex-col space-y-1">
       {links.map((link) => {
-        const LinkIcon = link.icon;
         return (
           <Link
             key={link.name}
             href={link.href}
             onClick={closeDrawer}
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             className={clsx(
-              // 修复：移除 justify-center，统一使用 justify-start；增加 px-4 和 gap-3
-              "flex mx-4 h-12 items-center justify-start gap-3 rounded-xl px-4 text-base font-medium transition-colors",
+              "flex items-center gap-4 px-4 py-3 text-sm transition-all duration-200 scale-95 active:scale-90 transition-transform",
               {
-                "bg-base-200 text-base-content": pathname === link.href,
-                "text-base-content/70 hover:bg-base-200/50 hover:text-base-content":
+                "font-bold text-indigo-700 border-r-4 border-indigo-600 bg-indigo-50/50":
+                  pathname === link.href,
+                "font-medium text-slate-500 rounded-[1rem] hover:text-indigo-500 hover:bg-indigo-50/50":
                   pathname !== link.href,
               },
             )}
           >
-            <LinkIcon className="w-6 text-primary" />
-            {/* 修复：移除 hidden md:block，始终显示文字 */}
-            <p className="block">{link.name}</p>
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontVariationSettings:
+                  pathname === link.href ? "'FILL' 1" : "'FILL' 0",
+                color: pathname === link.href ? "#4338ca" : "#94a3b8",
+              }}
+            >
+              {link.iconName}
+            </span>
+            <span className="">{link.name}</span>
           </Link>
         );
       })}
