@@ -135,6 +135,7 @@ export async function getLatestPodcasts(limit: number = 1) {
           coverUrl: signedCoverUrl,
           episodeCount: podcast._count.episode,
           firstEpisodeId: podcast.episode[0]?.episodeid,
+          category: podcast.tags[0]?.name || "最新推荐",
         };
       }),
     );
@@ -308,4 +309,62 @@ export async function getRecommendedChannels() {
 
 export type RecommendedChannel = Awaited<
   ReturnType<typeof getRecommendedChannels>
+>[number];
+
+/**
+ * 获取编辑精选播客 (isEditorPick = true)
+ * @param limit 限制数量
+ */
+export async function getEditorPicks(limit: number = 8) {
+  try {
+    const podcasts = await prisma.podcast.findMany({
+      where: {
+        isEditorPick: true,
+      },
+      take: limit,
+      include: {
+        tags: {
+          take: 1,
+          select: { name: true },
+        },
+        _count: {
+          select: { episode: true },
+        },
+      },
+      orderBy: {
+        createAt: Prisma.SortOrder.desc,
+      },
+    });
+
+    const processedPodcasts = await Promise.all(
+      podcasts.map(async (p) => {
+        let signedCoverUrl = p.coverUrl;
+        if (p.coverFileName && p.coverUrl !== "default_cover_url") {
+          try {
+            signedCoverUrl = await generateSignatureUrl(
+              p.coverFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(`Failed to sign url for podcast ${p.title}`, e);
+          }
+        }
+        return {
+          ...p,
+          coverUrl: signedCoverUrl,
+          category: p.tags[0]?.name || "General",
+          episodeCount: p._count.episode,
+        };
+      }),
+    );
+
+    return processedPodcasts;
+  } catch (error) {
+    console.error("Failed to fetch editor picks:", error);
+    return [];
+  }
+}
+
+export type EditorPickPodcast = Awaited<
+  ReturnType<typeof getEditorPicks>
 >[number];
