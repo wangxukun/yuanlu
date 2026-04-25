@@ -58,7 +58,7 @@ export default async function ChannelsPage() {
                 <Link
                   href={`/channel/${encodeURIComponent(channel.name)}`}
                   key={channel.name}
-                  className={`group relative overflow-hidden rounded-1xl xl:rounded-l ${palette.bg} text-white p-5 xl:p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex justify-center items-center w-full min-h-[160px] xl:min-h-[200px]`}
+                  className={`group relative overflow-hidden rounded-1xl xl:rounded-l ${palette.bg} text-white p-5 xl:p-8 transition-all duration-300 hover:-translate-y-1 flex justify-center items-center w-full min-h-[160px] xl:min-h-[200px]`}
                 >
                   <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center">
                     <h3 className="text-[20px] xl:text-[24px] font-bold uppercase tracking-wide truncate mb-2 w-full">

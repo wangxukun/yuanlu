@@ -67,7 +67,7 @@ export default function RootLayout({
               <div className="drawer-content flex flex-col relative w-full transition-all duration-300">
                 <Header />
 
-                <main className="flex-1 flex flex-col w-full pt-[var(--header-height-mobile)] lg:pt-[var(--header-height-desktop)] pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:pb-0">
+                <main className="flex-1 flex flex-col w-full pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:pb-0">
                   <div className="flex-1 w-full">{children}</div>
                   <Footer />
                 </main>

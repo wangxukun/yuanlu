@@ -1,17 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePlayerStore } from "../../store/player-store";
-import {
-  Play,
-  Pause,
-  X,
-  SkipBack,
-  SkipForward,
-  Check,
-  Rabbit,
-  Turtle,
-} from "lucide-react";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -36,12 +26,28 @@ export default function PlayControlBar() {
     setPlaybackRate,
   } = usePlayerStore();
 
+  const [volume, setVolume] = useState(0.75);
+
   if (!currentEpisode) return null;
+
+  const cyclePlaybackRate = () => {
+    const rates = [0.8, 1, 1.25, 1.5, 2];
+    const currentIndex = rates.indexOf(playbackRate);
+    const nextIndex =
+      currentIndex === -1 ? 1 : (currentIndex + 1) % rates.length;
+    setPlaybackRate(rates[nextIndex]);
+  };
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = Number(e.target.value);
     if (audioRef) audioRef.currentTime = time;
     setCurrentTime(time);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setVolume(val);
+    if (audioRef) audioRef.volume = val;
   };
 
   const handleInfoClick = () => {
@@ -54,170 +60,154 @@ export default function PlayControlBar() {
     }
   };
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="fixed bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:bottom-0 left-0 lg:left-[var(--sidebar-width)] right-0 z-40 bg-base-100/95 backdrop-blur-lg border-t border-base-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="relative h-16 px-4 flex items-center justify-between gap-3">
-        <div
-          className="flex items-center flex-1 min-w-0 cursor-pointer group hover:bg-base-200/50 rounded-lg p-1 -ml-1 transition-colors"
-          onClick={handleInfoClick}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="relative shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-base-200 border border-base-300 shadow-sm">
-            <img
-              src={currentEpisode.coverUrl}
-              alt={currentEpisode.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="ml-3 flex flex-col justify-center min-w-0">
-            <h3 className="text-sm font-semibold text-base-content truncate pr-2 leading-tight">
-              {currentEpisode.title}
-            </h3>
-            <p className="text-xs text-base-content/60 truncate leading-tight mt-0.5">
-              {currentEpisode.podcast?.title}
-            </p>
-          </div>
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 lg:left-[calc(50%+144px)] lg:-translate-x-1/2 w-[calc(100%-4rem)] max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-4 rounded-2xl shadow-[0_20px_40px_rgba(90,66,232,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] z-50 flex items-center gap-4 lg:gap-6 border border-slate-100 dark:border-slate-800">
+      {/* Left: Thumbnail & Info */}
+      <div
+        className="flex items-center gap-4 w-1/4 min-w-[120px] cursor-pointer group"
+        onClick={handleInfoClick}
+      >
+        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-800">
+          <img
+            alt="当前播放"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            src={currentEpisode.coverUrl}
+          />
+        </div>
+        <div className="hidden sm:block overflow-hidden">
+          <h4
+            className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-indigo-600 transition-colors"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            {currentEpisode.title}
+          </h4>
+          <p className="text-xs text-slate-500 truncate">
+            {currentEpisode.podcast?.title || "未知节目"}
+          </p>
+        </div>
+      </div>
+
+      {/* Center: Controls & Progress */}
+      <div className="flex-1 flex flex-col items-center">
+        <div className="flex items-center gap-4 lg:gap-6 mb-2">
+          <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
+            <span className="material-symbols-outlined">shuffle</span>
+          </button>
+          <button
+            onClick={backward}
+            className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            <span className="material-symbols-outlined">skip_previous</span>
+          </button>
+
+          <button
+            onClick={togglePlay}
+            className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+          >
+            {isPlaying ? (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                pause
+              </span>
+            ) : (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                play_arrow
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={forward}
+            className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            <span className="material-symbols-outlined">skip_next</span>
+          </button>
+          <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
+            <span className="material-symbols-outlined">repeat</span>
+          </button>
         </div>
 
-        <div className="hidden lg:flex flex-col absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md justify-center gap-1">
-          <div className="flex items-center justify-center gap-4">
-            {/* Speed Control */}
-            <div className="dropdown dropdown-top">
-              <div
-                tabIndex={0}
-                role="button"
-                className="text-primary hover:text-primary-focus font-bold text-xs active:scale-95 transition-colors px-1"
-              >
-                {playbackRate}x
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content z-[200] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-40 mb-4 border border-base-200"
-              >
-                {[0.8, 1, 1.3, 1.5, 1.8, 2].map((rate) => (
-                  <li key={rate}>
-                    <button
-                      onClick={() => {
-                        setPlaybackRate(rate);
-                        const elem = document.activeElement as HTMLElement;
-                        if (elem) elem.blur();
-                      }}
-                      className={`flex justify-between items-center px-4 py-2 rounded-xl transition-colors ${
-                        playbackRate === rate
-                          ? "bg-primary/10 text-primary font-bold"
-                          : "hover:bg-base-200 text-base-content/80 text-sm"
-                      }`}
-                    >
-                      <span className={playbackRate === rate ? "text-sm" : ""}>
-                        {rate}x
-                      </span>
-                      {playbackRate === rate && <Check size={16} />}
-                    </button>
-                  </li>
-                ))}
-                <div className="divider my-1"></div>
-                <li>
-                  <button
-                    onClick={() => {
-                      const newRate = playbackRate + 0.1;
-                      if (newRate <= 3)
-                        setPlaybackRate(Number(newRate.toFixed(1)));
-                    }}
-                    className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
-                  >
-                    Faster <Rabbit size={16} className="text-base-content/60" />
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => {
-                      const newRate = playbackRate - 0.1;
-                      if (newRate >= 0.5)
-                        setPlaybackRate(Number(newRate.toFixed(1)));
-                    }}
-                    className="flex justify-between items-center px-4 py-2 rounded-xl hover:bg-base-200 text-base-content/80 text-sm"
-                  >
-                    Slower <Turtle size={16} className="text-base-content/60" />
-                  </button>
-                </li>
-              </ul>
-            </div>
+        <div className="w-full flex items-center gap-3">
+          <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px] text-right">
+            {formatTime(currentTime)}
+          </span>
 
-            <button
-              onClick={backward}
-              className="text-base-content/60 hover:text-primary"
-            >
-              <SkipBack size={20} />
-            </button>
-            <button
-              onClick={togglePlay}
-              className="btn btn-circle btn-sm btn-primary text-white shadow-md border-none"
-            >
-              {isPlaying ? (
-                <Pause size={16} />
-              ) : (
-                <Play size={16} className="ml-0.5" />
-              )}
-            </button>
-            <button
-              onClick={forward}
-              className="text-base-content/60 hover:text-primary"
-            >
-              <SkipForward size={20} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2 w-full">
-            <span className="text-[10px] text-base-content/50 font-mono">
-              {formatTime(currentTime)}
-            </span>
+          {/* Custom Progress Bar */}
+          <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative overflow-hidden group/progress flex items-center">
+            <div
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-full transition-all duration-150"
+              style={{ width: `${progressPercent}%` }}
+            ></div>
             <input
               type="range"
               min="0"
               max={duration || 0}
               value={currentTime}
               onChange={handleSeekChange}
-              className="range range-xs range-primary w-full"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <span className="text-[10px] text-base-content/50 font-mono">
-              {formatTime(duration)}
-            </span>
+          </div>
+
+          <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px]">
+            {formatTime(duration)}
+          </span>
+        </div>
+      </div>
+
+      {/* Right: Actions & Volume */}
+      <div className="flex items-center justify-end gap-4 w-1/4 min-w-[80px]">
+        {/* Playback speed control */}
+        <button
+          onClick={cyclePlaybackRate}
+          className="text-slate-400 hover:text-indigo-600 font-bold text-xs transition-colors w-8 text-center hidden md:block"
+          title="播放速度"
+        >
+          {playbackRate}x
+        </button>
+
+        <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
+          <span className="material-symbols-outlined">lyrics</span>
+        </button>
+        <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
+          <span className="material-symbols-outlined">playlist_play</span>
+        </button>
+
+        <div className="items-center gap-2 hidden lg:flex">
+          <span className="material-symbols-outlined text-slate-400 text-lg">
+            volume_up
+          </span>
+          <div className="w-20 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative flex items-center">
+            <div
+              className="absolute left-0 top-0 h-full bg-indigo-600 rounded-full pointer-events-none"
+              style={{ width: `${volume * 100}%` }}
+            ></div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={handleVolumeChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 lg:hidden">
-          <button
-            onClick={togglePlay}
-            className="btn btn-circle btn-sm btn-primary text-white shadow-md border-none"
-          >
-            {isPlaying ? (
-              <Pause size={16} />
-            ) : (
-              <Play size={16} className="ml-0.5" />
-            )}
-          </button>
-          <button
-            onClick={closePlayer}
-            className="p-2 rounded-full text-base-content/40 hover:bg-base-200"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-3 shrink-0 w-32 justify-end">
-          <button
-            onClick={closePlayer}
-            className="p-2 rounded-full text-base-content/40 hover:bg-base-200"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-      <div className="h-0.5 w-full bg-base-200 absolute bottom-0 left-0 lg:hidden">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-        ></div>
+        {/* Close button for mobile/desktop to dismiss player */}
+        <button
+          onClick={closePlayer}
+          className="text-slate-400 hover:text-red-500 transition-colors"
+          title="关闭播放器"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
       </div>
     </div>
   );

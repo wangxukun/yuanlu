@@ -1,0 +1,1065 @@
+<!doctype html>
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#454653",
+              "on-error": "#ffffff",
+              "primary-fixed-dim": "#c6bfff",
+              "outline-variant": "#c8c4d8",
+              "tertiary-fixed": "#e2e1f1",
+              "on-tertiary": "#ffffff",
+              "on-primary": "#ffffff",
+              "on-surface": "#191c1f",
+              primary: "#411fd0",
+              "on-secondary-fixed-variant": "#453d84",
+              "on-secondary-container": "#473f86",
+              "on-primary-fixed": "#170065",
+              "on-error-container": "#93000a",
+              "secondary-fixed-dim": "#c6bfff",
+              "on-surface-variant": "#474555",
+              "on-primary-fixed-variant": "#3e1ace",
+              "surface-variant": "#e1e2e6",
+              tertiary: "#484856",
+              "tertiary-container": "#60606e",
+              error: "#ba1a1a",
+              "surface-container-high": "#e7e8ec",
+              "primary-container": "#5a42e8",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#eff1f5",
+              "inverse-primary": "#c6bfff",
+              "tertiary-fixed-dim": "#c6c5d5",
+              secondary: "#5c559e",
+              "surface-container": "#edeef2",
+              "on-background": "#191c1f",
+              "surface-container-highest": "#e1e2e6",
+              "secondary-container": "#b8b0ff",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#e4dfff",
+              "on-tertiary-fixed": "#1a1b26",
+              "on-primary-container": "#ded8ff",
+              "on-tertiary-container": "#dddbec",
+              background: "#f8f9fd",
+              "surface-tint": "#573fe5",
+              "surface-container-lowest": "#ffffff",
+              "surface-dim": "#d9dade",
+              "secondary-fixed": "#e4dfff",
+              outline: "#787587",
+              "inverse-surface": "#2e3134",
+              "surface-bright": "#f8f9fd",
+              "surface-container-low": "#f2f3f7",
+              "on-secondary-fixed": "#180b57",
+              surface: "#f8f9fd",
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "2rem",
+              xl: "3rem",
+              full: "9999px",
+              "24px": "24px",
+            },
+            fontFamily: {
+              headline: ["Plus Jakarta Sans"],
+              display: ["Plus Jakarta Sans"],
+              body: ["Inter"],
+              label: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-surface">
+    <!-- SideNavBar (Shared Component) -->
+    <aside
+      class="fixed left-0 top-0 h-full py-8 px-6 h-screen w-72 flex-col hidden lg:flex bg-slate-50 dark:bg-slate-950 z-50"
+    >
+      <div class="mb-12">
+        <h1
+          class="text-2xl font-bold tracking-tight text-indigo-700 dark:text-indigo-400 flex items-center gap-3"
+          style=""
+        >
+          <img
+            alt="Logo"
+            class="h-10 w-10 object-contain"
+            src="https://lh3.googleusercontent.com/aida/ADBb0uiGD_y2lH-t2qm53jmN7TJnHYliVsihMzI_OpVVpR1hEfbNZioIH2KfJ8Ns24NSpzxJprwcwmYgehIElO2JOZZmzOLbKJzpvcxV5wPx78cDfGSFBMa0LR_rqjnvKzIa2IaB2p44vj2QkSZsYmwsHws4s08JtBegYuc-aOSjJJYfJsurDz7Wj6EfVodoRhlYXv9LGjIZGidTkLHq3VWKEdai34bAJjK9B7AMZzS_pc7RBj4q2_77cF91mRkG"
+          />远路播客
+        </h1>
+      </div>
+      <nav class="flex flex-col gap-2 flex-1">
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors rounded-xl scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span class="material-symbols-outlined" style="">home</span>
+          <span class="" style="">主页</span>
+        </a>
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-bold text-sm text-indigo-700 dark:text-indigo-400 border-r-4 border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-variation-settings: &quot;FILL&quot; 1"
+            >explore</span
+          >
+          <span class="" style="">发现</span>
+        </a>
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors rounded-xl scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span class="material-symbols-outlined" style="">school</span>
+          <span class="" style="">学习路径</span>
+        </a>
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors rounded-xl scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span class="material-symbols-outlined" style="">translate</span>
+          <span class="" style="">生词本</span>
+        </a>
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors rounded-xl scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span class="material-symbols-outlined" style="">history</span>
+          <span class="" style="">收听历史</span>
+        </a>
+        <a
+          class="flex items-center gap-4 px-4 py-3 font-['Plus_Jakarta_Sans'] font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors rounded-xl scale-95 active:scale-90 transition-transform"
+          href="#"
+          style=""
+        >
+          <span class="material-symbols-outlined" style="">favorite</span>
+          <span class="" style="">我的收藏</span>
+        </a>
+      </nav>
+      <div class="mt-auto pt-8">
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-lg">
+          <p
+            class="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-2"
+            style=""
+          >
+            专业版会员
+          </p>
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-4" style="">
+            探索无限人声，开启深度旅程。
+          </p>
+          <button
+            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-bold text-xs"
+            style=""
+          >
+            立即升级
+          </button>
+        </div>
+      </div>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="lg:ml-72 min-h-screen">
+      <!-- TopNavBar (Shared Component) -->
+      <header
+        class="sticky top-0 z-40 flex items-center justify-between px-8 w-full h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl duration-300 ease-in-out"
+      >
+        <div class="flex items-center gap-2 lg:hidden">
+          <h1
+            class="text-xl font-black text-indigo-600 dark:text-indigo-400"
+            style=""
+          >
+            The Voyager
+          </h1>
+        </div>
+        <div class="flex-1 flex justify-end items-center gap-6">
+          <div class="relative w-96 hidden md:block">
+            <input
+              class="w-full h-12 bg-surface-container-low border-none rounded-full px-6 pl-12 text-sm focus:ring-2 focus:ring-primary/10"
+              placeholder="搜索路径、声音、智慧..."
+              type="text"
+            />
+            <span
+              class="material-symbols-outlined absolute left-4 top-3 text-slate-400"
+              style=""
+              >search</span
+            >
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              class="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+              style=""
+            >
+              <span class="material-symbols-outlined" style=""
+                >notifications</span
+              >
+            </button>
+            <button
+              class="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+              style=""
+            >
+              <span class="material-symbols-outlined" style="">dark_mode</span>
+            </button>
+            <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-200">
+              <img
+                alt="用户个人资料"
+                class="w-full h-full object-cover"
+                data-alt="Portrait of a friendly smiling man with glasses in a professional studio setting with soft lighting"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3nEcaZM_d3on3lsubO3hS-704hvjwYDarFa16xSS3OjOOOva6ZmFcL8UDDj6m-YDsbogo1P4CDtoMU4gx634jOmlh6ZIesZnsH3f5YMqqyj9aAyCg18DhNVzF5pcyBtYUKBSaxeVSgw55Bve01WRnNIZl_smMR-kLhLfL3vIkT2_6CONxLC3z0JjbKUq5oiXt2ae_fqmyZNV12ra9sVxksQw2Au_vaaMp8yk3rDMO7-_Y4AQKS89tWOwRmAXO-4_7iBJU6DQO2o3t"
+                style=""
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="px-8 py-10 max-w-7xl mx-auto">
+        <!-- Hot Programs Section (Moved up) -->
+        <section class="mb-16">
+          <div class="flex items-center justify-between mb-6">
+            <h2
+              class="text-2xl font-bold font-headline text-on-surface"
+              style=""
+            >
+              热门节目
+            </h2>
+            <a
+              class="text-primary text-sm font-semibold hover:underline"
+              href="#"
+              style=""
+              >查看全部</a
+            >
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Rank 01 -->
+            <div
+              class="bg-surface-container-lowest p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative"
+            >
+              <div
+                class="absolute top-2 left-2 z-10 bg-[#FFD700] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm"
+                style=""
+              >
+                01
+              </div>
+              <div class="aspect-square rounded-lg overflow-hidden mb-4">
+                <img
+                  alt="排行 01"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Abstract golden patterns reflecting light like liquid metal ripples"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIf81QR4X8P0RYqiAGcxex2GEL6oz1X7ZBIWzuGBRdp4-xvB_2i6kZ0bLDagSDszNvCx1H4Ioxr8tY83r7WFgAezhBcD4Zuh7OhwQQ6CT0KCC2FO8Ruya16roAtFMbs7ePU7cTl3ZKnWLFtBxGFj1wFdXVLXoEq2-NGLUhUMbkUBmOeTZZq9L13OQ4huTPw3vK0CSe3m28m1l7FEkjWOpJKRL8jSCpL3WEJ9EAySBu8E_LtkMgxOBbfyJRED80Wn4tOpJqyoj8R8K2"
+                  style=""
+                />
+              </div>
+              <p
+                class="text-primary text-[10px] font-bold uppercase tracking-widest mb-1"
+                style=""
+              >
+                热门趋势
+              </p>
+              <h3
+                class="text-base font-bold text-on-surface mb-2 truncate font-headline group-hover:text-primary transition-colors"
+                style=""
+              >
+                禅意回响
+              </h3>
+              <div
+                class="flex items-center gap-3 text-[10px] text-outline font-semibold"
+              >
+                <span class="flex items-center gap-1" style=""
+                  ><span class="material-symbols-outlined text-xs" style=""
+                    >headphones</span
+                  >
+                  45.2k 收听者</span
+                >
+              </div>
+            </div>
+            <!-- Rank 02 -->
+            <div
+              class="bg-surface-container-lowest p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative"
+            >
+              <div
+                class="absolute top-2 left-2 z-10 bg-[#C0C0C0] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm"
+                style=""
+              >
+                02
+              </div>
+              <div class="aspect-square rounded-lg overflow-hidden mb-4">
+                <img
+                  alt="排行 02"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Close-up of a high-tech computer circuit board with soft blue glowing elements"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxSL79kRU8fxBg1OkVpc1hQ-0gUiy9VM4UF307mZZUSFlhp2PvmVrXibdwBTamD0d9Pm_2NeQG5L32yCXyxsewu-w5OGzSOoCzSSoZsHauYoMDgjp5WJuFIs14W3qA8jva3Zdwc2ox2Usa8bj4m55IqwiJYKdk1vMF7xRxMM18zBl4hlwYJZ2ENTUUq_N8AD1ntRi8AJ5e86SaOVdrApNbHg7zMCmi8zlFl2wy51-XtodEco6Zt5OTWSNtbixf8eayZ8K7hQ91NhRk"
+                  style=""
+                />
+              </div>
+              <p
+                class="text-primary text-[10px] font-bold uppercase tracking-widest mb-1"
+                style=""
+              >
+                热门趋势
+              </p>
+              <h3
+                class="text-base font-bold text-on-surface mb-2 truncate font-headline group-hover:text-primary transition-colors"
+                style=""
+              >
+                代码之旅
+              </h3>
+              <div
+                class="flex items-center gap-3 text-[10px] text-outline font-semibold"
+              >
+                <span class="flex items-center gap-1" style=""
+                  ><span class="material-symbols-outlined text-xs" style=""
+                    >headphones</span
+                  >
+                  32.8k 收听者</span
+                >
+              </div>
+            </div>
+            <!-- Rank 03 -->
+            <div
+              class="bg-surface-container-lowest p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative"
+            >
+              <div
+                class="absolute top-2 left-2 z-10 bg-[#CD7F32] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm"
+                style=""
+              >
+                03
+              </div>
+              <div class="aspect-square rounded-lg overflow-hidden mb-4">
+                <img
+                  alt="排行 03"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Top view of acoustic guitar strings and body with soft warm indoor lighting"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8n80DoDFgWrzikvPav_DEfNci3tRhwqjLjhLovMfuWenr_fwqdJf2k-cDrLxNuwsd8O1gKx6wH4wmagLv2KJNDqOdTjegaNZHVW1DCYDmZTE6QDTtKCQrIr_fb2CGLWJlx2jrd_uiObNhtmj3f1SgQnmvpykBubEfAJhK4Oz4xnC2G6lZbGmrx5mhNn3uvRzIRjdi36l8mpX0AmMEZtHB5J1grgeiFUIQYEnO-fpnyT986LDuZLsls7rxvdQqZgBqMnsgeOyVyqmL"
+                  style=""
+                />
+              </div>
+              <p
+                class="text-primary text-[10px] font-bold uppercase tracking-widest mb-1"
+                style=""
+              >
+                热门趋势
+              </p>
+              <h3
+                class="text-base font-bold text-on-surface mb-2 truncate font-headline group-hover:text-primary transition-colors"
+                style=""
+              >
+                讲故事的人公会
+              </h3>
+              <div
+                class="flex items-center gap-3 text-[10px] text-outline font-semibold"
+              >
+                <span class="flex items-center gap-1" style=""
+                  ><span class="material-symbols-outlined text-xs" style=""
+                    >headphones</span
+                  >
+                  28.1k 收听者</span
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 为你推荐 (For You) - Updated Layout from SCREEN_26 -->
+        <section class="mb-16">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h2
+                class="text-2xl font-bold font-headline text-on-surface"
+                style=""
+              >
+                为你推荐
+              </h2>
+            </div>
+            <a
+              class="text-primary text-sm font-semibold hover:underline"
+              href="#"
+              style=""
+              >查看全部</a
+            >
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Recommendation Card 1 -->
+            <div class="group cursor-pointer">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4 bg-surface-container-low shadow-sm"
+              >
+                <img
+                  alt="播客"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  data-alt="Minimalist design of audio waves forming a mountain peak in purple and white tones"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj4cwX292bASk3zVjfcEot_88jv9OBgi5WhBdKGtvgyIYSBjIJisRMyA9xRg3PEaMal6gnPAZ9UQdZUy-8O62QmhUDgkHFbtS4fHMu1DDorSN2ZIpvLefE-ejkL_ACaWZ3xhCvUOtwS4GRP5nyr3EWWfPS_EJnHjQ-NXAiqWpcxR81Kovik1olK8BkEJCxIioVBAJRKQS-HUIhOjyrYa8kEzNL7GjDzxdc0bjIUh0SMQDFh9ozMPjk7ozytHzF6zpc1h01yvCpM9i4"
+                  style=""
+                />
+                <div
+                  class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
+                >
+                  <div
+                    class="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-3xl"
+                      style="font-variation-settings: &quot;FILL&quot; 1"
+                      >play_arrow</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <p
+                  class="text-primary font-bold text-[10px] uppercase tracking-widest"
+                  style=""
+                >
+                  远路工作室
+                </p>
+                <h3
+                  class="font-bold text-on-surface leading-snug group-hover:text-primary transition-colors font-headline"
+                  style=""
+                >
+                  数字游民的灵魂
+                </h3>
+                <div
+                  class="flex items-center gap-2 text-slate-500 text-[11px] font-medium"
+                >
+                  <span class="" style="">48 剧集</span>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                  <span class="" style="">12.5k 播放</span>
+                  <span
+                    class="bg-surface-variant px-2 py-0.5 rounded text-primary"
+                    style=""
+                    >心理学</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- Recommendation Card 2 -->
+            <div class="group cursor-pointer">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4 bg-surface-container-low shadow-sm"
+              >
+                <img
+                  alt="播客"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  data-alt="Close up of vintage microphone in a dark professional studio with atmospheric blue lighting"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVGjYL3oACzPPE8LVe3NOfQgDMZDH4wvV5-8HxmZ2qa8qFKNMQIRiDjwMauBluO_U-H1w5SuDzS7rXBwg8vulaaWo2C8XskAEaEJ6bt82S2CzZ37LWULoimiXd4YU3SmEebo7IjsnLR5pv3DGGRWLOXthZkqu7yQ829irbvDnb_RVHBjv29Ig_vmFnRtfXP_6bV3HbGw-0oGeEHGvoIzKz6U3IQuIhVccZhDWAplIegHOFqT01O96knszInU-coT9Lhbc1hcpkxetE"
+                  style=""
+                />
+                <div
+                  class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
+                >
+                  <div
+                    class="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-3xl"
+                      style="font-variation-settings: &quot;FILL&quot; 1"
+                      >play_arrow</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <p
+                  class="text-primary font-bold text-[10px] uppercase tracking-widest"
+                  style=""
+                >
+                  午夜电台
+                </p>
+                <h3
+                  class="font-bold text-on-surface leading-snug group-hover:text-primary transition-colors font-headline"
+                  style=""
+                >
+                  午夜谈话
+                </h3>
+                <div
+                  class="flex items-center gap-2 text-slate-500 text-[11px] font-medium"
+                >
+                  <span class="" style="">124 剧集</span>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                  <span class="" style="">85.2k 播放</span>
+                  <span
+                    class="bg-surface-variant px-2 py-0.5 rounded text-primary"
+                    style=""
+                    >情感</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- Recommendation Card 3 -->
+            <div class="group cursor-pointer">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4 bg-surface-container-low shadow-sm"
+              >
+                <img
+                  alt="播客"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  data-alt="Top view of an open notebook with a pen and coffee cup on a clean white desk"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7UpIhMrmmUipmZwuu6Jnu0cIA5qmLKV2CoIoxC8g8EATh2dbPhgcjsV7bbGdcvSfRFTXIZ3hiEVKTgEXB3YA5I5E0GFT09ykOVjeo38JT2PC5i_3nPML0fYcNT2sVFMt2xcw-KCXYyABrIJPOIWAiWCgML-zhwzmC1uIaTB3SyCFx0mKOfcAJ7V1XN5DhNBqpRHBjwdhOanY2aToSbqfmUZihlOiRBLglBArZB9oDC1iQ4JiWCEpKa9J446G5CpDMCFroIbW46il_"
+                  style=""
+                />
+                <div
+                  class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
+                >
+                  <div
+                    class="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-3xl"
+                      style="font-variation-settings: &quot;FILL&quot; 1"
+                      >play_arrow</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <p
+                  class="text-primary font-bold text-[10px] uppercase tracking-widest"
+                  style=""
+                >
+                  创意中心
+                </p>
+                <h3
+                  class="font-bold text-on-surface leading-snug group-hover:text-primary transition-colors font-headline"
+                  style=""
+                >
+                  心流与创造力瓶颈
+                </h3>
+                <div
+                  class="flex items-center gap-2 text-slate-500 text-[11px] font-medium"
+                >
+                  <span class="" style="">312 剧集</span>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                  <span class="" style="">240k 播放</span>
+                  <span
+                    class="bg-surface-variant px-2 py-0.5 rounded text-primary"
+                    style=""
+                    >教育</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- Recommendation Card 4 -->
+            <div class="group cursor-pointer">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4 bg-surface-container-low shadow-sm"
+              >
+                <img
+                  alt="播客"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  data-alt="Portrait of a young person wearing high-end over-ear headphones with neon lighting accents"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjcXewg-4iG-RJmcZKVnr9qHWuq2gIggaFE2oh1sGUYgb5BzB2QNpScNqqVQsXnN5utz75bT3rMzGEDuSK4ifigY__AXzT5OlOt3NqOkVJhRMg1_JdavtLvknwjmrAfqbi56dyB8vjkYmw7c-MYc5GvxNPgUTBHu6RLQIW9h0B1T9_SdfPyNwiBAu7t4lX1kHYhP8grwggWscyU337__PoT6nPNG2G8lzThDcd14tR4sndpAR2r5YXOGWUfkEYtgwcd7oRHnokPPps"
+                  style=""
+                />
+                <div
+                  class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
+                >
+                  <div
+                    class="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-3xl"
+                      style="font-variation-settings: &quot;FILL&quot; 1"
+                      >play_arrow</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <p
+                  class="text-primary font-bold text-[10px] uppercase tracking-widest"
+                  style=""
+                >
+                  科学周刊
+                </p>
+                <h3
+                  class="font-bold text-on-surface leading-snug group-hover:text-primary transition-colors font-headline"
+                  style=""
+                >
+                  未来科技伦理
+                </h3>
+                <div
+                  class="flex items-center gap-2 text-slate-500 text-[11px] font-medium"
+                >
+                  <span class="" style="">15 剧集</span>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                  <span class="" style="">620k 播放</span>
+                  <span
+                    class="bg-surface-variant px-2 py-0.5 rounded text-primary"
+                    style=""
+                    >文化</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 新节目 (New Programs) -->
+        <section class="mb-16">
+          <div class="flex items-end justify-between mb-8">
+            <div>
+              <h2 class="text-2xl font-bold text-on-surface" style="">
+                新节目
+              </h2>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-primary shadow-sm"
+                style=""
+              >
+                <span class="material-symbols-outlined" style=""
+                  >chevron_left</span
+                >
+              </button>
+              <button
+                class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-primary shadow-sm"
+                style=""
+              >
+                <span class="material-symbols-outlined" style=""
+                  >chevron_right</span
+                >
+              </button>
+            </div>
+          </div>
+          <div class="flex gap-8 overflow-x-auto no-scrollbar pb-4">
+            <!-- New Program Card 1 -->
+            <div class="flex-none w-64 group">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4"
+              >
+                <img
+                  alt="节目封面"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Dramatic black and white landscape of misty mountains with a single bird soaring high"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCesZN2k0c-yVLiaP16ouIsUXqj7RswdE93e1Jjxf322b6HOZYG5HToHzTf-R2floPP97LejbgklpKWdn41-pJsz-6OqszVq7hi9do_dJ45ujL65iGzX-Hld63jIA2EidPKzefh01HaE4vCQNLX_551OcrySNNcXvZZEqzWTvKp2eCuhI5OKiGhP4MJ4sUq8JVIrPfxvdRL6Ljt39pHnvP2sdRweU1cGNXnI6DlaEjSwWp6NcOG7n32b4hoUbmafZ9fWBq-Jn3eUD84"
+                  style=""
+                />
+                <div
+                  class="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg"
+                  style=""
+                >
+                  新作
+                </div>
+              </div>
+              <p
+                class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1"
+                style=""
+              >
+                现代智慧
+              </p>
+              <h3 class="font-bold text-on-surface line-clamp-1 mb-1" style="">
+                静止的哲学
+              </h3>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xs text-slate-400" style="">12 集</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span
+                  class="text-xs text-primary font-medium px-2 py-0.5 bg-surface-variant rounded-full"
+                  style=""
+                  >社会</span
+                >
+              </div>
+            </div>
+            <!-- New Program Card 2 -->
+            <div class="flex-none w-64 group">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4"
+              >
+                <img
+                  alt="节目封面"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Close-up of a jazz saxophone with warm stage lighting and soft bokeh background"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGC6wBttUlXOKx-EuvmLsxHC96eCZ9_ch1pO70JYwMX_yRBA5VltByMeUT3ULv3VeuRj4O7UO1rxGo_TRs0CJssGKpmNWGDBF9qNT19ZaUogU_AvOCcMGEYg8CfLHtJ_X8t9HyCWh94bciCaaXpkwxiYek5o0mHRmqupSPd81SkMACvPf99QTssMpfrwtk2CWp0l4OCsMIqA9fvhFSPYl1J5F9jBx0Bc2r0go43EsMRghwn-Gka5iyshZ_dyZNsNyLpYk8RjcIH0N5"
+                  style=""
+                />
+                <div
+                  class="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg"
+                  style=""
+                >
+                  新作
+                </div>
+              </div>
+              <p
+                class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1"
+                style=""
+              >
+                声音档案馆
+              </p>
+              <h3 class="font-bold text-on-surface line-clamp-1 mb-1" style="">
+                爵士仪式
+              </h3>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xs text-slate-400" style="">8 集</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span
+                  class="text-xs text-primary font-medium px-2 py-0.5 bg-surface-variant rounded-full"
+                  style=""
+                  >音乐</span
+                >
+              </div>
+            </div>
+            <!-- New Program Card 3 -->
+            <div class="flex-none w-64 group">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4"
+              >
+                <img
+                  alt="节目封面"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Satellite view of earth with vibrant city lights and deep space background"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAD5qG3CxvGNxBZlynRcVYaC9ZHHesQQnlQ_jfpGif9BWztmBXPBc1CJ-z4EKKAxa7VBh9NmP3n1O-P_PKQJ9R56Lh2z-qDoJ9kCrBsahUyM6r--adtqpTsNk5XvFv88asagqZhT_UWar3LORcj4GbfOKPn9_a0q9BxdUPk7lzEvmJJO_aeTn1I2cOJDBoxC_M1lK_UHWlFaBBYbJ_2o93-j8sa1hvsTw9m1BI5VNv7rw_RCeHTlCnt_KsHTpdXeD6QDyI3YVzbxjXX"
+                  style=""
+                />
+                <div
+                  class="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg"
+                  style=""
+                >
+                  新作
+                </div>
+              </div>
+              <p
+                class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1"
+                style=""
+              >
+                轨道视角
+              </p>
+              <h3 class="font-bold text-on-surface line-clamp-1 mb-1" style="">
+                火星编年史
+              </h3>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xs text-slate-400" style="">24 集</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span
+                  class="text-xs text-primary font-medium px-2 py-0.5 bg-surface-variant rounded-full"
+                  style=""
+                  >科学</span
+                >
+              </div>
+            </div>
+            <!-- New Program Card 4 -->
+            <div class="flex-none w-64 group">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4"
+              >
+                <img
+                  alt="节目封面"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Stack of vintage leather-bound books on a dark wooden table with warm candlelight"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoFkFwlR_nsJ1pcb0zQ96INCSUYNfzGhdld-wLXp-g4Ea3Qt3fJ__Kx11sXT0E7oqeUSbWRMQmqIFRdsosPYAi4xF45EhYXejEktqJVrQ0m2_DZca14g0-Ic_8CSS0qRMIsAxkF0_6X4AynM7ORZtVnRfJiM1oy_TLaJs62ivu0nViQb3ghLg8dKM5qDtNAKCLYd4Gbp8o-lpgH6sHhQx4nPZCofN1SIM5hiV3PJeAzT3ENSPrZu1RCexgfM8rnXEnxA_KBqiYh77T"
+                  style=""
+                />
+                <div
+                  class="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg"
+                  style=""
+                >
+                  新作
+                </div>
+              </div>
+              <p
+                class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1"
+                style=""
+              >
+                文学评论
+              </p>
+              <h3 class="font-bold text-on-surface line-clamp-1 mb-1" style="">
+                未竟之诗
+              </h3>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xs text-slate-400" style="">15 集</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span
+                  class="text-xs text-primary font-medium px-2 py-0.5 bg-surface-variant rounded-full"
+                  style=""
+                  >文学</span
+                >
+              </div>
+            </div>
+            <!-- New Program Card 5 -->
+            <div class="flex-none w-64 group">
+              <div
+                class="relative aspect-square rounded-lg overflow-hidden mb-4"
+              >
+                <img
+                  alt="节目封面"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  data-alt="Colorful array of exotic spices in wooden bowls on a rustic market table"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD13JkURJfPF5DXXvBGdVWQIFDL5B-9rAhY49TjaA6ukBwrNvFGCW4DNNcnXPYhWCnP-QnH389kPaXZI8weTdAh8zKVq1jh2koJwiph2DsiTLdnagoTC43MEIG3OZWfCUjz62XL2IjaGYIZYuDY_l_wYY0GUVCfccUecwEzP7O0X3UjDFkqchDqh9X4P0Air4ZFWC1uoD-C2EVHau0iExV4lOSNiL6EEBsMAmGQ8oe1DOfD5UZ73cDgvFKqqrBsZYw1DJUKDAHRbO3V"
+                  style=""
+                />
+                <div
+                  class="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg"
+                  style=""
+                >
+                  新作
+                </div>
+              </div>
+              <p
+                class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1"
+                style=""
+              >
+                味蕾旅行
+              </p>
+              <h3 class="font-bold text-on-surface line-clamp-1 mb-1" style="">
+                丝路香料考
+              </h3>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xs text-slate-400" style="">9 集</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span
+                  class="text-xs text-primary font-medium px-2 py-0.5 bg-surface-variant rounded-full"
+                  style=""
+                  >文化</span
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 推荐频道 (Recommended Channels) -->
+        <section class="mb-16">
+          <div class="flex items-center justify-between mb-8">
+            <h2
+              class="text-2xl font-bold font-headline text-on-surface"
+              style=""
+            >
+              推荐频道
+            </h2>
+            <a
+              class="text-primary text-sm font-semibold hover:underline"
+              href="#"
+              style=""
+              >查看全部</a
+            >
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Channel Card 1 -->
+            <div
+              class="bg-[#F0EEFF] p-8 rounded-24px hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-50 cursor-pointer"
+            >
+              <h3
+                class="text-xl font-bold text-[#1A1A1A] mb-2 font-headline"
+                style=""
+              >
+                深度对话
+              </h3>
+              <p class="text-[#6B7280] text-sm font-medium mb-8" style="">
+                45 剧集
+              </p>
+              <button
+                class="flex items-center justify-center gap-2 bg-white text-primary border border-primary/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-primary hover:text-white hover:shadow-md transition-all w-full"
+                style=""
+              >
+                <span class="material-symbols-outlined text-lg" style=""
+                  >computer</span
+                >
+                <span class="" style="">频道主页</span>
+              </button>
+            </div>
+            <!-- Channel Card 2 -->
+            <div
+              class="bg-[#F0EEFF] p-8 rounded-24px hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-50 cursor-pointer"
+            >
+              <h3
+                class="text-xl font-bold text-[#1A1A1A] mb-2 font-headline"
+                style=""
+              >
+                静心冥想
+              </h3>
+              <p class="text-[#6B7280] text-sm font-medium mb-8" style="">
+                32 剧集
+              </p>
+              <button
+                class="flex items-center justify-center gap-2 bg-white text-primary border border-primary/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-primary hover:text-white hover:shadow-md transition-all w-full"
+                style=""
+              >
+                <span class="material-symbols-outlined text-lg" style=""
+                  >computer</span
+                >
+                <span class="" style="">频道主页</span>
+              </button>
+            </div>
+            <!-- Channel Card 3 -->
+            <div
+              class="bg-[#F0EEFF] p-8 rounded-24px hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-50 cursor-pointer"
+            >
+              <h3
+                class="text-xl font-bold text-[#1A1A1A] mb-2 font-headline"
+                style=""
+              >
+                独立音乐
+              </h3>
+              <p class="text-[#6B7280] text-sm font-medium mb-8" style="">
+                128 剧集
+              </p>
+              <button
+                class="flex items-center justify-center gap-2 bg-white text-primary border border-primary/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-primary hover:text-white hover:shadow-md transition-all w-full"
+                style=""
+              >
+                <span class="material-symbols-outlined text-lg" style=""
+                  >computer</span
+                >
+                <span class="" style="">频道主页</span>
+              </button>
+            </div>
+            <!-- Channel Card 4 -->
+            <div
+              class="bg-[#F0EEFF] p-8 rounded-24px hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-50 cursor-pointer"
+            >
+              <h3
+                class="text-xl font-bold text-[#1A1A1A] mb-2 font-headline"
+                style=""
+              >
+                未来科技
+              </h3>
+              <p class="text-[#6B7280] text-sm font-medium mb-8" style="">
+                56 剧集
+              </p>
+              <button
+                class="flex items-center justify-center gap-2 bg-white text-primary border border-primary/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-primary hover:text-white hover:shadow-md transition-all w-full"
+                style=""
+              >
+                <span class="material-symbols-outlined text-lg" style=""
+                  >computer</span
+                >
+                <span class="" style="">频道主页</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <!-- Floating Player Bar (Glassmorphism) -->
+      <div
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 lg:left-[calc(50%+144px)] lg:-translate-x-1/2 w-[calc(100%-4rem)] max-w-4xl bg-white/80 backdrop-blur-2xl p-4 rounded-lg shadow-[0_20px_40px_rgba(90,66,232,0.1)] z-50 flex items-center gap-6"
+      >
+        <div class="flex items-center gap-4 w-1/4">
+          <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+            <img
+              alt="当前播放"
+              class="w-full h-full object-cover"
+              data-alt="Abstract colorful light leak with soft gradients and floating dust particles"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQHd5cfTDWtwYvmgX04usu544DhQAwJLZGnWumVi8tLbmrVOcrDNiwFAbgSGA-LVYCIvL4UAYH1fY-OlvDHEjXf8CtAkhwJ2NXnDbfGRtbuHozAQ3duXKG-0-ytltpBfMbhAEmRhXP9jzpVECapwUp0lcTmAcboRxFQM9gvmVNkFVuyzWLqspEQZPueC2k2MN8Us3DPRVszLuKlIjEXTwNi2yN-1k_s94p3MIaipOnvD5UASTgMqvLapts7bk3wf5gieZpeqyXJWDI"
+              style=""
+            />
+          </div>
+          <div class="hidden sm:block overflow-hidden">
+            <h4 class="font-bold text-sm text-on-surface truncate" style="">
+              明日之声
+            </h4>
+            <p class="text-xs text-slate-500 truncate" style="">
+              遥远的回响 原创节目
+            </p>
+          </div>
+        </div>
+        <div class="flex-1 flex flex-col items-center">
+          <div class="flex items-center gap-6 mb-2">
+            <button class="text-slate-400 hover:text-primary" style="">
+              <span class="material-symbols-outlined" style="">shuffle</span>
+            </button>
+            <button class="text-slate-700 hover:text-primary" style="">
+              <span class="material-symbols-outlined" style=""
+                >skip_previous</span
+              >
+            </button>
+            <button
+              class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+              style=""
+            >
+              <span
+                class="material-symbols-outlined"
+                style="font-variation-settings: &quot;FILL&quot; 1"
+                >play_arrow</span
+              >
+            </button>
+            <button class="text-slate-700 hover:text-primary" style="">
+              <span class="material-symbols-outlined" style="">skip_next</span>
+            </button>
+            <button class="text-slate-400 hover:text-primary" style="">
+              <span class="material-symbols-outlined" style="">repeat</span>
+            </button>
+          </div>
+          <div class="w-full flex items-center gap-3">
+            <span class="text-[10px] text-slate-400 font-medium" style=""
+              >12:34</span
+            >
+            <div
+              class="flex-1 h-1 bg-surface-container-high rounded-full relative overflow-hidden"
+            >
+              <div
+                class="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-primary to-primary-container rounded-full"
+              ></div>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium" style=""
+              >45:00</span
+            >
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-4 w-1/4">
+          <button
+            class="text-slate-400 hover:text-primary hidden md:block"
+            style=""
+          >
+            <span class="material-symbols-outlined" style="">lyrics</span>
+          </button>
+          <button
+            class="text-slate-400 hover:text-primary hidden md:block"
+            style=""
+          >
+            <span class="material-symbols-outlined" style=""
+              >playlist_play</span
+            >
+          </button>
+          <div class="flex items-center gap-2">
+            <span
+              class="material-symbols-outlined text-slate-400 text-lg"
+              style=""
+              >volume_up</span
+            >
+            <div
+              class="w-20 h-1 bg-surface-container-high rounded-full overflow-hidden"
+            >
+              <div class="h-full w-3/4 bg-primary rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

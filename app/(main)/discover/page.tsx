@@ -4,287 +4,465 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import {
-  ArrowTrendingUpIcon,
-  FaceFrownIcon,
-  SignalIcon,
-  TvIcon,
-  ChevronRightIcon,
-} from "@heroicons/react/24/outline";
-import { PlayIcon } from "@heroicons/react/24/solid";
-import {
   getTrendingPodcasts,
-  getPodcastsByQuery,
   getRecommendedChannels,
 } from "@/lib/discover-service";
-import DiscoverSearch from "./DiscoverSearch";
-import { Headphones, Layers } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
-  searchParams: Promise<{ query?: string }>;
-}
+export const metadata: Metadata = {
+  title: "发现 | 远路播客",
+  description: "探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。",
+};
 
-export async function generateMetadata({
-  searchParams,
-}: PageProps): Promise<Metadata> {
-  const params = await searchParams;
-  const query = params.query;
-
-  return {
-    title: query ? `搜索结果: ${query} | 远路播客` : "发现 | 远路播客",
-    description: "探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。",
-  };
-}
-
-export default async function DiscoverPage({ searchParams }: PageProps) {
-  const params: { query?: string } = await searchParams;
-  const query: string = params.query ?? "";
-  const isSearching = !!query;
-
-  // 获取数据
-  const searchResults = isSearching ? await getPodcastsByQuery(query) : [];
-
-  // 并行获取基础数据
+export default async function DiscoverPage() {
   const [trendingPodcasts, recommendedChannels] = await Promise.all([
-    !isSearching ? getTrendingPodcasts() : Promise.resolve([]),
-    !isSearching ? getRecommendedChannels() : Promise.resolve([]),
+    getTrendingPodcasts(),
+    getRecommendedChannels(),
   ]);
 
   return (
-    <div className="bg-base-200 min-h-screen pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 py-6 xl:py-8 space-y-8 xl:space-y-12">
-        {/* Search Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 xl:space-y-4">
-          <h1 className="text-2xl xl:text-3xl font-bold text-base-content">
-            {isSearching ? `搜索结果: "${query}"` : "找到你的下一课"}
-          </h1>
-          <p className="text-sm xl:text-base text-base-content/60 px-4">
-            {isSearching
-              ? `共找到 ${searchResults.length} 个相关播客`
-              : "探索、发现和订阅最酷的播客，量身定制适合你的水平和兴趣。"}
-          </p>
-          <DiscoverSearch />
-        </div>
-
-        {/* --- 搜索结果或默认视图 --- */}
-        {isSearching ? (
-          <section className="space-y-6">
-            {searchResults.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {searchResults.map((podcast) => (
-                  <Link
-                    href={`/podcast/${podcast.podcastid}`}
-                    key={podcast.podcastid}
-                    className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow border border-base-200"
-                  >
-                    <figure className="relative aspect-square overflow-hidden rounded-t-2xl">
-                      <img
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+      <div className="px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+        {/* Hot Programs Section */}
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2
+              className="text-2xl font-bold text-slate-900 dark:text-slate-100"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              热门节目
+            </h2>
+            <Link
+              href="/discover/trending"
+              className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+            >
+              查看全部
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trendingPodcasts.slice(0, 3).map((podcast, index) => {
+              const rankColors = [
+                "bg-[#FFD700] text-white", // 01 Gold
+                "bg-[#C0C0C0] text-white", // 02 Silver
+                "bg-[#CD7F32] text-white", // 03 Bronze
+              ];
+              return (
+                <Link
+                  href={`/podcast/${podcast.podcastid}`}
+                  key={podcast.podcastid}
+                >
+                  <div className="rounded-[1rem] transition-shadow group cursor-pointer relative">
+                    <div
+                      className={`absolute top-2 left-2 z-10 ${rankColors[index]} w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm`}
+                    >
+                      0{index + 1}
+                    </div>
+                    <div className="aspect-square rounded-[1rem] overflow-hidden mb-4 relative">
+                      <Image
                         src={podcast.coverUrl}
                         alt={podcast.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      {podcast.tags && podcast.tags.length > 0 && (
-                        <div className="absolute bottom-2 left-2">
-                          <div className="badge badge-neutral badge-sm bg-black/50 border-none text-white backdrop-blur-sm">
-                            {podcast.tags[0].name}
-                          </div>
-                        </div>
-                      )}
-                    </figure>
-                    <div className="card-body p-4 xl:p-5">
-                      <h3 className="card-title text-base xl:text-lg font-bold line-clamp-1">
-                        {podcast.title}
-                      </h3>
-                      <p className="text-sm text-base-content/60 line-clamp-2 min-h-[2.5em]">
-                        {podcast.description || "暂无描述"}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="text-xs text-base-content/40">
-                          {podcast.episodeCount} 集
-                        </div>
-                        <button className="btn btn-circle btn-sm btn-primary btn-outline">
-                          <PlayIcon className="w-4 h-4" />
-                        </button>
-                      </div>
                     </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-base-content/40">
-                <FaceFrownIcon className="w-16 h-16 mb-4 opacity-50" />
-                <p className="text-lg font-medium">没有找到相关播客</p>
-                <p className="text-sm">
-                  尝试更换关键词，或者浏览推荐频道发现更多内容
-                </p>
-              </div>
-            )}
-          </section>
-        ) : (
-          <>
-            {/* Recommended Channels */}
-            {recommendedChannels.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4 xl:mb-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="bg-violet-100 dark:bg-violet-900/30 p-1.5 rounded-md">
-                      <SignalIcon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                    </div>
-                    <h2 className="text-lg xl:text-xl font-bold text-base-content">
-                      推荐频道
-                    </h2>
-                  </div>
-                  <Link
-                    href="/discover/channels"
-                    className="flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-primary transition-colors"
-                  >
-                    更多
-                    <ChevronRightIcon className="w-4 h-4 gap-0" />
-                  </Link>
-                </div>
-                <div className="flex sm:grid gap-4 xl:gap-5 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 snap-x sm:snap-none scrollbar-hide sm:grid-cols-2 lg:grid-cols-3">
-                  {recommendedChannels.slice(0, 3).map((channel, idx) => {
-                    const palettes = [
-                      { bg: "bg-teal-800", text: "text-teal-800" },
-                      { bg: "bg-indigo-800", text: "text-indigo-800" },
-                      { bg: "bg-rose-800", text: "text-rose-800" },
-                      { bg: "bg-emerald-800", text: "text-emerald-800" },
-                      { bg: "bg-sky-800", text: "text-sky-800" },
-                      { bg: "bg-purple-800", text: "text-purple-800" },
-                    ];
-                    const palette = palettes[idx % palettes.length];
-
-                    // Use first two letters as initials
-                    return (
-                      <Link
-                        href={`/channel/${encodeURIComponent(channel.name)}`}
-                        key={channel.name}
-                        className={`group relative overflow-hidden rounded-1xl xl:rounded-l ${palette.bg} text-white p-5 xl:p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex justify-center items-center flex-shrink-0 w-[280px] snap-center sm:w-full sm:flex-shrink sm:snap-none min-h-[160px] xl:min-h-[200px]`}
-                      >
-                        <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center">
-                          <h3 className="text-[20px] xl:text-[24px] font-bold uppercase tracking-wide truncate mb-2 w-full">
-                            {channel.name}
-                          </h3>
-                          <p className="text-sm xl:text-base text-white/80 truncate mb-4 w-full">
-                            {`${channel.name} · 频道 · ${channel.podcastCount} 档节目`}
-                          </p>
-                          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-black/20 text-white/90 text-[13px] font-medium hover:bg-black/30 transition-colors">
-                            <TvIcon className="w-4 h-4" />
-                            频道主页
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* Trending Podcasts (Card Style) */}
-            <section>
-              <div className="flex items-center justify-between mb-4 xl:mb-6">
-                <div className="flex items-center space-x-2">
-                  <div className="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-md">
-                    <ArrowTrendingUpIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <h2 className="text-lg xl:text-xl font-bold text-base-content">
-                    热门播客
-                  </h2>
-                </div>
-                <Link
-                  href="/discover/trending"
-                  className="flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-primary transition-colors"
-                >
-                  更多
-                  <ChevronRightIcon className="w-4 h-4 gap-0" />
-                </Link>
-              </div>
-              {trendingPodcasts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 xl:gap-5">
-                  {trendingPodcasts.slice(0, 4).map((podcast, index) => (
-                    <Link
-                      href={`/podcast/${podcast.podcastid}`}
-                      key={podcast.podcastid}
-                      className="card bg-base-100 shadow-sm hover:shadow-lg border border-base-200 hover:border-primary/20 transition-all duration-300 group overflow-hidden"
+                    <p className="text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-1">
+                      热门趋势
+                    </p>
+                    <h3
+                      className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2 truncate group-hover:text-indigo-600 transition-colors"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
-                      {/* Cover image */}
-                      <figure className="relative aspect-square overflow-hidden">
-                        <Image
-                          src={podcast.coverUrl}
-                          alt={podcast.title}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        {/* Rank badge */}
-                        <div className="absolute top-2 left-2">
-                          <div
-                            className={`w-7 h-7 xl:w-8 xl:h-8 rounded-lg flex items-center justify-center text-xs xl:text-sm font-extrabold shadow-lg ${
-                              index === 0
-                                ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                                : index === 1
-                                  ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
-                                  : index === 2
-                                    ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
-                                    : "bg-black/50 text-white backdrop-blur-sm"
-                            }`}
-                          >
-                            {index + 1}
-                          </div>
-                        </div>
-                        {/* Category badge */}
-                        {podcast.category && (
-                          <div className="absolute bottom-2 left-2">
-                            <div className="badge badge-sm bg-black/50 border-none text-white backdrop-blur-sm">
-                              {podcast.category}
-                            </div>
-                          </div>
-                        )}
-                        {/* Play overlay on hover */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-xl">
-                            <PlayIcon className="w-5 h-5 ml-0.5" />
-                          </div>
-                        </div>
-                      </figure>
-                      {/* Card body */}
-                      <div className="card-body p-3 xl:p-4">
-                        <h3 className="text-sm xl:text-base font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
-                          {podcast.title}
-                        </h3>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="flex items-center gap-2 text-xs text-base-content/50 truncate">
-                            {podcast.platform && (
-                              <span className="truncate max-w-[320px] sm:max-w-[320px]">
-                                {podcast.platform}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-1.5">
-                          <div className="flex items-center gap-3 text-xs text-base-content/40">
-                            <span className="flex items-center gap-1">
-                              <Layers className="w-3 h-3" />
-                              {podcast.episodeCount} 集
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Headphones className="w-3 h-3" />
-                              {podcast.totalPlays.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                      {podcast.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500 font-semibold">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">
+                          headphones
+                        </span>
+                        {(podcast.totalPlays / 1000).toFixed(1)}k 收听者
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 为你推荐 (For You) */}
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2
+              className="text-2xl font-bold text-slate-900 dark:text-slate-100"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              为你推荐
+            </h2>
+            <a
+              className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+              href="#"
+            >
+              查看全部
+            </a>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Recommendation Card 1 */}
+            <div className="group cursor-pointer">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                <img
+                  alt="播客"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj4cwX292bASk3zVjfcEot_88jv9OBgi5WhBdKGtvgyIYSBjIJisRMyA9xRg3PEaMal6gnPAZ9UQdZUy-8O62QmhUDgkHFbtS4fHMu1DDorSN2ZIpvLefE-ejkL_ACaWZ3xhCvUOtwS4GRP5nyr3EWWfPS_EJnHjQ-NXAiqWpcxR81Kovik1olK8BkEJCxIioVBAJRKQS-HUIhOjyrYa8kEzNL7GjDzxdc0bjIUh0SMQDFh9ozMPjk7ozytHzF6zpc1h01yvCpM9i4"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
+                    <span
+                      className="material-symbols-outlined text-indigo-600 text-3xl"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      play_arrow
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                <div className="bg-base-100 rounded-2xl xl:rounded-3xl border border-base-200 shadow-sm p-8 text-center text-base-content/40">
-                  暂无热门播客数据
+              </div>
+              <div className="space-y-1">
+                <p className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-widest">
+                  远路工作室
+                </p>
+                <h3
+                  className="font-bold text-slate-900 dark:text-slate-100 leading-snug group-hover:text-indigo-600 transition-colors"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  数字游民的灵魂
+                </h3>
+                <div className="flex items-center gap-2 text-slate-500 text-[11px] font-medium">
+                  <span>48 剧集</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>12.5k 播放</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-400">
+                    心理学
+                  </span>
                 </div>
-              )}
-            </section>
-          </>
-        )}
+              </div>
+            </div>
+            {/* Recommendation Card 2 */}
+            <div className="group cursor-pointer">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                <img
+                  alt="播客"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVGjYL3oACzPPE8LVe3NOfQgDMZDH4wvV5-8HxmZ2qa8qFKNMQIRiDjwMauBluO_U-H1w5SuDzS7rXBwg8vulaaWo2C8XskAEaEJ6bt82S2CzZ37LWULoimiXd4YU3SmEebo7IjsnLR5pv3DGGRWLOXthZkqu7yQ829irbvDnb_RVHBjv29Ig_vmFnRtfXP_6bV3HbGw-0oGeEHGvoIzKz6U3IQuIhVccZhDWAplIegHOFqT01O96knszInU-coT9Lhbc1hcpkxetE"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
+                    <span
+                      className="material-symbols-outlined text-indigo-600 text-3xl"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      play_arrow
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-widest">
+                  午夜电台
+                </p>
+                <h3
+                  className="font-bold text-slate-900 dark:text-slate-100 leading-snug group-hover:text-indigo-600 transition-colors"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  午夜谈话
+                </h3>
+                <div className="flex items-center gap-2 text-slate-500 text-[11px] font-medium">
+                  <span>124 剧集</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>85.2k 播放</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-400">
+                    情感
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* Recommendation Card 3 */}
+            <div className="group cursor-pointer">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                <img
+                  alt="播客"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7UpIhMrmmUipmZwuu6Jnu0cIA5qmLKV2CoIoxC8g8EATh2dbPhgcjsV7bbGdcvSfRFTXIZ3hiEVKTgEXB3YA5I5E0GFT09ykOVjeo38JT2PC5i_3nPML0fYcNT2sVFMt2xcw-KCXYyABrIJPOIWAiWCgML-zhwzmC1uIaTB3SyCFx0mKOfcAJ7V1XN5DhNBqpRHBjwdhOanY2aToSbqfmUZihlOiRBLglBArZB9oDC1iQ4JiWCEpKa9J446G5CpDMCFroIbW46il_"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
+                    <span
+                      className="material-symbols-outlined text-indigo-600 text-3xl"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      play_arrow
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-widest">
+                  创意中心
+                </p>
+                <h3
+                  className="font-bold text-slate-900 dark:text-slate-100 leading-snug group-hover:text-indigo-600 transition-colors"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  心流与创造力瓶颈
+                </h3>
+                <div className="flex items-center gap-2 text-slate-500 text-[11px] font-medium">
+                  <span>312 剧集</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>240k 播放</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-400">
+                    教育
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* Recommendation Card 4 */}
+            <div className="group cursor-pointer">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                <img
+                  alt="播客"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjcXewg-4iG-RJmcZKVnr9qHWuq2gIggaFE2oh1sGUYgb5BzB2QNpScNqqVQsXnN5utz75bT3rMzGEDuSK4ifigY__AXzT5OlOt3NqOkVJhRMg1_JdavtLvknwjmrAfqbi56dyB8vjkYmw7c-MYc5GvxNPgUTBHu6RLQIW9h0B1T9_SdfPyNwiBAu7t4lX1kHYhP8grwggWscyU337__PoT6nPNG2G8lzThDcd14tR4sndpAR2r5YXOGWUfkEYtgwcd7oRHnokPPps"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
+                    <span
+                      className="material-symbols-outlined text-indigo-600 text-3xl"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      play_arrow
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-widest">
+                  科学周刊
+                </p>
+                <h3
+                  className="font-bold text-slate-900 dark:text-slate-100 leading-snug group-hover:text-indigo-600 transition-colors"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  未来科技伦理
+                </h3>
+                <div className="flex items-center gap-2 text-slate-500 text-[11px] font-medium">
+                  <span>15 剧集</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>620k 播放</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-400">
+                    文化
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 新节目 (New Programs) */}
+        <section className="mb-16">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2
+                className="text-2xl font-bold text-slate-900 dark:text-slate-100"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                新节目
+              </h2>
+            </div>
+            <div className="flex gap-2">
+              <button className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700">
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700">
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-8 overflow-x-auto scrollbar-none pb-4 -mx-6 px-6 lg:mx-0 lg:px-0">
+            {/* New Program Card 1 */}
+            <div className="flex-none w-64 group">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4">
+                <img
+                  alt="节目封面"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCesZN2k0c-yVLiaP16ouIsUXqj7RswdE93e1Jjxf322b6HOZYG5HToHzTf-R2floPP97LejbgklpKWdn41-pJsz-6OqszVq7hi9do_dJ45ujL65iGzX-Hld63jIA2EidPKzefh01HaE4vCQNLX_551OcrySNNcXvZZEqzWTvKp2eCuhI5OKiGhP4MJ4sUq8JVIrPfxvdRL6Ljt39pHnvP2sdRweU1cGNXnI6DlaEjSwWp6NcOG7n32b4hoUbmafZ9fWBq-Jn3eUD84"
+                />
+                <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full shadow-lg">
+                  新作
+                </div>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+                现代智慧
+              </p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">
+                静止的哲学
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400">12 集</span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                  社会
+                </span>
+              </div>
+            </div>
+            {/* New Program Card 2 */}
+            <div className="flex-none w-64 group">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4">
+                <img
+                  alt="节目封面"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGC6wBttUlXOKx-EuvmLsxHC96eCZ9_ch1pO70JYwMX_yRBA5VltByMeUT3ULv3VeuRj4O7UO1rxGo_TRs0CJssGKpmNWGDBF9qNT19ZaUogU_AvOCcMGEYg8CfLHtJ_X8t9HyCWh94bciCaaXpkwxiYek5o0mHRmqupSPd81SkMACvPf99QTssMpfrwtk2CWp0l4OCsMIqA9fvhFSPYl1J5F9jBx0Bc2r0go43EsMRghwn-Gka5iyshZ_dyZNsNyLpYk8RjcIH0N5"
+                />
+                <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full shadow-lg">
+                  新作
+                </div>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+                声音档案馆
+              </p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">
+                爵士仪式
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400">8 集</span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                  音乐
+                </span>
+              </div>
+            </div>
+            {/* New Program Card 3 */}
+            <div className="flex-none w-64 group">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4">
+                <img
+                  alt="节目封面"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAD5qG3CxvGNxBZlynRcVYaC9ZHHesQQnlQ_jfpGif9BWztmBXPBc1CJ-z4EKKAxa7VBh9NmP3n1O-P_PKQJ9R56Lh2z-qDoJ9kCrBsahUyM6r--adtqpTsNk5XvFv88asagqZhT_UWar3LORcj4GbfOKPn9_a0q9BxdUPk7lzEvmJJO_aeTn1I2cOJDBoxC_M1lK_UHWlFaBBYbJ_2o93-j8sa1hvsTw9m1BI5VNv7rw_RCeHTlCnt_KsHTpdXeD6QDyI3YVzbxjXX"
+                />
+                <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full shadow-lg">
+                  新作
+                </div>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+                轨道视角
+              </p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">
+                火星编年史
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400">24 集</span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                  科学
+                </span>
+              </div>
+            </div>
+            {/* New Program Card 4 */}
+            <div className="flex-none w-64 group">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4">
+                <img
+                  alt="节目封面"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoFkFwlR_nsJ1pcb0zQ96INCSUYNfzGhdld-wLXp-g4Ea3Qt3fJ__Kx11sXT0E7oqeUSbWRMQmqIFRdsosPYAi4xF45EhYXejEktqJVrQ0m2_DZca14g0-Ic_8CSS0qRMIsAxkF0_6X4AynM7ORZtVnRfJiM1oy_TLaJs62ivu0nViQb3ghLg8dKM5qDtNAKCLYd4Gbp8o-lpgH6sHhQx4nPZCofN1SIM5hiV3PJeAzT3ENSPrZu1RCexgfM8rnXEnxA_KBqiYh77T"
+                />
+                <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full shadow-lg">
+                  新作
+                </div>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+                文学评论
+              </p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">
+                未竟之诗
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400">15 集</span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                  文学
+                </span>
+              </div>
+            </div>
+            {/* New Program Card 5 */}
+            <div className="flex-none w-64 group">
+              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4">
+                <img
+                  alt="节目封面"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD13JkURJfPF5DXXvBGdVWQIFDL5B-9rAhY49TjaA6ukBwrNvFGCW4DNNcnXPYhWCnP-QnH389kPaXZI8weTdAh8zKVq1jh2koJwiph2DsiTLdnagoTC43MEIG3OZWfCUjz62XL2IjaGYIZYuDY_l_wYY0GUVCfccUecwEzP7O0X3UjDFkqchDqh9X4P0Air4ZFWC1uoD-C2EVHau0iExV4lOSNiL6EEBsMAmGQ8oe1DOfD5UZ73cDgvFKqqrBsZYw1DJUKDAHRbO3V"
+                />
+                <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full shadow-lg">
+                  新作
+                </div>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">
+                味蕾旅行
+              </p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">
+                丝路香料考
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400">9 集</span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                  文化
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 推荐频道 (Recommended Channels) */}
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2
+              className="text-2xl font-bold text-slate-900 dark:text-slate-100"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              推荐频道
+            </h2>
+            <Link
+              href="/discover/channels"
+              className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+            >
+              查看全部
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recommendedChannels.slice(0, 4).map((channel) => (
+              <Link
+                href={`/channel/${encodeURIComponent(channel.name)}`}
+                key={channel.name}
+              >
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[24px] hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-100 dark:border-indigo-800/30 h-full">
+                  <h3
+                    className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2"
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    {channel.name}
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-8">
+                    {channel.podcastCount} 剧集
+                  </p>
+                  <button className="mt-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-indigo-600/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white hover:shadow-md transition-all w-full">
+                    <span className="material-symbols-outlined text-lg">
+                      computer
+                    </span>
+                    <span>频道主页</span>
+                  </button>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
