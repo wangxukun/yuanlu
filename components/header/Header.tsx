@@ -2,85 +2,53 @@
 "use client";
 import LoginHomeBtn from "@/components/auth/login-home-btn";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Bars3Icon } from "@heroicons/react/24/outline";
+import React from "react";
 import { useSession } from "next-auth/react";
 import ThemeSwitcher from "@/components/theme-switcher";
-import PhoneAcmeLogo from "@/components/phone-acme-logo";
 import NotificationBell from "@/components/header/NotificationBell";
 
 export default function Header() {
   const { status } = useSession();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
-    <>
-      {/* ================= 移动端/平板端 Header (< lg) ================= */}
-      <div
-        className={`lg:hidden fixed w-full top-0 h-[var(--header-height-mobile)] z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-base-100 shadow-sm border-b border-base-200"
-            : "bg-base-100 border-b border-transparent"
-        }`}
-      >
-        <div className="flex items-center justify-between h-full px-4 relative z-50">
-          {/* 左侧：菜单按钮 (改为 label 触发 drawer) */}
-          <label
-            htmlFor="main-drawer"
-            className="p-2 -ml-2 rounded-full hover:bg-base-200 transition-colors active:scale-95 shrink-0 lg:hidden cursor-pointer"
-            aria-label="Toggle Menu"
-          >
-            <Bars3Icon className="w-6 h-6 text-base-content" />
-          </label>
-
-          {/* 中间：Logo */}
-          <Link
-            href="/"
-            className="flex-1 flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2"
-          >
-            <div className="opacity-90 hover:opacity-100 transition-opacity flex justify-center">
-              <PhoneAcmeLogo />
-            </div>
-          </Link>
-
-          {/* 右侧：工具栏 */}
-          <div className="flex items-center space-x-1 z-20 shrink-0">
-            <ThemeSwitcher />
-            {status === "authenticated" && <NotificationBell />}
-            <div className="scale-90 origin-right">
-              <LoginHomeBtn />
-            </div>
-          </div>
-        </div>
+    <header className="sticky top-0 z-40 flex items-center justify-between px-6 lg:px-8 w-full h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-all duration-300 ease-in-out border-b border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-4 lg:hidden">
+        <label
+          htmlFor="main-drawer"
+          className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 cursor-pointer"
+          aria-label="Toggle Menu"
+        >
+          <span className="material-symbols-outlined">menu</span>
+        </label>
+        <h1
+          className="text-xl font-black text-indigo-600 dark:text-indigo-400"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+          The Voyager
+        </h1>
       </div>
 
-      {/* ================= 桌面端 Header (>= lg) ================= */}
-      <div
-        className={`hidden lg:flex fixed top-0 left-[var(--sidebar-width)] w-[calc(100%-var(--sidebar-width))] h-[var(--header-height-desktop)] z-40 transition-all duration-300 items-center justify-between px-6 border-b border-base-200 ${
-          scrolled ? "bg-base-100/80 backdrop-blur-lg shadow-sm" : "bg-base-100"
-        }`}
-      >
-        {/* 中间区域（由于移除了之前的播放器相关组件，这里可根据需要留白或作为其他用途，目前保留为空） */}
-        <div className="flex-1 max-w-3xl px-4 flex justify-center"></div>
+      <div className="flex-1 flex justify-end items-center gap-6">
+        <div className="relative w-96 hidden md:block">
+          <input
+            className="w-full h-12 bg-slate-100 dark:bg-slate-800 border-none rounded-full px-6 pl-12 text-sm focus:ring-2 focus:ring-indigo-500/20 transition-shadow outline-none text-slate-700 dark:text-slate-200"
+            placeholder="搜索路径、声音、智慧..."
+            type="text"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          />
+          <span className="material-symbols-outlined absolute left-4 top-3 text-slate-400">
+            search
+          </span>
+        </div>
 
-        {/* 右区域：设置等 */}
-        <div className="flex-none w-[300px] flex items-center justify-end gap-4">
-          {/* <div className="h-6 w-px bg-base-300 mx-2"></div> */}
-
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <ThemeSwitcher />
             {status === "authenticated" && <NotificationBell />}
+            <ThemeSwitcher />
             <LoginHomeBtn />
           </div>
         </div>
       </div>
-    </>
+    </header>
   );
 }

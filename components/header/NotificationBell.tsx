@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { BellIcon } from "@heroicons/react/24/outline";
-import { BellAlertIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -20,17 +18,6 @@ interface NotificationListResponse {
   unreadCount: number;
   notifications: Notification[];
 }
-
-/** 通知类型对应的标签颜色 */
-const TYPE_BADGE: Record<string, string> = {
-  COMMENT: "badge-info",
-  LIKE: "badge-warning",
-  ACHIEVEMENT: "badge-success",
-  SYSTEM: "badge-neutral",
-  REPLY: "badge-primary",
-  EPISODE_UPDATE: "badge-accent",
-  STUDY: "badge-secondary",
-};
 
 /** 通知类型对应的中文标签 */
 const TYPE_LABEL: Record<string, string> = {
@@ -133,35 +120,39 @@ export default function NotificationBell() {
       {/* 铃铛按钮 */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="btn btn-ghost btn-circle btn-sm relative"
+        className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 relative"
         aria-label="通知"
       >
-        {unreadCount > 0 ? (
-          <>
-            <BellAlertIcon className="w-5 h-5 text-primary animate-[wiggle_1s_ease-in-out_infinite]" />
-            {/* 红点未读数 */}
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-error-content text-[10px] font-bold leading-none">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          </>
-        ) : (
-          <BellIcon className="w-5 h-5" />
+        <span
+          className="material-symbols-outlined"
+          style={{
+            fontVariationSettings: unreadCount > 0 ? "'FILL' 1" : "'FILL' 0",
+          }}
+        >
+          notifications
+        </span>
+        {unreadCount > 0 && (
+          <span className="absolute top-2 right-2 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
         )}
       </button>
 
       {/* 下拉面板 */}
       {open && (
-        <div className="fixed inset-x-4 top-[calc(var(--header-height-mobile)+0.5rem)] mx-auto w-auto max-w-sm z-[100] rounded-2xl shadow-2xl border border-base-300 bg-base-100 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none">
+        <div
+          className="fixed inset-x-4 top-[90px] mx-auto w-auto max-w-sm z-[100] rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none"
+          style={{ fontFamily: "'Inter', sans-serif" }}
+        >
           {/* 面板头部 */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-base-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 dark:border-slate-800">
             <Link
               href="/notifications"
               onClick={() => setOpen(false)}
-              className="font-semibold text-sm text-base-content hover:text-primary transition-colors flex items-center"
+              className="font-bold text-sm text-slate-800 dark:text-slate-100 hover:text-indigo-600 transition-colors flex items-center"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               通知
               {unreadCount > 0 && (
-                <span className="ml-2 badge badge-primary badge-sm">
+                <span className="ml-2 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px]">
                   {unreadCount} 条未读
                 </span>
               )}
@@ -170,7 +161,7 @@ export default function NotificationBell() {
               <button
                 onClick={markAllAsRead}
                 disabled={loading}
-                className="text-xs text-primary hover:underline disabled:opacity-50"
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
               >
                 全部已读
               </button>
@@ -225,32 +216,30 @@ function NotificationItem({
 
   const content = (
     <div
-      className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer hover:bg-base-200 ${
-        n.isRead ? "opacity-60" : "bg-primary/5"
+      className={`flex items-start gap-4 px-6 py-4 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+        n.isRead ? "opacity-60" : "bg-indigo-50/30 dark:bg-indigo-900/10"
       }`}
       onClick={handleClick}
     >
       {/* 未读圆点 */}
-      <div className="mt-1.5 flex-shrink-0">
-        {n.isRead ? (
-          <div className="w-2 h-2 rounded-full bg-base-300" />
-        ) : (
-          <div className="w-2 h-2 rounded-full bg-primary" />
+      <div className="mt-2 flex-shrink-0">
+        {!n.isRead && (
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
         )}
       </div>
 
       {/* 内容 */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-base-content leading-snug line-clamp-2">
+        <p className="text-sm text-slate-700 dark:text-slate-200 leading-snug line-clamp-2 font-medium">
           {n.notificationText}
         </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span
-            className={`badge badge-xs ${TYPE_BADGE[n.type] ?? "badge-neutral"}`}
-          >
+        <div className="mt-2 flex items-center gap-2">
+          <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded-md uppercase tracking-wider">
             {TYPE_LABEL[n.type] ?? n.type}
           </span>
-          <span className="text-xs text-base-content/40">{timeAgo}</span>
+          <span className="text-[10px] font-medium text-slate-400">
+            {timeAgo}
+          </span>
         </div>
       </div>
     </div>

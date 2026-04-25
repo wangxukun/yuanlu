@@ -2,7 +2,6 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 
 export default function ThemeSwitcher() {
   const [mounted, setMounted] = useState(false);
@@ -24,20 +23,12 @@ export default function ThemeSwitcher() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center space-x-2 px-4 py-2 hover:drop-shadow-md rounded-lg transition-colors"
+      className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
       aria-label="切换主题"
     >
-      {theme === "dark" ? (
-        <>
-          <SunIcon className="w-5 h-5 text-yellow-400" />
-          {/*<span className="text-secondary-foreground dark:text-muted-foreground">浅色</span>*/}
-        </>
-      ) : (
-        <>
-          <MoonIcon className="w-5 h-5 text-indigo-800" />
-          {/*<span className="text-secondary-foreground dark:text-muted-foreground">深色</span>*/}
-        </>
-      )}
+      <span className="material-symbols-outlined">
+        {theme === "dark" ? "light_mode" : "dark_mode"}
+      </span>
     </button>
   );
 }
