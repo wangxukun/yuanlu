@@ -112,16 +112,6 @@ export default async function DiscoverPage() {
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
-                    <span
-                      className="material-symbols-outlined text-indigo-600 text-3xl"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      play_arrow
-                    </span>
-                  </div>
-                </div>
               </div>
               <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1 truncate">
                 {podcast.platform || "精品推荐"}
@@ -202,7 +192,7 @@ export default async function DiscoverPage() {
                 href={`/channel/${encodeURIComponent(channel.name)}`}
                 key={channel.name}
               >
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[24px] hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center border border-indigo-100 dark:border-indigo-800/30 h-full">
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[24px] hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
                   <h3
                     className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -212,12 +202,12 @@ export default async function DiscoverPage() {
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-8">
                     {channel.podcastCount} 档节目
                   </p>
-                  <button className="mt-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-indigo-600/20 px-6 py-3 rounded-full font-bold text-sm hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white hover:shadow-md transition-all w-full">
-                    <span className="material-symbols-outlined text-lg">
+                  <div className="mt-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-slate-800/50 text-indigo-600 dark:text-indigo-400 text-[12px] font-bold group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">
                       computer
                     </span>
                     <span>频道主页</span>
-                  </button>
+                  </div>
                 </div>
               </Link>
             ))}

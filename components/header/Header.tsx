@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import ThemeSwitcher from "@/components/theme-switcher";
 import NotificationBell from "@/components/header/NotificationBell";
 import SearchBar from "@/components/header/SearchBar";
+import Image from "next/image";
 
 export default function Header() {
   const { status } = useSession();
@@ -21,12 +22,22 @@ export default function Header() {
         >
           <span className="material-symbols-outlined">menu</span>
         </label>
-        <h1
-          className="text-xl font-black text-indigo-600 dark:text-indigo-400"
-          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          The Voyager
-        </h1>
+        <div className="flex items-center">
+          <Image
+            src="/static/images/apple-touch-icon-light.png"
+            alt="远路播客 Logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain dark:hidden"
+          />
+          <Image
+            src="/static/images/apple-touch-icon-dark.png"
+            alt="远路播客 Logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain hidden dark:block"
+          />
+        </div>
       </div>
 
       <div className="flex-1 flex justify-end items-center gap-6">
