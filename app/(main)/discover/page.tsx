@@ -52,6 +52,7 @@ export default async function DiscoverPage() {
                 "bg-[#FFD700] text-white", // 01 Gold
                 "bg-[#C0C0C0] text-white", // 02 Silver
                 "bg-[#CD7F32] text-white", // 03 Bronze
+                "bg-[#666666] text-white", // 04 iron
               ];
               return (
                 <Link

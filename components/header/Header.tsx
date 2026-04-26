@@ -6,6 +6,7 @@ import React from "react";
 import { useSession } from "next-auth/react";
 import ThemeSwitcher from "@/components/theme-switcher";
 import NotificationBell from "@/components/header/NotificationBell";
+import SearchBar from "@/components/header/SearchBar";
 
 export default function Header() {
   const { status } = useSession();
@@ -29,17 +30,7 @@ export default function Header() {
       </div>
 
       <div className="flex-1 flex justify-end items-center gap-6">
-        <div className="relative w-96 hidden md:block">
-          <input
-            className="w-full h-12 bg-slate-100 dark:bg-slate-800 border-none rounded-full px-6 pl-12 text-sm focus:ring-2 focus:ring-indigo-500/20 transition-shadow outline-none text-slate-700 dark:text-slate-200"
-            placeholder="搜索路径、声音、智慧..."
-            type="text"
-            style={{ fontFamily: "'Inter', sans-serif" }}
-          />
-          <span className="material-symbols-outlined absolute left-4 top-3 text-slate-400">
-            search
-          </span>
-        </div>
+        <SearchBar />
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
