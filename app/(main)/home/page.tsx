@@ -9,7 +9,7 @@ import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dt
 import { episodeService } from "@/core/episode/episode.service";
 
 export const metadata: Metadata = {
-  title: "我的主页 | 远路",
+  title: "我的主页 | 远路播客",
   description: "查看你的学习进度和个性化推荐。",
 };
 
@@ -26,6 +26,7 @@ export default async function HomePage() {
     level: "General",
     items: [] as RecommendedEpisodeDto[],
   };
+  let recentPublishedEpisodes: RecommendedEpisodeDto[] = [];
 
   if (user?.userid) {
     const statsPromise = statsService
@@ -78,6 +79,10 @@ export default async function HomePage() {
     }
   }
 
+  recentPublishedEpisodes = await episodeService
+    .getRecentPublishedEpisodes(8)
+    .catch(() => []);
+
   return (
     <HomeClient
       user={user}
@@ -86,6 +91,7 @@ export default async function HomePage() {
       recentHistory={recentHistoryList} // 传递剩余历史记录
       recommendedEpisodes={recommendedData.items}
       recommendedLevel={recommendedData.level}
+      recentPublishedEpisodes={recentPublishedEpisodes}
     />
   );
 }

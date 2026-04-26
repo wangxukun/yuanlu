@@ -46,7 +46,7 @@ export default async function DiscoverPage() {
               查看更多
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex lg:grid lg:grid-cols-4 gap-6 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-none">
             {trendingPodcasts.slice(0, 4).map((podcast, index) => {
               const rankColors = [
                 "bg-[#FFD700] text-white", // 01 Gold
@@ -58,14 +58,15 @@ export default async function DiscoverPage() {
                 <Link
                   href={`/podcast/${podcast.podcastid}`}
                   key={podcast.podcastid}
+                  className="flex-none w-64 lg:w-auto lg:flex-initial"
                 >
-                  <div className="rounded-[1rem] transition-shadow group cursor-pointer relative">
+                  <div className="rounded-lg transition-shadow group cursor-pointer relative">
                     <div
                       className={`absolute top-2 left-2 z-10 ${rankColors[index]} w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm`}
                     >
                       0{index + 1}
                     </div>
-                    <div className="aspect-square rounded-[1rem] overflow-hidden mb-4 relative">
+                    <div className="aspect-square rounded-lg overflow-hidden mb-4 relative">
                       <Image
                         src={podcast.coverUrl}
                         alt={podcast.title}
@@ -98,14 +99,14 @@ export default async function DiscoverPage() {
         </section>
 
         {/* 为你推荐 (For You) */}
-        <HorizontalScrollContainer title="为你推荐">
+        <HorizontalScrollContainer title="为您推荐">
           {editorPicks.map((podcast) => (
             <Link
               href={`/podcast/${podcast.podcastid}`}
               key={podcast.podcastid}
               className="flex-none w-64 group cursor-pointer"
             >
-              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+              <div className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
                 <Image
                   src={podcast.coverUrl}
                   alt={podcast.title}
@@ -140,7 +141,7 @@ export default async function DiscoverPage() {
               key={podcast.podcastid}
               className="flex-none w-64 group cursor-pointer"
             >
-              <div className="relative aspect-square rounded-[1rem] overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
+              <div className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 shadow-sm">
                 <Image
                   src={podcast.coverUrl}
                   alt={podcast.title}
@@ -186,13 +187,14 @@ export default async function DiscoverPage() {
               查看全部
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex lg:grid lg:grid-cols-4 gap-6 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-none">
             {recommendedChannels.slice(0, 4).map((channel) => (
               <Link
                 href={`/channel/${encodeURIComponent(channel.name)}`}
                 key={channel.name}
+                className="flex-none w-72 lg:w-auto lg:flex-initial"
               >
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[24px] hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
                   <h3
                     className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}

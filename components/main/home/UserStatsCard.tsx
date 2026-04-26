@@ -25,7 +25,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
       : 0;
 
   return (
-    <div className="md:w-80 bg-base-100 rounded-3xl p-6 shadow-sm border border-base-200 flex flex-col justify-center">
+    <div className="md:w-80 bg-white dark:bg-slate-900 rounded-lg p-6 flex flex-col justify-center">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-base-content">每周进度</h3>
         {/* 展示周环比增长 */}

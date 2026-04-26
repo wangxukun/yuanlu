@@ -327,4 +327,49 @@ export const episodeService = {
       items,
     };
   },
+
+  /**
+   * 获取全站最新发布的单集
+   */
+  async getRecentPublishedEpisodes(
+    limit: number = 8,
+  ): Promise<RecommendedEpisodeDto[]> {
+    const episodes = await prisma.episode.findMany({
+      where: { status: "published" },
+      orderBy: { createAt: "desc" },
+      take: limit,
+      include: {
+        podcast: { select: { title: true } },
+        tags: { take: 1 },
+      },
+    });
+
+    const items: RecommendedEpisodeDto[] = await Promise.all(
+      episodes.map(async (ep) => {
+        const coverUrl = await generateSignatureUrl(
+          ep.coverFileName || "",
+          3600 * 3,
+        ).catch(() => ep.coverUrl);
+
+        const durationMins = Math.floor(ep.duration / 60);
+        const category =
+          ep.tags && ep.tags.length > 0
+            ? ep.tags[0].name
+            : ep.difficulty || "General";
+
+        return {
+          id: ep.episodeid,
+          title: ep.title,
+          podcastTitle: ep.podcast?.title || "Unknown Podcast",
+          category: category,
+          duration: `${durationMins} min`,
+          coverUrl: coverUrl,
+          difficulty: ep.difficulty || "General",
+          isExclusive: ep.isExclusive || false,
+          playCount: ep.playCount || 0,
+        };
+      }),
+    );
+    return items;
+  },
 };

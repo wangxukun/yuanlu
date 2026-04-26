@@ -17,7 +17,7 @@ export default function AcmeLogo() {
         alt="远路播客 Logo"
         width={40}
         height={40}
-        className="h-10 w-10 object-contain rounded-xl shadow-sm"
+        className="h-10 w-10 object-contain rounded-xl"
       />
       <p
         className="text-2xl font-bold tracking-tight text-indigo-700"

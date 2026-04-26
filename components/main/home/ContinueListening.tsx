@@ -26,7 +26,7 @@ export default function ContinueListening({
         <h2 className="text-xl font-bold text-base-content">继续收听</h2>
         <Link
           href="/library/history"
-          className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
         >
           查看历史
         </Link>
@@ -35,7 +35,7 @@ export default function ContinueListening({
         {history.map((item) => (
           <div
             key={item.historyId}
-            className="bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer flex items-center space-x-4 group relative overflow-hidden flex-shrink-0 w-[300px] snap-center sm:w-full sm:flex-shrink sm:snap-none"
+            className="bg-white dark:bg-slate-900 p-4 rounded-lg transition-all cursor-pointer flex items-center space-x-4 group relative overflow-hidden flex-shrink-0 w-[300px] snap-center sm:w-full sm:flex-shrink sm:snap-none"
             onClick={() => onPlay(item.episodeId)}
           >
             <div className="relative flex-shrink-0 w-32 aspect-[16/9] rounded-lg overflow-hidden bg-base-300">

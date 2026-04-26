@@ -48,7 +48,7 @@ export default async function ChannelsPage() {
                 href={`/channel/${encodeURIComponent(channel.name)}`}
                 key={channel.name}
               >
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[24px] hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
                   <h3
                     className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -69,7 +69,7 @@ export default async function ChannelsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-16 text-center text-slate-400 dark:text-slate-500 text-lg">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-16 text-center text-slate-400 dark:text-slate-500 text-lg">
             暂无频道数据
           </div>
         )}

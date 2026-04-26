@@ -8,6 +8,7 @@ import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton";
 import UserStatsCard from "@/components/main/home/UserStatsCard";
 import ContinueListening from "@/components/main/home/ContinueListening";
 import RecommendedPodcasts from "@/components/main/home/RecommendedPodcasts";
+import RecentEpisodes from "@/components/main/home/RecentEpisodes";
 import { UserHomeStatsDto } from "@/core/stats/dto";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { BoltIcon } from "@heroicons/react/24/solid";
@@ -21,6 +22,7 @@ interface HomeClientProps {
   recentHistory: RecentHistoryItemDto[];
   recommendedEpisodes: RecommendedEpisodeDto[];
   recommendedLevel: string;
+  recentPublishedEpisodes: RecommendedEpisodeDto[];
 }
 export default function HomeClient({
   user,
@@ -29,6 +31,7 @@ export default function HomeClient({
   recentHistory,
   recommendedEpisodes,
   recommendedLevel,
+  recentPublishedEpisodes,
 }: HomeClientProps) {
   const router = useRouter();
 
@@ -59,11 +62,11 @@ export default function HomeClient({
   };
 
   return (
-    <div className="bg-base-200 min-h-screen pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8 space-y-6 md:space-y-10">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-10">
         {/* Welcome & Stats Hero */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-          <div className="flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20">
+          <div className="flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[24px] p-6 md:p-8 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10">
               <BoltIcon className="w-32 h-32" />
             </div>
@@ -90,7 +93,7 @@ export default function HomeClient({
                 {/* Mobile Only Cover Image */}
                 {latestHistory && (
                   <div className="block xl:hidden shrink-0">
-                    <div className="relative w-32 aspect-[16/9] rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
+                    <div className="relative w-32 aspect-[16/9] rounded-lg overflow-hidden">
                       <Image
                         src={
                           latestHistory.coverUrl ||
@@ -121,7 +124,7 @@ export default function HomeClient({
                   alt="Podcast"
                   width={516}
                   height={516}
-                  className="w-48 h-28 object-cover rounded-lg shadow-md opacity-90 rotate-3 border-2 border-white/20"
+                  className="w-48 h-28 object-cover rounded-lg opacity-90 rotate-3"
                 />
               </div>
             )}
@@ -137,6 +140,12 @@ export default function HomeClient({
         <RecommendedPodcasts
           episodes={recommendedEpisodes}
           level={recommendedLevel}
+          onPlay={onPlayPodcast}
+        />
+
+        {/* Recent Episodes */}
+        <RecentEpisodes
+          episodes={recentPublishedEpisodes}
           onPlay={onPlayPodcast}
         />
       </div>
