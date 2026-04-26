@@ -19,5 +19,9 @@ export default async function VocabularyPage() {
     session.user.userid,
   );
 
-  return <VocabularyNotebook vocabularyList={vocabularyList} />;
+  return (
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
+      <VocabularyNotebook vocabularyList={vocabularyList} />
+    </div>
+  );
 }

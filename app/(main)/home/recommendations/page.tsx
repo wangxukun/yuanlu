@@ -31,14 +31,14 @@ export default async function RecommendationsPage() {
   const level = data.level;
 
   return (
-    <div className="bg-base-200 min-h-screen pb-20">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 py-6 xl:py-8 space-y-6 xl:space-y-8">
         {/* Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/home"
-              className="p-2 hover:bg-base-300 rounded-lg text-base-content/60 hover:text-base-content transition-colors"
+              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-base-content/60 hover:text-base-content transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </Link>
@@ -49,11 +49,14 @@ export default async function RecommendationsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl xl:text-3xl font-bold text-base-content">
+                <h1
+                  className="text-2xl xl:text-3xl font-bold text-base-content"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
                   为你推荐
                 </h1>
                 {level && (
-                  <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
+                  <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md dark:bg-indigo-900/30 dark:text-indigo-300">
                     {level === "General" ? "精选" : level}
                   </span>
                 )}
@@ -79,7 +82,7 @@ export default async function RecommendationsPage() {
               return (
                 <div
                   key={episode.id}
-                  className="card bg-base-100 shadow-sm hover:shadow-lg border border-base-200 hover:border-primary/20 transition-all duration-300 group overflow-hidden relative cursor-pointer"
+                  className="bg-white dark:bg-slate-900 rounded-lg hover:scale-[1.02] transition-all duration-300 group overflow-hidden relative cursor-pointer"
                 >
                   {/* Cover image */}
                   <figure className="relative aspect-[16/9] overflow-hidden">
@@ -95,12 +98,12 @@ export default async function RecommendationsPage() {
                     {/* PRO and Play count badges (top left) */}
                     <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
                       {episode.isExclusive && (
-                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] tracking-widest flex items-center">
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded font-extrabold text-[10px] tracking-widest flex items-center">
                           👑 PRO
                         </div>
                       )}
                       {episode.playCount !== undefined && (
-                        <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded shadow-sm text-[11px] font-medium flex items-center tracking-wide">
+                        <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-medium flex items-center tracking-wide">
                           <Headphones className="w-3 h-3 mr-1 opacity-80" />
                           {episode.playCount.toLocaleString()}
                         </div>
@@ -109,7 +112,7 @@ export default async function RecommendationsPage() {
                     {/* Difficulty badge (top right) */}
                     <div className="absolute top-2 right-2 z-10">
                       <div
-                        className={`bg-white/95 px-2 py-0.5 rounded shadow-sm font-extrabold text-sm tracking-wide ${diffColor}`}
+                        className={`bg-white/95 px-2 py-0.5 rounded font-extrabold text-sm tracking-wide ${diffColor}`}
                       >
                         {diffLevel}
                       </div>
@@ -117,7 +120,7 @@ export default async function RecommendationsPage() {
                     {/* Category badge (bottom left) */}
                     {episode.category && (
                       <div className="absolute bottom-2 left-2 z-10">
-                        <div className="bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded shadow-sm font-bold text-xs flex items-center">
+                        <div className="bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded font-bold text-xs flex items-center">
                           <PlayIcon className="w-3 h-3 mr-1" />
                           {episode.category}
                         </div>
@@ -125,20 +128,20 @@ export default async function RecommendationsPage() {
                     )}
                     {/* Duration badge (bottom right) */}
                     <div className="absolute bottom-2 right-2 z-10">
-                      <div className="bg-black/70 text-white backdrop-blur-sm px-2 py-0.5 rounded shadow-sm text-xs font-medium flex items-center">
+                      <div className="bg-black/70 text-white backdrop-blur-sm px-2 py-0.5 rounded text-xs font-medium flex items-center">
                         <ClockOutlineIcon className="w-3 h-3 mr-1" />
                         {episode.duration}
                       </div>
                     </div>
                     {/* Play overlay on hover */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-                      <div className="w-14 h-14 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-xl">
+                      <div className="w-14 h-14 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
                         <PlayIcon className="w-6 h-6 ml-1" />
                       </div>
                     </div>
                   </figure>
                   {/* Card body */}
-                  <div className="card-body p-4 xl:p-5 pointer-events-none">
+                  <div className="p-4 xl:p-5 pointer-events-none">
                     <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
                       {episode.title}
                     </h3>
@@ -160,7 +163,7 @@ export default async function RecommendationsPage() {
             })}
           </div>
         ) : (
-          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-sm p-16 text-center text-base-content/40 text-lg">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-16 text-center text-base-content/40 text-lg">
             暂无推荐内容，请先去收听一些节目吧！
           </div>
         )}

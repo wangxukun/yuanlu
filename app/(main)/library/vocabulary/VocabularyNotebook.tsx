@@ -16,6 +16,7 @@ import {
   Award,
   BookOpen,
   BookOpenCheck,
+  ExternalLink,
 } from "lucide-react";
 import { submitReviewAction } from "@/lib/actions/vocabulary-actions";
 import { ReviewQuality } from "@/lib/srs";
@@ -228,10 +229,16 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 font-sans">
       {/* 1. 头部与统计面板 */}
-      <header className="flex flex-col xl:flex-row justify-between xl:items-end border-b border-base-200 pb-6 gap-6">
+      <header className="flex flex-col xl:flex-row justify-between xl:items-end pb-6 gap-6">
         <div>
-          <h1 className="text-2xl xl:text-3xl font-bold text-base-content flex items-center">
-            <BookOpenCheck className="mr-3 text-primary" size={32} />
+          <h1
+            className="text-2xl xl:text-3xl font-bold text-base-content flex items-center"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            <BookOpenCheck
+              className="mr-3 text-indigo-600 dark:text-indigo-400"
+              size={32}
+            />
             生词本
           </h1>
           <p className="text-base-content/60 mt-2 text-sm xl:text-base">
@@ -243,8 +250,8 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
         <div className="w-full xl:w-auto">
           <div className="grid grid-cols-3 gap-2 xl:flex xl:gap-4 xl:overflow-x-auto">
             {/* Total Card */}
-            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-base-100 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-base-200 shadow-sm xl:min-w-[140px]">
-              <div className="p-1.5 xl:p-2 bg-base-200 text-base-content/60 rounded-lg mb-1 xl:mb-0">
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-lg xl:min-w-[140px]">
+              <div className="p-1.5 xl:p-2 bg-slate-50 dark:bg-slate-950 text-base-content/60 rounded-lg mb-1 xl:mb-0">
                 <BookOpen size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
               <div className="text-center xl:text-left">
@@ -258,7 +265,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
             </div>
 
             {/* Due Card */}
-            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-base-100 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-base-200 shadow-sm xl:min-w-[140px]">
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-lg xl:min-w-[140px]">
               <div className="p-1.5 xl:p-2 bg-warning/10 text-warning rounded-lg mb-1 xl:mb-0">
                 <Clock size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
@@ -273,7 +280,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
             </div>
 
             {/* Mastered Card */}
-            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-base-100 px-2 py-3 xl:px-4 xl:py-3 rounded-xl border border-base-200 shadow-sm xl:min-w-[140px]">
+            <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-slate-900 px-2 py-3 xl:px-4 xl:py-3 rounded-lg xl:min-w-[140px]">
               <div className="p-1.5 xl:p-2 bg-success/10 text-success rounded-lg mb-1 xl:mb-0">
                 <Award size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
@@ -293,13 +300,13 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       {/* 2. 复习入口 (SRS) */}
       <section className="grid grid-cols-1 gap-6">
         {stats.due > 0 ? (
-          <div className="bg-neutral rounded-2xl p-6 xl:p-8 text-neutral-content flex flex-col sm:flex-row items-center justify-between shadow-xl gap-6 sm:gap-0">
+          <div className="bg-indigo-600 dark:bg-indigo-900/40 rounded-lg p-6 xl:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0 transition-colors">
             <div>
               <h2 className="text-xl xl:text-2xl font-bold flex items-center mb-2">
-                <BrainCircuit className="mr-3 text-primary" />
+                <BrainCircuit className="mr-3 text-indigo-300" />
                 复习计划已就绪
               </h2>
-              <p className="text-neutral-content/80 max-w-lg text-sm xl:text-base">
+              <p className="text-white/80 max-w-lg text-sm xl:text-base">
                 根据遗忘曲线，你有{" "}
                 <span className="text-white font-bold">{stats.due} 个生词</span>{" "}
                 需要复习。
@@ -307,14 +314,14 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
             </div>
             <button
               onClick={startReview}
-              className="w-full sm:w-auto bg-primary text-primary-content px-8 py-3 rounded-full font-bold hover:brightness-110 transition-colors shadow-lg flex items-center justify-center shrink-0"
+              className="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center shrink-0"
             >
               <PlayCircle className="mr-2" size={20} />
               开始复习
             </button>
           </div>
         ) : (
-          <div className="bg-base-200/50 border border-base-200 border-dashed rounded-2xl p-6 text-center text-base-content/60 transition-colors">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 text-center text-base-content/60 transition-colors">
             <CheckCircle className="mx-auto mb-2 text-success" size={32} />
             <h3 className="font-medium text-base-content">全部完成了！</h3>
             <p className="text-sm">
@@ -325,7 +332,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       </section>
 
       {/* 3. 列表控制栏 */}
-      <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm transition-colors sticky top-0 z-10 xl:static">
+      <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-lg transition-colors sticky top-0 z-10 xl:static">
         <div className="relative w-full xl:w-96">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
@@ -334,7 +341,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
           <input
             type="text"
             placeholder="搜索单词或释义..."
-            className="w-full pl-10 pr-4 py-2 bg-base-200/50 border border-base-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm text-base-content placeholder-base-content/40"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 text-sm text-base-content placeholder-base-content/40 transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -357,8 +364,8 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                 }
                 className={`flex-1 xl:flex-none px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                   sortMethod === opt.id
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "text-base-content/60 hover:bg-base-200 border border-transparent"
+                    ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm"
+                    : "text-base-content/60 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 {opt.label}
@@ -380,20 +387,21 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               onClick={() =>
                 setExpandedId(isExpanded ? null : item.vocabularyid)
               }
-              className={`bg-base-100 rounded-xl border transition-all cursor-pointer overflow-hidden ${
+              className={`bg-white dark:bg-slate-900 rounded-lg transition-all cursor-pointer overflow-hidden ${
                 isExpanded
-                  ? "border-primary/30 shadow-md ring-1 ring-primary/20"
-                  : "border-base-200 hover:border-primary/50 hover:shadow-sm"
+                  ? "ring-1 ring-primary/20"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               {/* 卡片内容区: Mobile为垂直布局，Desktop为水平布局 */}
               <div className="p-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 xl:gap-0">
                 {/* 左侧：单词与定义 */}
                 <div className="flex flex-row items-start space-x-4 w-full xl:w-auto">
-                  {/* 状态指示点 (Desktop) / 状态条 (Mobile) */}
                   <div
                     className={`hidden xl:block w-2 h-2 rounded-full mt-2.5 xl:mt-0 shrink-0 ${
-                      due ? "bg-warning animate-pulse" : "bg-base-300"
+                      due
+                        ? "bg-warning animate-pulse"
+                        : "bg-slate-200 dark:bg-slate-700"
                     }`}
                     title={due ? "需要复习" : "未到期"}
                   />
@@ -408,14 +416,16 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                         {/* Mobile: 状态指示点在标题旁 */}
                         <div
                           className={`xl:hidden w-2 h-2 rounded-full ${
-                            due ? "bg-warning" : "bg-base-300"
+                            due
+                              ? "bg-warning"
+                              : "bg-slate-200 dark:bg-slate-700"
                           }`}
                         />
                       </div>
                       {item.speakUrl && (
                         <button
                           onClick={(e) => playAudio(e, item.speakUrl)}
-                          className="p-1.5 text-base-content/40 hover:text-primary rounded-full bg-base-200 xl:bg-transparent transition-colors shrink-0"
+                          className="p-1.5 text-base-content/40 hover:text-primary rounded-full bg-slate-50 dark:bg-slate-800 xl:bg-transparent transition-colors shrink-0"
                         >
                           <Volume2 size={16} />
                         </button>
@@ -438,7 +448,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                         className={`w-1.5 h-4 xl:h-6 rounded-full ${
                           level <= item.proficiency
                             ? "bg-primary"
-                            : "bg-base-200"
+                            : "bg-slate-100 dark:bg-slate-800"
                         }`}
                       />
                     ))}
@@ -478,7 +488,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               {/* 展开的详情面板 */}
               {isExpanded && (
                 <div
-                  className="bg-base-200/30 border-t border-base-200 p-4 xl:p-6 animate-in slide-in-from-top-2 duration-200 cursor-default"
+                  className="bg-indigo-50/30 dark:bg-slate-800/40 p-4 xl:p-6 animate-in slide-in-from-top-2 duration-200 cursor-default"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -487,7 +497,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                         <h4 className="text-xs font-bold text-base-content/40 uppercase mb-2">
                           例句
                         </h4>
-                        <div className="bg-base-100 p-4 rounded-xl border border-base-200 shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
                           {renderContext(item.contextSentence, item.word)}
                         </div>
                       </div>
@@ -530,7 +540,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                               href={item.webUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex-1 px-3 py-2 bg-base-100 border border-base-200 rounded-lg text-sm text-base-content/80 hover:border-primary/50 hover:text-primary transition-colors text-center"
+                              className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 rounded-lg text-sm text-base-content/80 hover:text-primary transition-colors text-center"
                             >
                               查看词典
                             </a>
@@ -553,22 +563,21 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
         )}
       </div>
 
-      {/* 5. 复习会话模态框 */}
       {isReviewOpen && reviewQueue.length > 0 && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 xl:p-4 bg-neutral/70 backdrop-blur-sm">
-          <div className="bg-base-100 w-full h-full xl:h-auto max-w-none xl:max-w-2xl rounded-none xl:rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border-none xl:border">
+        <dialog className="modal modal-open">
+          <div className="modal-box flex flex-col w-full h-full max-w-none max-h-none rounded-none sm:rounded-lg sm:max-w-2xl sm:h-auto sm:max-h-[90vh] bg-white dark:bg-slate-900 shadow-2xl p-0 overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-base-200/50 shrink-0 mt-safe xl:mt-0">
+            <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-slate-50 dark:bg-slate-950 shrink-0 mt-safe xl:mt-0">
               <div className="flex items-center space-x-2">
                 <BrainCircuit className="text-primary" size={20} />
                 <span className="font-bold text-base-content/90">复习中</span>
-                <span className="bg-base-300 text-base-content/80 text-xs px-2 py-0.5 rounded-full">
+                <span className="bg-slate-200 dark:bg-slate-800 text-base-content/80 text-xs px-2 py-0.5 rounded-full">
                   {currentReviewIndex + 1} / {reviewQueue.length}
                 </span>
               </div>
               <button
                 onClick={() => setIsReviewOpen(false)}
-                className="p-2 hover:bg-base-300 rounded-full text-base-content/40 transition-colors"
+                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full text-base-content/40 transition-colors"
               >
                 <X size={20} />
               </button>
@@ -578,11 +587,11 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
             <div className="flex-1 flex flex-col relative overflow-y-auto">
               {/* 正反面切换区域 */}
               <div
-                className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-base-200/30 transition-colors min-h-[300px]"
+                className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-slate-100/30 dark:hover:bg-slate-800/20 transition-colors min-h-[300px]"
                 onClick={() => !isCardFlipped && setIsCardFlipped(true)}
               >
                 {!isCardFlipped ? (
-                  // 正面: 先展示例句（挖空）
+                  // 正面: 展示例句（挖空）+ 中文翻译
                   <div className="space-y-8 animate-in fade-in duration-300 max-w-lg mx-auto">
                     <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
                       补全句子
@@ -594,13 +603,30 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                         true,
                       )}
                     </div>
-                    <div className="text-sm text-primary italic mt-8 animate-pulse">
-                      点击显示答案
-                    </div>
+                    {reviewQueue[currentReviewIndex].translation && (
+                      <div className="text-sm text-base-content/50">
+                        {reviewQueue[currentReviewIndex].translation}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   // 背面: 完整信息
-                  <div className="space-y-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 xl:pb-0">
+                  <div className="space-y-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 xl:pb-0 relative">
+                    {/* 查看词典按钮 */}
+                    {reviewQueue[currentReviewIndex].webUrl && (
+                      <div className="flex justify-start">
+                        <a
+                          href={reviewQueue[currentReviewIndex].webUrl!}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                        >
+                          <ExternalLink size={14} />
+                          查看词典
+                        </a>
+                      </div>
+                    )}
                     <div>
                       <h2 className="text-3xl xl:text-4xl font-bold text-primary mb-2 break-words">
                         {reviewQueue[currentReviewIndex].word}
@@ -617,7 +643,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                                 reviewQueue[currentReviewIndex].speakUrl,
                               )
                             }
-                            className="p-1 hover:text-primary bg-base-200 rounded-full"
+                            className="p-1 hover:text-primary bg-slate-100 dark:bg-slate-800 rounded-full"
                           >
                             <Volume2 size={16} />
                           </button>
@@ -625,7 +651,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
+                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-6 rounded-lg">
                       {renderContext(
                         reviewQueue[currentReviewIndex].contextSentence,
                         reviewQueue[currentReviewIndex].word,
@@ -641,7 +667,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               </div>
 
               {/* 控制栏 Footer */}
-              <div className="p-4 xl:p-6 border-t border-base-200 bg-base-200/50 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
+              <div className="p-4 xl:p-6 border-t border-base-200 bg-slate-50 dark:bg-slate-950 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
                 {!isCardFlipped ? (
                   <button
                     onClick={() => setIsCardFlipped(true)}
@@ -654,7 +680,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.FORGOT)}
-                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-base-100 border border-base-200 hover:border-error/50 hover:bg-error/10 text-base-content/80 hover:text-error transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-error transition-all group disabled:opacity-50"
                     >
                       <RotateCcw
                         size={20}
@@ -667,7 +693,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.HARD)}
-                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-base-100 border border-base-200 hover:border-warning/50 hover:bg-warning/10 text-base-content/80 hover:text-warning transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-warning transition-all group disabled:opacity-50"
                     >
                       <Clock
                         size={20}
@@ -681,7 +707,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.GOOD)}
-                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-base-100 border border-base-200 hover:border-success/50 hover:bg-success/10 text-base-content/80 hover:text-success transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-success transition-all group disabled:opacity-50"
                     >
                       <CheckCircle
                         size={20}
@@ -695,7 +721,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     <button
                       disabled={isSubmitting}
                       onClick={() => handleSRS(ReviewQuality.EASY)}
-                      className="flex flex-col items-center p-2 xl:p-3 rounded-xl bg-base-100 border border-base-200 hover:border-info/50 hover:bg-info/10 text-base-content/80 hover:text-info transition-all group disabled:opacity-50"
+                      className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-info transition-all group disabled:opacity-50"
                     >
                       <Award
                         size={20}
@@ -711,7 +737,10 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               </div>
             </div>
           </div>
-        </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setIsReviewOpen(false)}>close</button>
+          </form>
+        </dialog>
       )}
     </div>
   );

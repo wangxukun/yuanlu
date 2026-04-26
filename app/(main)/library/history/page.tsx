@@ -19,5 +19,9 @@ export default async function HistoryPage() {
     session.user.userid,
   );
 
-  return <ListeningHistoryPage history={history} />;
+  return (
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
+      <ListeningHistoryPage history={history} />
+    </div>
+  );
 }

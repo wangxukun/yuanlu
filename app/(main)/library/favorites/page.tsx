@@ -23,9 +23,11 @@ export default async function Page() {
   ]);
 
   return (
-    <FavoritesPage
-      favoritePodcasts={favoritePodcasts}
-      favoriteEpisodes={favoriteEpisodes}
-    />
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
+      <FavoritesPage
+        favoritePodcasts={favoritePodcasts}
+        favoriteEpisodes={favoriteEpisodes}
+      />
+    </div>
   );
 }
