@@ -122,7 +122,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               onClick={() => setActiveTab("podcasts")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "podcasts"
-                  ? "bg-base-100 text-primary shadow-sm"
+                  ? "bg-base-100 text-primary"
                   : "text-base-content/60 hover:text-base-content"
               }`}
             >
@@ -132,7 +132,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               onClick={() => setActiveTab("episodes")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "episodes"
-                  ? "bg-base-100 text-primary shadow-sm"
+                  ? "bg-base-100 text-primary"
                   : "text-base-content/60 hover:text-base-content"
               }`}
             >
@@ -154,12 +154,12 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
             placeholder={`搜索收藏的${
               activeTab === "podcasts" ? "播客" : "单集"
             }...`}
-            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-base-200/50 border border-base-200 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm text-sm text-base-content placeholder-base-content/40"
+            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-base-200/50 border border-base-200 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-sm text-base-content placeholder-base-content/40"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="hidden sm:flex items-center space-x-2 px-6 py-3 bg-base-100 border border-base-200 rounded-2xl text-base-content/70 font-bold hover:bg-base-200 transition-colors shadow-sm text-sm shrink-0">
+        <button className="hidden sm:flex items-center space-x-2 px-6 py-3 bg-base-100 border border-base-200 rounded-2xl text-base-content/70 font-bold hover:bg-base-300 transition-colors text-sm shrink-0">
           <Filter size={18} />
           <span>排序</span>
         </button>
@@ -174,7 +174,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               <div
                 key={series.id}
                 onClick={() => handleSelectSeries(series.id)}
-                className="group bg-base-100 rounded-2xl xl:rounded-3xl border border-base-200 overflow-hidden shadow-sm hover:shadow-xl xl:hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-row xl:flex-col items-center xl:items-stretch p-3 xl:p-0 relative"
+                className="group bg-base-100 rounded-2xl xl:rounded-3xl border border-base-200 overflow-hidden xl:hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-row xl:flex-col items-center xl:items-stretch p-3 xl:p-0 relative"
               >
                 {/* Image Section */}
                 <div className="relative w-24 h-24 xl:w-full xl:h-auto xl:aspect-square shrink-0 rounded-xl xl:rounded-none overflow-hidden bg-base-300">
@@ -285,7 +285,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
           className={`
             w-full transition-all
             // Desktop: List Container Styles
-            xl:bg-base-100 xl:rounded-3xl xl:border xl:border-base-200 xl:shadow-sm xl:overflow-hidden xl:divide-y xl:divide-base-200
+            xl:bg-base-100 xl:rounded-3xl xl:border xl:border-base-200 xl:overflow-hidden xl:divide-y xl:divide-base-200 
             // Mobile: Grid Container Styles
             grid grid-cols-1 sm:grid-cols-2 gap-4 xl:block
           `}
@@ -297,9 +297,9 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               className={`
                 group relative cursor-pointer transition-all
                 // Mobile Styles (Card)
-                bg-base-100 rounded-2xl border border-base-200 shadow-sm flex flex-col overflow-hidden
+                bg-base-100 rounded-2xl border border-base-200 flex flex-col overflow-hidden
                 // Desktop Styles (List Row Override)
-                xl:bg-transparent xl:rounded-none xl:border-none xl:shadow-none xl:flex-row xl:items-center xl:p-6 xl:hover:bg-base-200/50 xl:overflow-visible
+                xl:bg-transparent xl:rounded-none xl:border-none xl:mb-2 xl:flex-row xl:items-center xl:p-6 xl:hover:bg-base-200/50 xl:overflow-visible 
               `}
             >
               {/* Image Section */}

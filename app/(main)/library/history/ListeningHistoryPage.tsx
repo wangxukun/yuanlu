@@ -201,7 +201,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
 
       {/* Hero 区域 */}
       {latestUnfinished && filter !== "finished" && (
-        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 bg-gradient-to-br from-indigo-600 to-purple-700 dark:border dark:border-slate-800 rounded-3xl p-6 xl:p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none group">
+        <div className="relative overflow-hidden bg-slate-900 dark:bg-black/40 bg-gradient-to-br from-indigo-600 to-purple-700 dark:border dark:border-slate-800 rounded-3xl p-6 xl:p-8 text-white dark:shadow-none group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
           {/* Mobile: Flex-col (Vertical), Desktop: Flex-row (Horizontal) */}
           <div className="relative z-10 flex flex-col xl:flex-row items-center gap-6 xl:gap-8">
@@ -269,7 +269,7 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
       )}
 
       {/* 筛选栏 - Mobile Layout Redesign */}
-      <div className="flex flex-col-reverse xl:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors sticky top-0 xl:static z-20">
+      <div className="flex flex-col-reverse xl:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl transition-colors sticky top-0 xl:static z-20">
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full xl:w-auto">
           {/* Mobile: Grid cols 3, Desktop: Flex row */}
           <div className="grid grid-cols-3 xl:flex xl:flex-row w-full gap-1">
@@ -333,10 +333,10 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
                   <div
                     key={item.historyid}
                     onClick={() => handlePlayEpisode(item.episode.id)}
-                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all cursor-pointer flex flex-col xl:flex-row xl:items-center gap-4 relative overflow-hidden"
+                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 transition-all cursor-pointer flex flex-col xl:flex-row xl:items-center gap-4 relative overflow-hidden"
                   >
                     {/* Cover Image: Full width on mobile, Fixed size on Desktop */}
-                    <div className="w-full xl:w-32 aspect-video xl:h-18 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-slate-100 dark:bg-slate-800 relative">
+                    <div className="w-full xl:w-32 aspect-video xl:h-18 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 relative">
                       <img
                         src={item.episode.thumbnailUrl}
                         alt={item.episode.title}
