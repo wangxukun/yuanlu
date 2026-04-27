@@ -1,7 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { usePlayerStore } from "../../store/player-store";
+import { toast } from "sonner";
+import { MergedSubtitleItem } from "@/components/episode/transcript/types";
+import FullContentTranscript from "@/components/episode/FullContentTranscript";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -27,6 +30,47 @@ export default function PlayControlBar() {
   } = usePlayerStore();
 
   const [volume, setVolume] = useState(0.75);
+
+  // Lyrics / FullContentTranscript state
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
+  const [subtitles, setSubtitles] = useState<MergedSubtitleItem[]>([]);
+  const [isLoadingLyrics, setIsLoadingLyrics] = useState(false);
+  const cachedEpisodeId = useRef<string | null>(null);
+
+  // Clear subtitle cache when episode changes
+  useEffect(() => {
+    if (currentEpisode?.episodeid !== cachedEpisodeId.current) {
+      setSubtitles([]);
+      setIsLyricsOpen(false);
+      cachedEpisodeId.current = currentEpisode?.episodeid ?? null;
+    }
+  }, [currentEpisode?.episodeid]);
+
+  const handleOpenLyrics = useCallback(async () => {
+    if (!currentEpisode) return;
+    // If subtitles already loaded for this episode, just open
+    if (subtitles.length > 0) {
+      setIsLyricsOpen(true);
+      return;
+    }
+    setIsLoadingLyrics(true);
+    try {
+      const res = await fetch(
+        `/api/episode/subtitles?id=${currentEpisode.episodeid}`,
+      );
+      const json = await res.json();
+      if (json.success && json.data?.length > 0) {
+        setSubtitles(json.data);
+        setIsLyricsOpen(true);
+      } else {
+        toast.error("该单集暂无字幕");
+      }
+    } catch {
+      toast.error("字幕加载失败");
+    } finally {
+      setIsLoadingLyrics(false);
+    }
+  }, [currentEpisode, subtitles]);
 
   if (!currentEpisode) return null;
 
@@ -63,152 +107,181 @@ export default function PlayControlBar() {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 lg:left-[calc(50%+144px)] lg:-translate-x-1/2 w-[calc(100%-4rem)] max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-4 rounded-2xl shadow-[0_20px_40px_rgba(90,66,232,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] z-50 flex items-center gap-4 lg:gap-6 border border-slate-100 dark:border-slate-800">
-      {/* Left: Thumbnail & Info */}
+    <>
       <div
-        className="flex items-center gap-4 w-1/4 min-w-[120px] cursor-pointer group"
-        onClick={handleInfoClick}
+        className={`fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] ${
+          isLyricsOpen
+            ? "bottom-0 left-0 w-full max-w-none bg-white dark:bg-slate-900 px-4 py-4 md:px-8 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-none transform-none"
+            : "bottom-8 left-1/2 -translate-x-1/2 lg:left-[calc(50%+144px)] w-[calc(100%-4rem)] max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-4 rounded-2xl shadow-[0_20px_40px_rgba(90,66,232,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800"
+        }`}
       >
-        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-800">
-          <img
-            alt="当前播放"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            src={currentEpisode.coverUrl}
-          />
-        </div>
-        <div className="hidden sm:block overflow-hidden">
-          <h4
-            className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-indigo-600 transition-colors"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        <div
+          className={`w-full flex items-center justify-between gap-4 lg:gap-6 ${isLyricsOpen ? "max-w-[1200px] mx-auto" : ""}`}
+        >
+          {/* Left: Thumbnail & Info */}
+          <div
+            className="flex items-center gap-4 w-1/4 min-w-[120px] cursor-pointer group"
+            onClick={handleInfoClick}
           >
-            {currentEpisode.title}
-          </h4>
-          <p className="text-xs text-slate-500 truncate">
-            {currentEpisode.podcast?.title || "未知节目"}
-          </p>
-        </div>
-      </div>
-
-      {/* Center: Controls & Progress */}
-      <div className="flex-1 flex flex-col items-center">
-        <div className="flex items-center gap-4 lg:gap-6 mb-2">
-          <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
-            <span className="material-symbols-outlined">shuffle</span>
-          </button>
-          <button
-            onClick={backward}
-            className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            <span className="material-symbols-outlined">skip_previous</span>
-          </button>
-
-          <button
-            onClick={togglePlay}
-            className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
-          >
-            {isPlaying ? (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-800">
+              <img
+                alt="当前播放"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                src={currentEpisode.coverUrl}
+              />
+            </div>
+            <div className="hidden sm:block overflow-hidden">
+              <h4
+                className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-indigo-600 transition-colors"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                pause
-              </span>
-            ) : (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                play_arrow
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={forward}
-            className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            <span className="material-symbols-outlined">skip_next</span>
-          </button>
-          <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
-            <span className="material-symbols-outlined">repeat</span>
-          </button>
-        </div>
-
-        <div className="w-full flex items-center gap-3">
-          <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px] text-right">
-            {formatTime(currentTime)}
-          </span>
-
-          {/* Custom Progress Bar */}
-          <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative overflow-hidden group/progress flex items-center">
-            <div
-              className="absolute left-0 top-0 h-full bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-full transition-all duration-150"
-              style={{ width: `${progressPercent}%` }}
-            ></div>
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={handleSeekChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
+                {currentEpisode.title}
+              </h4>
+              <p className="text-xs text-slate-500 truncate">
+                {currentEpisode.podcast?.title || "未知节目"}
+              </p>
+            </div>
           </div>
 
-          <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px]">
-            {formatTime(duration)}
-          </span>
-        </div>
-      </div>
+          {/* Center: Controls & Progress */}
+          <div className="flex-1 flex flex-col items-center">
+            <div className="flex items-center gap-4 lg:gap-6 mb-2">
+              <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
+                <span className="material-symbols-outlined">shuffle</span>
+              </button>
+              <button
+                onClick={backward}
+                className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                <span className="material-symbols-outlined">skip_previous</span>
+              </button>
 
-      {/* Right: Actions & Volume */}
-      <div className="flex items-center justify-end gap-4 w-1/4 min-w-[80px]">
-        {/* Playback speed control */}
-        <button
-          onClick={cyclePlaybackRate}
-          className="text-slate-400 hover:text-indigo-600 font-bold text-xs transition-colors w-8 text-center hidden md:block"
-          title="播放速度"
-        >
-          {playbackRate}x
-        </button>
+              <button
+                onClick={togglePlay}
+                className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+              >
+                {isPlaying ? (
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    pause
+                  </span>
+                ) : (
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    play_arrow
+                  </span>
+                )}
+              </button>
 
-        <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
-          <span className="material-symbols-outlined">lyrics</span>
-        </button>
-        <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
-          <span className="material-symbols-outlined">playlist_play</span>
-        </button>
+              <button
+                onClick={forward}
+                className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                <span className="material-symbols-outlined">skip_next</span>
+              </button>
+              <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
+                <span className="material-symbols-outlined">repeat</span>
+              </button>
+            </div>
 
-        <div className="items-center gap-2 hidden lg:flex">
-          <span className="material-symbols-outlined text-slate-400 text-lg">
-            volume_up
-          </span>
-          <div className="w-20 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative flex items-center">
-            <div
-              className="absolute left-0 top-0 h-full bg-indigo-600 rounded-full pointer-events-none"
-              style={{ width: `${volume * 100}%` }}
-            ></div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={handleVolumeChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
+            <div className="w-full flex items-center gap-3">
+              <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px] text-right">
+                {formatTime(currentTime)}
+              </span>
+
+              {/* Custom Progress Bar */}
+              <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative overflow-hidden group/progress flex items-center">
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-full transition-all duration-150"
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={handleSeekChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </div>
+
+              <span className="text-[10px] text-slate-400 font-medium font-mono min-w-[36px]">
+                {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Actions & Volume */}
+          <div className="flex items-center justify-end gap-4 w-1/4 min-w-[80px]">
+            {/* Playback speed control */}
+            <button
+              onClick={cyclePlaybackRate}
+              className="text-slate-400 hover:text-indigo-600 font-bold text-xs transition-colors w-8 text-center hidden md:block"
+              title="播放速度"
+            >
+              {playbackRate}x
+            </button>
+
+            <button
+              onClick={handleOpenLyrics}
+              disabled={isLoadingLyrics}
+              className={`text-slate-400 hover:text-indigo-600 transition-colors hidden md:block ${isLoadingLyrics ? "animate-pulse" : ""}`}
+              title="沉浸字幕"
+            >
+              <span className="material-symbols-outlined">
+                {isLoadingLyrics ? "hourglass_top" : "lyrics"}
+              </span>
+            </button>
+            <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
+              <span className="material-symbols-outlined">playlist_play</span>
+            </button>
+
+            <div className="items-center gap-2 hidden lg:flex">
+              <span className="material-symbols-outlined text-slate-400 text-lg">
+                volume_up
+              </span>
+              <div className="w-20 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative flex items-center">
+                <div
+                  className="absolute left-0 top-0 h-full bg-indigo-600 rounded-full pointer-events-none"
+                  style={{ width: `${volume * 100}%` }}
+                ></div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Close button for mobile/desktop to dismiss player */}
+            <button
+              onClick={closePlayer}
+              className="text-slate-400 hover:text-red-500 transition-colors"
+              title="关闭播放器"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
           </div>
         </div>
-
-        {/* Close button for mobile/desktop to dismiss player */}
-        <button
-          onClick={closePlayer}
-          className="text-slate-400 hover:text-red-500 transition-colors"
-          title="关闭播放器"
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
       </div>
-    </div>
+
+      {/* Full-screen immersive transcript overlay */}
+      {currentEpisode && subtitles.length > 0 && (
+        <FullContentTranscript
+          isOpen={isLyricsOpen}
+          onClose={() => setIsLyricsOpen(false)}
+          subtitles={subtitles}
+          episode={currentEpisode}
+        />
+      )}
+    </>
   );
 }

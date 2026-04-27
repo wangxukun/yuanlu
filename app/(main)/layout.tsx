@@ -71,9 +71,6 @@ export default function RootLayout({
                   <div className="flex-1 w-full">{children}</div>
                   <Footer />
                 </main>
-
-                <PlayControlBar />
-                <BottomNav />
               </div>
 
               <div className="drawer-side z-[100]">
@@ -85,6 +82,9 @@ export default function RootLayout({
                 <SideNav />
               </div>
             </div>
+
+            <PlayControlBar />
+            <BottomNav />
           </ThemeProvider>
         </AuthProvider>
       </body>
