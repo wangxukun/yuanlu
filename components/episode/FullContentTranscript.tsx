@@ -14,11 +14,16 @@ import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { parseTimeStr } from "@/lib/tools";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
+import { ProofreadModal } from "./transcript/ProofreadModal";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
 
 // We will use standard string template literals or clsx if needed. Let's just use string templates for simplicity, or provide a simple cn equivalent.
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+type VisibilityMode = "both" | "en" | "zh";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 interface FullContentTranscriptProps {
@@ -93,14 +98,13 @@ interface SubtitleRowProps {
   sub: ProcessedSubtitle;
   isActive: boolean;
   isLooping: boolean;
-  isProofreading: boolean;
-  editEn: string;
-  editZh: string;
-  onEditEn: (v: string) => void;
-  onEditZh: (v: string) => void;
+  isLoggedIn: boolean;
+  visibilityMode: VisibilityMode;
+  isProofreadingMode: boolean;
   onJump: (t: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
   onToggleLoop: () => void;
+  onProofread: (sub: ProcessedSubtitle) => void;
   activePopoverWord: string | null;
   onClosePopover: () => void;
   onSavePopover: (word: string, val: string) => void;
@@ -110,47 +114,17 @@ const SubtitleRow = React.memo(function SubtitleRow({
   sub,
   isActive,
   isLooping,
-  isProofreading,
-  editEn,
-  editZh,
-  onEditEn,
-  onEditZh,
+  isLoggedIn,
+  visibilityMode,
+  isProofreadingMode,
   onJump,
   onWordClick,
   onToggleLoop,
+  onProofread,
   activePopoverWord,
   onClosePopover,
   onSavePopover,
 }: SubtitleRowProps) {
-  if (isProofreading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-indigo-200 bg-indigo-50/50 shadow-sm"
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="material-symbols-outlined text-indigo-600 text-sm">
-            edit_note
-          </span>
-          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-            正在编辑
-          </span>
-        </div>
-        <textarea
-          className="w-full font-serif text-lg text-slate-800 bg-white border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-600 focus:outline-none min-h-[100px] shadow-sm transition-shadow resize-y"
-          value={editEn}
-          onChange={(e) => onEditEn(e.target.value)}
-        />
-        <textarea
-          className="w-full font-sans text-sm text-slate-600 bg-white border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-600 focus:outline-none min-h-[80px] shadow-sm transition-shadow resize-y"
-          value={editZh}
-          onChange={(e) => onEditZh(e.target.value)}
-        />
-      </motion.div>
-    );
-  }
-
   // Active or Normal State
   return (
     <motion.div
@@ -167,98 +141,114 @@ const SubtitleRow = React.memo(function SubtitleRow({
       }}
     >
       <div className="flex-1 space-y-3">
-        <p
-          className={cn(
-            "font-serif text-lg sm:text-xl leading-relaxed tracking-wide",
-            isActive ? "text-indigo-900 font-medium" : "text-slate-700",
-          )}
-        >
-          {sub.textEn
-            .trim()
-            .split(" ")
-            .map((word, i) => {
-              const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
-              const isPopoverOpen = activePopoverWord === cleanWord;
-              return (
-                <React.Fragment key={i}>
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const sel = window.getSelection();
-                      if (sel && !sel.isCollapsed) return;
-                      onWordClick(cleanWord, sub.textEn, sub.textZh);
-                    }}
-                    className={cn(
-                      "cursor-pointer rounded px-0.5 -mx-0.5 inline-block transition-colors select-text",
-                      isPopoverOpen
-                        ? "bg-indigo-100 text-indigo-800 underline decoration-indigo-400"
-                        : "hover:text-indigo-600 hover:bg-indigo-50",
-                    )}
-                  >
-                    {word}
-                  </span>{" "}
-                </React.Fragment>
-              );
-            })}
-        </p>
-        <p
-          className={cn(
-            "font-sans text-sm sm:text-base leading-relaxed",
-            isActive ? "text-slate-600" : "text-slate-400",
-          )}
-        >
-          {sub.textZh.trim()}
-        </p>
+        {(visibilityMode === "both" || visibilityMode === "en") && (
+          <p
+            className={cn(
+              "font-serif text-lg sm:text-xl leading-relaxed tracking-wide",
+              isActive ? "text-indigo-900 font-medium" : "text-slate-700",
+            )}
+          >
+            {sub.textEn
+              .trim()
+              .split(" ")
+              .map((word, i) => {
+                const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
+                const isPopoverOpen = activePopoverWord === cleanWord;
+                return (
+                  <React.Fragment key={i}>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const sel = window.getSelection();
+                        if (sel && !sel.isCollapsed) return;
+                        onWordClick(cleanWord, sub.textEn, sub.textZh);
+                      }}
+                      className={cn(
+                        "cursor-pointer rounded px-0.5 -mx-0.5 inline-block transition-colors select-text",
+                        isPopoverOpen
+                          ? "bg-indigo-100 text-indigo-800 underline decoration-indigo-400"
+                          : "hover:text-indigo-600 hover:bg-indigo-50",
+                      )}
+                    >
+                      {word}
+                    </span>{" "}
+                  </React.Fragment>
+                );
+              })}
+          </p>
+        )}
+        {(visibilityMode === "both" || visibilityMode === "zh") && (
+          <p
+            className={cn(
+              "font-sans text-sm sm:text-base leading-relaxed",
+              isActive ? "text-slate-600" : "text-slate-400",
+            )}
+          >
+            {sub.textZh.trim()}
+          </p>
+        )}
       </div>
 
-      {isActive ? (
-        <div className="flex flex-col gap-2 relative">
+      {/* ── Control Column ── */}
+      <div className="flex flex-col items-center gap-2 relative min-w-[40px]">
+        {!isProofreadingMode ? (
+          /* Loop Toggle */
           <button
             onClick={(e) => {
               e.stopPropagation();
               onToggleLoop();
             }}
             className={cn(
-              "p-2 rounded-full shadow-md hover:shadow-lg active:scale-90 transition-all",
-              isLooping
-                ? "bg-indigo-600 text-white"
-                : "bg-indigo-100 text-indigo-600 hover:bg-indigo-200",
+              "p-1.5 rounded-full transition-all duration-300",
+              isActive
+                ? isLooping
+                  ? "text-indigo-600 scale-125"
+                  : "text-indigo-300 hover:text-indigo-500"
+                : "opacity-0 group-hover:opacity-100 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50",
             )}
             title="单句循环"
           >
             <span
-              className="material-symbols-outlined"
+              className="material-symbols-outlined text-xl"
               style={{
                 fontVariationSettings: isLooping ? "'FILL' 1" : "'FILL' 0",
               }}
             >
-              repeat
+              {isLooping ? "repeat_one" : "repeat"}
             </span>
           </button>
+        ) : (
+          /* Proofread Button */
+          isLoggedIn &&
+          onProofread && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onProofread(sub);
+              }}
+              className={cn(
+                "p-1.5 rounded-full transition-all duration-300",
+                "opacity-0 group-hover:opacity-100 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50",
+              )}
+              title="校对字幕"
+            >
+              <PencilSquareIcon className="w-5 h-5" />
+            </button>
+          )
+        )}
 
-          {/* Popover */}
-          <AnimatePresence>
-            {activePopoverWord && (
-              <WordPopover
-                word={activePopoverWord}
-                translation="待查询..."
-                onClose={onClosePopover}
-                onSave={(val) => onSavePopover(activePopoverWord, val)}
-              />
-            )}
-          </AnimatePresence>
-        </div>
-      ) : (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleLoop();
-          }}
-          className="opacity-0 group-hover:opacity-100 p-2 rounded-full hover:bg-indigo-50 active:bg-indigo-100 transition-all text-indigo-400"
-        >
-          <span className="material-symbols-outlined">repeat</span>
-        </button>
-      )}
+        {/* Popover */}
+        <AnimatePresence>
+          {isActive && activePopoverWord && (
+            <WordPopover
+              word={activePopoverWord}
+              translation="待查询..."
+              onClose={onClosePopover}
+              onSave={(val) => onSavePopover(activePopoverWord, val)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 });
@@ -288,10 +278,18 @@ export default function FullContentTranscript({
 
   // ── States ──
   const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
+
+  const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>("both");
   const [isProofreadingMode, setIsProofreadingMode] = useState(false);
-  const [editData, setEditData] = useState<
-    Record<number, { en: string; zh: string }>
-  >({});
+
+  // Proofread Modal State
+  const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
+    null,
+  );
+  const [isProofreadOpen, setIsProofreadOpen] = useState(false);
+
+  const userRole = session?.user?.role || "USER";
+  const isLoggedIn = !!session?.user;
   const [activePopoverIndex, setActivePopoverIndex] = useState<number | null>(
     null,
   );
@@ -366,7 +364,7 @@ export default function FullContentTranscript({
 
   // ── Auto-scroll to center ──
   useEffect(() => {
-    if (activeIndex === -1 || !scrollContainerRef.current || isProofreadingMode)
+    if (activeIndex === -1 || !scrollContainerRef.current || isProofreadOpen)
       return;
     const el = document.getElementById(`fct-sub-${processed[activeIndex]?.id}`);
     if (!el) return;
@@ -379,7 +377,7 @@ export default function FullContentTranscript({
       top: container.scrollTop + offset,
       behavior: "smooth",
     });
-  }, [activeIndex, processed, isProofreadingMode]);
+  }, [activeIndex, processed, isProofreadOpen]);
 
   // ── Single-sentence loop ──
   useEffect(() => {
@@ -431,71 +429,23 @@ export default function FullContentTranscript({
     [isPlayingThis, isPlaying, pause, activeIndex, handleJump, processed],
   );
 
-  const toggleProofreading = () => {
-    if (!isProofreadingMode) {
-      // Init edit data
-      const data: Record<number, { en: string; zh: string }> = {};
-      processed.forEach((s, i) => {
-        data[i] = { en: s.textEn, zh: s.textZh };
-      });
-      setEditData(data);
-    }
-    setIsProofreadingMode(!isProofreadingMode);
-  };
-
-  const handleSubmitProofread = async () => {
-    const changes = Object.entries(editData)
-      .filter(([i]) => {
-        const idx = Number(i);
-        const orig = processed[idx];
-        return (
-          orig &&
-          (editData[idx].en.trim() !== orig.textEn.trim() ||
-            editData[idx].zh.trim() !== orig.textZh.trim())
-        );
-      })
-      .map(([i]) => {
-        const idx = Number(i);
-        const orig = processed[idx];
-        return {
-          subtitleIndex: orig.id,
-          originalTextEn: orig.textEn,
-          originalTextZh: orig.textZh,
-          modifiedTextEn: editData[idx].en.trim(),
-          modifiedTextZh: editData[idx].zh.trim(),
-        };
-      });
-
-    if (changes.length === 0) {
-      toast.info("未进行任何更改");
-      setIsProofreadingMode(false);
-      return;
-    }
-
-    const isAdmin = session?.user?.role === "ADMIN";
-    const endpoint = isAdmin
-      ? "/api/proofread/direct-update"
-      : "/api/proofread/submit";
-
-    try {
-      for (const change of changes) {
-        await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ episodeid: episode.episodeid, ...change }),
-        });
-      }
-      toast.success(isAdmin ? "字幕已更新" : "校对已提交审核");
-      setIsProofreadingMode(false);
-    } catch {
-      toast.error("提交失败");
-    }
-  };
+  // Handlers
 
   // Swipe down to close
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 100) onClose();
   };
+
+  // ── Body Scroll Lock ──
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -513,92 +463,91 @@ export default function FullContentTranscript({
         >
           {/* ── Header Section ── */}
           <header className="w-full bg-white/80 border-b border-slate-200 sticky top-0 z-10 transition-colors duration-300">
-            <div className="max-w-[900px] mx-auto px-4 md:px-8 py-4 flex flex-col items-center relative">
-              {/* Close Anchor */}
+            <div className="max-w-[900px] mx-auto px-4 md:px-8 py-3 flex items-center justify-center relative min-h-[64px]">
+              {/* ── Subtitle Visibility Controls (Left) ── */}
+              <div className="absolute left-2 md:left-8 flex items-center bg-slate-100/80 backdrop-blur-sm p-0.5 md:p-1 rounded-2xl gap-0.5 border border-slate-200/50 shadow-sm transition-all duration-300">
+                <button
+                  onClick={() => setVisibilityMode("both")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
+                    visibilityMode === "both"
+                      ? "bg-white text-indigo-600 shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
+                      : "text-slate-500 hover:text-indigo-500 hover:bg-white/50",
+                  )}
+                  title="显示中英双语"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    translate
+                  </span>
+                  <span className="hidden md:inline">双语</span>
+                </button>
+                <button
+                  onClick={() => setVisibilityMode("en")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
+                    visibilityMode === "en"
+                      ? "bg-white text-indigo-600 shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
+                      : "text-slate-500 hover:text-indigo-500 hover:bg-white/50",
+                  )}
+                  title="仅显示英文"
+                >
+                  <span className="material-symbols-outlined text-sm">abc</span>
+                  <span className="hidden md:inline">英文</span>
+                </button>
+                <button
+                  onClick={() => setVisibilityMode("zh")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
+                    visibilityMode === "zh"
+                      ? "bg-white text-indigo-600 shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
+                      : "text-slate-500 hover:text-indigo-500 hover:bg-white/50",
+                  )}
+                  title="仅显示中文"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    text_fields
+                  </span>
+                  <span className="hidden md:inline">中文</span>
+                </button>
+              </div>
+
+              {/* Close Anchor (Center) */}
               <button
                 onClick={onClose}
-                className="mb-4 text-slate-400 hover:text-indigo-600 transition-colors active:scale-95 duration-200"
+                className="text-slate-400 hover:text-indigo-600 transition-colors active:scale-95 duration-200 flex items-center justify-center"
               >
                 <span className="material-symbols-outlined text-4xl">
                   expand_more
                 </span>
               </button>
 
-              <div className="flex items-center justify-between w-full">
-                {/* Podcast Metadata */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
-                    <img
-                      alt="Podcast Thumbnail"
-                      src={episode.coverUrl}
-                      className="w-full h-full object-cover"
-                    />
+              {/* ── Proofreading Toggle (Right) ── */}
+              <div className="absolute right-2 md:right-8 flex items-center">
+                {isLoggedIn && (
+                  <div className="form-control">
+                    <label className="label cursor-pointer gap-2 p-0">
+                      <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
+                        字幕校对
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={isProofreadingMode}
+                        onChange={() =>
+                          setIsProofreadingMode(!isProofreadingMode)
+                        }
+                      />
+                    </label>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-indigo-600 text-sm">
-                      {episode.podcast?.title || "未知节目"}
-                    </span>
-                    <h1 className="text-xl font-bold text-slate-900 leading-tight line-clamp-1 max-w-[200px] md:max-w-md">
-                      {episode.title}
-                    </h1>
-                  </div>
-                </div>
-
-                {/* Proofreading Mode Toggle */}
-                <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-full border border-slate-200 transition-all hover:shadow-sm">
-                  <span className="text-sm font-medium text-slate-600">
-                    校对模式
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={isProofreadingMode}
-                      onChange={toggleProofreading}
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
+                )}
               </div>
             </div>
-
-            {/* Proofread action bar */}
-            <AnimatePresence>
-              {isProofreadingMode && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden border-t border-indigo-100 bg-indigo-50/50"
-                >
-                  <div className="max-w-[900px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-                    <span className="text-xs text-indigo-600 font-medium">
-                      进入编辑模式，修改后请提交
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setIsProofreadingMode(false)}
-                        className="text-xs px-4 py-2 rounded-full border border-indigo-200 text-indigo-600 hover:bg-white transition-colors font-medium"
-                      >
-                        取消
-                      </button>
-                      <button
-                        onClick={handleSubmitProofread}
-                        className="text-xs px-4 py-2 rounded-full text-white shadow-md transition-colors bg-indigo-600 hover:bg-indigo-700 font-medium"
-                      >
-                        提交修改
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </header>
 
           {/* ── Main Content Canvas ── */}
           <main
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto custom-scrollbar bg-white/50"
+            className="flex-1 overflow-y-auto scrollbar-none bg-white/50"
           >
             <div className="max-w-[900px] mx-auto px-4 md:px-8 py-8 space-y-4">
               <AnimatePresence>
@@ -608,26 +557,18 @@ export default function FullContentTranscript({
                     sub={sub}
                     isActive={index === activeIndex}
                     isLooping={loopingIndex === index}
-                    isProofreading={isProofreadingMode}
-                    editEn={editData[index]?.en ?? sub.textEn}
-                    editZh={editData[index]?.zh ?? sub.textZh}
-                    onEditEn={(v) =>
-                      setEditData((d) => ({
-                        ...d,
-                        [index]: { ...d[index], en: v },
-                      }))
-                    }
-                    onEditZh={(v) =>
-                      setEditData((d) => ({
-                        ...d,
-                        [index]: { ...d[index], zh: v },
-                      }))
-                    }
+                    isLoggedIn={isLoggedIn}
+                    visibilityMode={visibilityMode}
+                    isProofreadingMode={isProofreadingMode}
                     onJump={handleJump}
                     onWordClick={(word) => handleWordClick(index, word)}
                     onToggleLoop={() =>
                       setLoopingIndex((prev) => (prev === index ? null : index))
                     }
+                    onProofread={(sub) => {
+                      setProofreadSub(sub);
+                      setIsProofreadOpen(true);
+                    }}
                     activePopoverWord={
                       activePopoverIndex === index ? activePopoverWord : null
                     }
@@ -654,6 +595,14 @@ export default function FullContentTranscript({
               menu_book
             </span>
           </div>
+
+          <ProofreadModal
+            isOpen={isProofreadOpen}
+            onClose={() => setIsProofreadOpen(false)}
+            subtitle={proofreadSub}
+            episodeid={episode.episodeid}
+            userRole={userRole}
+          />
         </motion.div>
       )}
     </AnimatePresence>
