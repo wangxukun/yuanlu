@@ -8,6 +8,7 @@ export function useTranscriptScroll(
   processedSubtitles: ProcessedSubtitle[],
   currentTime: number,
   autoScroll: boolean,
+  idPrefix: string = "subtitle",
 ) {
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const rafRef = useRef<number | null>(null);
@@ -112,7 +113,7 @@ export function useTranscriptScroll(
     if (!autoScroll || activeIndex === -1) return;
 
     const activeEl = document.getElementById(
-      `subtitle-${processedSubtitles[activeIndex]?.id}`,
+      `${idPrefix}-${processedSubtitles[activeIndex]?.id}`,
     );
 
     if (activeEl) {

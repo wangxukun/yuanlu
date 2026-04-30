@@ -3,7 +3,13 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-export default function ThemeSwitcher() {
+export default function ThemeSwitcher({
+  className,
+  children,
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -23,12 +29,16 @@ export default function ThemeSwitcher() {
   return (
     <button
       onClick={toggleTheme}
-      className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+      className={
+        className ||
+        "w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+      }
       aria-label="切换主题"
     >
       <span className="material-symbols-outlined">
         {theme === "dark" ? "light_mode" : "dark_mode"}
       </span>
+      {children}
     </button>
   );
 }
