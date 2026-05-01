@@ -5,15 +5,14 @@ import { useSession } from "next-auth/react";
 import {
   UserCircleIcon,
   PaperAirplaneIcon,
-  ChatBubbleLeftRightIcon,
-  HeartIcon as HeartIconOutline,
+  HandThumbUpIcon as ThumbUpIconOutline,
   ArrowUturnLeftIcon,
   EllipsisHorizontalIcon,
   TrashIcon,
   FlagIcon,
   ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
+import { HandThumbUpIcon as ThumbUpIconSolid } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 
 // --- Types ---
@@ -281,7 +280,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     return (
       <div
         className={clsx(
-          "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500",
+          "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 border-b border-base-300 last:border-0 p-4",
           isReply ? "mt-4" : "mt-6",
         )}
       >
@@ -340,7 +339,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           {/* Comment Bubble */}
           <div
             className={clsx(
-              "bg-base-200 p-3 md:p-4 rounded-2xl rounded-tl-none text-base-content/80 leading-relaxed hover:bg-base-200/60 transition-colors",
+              "p-3 md:p-4 rounded-2xl rounded-tl-none text-slate-700 dark:text-slate-200 leading-relaxed",
               isReply ? "text-xs md:text-sm" : "text-sm md:text-base",
             )}
           >
@@ -359,14 +358,14 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               className={clsx(
                 "flex items-center gap-1.5 text-xs font-bold transition-colors group/btn",
                 comment.isLiked
-                  ? "text-error"
-                  : "text-base-content/40 hover:text-error",
+                  ? "text-primary"
+                  : "text-slate-400 hover:text-primary",
               )}
             >
               {comment.isLiked ? (
-                <HeartIconSolid className="w-3.5 h-3.5" />
+                <ThumbUpIconSolid className="w-3.5 h-3.5" />
               ) : (
-                <HeartIconOutline className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+                <ThumbUpIconOutline className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
               )}
               {comment.likesCount || 0}
             </button>
@@ -474,33 +473,17 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       </div>
     );
   };
-
   return (
-    // [修复关键点] 移除了 overflow-hidden，防止底部 Dropdown 被裁切
-    // 保留 rounded 和 ring 样式，因为子元素都有 padding 缩进，通常不会破坏圆角
-    <div className="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-base-200/50">
-      {/* Header */}
-      <div className="px-6 md:px-10 py-6 border-b border-base-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-          <ChatBubbleLeftRightIcon className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-base-content/90">听友讨论</h3>
-          <p className="text-xs text-base-content/40 font-medium">
-            Community Discussion • {comments.length}
-          </p>
-        </div>
-      </div>
-
-      <div className="p-4 md:p-8 lg:p-10">
+    <div className="w-full">
+      <div className="flex flex-col gap-8">
         {/* Main Input Area */}
         {session ? (
           <form
             onSubmit={handleSubmit}
-            className="mb-10 flex gap-4 md:gap-6 items-start group"
+            className="flex gap-4 md:gap-6 items-start group"
           >
             <div className="avatar placeholder pt-1 shrink-0">
-              <div className="bg-primary/10 text-primary rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-base-100 shadow-sm">
+              <div className="bg-primary/10 text-primary rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-white dark:ring-slate-900 shadow-sm">
                 {session.user?.image ? (
                   <img src={session.user.image} alt="me" />
                 ) : (
@@ -514,7 +497,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
             <div className="flex-1 relative">
               <textarea
                 style={{ direction: "ltr", textAlign: "left" }}
-                className="textarea w-full h-28 text-base p-4 bg-base-200 focus:bg-base-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-2xl resize-none shadow-inner placeholder:text-base-content/30 border-transparent focus:outline-none text-left align-top"
+                className="textarea w-full h-32 text-base p-4 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-900 border-[#e7eeff] dark:border-slate-800 focus:border-primary transition-all rounded-2xl resize-none shadow-sm placeholder:text-slate-400 focus:outline-none text-left align-top"
                 placeholder="分享你的见解或疑问..."
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
@@ -524,7 +507,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               <div className="absolute bottom-3 right-3 flex items-center gap-3">
                 <span
                   className={clsx(
-                    "text-xs transition-opacity font-mono text-base-content/30",
+                    "text-xs transition-opacity font-mono text-slate-400",
                     commentContent.length > 0 ? "opacity-100" : "opacity-0",
                   )}
                 >
@@ -532,7 +515,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                 </span>
                 <button
                   type="submit"
-                  className="btn btn-sm btn-primary rounded-xl shadow-lg shadow-primary/20 border-none"
+                  className="btn btn-primary rounded-xl shadow-lg shadow-primary/20 border-none"
                   disabled={!commentContent.trim() || isSubmitting}
                 >
                   {isSubmitting ? (
@@ -548,12 +531,12 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           </form>
         ) : (
           // Guest State
-          <div className="mb-12 p-8 md:p-10 bg-base-200 rounded-3xl border border-dashed border-base-300 text-center">
+          <div className="p-8 md:p-10 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-[#e7eeff] dark:border-slate-800 text-center">
             <div className="max-w-md mx-auto flex flex-col items-center gap-3">
-              <div className="w-10 h-10 bg-base-200 rounded-full flex items-center justify-center text-base-content/30">
+              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
                 <UserCircleIcon className="w-6 h-6" />
               </div>
-              <p className="text-base-content/60 text-sm font-medium">
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                 登录后参与讨论，记录你的学习点滴
               </p>
               <button
@@ -572,14 +555,14 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
         )}
 
         {/* Comments List */}
-        <div className="space-y-2">
+        <div className="space-y-4">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <span className="loading loading-dots loading-lg text-primary/40"></span>
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-base-content/40 italic text-sm">
+              <p className="text-slate-400 italic text-sm">
                 还没有人发言，来抢沙发吧！
               </p>
             </div>

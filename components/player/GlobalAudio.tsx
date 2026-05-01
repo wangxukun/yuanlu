@@ -22,6 +22,8 @@ export default function GlobalAudio() {
     currentAudioUrl,
     setCurrentAudioUrl,
     playbackRate,
+    playNext,
+    loopMode,
   } = usePlayerStore();
 
   const resumeTimeRef = useRef<number | null>(null);
@@ -146,8 +148,9 @@ export default function GlobalAudio() {
     if (audioRef.current) {
       setAudioRef(audioRef.current);
       audioRef.current.playbackRate = playbackRate;
+      audioRef.current.loop = loopMode === "one";
     }
-  }, [setAudioRef, playbackRate, currentAudioUrl]);
+  }, [setAudioRef, playbackRate, currentAudioUrl, loopMode]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -184,11 +187,7 @@ export default function GlobalAudio() {
     const handleCanPlay = () => tryRestoreProgress();
     const handleEnded = () => {
       if (currentEpisode?.episodeid) saveToBackend(audio.duration, true, true);
-      pause();
-      setCurrentTime(0);
-      resumeTimeRef.current = null;
-      setCurrentEpisode(null);
-      setCurrentAudioUrl("");
+      playNext();
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -209,6 +208,7 @@ export default function GlobalAudio() {
     currentEpisode,
     setDuration,
     tryRestoreProgress,
+    playNext,
   ]);
 
   return (

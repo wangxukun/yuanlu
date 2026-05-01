@@ -23,10 +23,19 @@ export default function PlayControlBar() {
     duration,
     audioRef,
     setCurrentTime,
-    forward,
-    backward,
     playbackRate,
     setPlaybackRate,
+    loopMode,
+    toggleLoopMode,
+    isShuffle,
+    toggleShuffle,
+    isPlaylistOpen,
+    setIsPlaylistOpen,
+    playlist,
+    playEpisode,
+    playPrevious,
+    playNext,
+    removeFromPlaylist,
   } = usePlayerStore();
 
   const [volume, setVolume] = useState(0.75);
@@ -146,12 +155,17 @@ export default function PlayControlBar() {
           {/* Center: Controls & Progress */}
           <div className="flex-1 flex flex-col items-center">
             <div className="flex items-center gap-4 lg:gap-6 mb-2">
-              <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
+              <button
+                onClick={toggleShuffle}
+                className={`transition-colors hidden sm:block ${isShuffle ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-indigo-600"}`}
+                title={isShuffle ? "随机播放中" : "顺序播放"}
+              >
                 <span className="material-symbols-outlined">shuffle</span>
               </button>
               <button
-                onClick={backward}
+                onClick={playPrevious}
                 className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                title="上一首"
               >
                 <span className="material-symbols-outlined">skip_previous</span>
               </button>
@@ -178,13 +192,26 @@ export default function PlayControlBar() {
               </button>
 
               <button
-                onClick={forward}
+                onClick={playNext}
                 className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                title="下一首"
               >
                 <span className="material-symbols-outlined">skip_next</span>
               </button>
-              <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden sm:block">
-                <span className="material-symbols-outlined">repeat</span>
+              <button
+                onClick={toggleLoopMode}
+                className={`transition-colors hidden sm:block ${loopMode !== "none" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-indigo-600"}`}
+                title={
+                  loopMode === "none"
+                    ? "不循环"
+                    : loopMode === "all"
+                      ? "列表循环"
+                      : "单曲循环"
+                }
+              >
+                <span className="material-symbols-outlined">
+                  {loopMode === "one" ? "repeat_one" : "repeat"}
+                </span>
               </button>
             </div>
 
@@ -230,15 +257,86 @@ export default function PlayControlBar() {
               onClick={handleOpenLyrics}
               disabled={isLoadingLyrics}
               className={`text-slate-400 hover:text-indigo-600 transition-colors hidden md:block ${isLoadingLyrics ? "animate-pulse" : ""}`}
-              title="沉浸字幕"
+              title="全屏沉浸模式"
             >
               <span className="material-symbols-outlined">
-                {isLoadingLyrics ? "hourglass_top" : "lyrics"}
+                {isLoadingLyrics ? "hourglass_top" : "fullscreen"}
               </span>
             </button>
-            <button className="text-slate-400 hover:text-indigo-600 transition-colors hidden md:block">
-              <span className="material-symbols-outlined">playlist_play</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsPlaylistOpen(!isPlaylistOpen)}
+                className={`transition-colors hidden md:block ${isPlaylistOpen ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-indigo-600"}`}
+                title="播放列表"
+              >
+                <span className="material-symbols-outlined">playlist_play</span>
+              </button>
+
+              {/* Simple Playlist Dropdown */}
+              {isPlaylistOpen && playlist.length > 0 && (
+                <div className="absolute bottom-full right-0 mb-4 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                      当前播放列表
+                    </h3>
+                    <span className="text-xs text-slate-500">
+                      {playlist.length} 首
+                    </span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                    {playlist.map((ep, idx) => (
+                      <div
+                        key={`${ep.episodeid}-${idx}`}
+                        className={`group/item flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-colors ${
+                          currentEpisode.episodeid === ep.episodeid
+                            ? "bg-indigo-50 dark:bg-indigo-900/30"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        }`}
+                        onClick={() => playEpisode(ep)}
+                      >
+                        <div className="w-8 h-8 rounded shrink-0 overflow-hidden relative">
+                          <img
+                            src={ep.coverUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                          {currentEpisode.episodeid === ep.episodeid &&
+                            isPlaying && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-[16px] text-white animate-pulse">
+                                  volume_up
+                                </span>
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-xs font-semibold truncate ${currentEpisode.episodeid === ep.episodeid ? "text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300"}`}
+                          >
+                            {ep.title}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">
+                            {ep.podcast?.title}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromPlaylist(ep.episodeid);
+                          }}
+                          className="opacity-0 group-hover/item:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
+                          title="从列表中移除"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            close
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="items-center gap-2 hidden lg:flex">
               <span className="material-symbols-outlined text-slate-400 text-lg">
