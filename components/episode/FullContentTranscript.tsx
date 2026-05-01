@@ -92,25 +92,31 @@ const SubtitleRow = React.memo(function SubtitleRow({
           >
             {sub.textEn
               .trim()
-              .split(" ")
-              .map((word, i) => {
-                const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
+              .split(/(\s+)/)
+              .map((part, i) => {
+                if (part.trim() === "") {
+                  return (
+                    <span key={i} className="inline select-text">
+                      {part}
+                    </span>
+                  );
+                }
+                const cleanWord = part.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
                 return (
-                  <React.Fragment key={i}>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const sel = window.getSelection();
-                        if (sel && !sel.isCollapsed) return;
-                        onWordClick(cleanWord, sub.textEn, sub.textZh);
-                      }}
-                      className={cn(
-                        "cursor-pointer rounded px-0.5 -mx-0.5 inline-block transition-colors select-text hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
-                      )}
-                    >
-                      {word}
-                    </span>{" "}
-                  </React.Fragment>
+                  <span
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const sel = window.getSelection();
+                      if (sel && !sel.isCollapsed) return;
+                      onWordClick(cleanWord, sub.textEn, sub.textZh);
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded inline transition-colors select-text hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
+                    )}
+                  >
+                    {part}
+                  </span>
                 );
               })}
           </p>
@@ -303,20 +309,10 @@ export default function FullContentTranscript({
   );
 
   const handleWordClick = useCallback(
-    async (
-      word: string,
-      contextEn: string,
-      contextZh: string,
-      index?: number,
-    ) => {
+    async (word: string, contextEn: string, contextZh: string) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
       if (isPlayingThis && isPlaying && pause) pause();
-
-      // Auto-jump to this sentence if not already active
-      if (index !== undefined && activeIndex !== index) {
-        handleJump(processed[index].start);
-      }
 
       const cleanWord = word.replace(/[.,!?;:"()]/g, "").trim();
       if (!cleanWord) return;
@@ -565,7 +561,7 @@ export default function FullContentTranscript({
                     isProofreadingMode={isProofreadingMode}
                     onJump={handleJump}
                     onWordClick={(word, en, zh) =>
-                      handleWordClick(word, en, zh, index)
+                      handleWordClick(word, en, zh)
                     }
                     onToggleLoop={() =>
                       setLoopingIndex((prev) => (prev === index ? null : index))

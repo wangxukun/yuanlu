@@ -325,11 +325,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               >
                 {getDisplayName(comment.User)}
               </span>
-              {comment.User?.user_profile?.learnLevel && !isReply && (
-                <span className="badge badge-xs badge-primary badge-outline font-mono opacity-80">
-                  {comment.User.user_profile.learnLevel}
-                </span>
-              )}
             </div>
             <span className="text-[10px] md:text-xs text-base-content/40 font-mono">
               {formatDate(comment.commentAt)}

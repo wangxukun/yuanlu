@@ -82,10 +82,18 @@ export const SubtitleItem = memo(function SubtitleItem({
           >
             {sub.textEn
               .trim()
-              .split(" ")
-              .map((word, i) => (
-                <React.Fragment key={i}>
+              .split(/(\s+)/)
+              .map((part, i) => {
+                if (part.trim() === "") {
+                  return (
+                    <span key={i} className="inline select-text">
+                      {part}
+                    </span>
+                  );
+                }
+                return (
                   <span
+                    key={i}
                     onClick={(e) => {
                       const selection = window.getSelection();
                       // 移动端兼容：如果正在选中文本，不触发单词点击
@@ -93,14 +101,14 @@ export const SubtitleItem = memo(function SubtitleItem({
                         return;
                       }
                       e.stopPropagation();
-                      onWordClick(word, sub.textEn, sub.textZh);
+                      onWordClick(part, sub.textEn, sub.textZh);
                     }}
-                    className="cursor-pointer rounded transition-colors px-0.5 -mx-0.5 inline-block active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
+                    className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
                   >
-                    {word}
-                  </span>{" "}
-                </React.Fragment>
-              ))}
+                    {part}
+                  </span>
+                );
+              })}
           </p>
 
           <div
