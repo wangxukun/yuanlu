@@ -16,6 +16,8 @@ import { parseTimeStr } from "@/lib/tools";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
 import { VocabularyModal } from "./transcript/VocabularyModal";
+import { SelectionMenu } from "./transcript/SelectionMenu";
+import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
@@ -201,6 +203,7 @@ export default function FullContentTranscript({
 
   const isPlayingThis = currentEpisode?.episodeid === episode.episodeid;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // ── States ──
   const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
@@ -253,6 +256,12 @@ export default function FullContentTranscript({
     "fct-sub",
   );
 
+  const { selectionMenu, setSelectionMenu } = useTranscriptSelection(
+    scrollContainerRef,
+    processed,
+    "fct-sub-",
+  );
+
   // ── Single-sentence loop ──
   useEffect(() => {
     if (loopingIndex === null || !isPlayingThis || !audioRef) return;
@@ -270,6 +279,8 @@ export default function FullContentTranscript({
   // ── Handlers ──
   const handleJump = useCallback(
     (t: number) => {
+      setSelectionMenu((prev) => ({ ...prev, visible: false }));
+
       if (isPlayingThis && audioRef) {
         audioRef.currentTime = t;
         setCurrentTime(t);
@@ -287,20 +298,23 @@ export default function FullContentTranscript({
       setCurrentEpisode,
       setCurrentAudioUrl,
       episode,
+      setSelectionMenu,
     ],
   );
 
   const handleWordClick = useCallback(
     async (
-      index: number,
       word: string,
       contextEn: string,
       contextZh: string,
+      index?: number,
     ) => {
+      setSelectionMenu((prev) => ({ ...prev, visible: false }));
+
       if (isPlayingThis && isPlaying && pause) pause();
 
       // Auto-jump to this sentence if not already active
-      if (activeIndex !== index) {
+      if (index !== undefined && activeIndex !== index) {
         handleJump(processed[index].start);
       }
 
@@ -332,7 +346,15 @@ export default function FullContentTranscript({
         setIsLoadingDefinition(false);
       }
     },
-    [isPlayingThis, isPlaying, pause, activeIndex, handleJump, processed],
+    [
+      isPlayingThis,
+      isPlaying,
+      pause,
+      activeIndex,
+      handleJump,
+      processed,
+      setSelectionMenu,
+    ],
   );
 
   const handleSaveVocabulary = async () => {
@@ -543,7 +565,7 @@ export default function FullContentTranscript({
                     isProofreadingMode={isProofreadingMode}
                     onJump={handleJump}
                     onWordClick={(word, en, zh) =>
-                      handleWordClick(index, word, en, zh)
+                      handleWordClick(word, en, zh, index)
                     }
                     onToggleLoop={() =>
                       setLoopingIndex((prev) => (prev === index ? null : index))
@@ -566,6 +588,16 @@ export default function FullContentTranscript({
               menu_book
             </span>
           </div>
+
+          <SelectionMenu
+            menuRef={menuRef}
+            selectionMenu={selectionMenu}
+            onClose={() =>
+              setSelectionMenu((prev) => ({ ...prev, visible: false }))
+            }
+            onWordClick={handleWordClick}
+          />
+
           <VocabularyModal
             isModalOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}

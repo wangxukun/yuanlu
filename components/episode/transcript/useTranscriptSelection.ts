@@ -4,6 +4,7 @@ import { SelectionMenuState, ProcessedSubtitle } from "./types";
 export function useTranscriptSelection(
   containerRef: RefObject<HTMLDivElement | null>,
   processedSubtitles: ProcessedSubtitle[],
+  idPrefix: string = "subtitle-",
 ) {
   const [selectionMenu, setSelectionMenu] = useState<SelectionMenuState>({
     visible: false,
@@ -52,10 +53,10 @@ export function useTranscriptSelection(
             ? anchorNode.parentElement
             : (anchorNode as HTMLElement);
 
-        const subtitleRow = parentElement?.closest('[id^="subtitle-"]');
+        const subtitleRow = parentElement?.closest(`[id^="${idPrefix}"]`);
 
         if (subtitleRow) {
-          const idStr = subtitleRow.id.split("-")[1];
+          const idStr = subtitleRow.id.replace(idPrefix, "");
           const subId = parseInt(idStr, 10);
           const subData = processedSubtitles.find((s) => s.id === subId);
 
