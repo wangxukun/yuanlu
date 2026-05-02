@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Podcast } from "@/core/podcast/podcast.entity";
+import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { toast } from "sonner";
 import { PlusIcon, TvIcon } from "@heroicons/react/24/outline";
