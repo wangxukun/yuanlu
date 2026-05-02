@@ -179,7 +179,7 @@ export default function PodcastDetail({
   };
 
   return (
-    <div className="min-h-screen bg-base-100 font-sans pb-24 relative w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans pb-24 relative w-full overflow-x-hidden transition-colors duration-300">
       {/* 沉浸式背景模糊 */}
       <div className="absolute top-0 left-0 w-full h-[500px] overflow-hidden -z-10 pointer-events-none">
         <Image
@@ -188,7 +188,7 @@ export default function PodcastDetail({
           fill
           className="object-cover opacity-20 blur-[80px] saturate-150 scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-base-100/80 to-base-100"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/80 to-slate-50 dark:via-slate-900/80 dark:to-slate-900"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-12 relative z-10">
@@ -218,7 +218,7 @@ export default function PodcastDetail({
           {/* 右侧：简介与剧集列表 */}
           <div className="flex-1 w-full min-w-0 z-10">
             {/* 简介区块 */}
-            <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 shadow-sm border border-base-200/50 mb-8">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 shadow-sm border border-slate-200/50 dark:border-slate-700/50 mb-8">
               <h3 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                 <InformationCircleIcon className="w-5 h-5 text-primary" />
                 关于播客

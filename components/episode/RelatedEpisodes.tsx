@@ -37,7 +37,7 @@ export default function RelatedEpisodes({
       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
         相关剧集
       </h3>
-      <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-6">
         {otherEpisodes.map((ep, index) => (
           <Link
             key={ep.episodeid}

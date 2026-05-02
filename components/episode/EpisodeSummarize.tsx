@@ -18,6 +18,7 @@ import { usePlayerStore } from "@/store/player-store";
 import Link from "next/link";
 import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
 import { toast } from "sonner";
+import { formatChineseDate } from "@/lib/tools";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const pathname = usePathname();
@@ -165,11 +166,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
           <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
             <Calendar className="w-4 h-4" />
             {episode.publishAt
-              ? new Date(episode.publishAt).toLocaleDateString("zh-CN", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
+              ? formatChineseDate(episode.publishAt)
               : "未知日期"}
           </span>
           <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">

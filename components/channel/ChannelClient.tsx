@@ -15,7 +15,7 @@ import {
   PauseIcon,
 } from "@heroicons/react/24/solid";
 import { usePlayerStore } from "@/store/player-store";
-import { formatTime } from "@/lib/tools";
+import { formatTime, formatDate } from "@/lib/tools";
 import type {
   ChannelData,
   ChannelShow,
@@ -124,7 +124,7 @@ function EpisodeRow({
         <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium text-base-content/40">
           <span className="flex items-center gap-1">
             <CalendarIcon className="w-3 h-3" />
-            {new Date(episode.publishAt).toLocaleDateString()}
+            {formatDate(episode.publishAt)}
           </span>
           {episode.duration ? (
             <span className="flex items-center gap-1">

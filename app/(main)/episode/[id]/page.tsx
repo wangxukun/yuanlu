@@ -57,16 +57,16 @@ export default async function EpisodePage({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-12 pt-8 md:pt-12 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-12 lg:gap-16">
           {/* --- Left Column: Main Content (2/3) --- */}
-          <div className="lg:col-span-2 flex flex-col gap-12 md:gap-16 min-w-0">
+          <div className="xl:col-span-2 flex flex-col gap-12 md:gap-16 min-w-0">
             {/* Hero Section */}
             <EpisodeSummarize episode={episode} />
 

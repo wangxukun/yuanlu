@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Info,
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
 import { Episode } from "@/core/episode/episode.entity";
@@ -117,9 +117,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
-      <Toaster position="top-center" />
-
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 font-sans transition-colors duration-300">
       {/* Header */}
       <div className="bg-indigo-900 text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -170,7 +168,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
         {/* Info Banner */}
-        <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mb-8 flex items-start gap-3">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-100 dark:border-slate-700 p-4 mb-8 flex items-start gap-3">
           <Info className="text-indigo-600 shrink-0 mt-0.5" size={20} />
           <div className="text-sm text-slate-600">
             <p className="font-bold text-slate-800 mb-1">如何使用跟读模式：</p>
@@ -189,13 +187,13 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               <div key={sub.id} className="relative">
                 {/* Connector Line */}
                 {index !== subtitles.length - 1 && (
-                  <div className="absolute left-8 top-full h-6 w-0.5 bg-slate-200 z-0 hidden md:block"></div>
+                  <div className="absolute left-8 top-full h-6 w-0.5 bg-slate-200 dark:bg-slate-700 z-0 hidden md:block"></div>
                 )}
 
                 <div className="flex gap-4">
                   {/* Number Indicator (Desktop) */}
                   <div className="hidden md:flex flex-col items-center shrink-0 w-16 pt-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm border-2 border-white shadow-sm z-10">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-sm border-2 border-white dark:border-slate-800 shadow-sm z-10">
                       {index + 1}
                     </div>
                   </div>
@@ -216,7 +214,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               </div>
             ))
           ) : (
-            <div className="text-center py-12 text-slate-500 bg-white rounded-xl">
+            <div className="text-center py-12 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               本集没有字幕。练习模式需要字幕。
             </div>
           )}
@@ -224,7 +222,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
         {/* Completion State */}
         {stats.progress >= 100 && subtitles.length > 0 && (
-          <div className="mt-12 text-center py-12 bg-white rounded-3xl border border-dashed border-emerald-200 animate-in fade-in slide-in-from-bottom-4">
+          <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-emerald-200 dark:border-emerald-900/50 animate-in fade-in slide-in-from-bottom-4">
             <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={40} className="text-emerald-600" />
             </div>

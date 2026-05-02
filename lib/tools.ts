@@ -5,9 +5,24 @@ export function formatTime(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
-// 时间格式化工具函数
-export function formatDate(date: string) {
-  return new Date(date).toISOString().split("T")[0];
+// 日期格式化工具函数 (避免 Hydration Error)
+export function formatDate(date: string | Date) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "未知日期";
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const day = d.getDate().toString().padStart(2, "0");
+  return `${year}/${month}/${day}`;
+}
+
+// 中文日期格式化
+export function formatChineseDate(date: string | Date) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "未知日期";
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${year}年${month}月${day}日`;
 }
 
 //  生成随机验证码

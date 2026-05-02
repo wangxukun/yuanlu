@@ -9,7 +9,7 @@ import AuthProvider from "@/app/AuthProvider";
 import "@/lib/sessionCleaner";
 import SideNav from "@/components/main/sidenav";
 import PlayControlBar from "@/components/controls/PlayControlBar";
-import BottomNav from "@/components/main/BottomNav";
+
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import PageTracker from "@/components/main/PageTracker";
@@ -57,7 +57,7 @@ export default function RootLayout({
             {/* 挂载全局音频引擎，不随页面切换销毁 */}
             <GlobalAudio />
 
-            <div className="drawer lg:drawer-open min-h-screen w-full">
+            <div className="drawer xl:drawer-open min-h-screen w-full">
               <input
                 id="main-drawer"
                 type="checkbox"
@@ -67,7 +67,7 @@ export default function RootLayout({
               <div className="drawer-content flex flex-col relative w-full transition-all duration-300">
                 <Header />
 
-                <main className="flex-1 flex flex-col w-full pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:pb-0">
+                <main className="flex-1 flex flex-col w-full">
                   <div className="flex-1 w-full">{children}</div>
                   <Footer />
                 </main>
@@ -84,7 +84,6 @@ export default function RootLayout({
             </div>
 
             <PlayControlBar />
-            <BottomNav />
           </ThemeProvider>
         </AuthProvider>
       </body>
