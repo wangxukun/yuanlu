@@ -46,6 +46,28 @@ export default function EpisodeCard({
   onPlayClick,
   onRowClick,
 }: EpisodeCardProps) {
+  const {
+    currentEpisode,
+    addToPlaylist,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+    setIsPlaying,
+  } = usePlayerStore();
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToPlaylist(episode as Episode);
+
+    // 如果当前没有剧集在播放器中，则设置当前剧集以显示 PlayControlBar
+    if (!currentEpisode) {
+      setCurrentEpisode(episode as Episode);
+      setCurrentAudioUrl(episode.audioUrl || "");
+      setIsPlaying(false);
+    }
+
+    toast.success("已加入播放列表");
+  };
+
   const progressSeconds = episode.progressSeconds || 0;
   const isFinished = episode.isFinished || false;
   const duration = episode.duration || 0;
@@ -60,33 +82,7 @@ export default function EpisodeCard({
     progressPercentage = Math.min((progressSeconds / duration) * 100, 100);
   }
 
-  const {
-    addToPlaylist,
-    currentEpisode,
-    setCurrentEpisode,
-    setCurrentAudioUrl,
-    setIsPlaying,
-  } = usePlayerStore();
-
   const isMenuOpen = activeMenuId === episode.episodeid;
-
-  const handleAddToQueue = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const enrichedEp = {
-      ...episode,
-      coverUrl: episode.coverUrl || podcastCoverUrl,
-    };
-    addToPlaylist(enrichedEp as unknown as Episode);
-
-    if (!currentEpisode) {
-      setCurrentEpisode(enrichedEp as unknown as Episode);
-      setCurrentAudioUrl(enrichedEp.audioUrl || "");
-      setIsPlaying(false);
-    }
-
-    toast.success("已加入播放队列");
-    onMenuToggle(null);
-  };
 
   return (
     <div
@@ -214,9 +210,8 @@ export default function EpisodeCard({
           <div className="hidden sm:flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               className="p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
+              onClick={handleAdd}
+              title="加入播放队列"
             >
               <QueueListIcon className="w-5 h-5" />
             </button>
@@ -245,7 +240,7 @@ export default function EpisodeCard({
                     <span>下载</span>
                   </button>
                   <button
-                    onClick={handleAddToQueue}
+                    onClick={handleAdd}
                     className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
                   >
                     <QueueListIcon className="w-3.5 h-3.5" />
