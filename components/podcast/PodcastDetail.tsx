@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { usePlayerStore } from "@/store/player-store";
 import { Episode } from "@/core/episode/episode.entity";
 import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
@@ -201,9 +200,9 @@ export default function PodcastDetail({
           {/* 右侧：简介与剧集列表 */}
           <div className="flex-1 w-full min-w-0 z-10">
             {/* 简介区块 */}
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 mb-8">
-              <h3 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
-                <InformationCircleIcon className="w-5 h-5 text-primary" />
+            <div className="backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 mb-8">
+              <h3 className="text-2xl font-bold text-base-content mb-4 flex items-center gap-2">
+                {/* <InformationCircleIcon className="w-5 h-5 text-primary" /> */}
                 关于播客
               </h3>
               <p className="text-base-content/70 leading-relaxed whitespace-pre-wrap text-sm sm:text-base">

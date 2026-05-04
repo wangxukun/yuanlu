@@ -43,7 +43,7 @@ export default function RelatedEpisodes({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
         相关剧集
       </h3>
