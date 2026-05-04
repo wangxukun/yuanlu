@@ -17,6 +17,8 @@ import {
 import { Headphones } from "lucide-react";
 import { formatTime, formatDate } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
+import { usePlayerStore } from "@/store/player-store";
+import { toast } from "sonner";
 
 interface EpisodeWithProgress extends Episode {
   progressSeconds?: number;
@@ -58,7 +60,33 @@ export default function EpisodeCard({
     progressPercentage = Math.min((progressSeconds / duration) * 100, 100);
   }
 
+  const {
+    addToPlaylist,
+    currentEpisode,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+    setIsPlaying,
+  } = usePlayerStore();
+
   const isMenuOpen = activeMenuId === episode.episodeid;
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const enrichedEp = {
+      ...episode,
+      coverUrl: episode.coverUrl || podcastCoverUrl,
+    };
+    addToPlaylist(enrichedEp as unknown as Episode);
+
+    if (!currentEpisode) {
+      setCurrentEpisode(enrichedEp as unknown as Episode);
+      setCurrentAudioUrl(enrichedEp.audioUrl || "");
+      setIsPlaying(false);
+    }
+
+    toast.success("已加入播放队列");
+    onMenuToggle(null);
+  };
 
   return (
     <div
@@ -216,7 +244,10 @@ export default function EpisodeCard({
                     <ArrowDownTrayIcon className="w-3.5 h-3.5" />
                     <span>下载</span>
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
+                  <button
+                    onClick={handleAddToQueue}
+                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                  >
                     <QueueListIcon className="w-3.5 h-3.5" />
                     <span>加入播放队列</span>
                   </button>
