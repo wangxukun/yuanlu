@@ -86,8 +86,8 @@ export default async function EpisodePage({
           </div>
 
           {/* --- Right Column: Sidebar (4/12) --- */}
-          <aside className="lg:col-span-4 flex flex-col gap-10">
-            <div className="lg:sticky lg:top-8">
+          <aside className="lg:col-span-4">
+            <div className="lg:sticky lg:top-24 self-start">
               <RelatedEpisodes
                 podcast={podcast}
                 currentId={episode.episodeid}
