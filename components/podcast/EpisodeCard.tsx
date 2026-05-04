@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   EllipsisHorizontalIcon,
   ClockIcon,
@@ -53,6 +54,7 @@ export default function EpisodeCard({
     setCurrentAudioUrl,
     setIsPlaying,
   } = usePlayerStore();
+  const router = useRouter();
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,6 +68,34 @@ export default function EpisodeCard({
     }
 
     toast.success("已加入播放列表");
+  };
+
+  const handleMarkAsPlayed = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/episode/${episode.episodeid}/progress`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          progressSeconds: episode.duration,
+          isFinished: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success("已标记为已播");
+        onMenuToggle(null); // 关闭菜单
+        router.refresh();
+      } else {
+        toast.error(data.message || "操作失败");
+      }
+    } catch (error) {
+      console.error("Failed to mark as played:", error);
+      toast.error("网络错误");
+    }
   };
 
   const progressSeconds = episode.progressSeconds || 0;
@@ -246,7 +276,10 @@ export default function EpisodeCard({
                     <QueueListIcon className="w-3.5 h-3.5" />
                     <span>加入播放队列</span>
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
+                  <button
+                    onClick={handleMarkAsPlayed}
+                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                  >
                     <ArrowPathIcon className="w-3.5 h-3.5" />
                     <span>标记为已播</span>
                   </button>
