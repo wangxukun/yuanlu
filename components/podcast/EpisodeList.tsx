@@ -45,11 +45,11 @@ export default function EpisodeList({
     : allSortedEpisodes;
 
   return (
-    <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-base-200/50">
+    <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 ">
       <div className="flex items-center justify-between mb-6 px-1 sm:px-2 gap-2">
         <h2 className="text-base sm:text-xl lg:text-2xl font-bold text-base-content flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
           <span className="sm:hidden">剧集</span>
-          <span className="hidden sm:inline">剧集列表</span>
+          <span className="hidden sm:inline text-2xl font-bold">剧集列表</span>
           <span className="bg-primary/10 text-primary text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold">
             {episodes?.length || 0}
           </span>

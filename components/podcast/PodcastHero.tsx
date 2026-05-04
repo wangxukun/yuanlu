@@ -27,7 +27,7 @@ export default function PodcastHero({
   onToggleFavorite,
 }: PodcastHeroProps) {
   return (
-    <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 lg:sticky lg:top-28 flex flex-col items-center lg:items-start text-center lg:text-left z-20">
+    <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 lg:sticky lg:top-12 flex flex-col items-center lg:items-start text-center lg:text-left z-20">
       {/* 封面 */}
       <div className="relative w-full aspect-[16/9] md:aspect-[16/9] lg:aspect-square overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md mb-6 lg:mb-8 group">
         <Image

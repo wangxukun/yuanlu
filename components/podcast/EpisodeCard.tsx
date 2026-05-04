@@ -62,12 +62,12 @@ export default function EpisodeCard({
 
   return (
     <div
-      className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-2xl border transition-all duration-300 cursor-pointer relative ${
+      className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-2xl transition-all duration-300 cursor-pointer relative ${
         isMenuOpen ? "z-20" : "z-0"
       } ${
         isCurrentPlaying || isCurrentPaused
-          ? "bg-primary/5 border-primary/30 shadow-md"
-          : "bg-base-100 border-transparent hover:border-base-200 hover:bg-base-50 hover:shadow-sm"
+          ? "bg-primary/5 border-primary/30"
+          : "bg-base-100 border-transparent hover:border-base-200 hover:bg-base-50"
       }`}
       onClick={() => onRowClick(episode as Episode)}
     >

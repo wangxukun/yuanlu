@@ -99,7 +99,7 @@ export default function ChannelPodcasts({
   const showArrows = canScrollLeft || canScrollRight;
 
   return (
-    <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-10 shadow-sm border border-base-200/50">
+    <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-10 ">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-base-content flex items-center gap-2">
