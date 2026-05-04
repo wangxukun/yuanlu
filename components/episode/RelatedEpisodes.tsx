@@ -17,7 +17,13 @@ export default function RelatedEpisodes({
   currentId: string;
 }) {
   const router = useRouter();
-  const { addToPlaylist } = usePlayerStore();
+  const {
+    addToPlaylist,
+    currentEpisode,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
+    setIsPlaying,
+  } = usePlayerStore();
 
   if (!podcast || !podcast.episode || podcast.episode.length <= 1) return null;
 
@@ -32,6 +38,14 @@ export default function RelatedEpisodes({
       podcast: ep.podcast || { title: podcast?.title },
     };
     addToPlaylist(enrichedEp);
+
+    // 如果当前没有剧集在播放器中，则设置当前剧集以显示 PlayControlBar
+    if (!currentEpisode) {
+      setCurrentEpisode(enrichedEp);
+      setCurrentAudioUrl(enrichedEp.audioUrl || "");
+      setIsPlaying(false);
+    }
+
     toast.success("已加入播放列表");
   };
 
@@ -43,7 +57,7 @@ export default function RelatedEpisodes({
   };
 
   return (
-    <div className="flex flex-col gap-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+    <div className="flex flex-col gap-6">
       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
         相关剧集
       </h3>
