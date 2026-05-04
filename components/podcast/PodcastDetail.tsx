@@ -5,10 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import {
-  ArrowLeftIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { usePlayerStore } from "@/store/player-store";
 import { Episode } from "@/core/episode/episode.entity";
 import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
@@ -107,9 +104,6 @@ export default function PodcastDetail({
   }, [session, podcast.podcastid]);
 
   // ---------------------- Handlers ----------------------
-  const handleBack = () => {
-    router.back();
-  };
 
   const handleRowClick = (episode: Episode) => {
     router.push(`/episode/${episode.episodeid}`);
@@ -192,17 +186,6 @@ export default function PodcastDetail({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-12 relative z-10">
-        {/* 桌面端返回按钮 */}
-        <button
-          onClick={handleBack}
-          className="hidden lg:flex items-center gap-2 text-base-content/60 hover:text-primary transition-colors mb-8 font-medium group w-fit"
-        >
-          <div className="p-1.5 rounded-full bg-base-200 group-hover:bg-primary/10 transition-colors">
-            <ArrowLeftIcon className="w-4 h-4" />
-          </div>
-          返回
-        </button>
-
         <div className="flex flex-col lg:flex-row gap-2 lg:gap-12 items-start">
           {/* 左侧：Sticky 播客信息区 */}
           <PodcastHero
@@ -218,7 +201,7 @@ export default function PodcastDetail({
           {/* 右侧：简介与剧集列表 */}
           <div className="flex-1 w-full min-w-0 z-10">
             {/* 简介区块 */}
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 shadow-sm border border-slate-200/50 dark:border-slate-700/50 mb-8">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 mb-8">
               <h3 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                 <InformationCircleIcon className="w-5 h-5 text-primary" />
                 关于播客
