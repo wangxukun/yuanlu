@@ -11,6 +11,8 @@ import {
   Clock,
   Tv,
   Mic,
+  Download,
+  FileDown,
 } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
 import { useSession } from "next-auth/react";
@@ -129,25 +131,25 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   };
 
   return (
-    <section className="flex flex-col md:flex-row gap-8 lg:gap-10 items-start">
-      {/* --- Cover Image --- */}
-      <div className="w-full md:w-72 shrink-0">
-        <div className="group relative w-full aspect-video overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+    <section className="flex flex-col gap-8">
+      {/* --- Main Player / Cover Area --- */}
+      <div className="w-full">
+        <div className="group relative w-full aspect-[16/9] md:aspect-[16/9] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
           <img
             src={episode.coverUrl}
             alt={episode.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
           />
-          {/* Play Overlay (Desktop Hover) */}
+          {/* Play Overlay */}
           <div
-            className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+            className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
             onClick={handlePlay}
           >
-            <button className="bg-primary text-white p-4 rounded-full shadow-2xl scale-110">
+            <button className="bg-[#5830E0] text-white p-5 rounded-full shadow-2xl transform transition-transform hover:scale-110">
               {isPlayingThis ? (
-                <Pause className="w-8 h-8 fill-current" />
+                <Pause className="w-10 h-10 fill-current" />
               ) : (
-                <Play className="w-8 h-8 ml-1 fill-current" />
+                <Play className="w-10 h-10 ml-1 fill-current" />
               )}
             </button>
           </div>
@@ -155,92 +157,110 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       </div>
 
       {/* --- Content Details --- */}
-      <div className="flex flex-col gap-4 flex-1 min-w-0">
-        {/* Badges & Meta */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {episode.tags && episode.tags.length > 0 && (
-            <span className="badge badge-outline border-primary text-primary px-4 py-3 text-xs font-bold uppercase tracking-wider">
-              {episode.tags[0].name}
+      <div className="flex flex-col gap-6 w-full">
+        <div className="flex flex-col gap-2">
+          {/* Badges & Meta */}
+          <div className="flex flex-wrap gap-4 items-center">
+            {episode.tags && episode.tags.length > 0 && (
+              <span className="bg-[#5830E0]/5 text-[#5830E0] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                {episode.tags[0].name}
+              </span>
+            )}
+            <span className="text-sm text-slate-500 flex items-center gap-1.5 font-medium">
+              <Calendar className="w-4 h-4" />
+              {episode.publishAt
+                ? formatChineseDate(episode.publishAt)
+                : "未知日期"}
             </span>
-          )}
-          <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
-            <Calendar className="w-4 h-4" />
-            {episode.publishAt
-              ? formatChineseDate(episode.publishAt)
-              : "未知日期"}
-          </span>
-          <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
-            <Clock className="w-4 h-4" />
-            {typeof episode.duration === "number"
-              ? `${Math.floor(episode.duration / 60)}分钟`
-              : episode.duration}
-          </span>
+            <span className="text-sm text-slate-500 flex items-center gap-1.5 font-medium">
+              <Clock className="w-4 h-4" />
+              {typeof episode.duration === "number"
+                ? `${Math.floor(episode.duration / 60)}分钟`
+                : episode.duration}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
+            {episode.title}
+          </h1>
+
+          {/* Podcast Title */}
+          <Link
+            href={`/podcast/${episode.podcastid}`}
+            className="text-[#5830E0] font-bold text-lg hover:underline transition-all flex items-center gap-2"
+          >
+            <Tv className="w-5 h-5" />
+            {episode.podcast?.title || "远路英语"}
+          </Link>
         </div>
 
-        {/* Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
-          {episode.title}
-        </h1>
-
-        {/* Podcast Title */}
-        <Link
-          href={`/podcast/${episode.podcastid}`}
-          className="flex items-center gap-2 text-primary font-semibold hover:opacity-80 transition-opacity"
-        >
-          <Tv className="w-5 h-5" />
-          <span>{episode.podcast?.title || "远路英语"}</span>
-        </Link>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3 mt-4 max-w-md w-full">
-          {/* Practice Button */}
-          <button
-            onClick={handleStartPractice}
-            className="btn btn-outline border-primary text-primary hover:bg-primary/10 w-full rounded-xl flex items-center justify-center gap-2 font-bold"
-          >
-            <Mic className="w-5 h-5" />
-            <span>口语练习模式</span>
-          </button>
-
-          <div className="flex items-center gap-4">
-            {/* Play Button */}
+        {/* Action Row */}
+        <div className="flex flex-wrap items-center gap-4 py-2 border-y border-slate-100 dark:border-slate-800">
+          {/* Practice & Download Group */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={handlePlay}
-              className="btn btn-primary flex-1 rounded-xl flex items-center justify-center gap-2 group shadow-lg shadow-primary/20"
+              onClick={handleStartPractice}
+              className="bg-[#5830E0] text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold hover:bg-[#470fd0] transition-colors"
             >
-              {isPlayingThis ? (
-                <Pause className="w-5 h-5 fill-current" />
-              ) : (
-                <Play className="w-5 h-5 fill-current transition-transform group-hover:scale-110" />
-              )}
-              <span className="font-bold">
-                {isPlayingThis ? "暂停播放" : "开始播放"}
-              </span>
+              <Mic className="w-5 h-5" />
+              <span>口语练习</span>
             </button>
 
-            {/* Share & Bookmark */}
             <button
               onClick={handleFeatureUnderDev}
-              className="btn btn-ghost btn-circle text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              title="分享"
+              className="p-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800"
+              title="下载音频"
             >
-              <Share2 className="w-5 h-5" />
+              <Download className="w-5 h-5" />
             </button>
             <button
-              onClick={handleToggleFavorite}
-              disabled={isLoadingFavorite}
-              className={`btn btn-ghost btn-circle hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                isFavorited
-                  ? "text-primary"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-              title="收藏"
+              onClick={handleFeatureUnderDev}
+              className="p-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800"
+              title="下载文档"
             >
-              {isFavorited ? (
-                <Bookmark className="w-5 h-5 fill-current" />
-              ) : (
-                <Bookmark className="w-5 h-5" />
-              )}
+              <FileDown className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-2" />
+
+          {/* Play, Share, Bookmark */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handlePlay}
+              className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200 hover:text-[#5830E0] transition-colors"
+            >
+              <div className="bg-[#5830E0] text-white p-2 rounded-full">
+                {isPlayingThis ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </div>
+              <span>{isPlayingThis ? "暂停" : "播放"}</span>
+            </button>
+
+            <button
+              onClick={handleToggleFavorite}
+              className={`flex items-center gap-1.5 font-medium transition-colors ${
+                isFavorited
+                  ? "text-[#5830E0]"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Bookmark
+                className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`}
+              />
+              <span className="hidden sm:inline">收藏</span>
+            </button>
+
+            <button
+              onClick={handleFeatureUnderDev}
+              className="flex items-center gap-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="hidden sm:inline">分享</span>
             </button>
           </div>
         </div>
