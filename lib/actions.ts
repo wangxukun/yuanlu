@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { registerFormSchema } from "@/lib/form-schema";
 import { deleteObject, uploadFile } from "@/lib/oss";
 import { auth } from "@/auth";
+import { requireAdminAction } from "@/core/auth/guard";
 import { episodeService } from "@/core/episode/episode.service";
 import { Prisma } from "@prisma/client";
 import { ActionState } from "@/lib/types";
@@ -146,6 +147,9 @@ export async function createPodcast(
   formData: FormData,
 ): Promise<PodcastState> {
   try {
+    // [安全修复] 只有 ADMIN 才能创建播客
+    await requireAdminAction();
+
     const title = formData.get("podcastName") as string;
     const description = formData.get("description") as string;
     const platform = formData.get("platform") as string;
@@ -188,6 +192,9 @@ export async function updatePodcast(
   formData: FormData,
 ): Promise<PodcastState> {
   try {
+    // [安全修复] 只有 ADMIN 才能更新播客
+    await requireAdminAction();
+
     const title = formData.get("podcastName") as string;
     const description = formData.get("description") as string;
     const platform = formData.get("platform") as string;
@@ -399,6 +406,9 @@ export async function deletePodcast(
   coverFileName: string,
 ): Promise<PodcastDelState> {
   try {
+    // [安全修复] 只有 ADMIN 才能删除播客
+    await requireAdminAction();
+
     // 1. 删除数据库数据
     // Prisma 的 onDelete: Cascade 应该会处理 tags 关联（隐式多对多通常只是删除关联记录）
     // 但必须确保 episode 是否级联删除？Schema 中 episode 没有定义 onDelete: Cascade 指向 podcast
@@ -516,6 +526,9 @@ export async function deleteUser(
   id: string,
   avatarFileName: string,
 ): Promise<UserDelState> {
+  // [安全修复] 只有 ADMIN 才能删除用户
+  await requireAdminAction();
+
   let delAvatarResult = null;
   if (avatarFileName) {
     // 删除OSS中用户头像
@@ -546,6 +559,9 @@ export async function deleteUser(
 }
 
 export async function deleteEpisodeById(id: string) {
+  // [安全修复] 只有 ADMIN 才能删除剧集
+  await requireAdminAction();
+
   const {
     audioFileName,
     coverFileName,

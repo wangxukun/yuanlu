@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { HandThumbUpIcon as ThumbUpIconSolid } from "@heroicons/react/24/solid";
 import clsx from "clsx";
+import { toast } from "sonner";
 
 // --- Types ---
 interface CommentUser {
@@ -53,6 +54,10 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
 
   // [修复] 中文输入法兼容性：使用 useRef
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // [新增] 删除确认 Modal 状态
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- Helper: Build Tree Structure ---
   const buildCommentTree = (flatComments: Comment[]): Comment[] => {
@@ -209,17 +214,28 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     }
   };
 
-  // [新增] 删除评论 Action
-  const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("确定要删除这条评论吗？")) return;
+  // [新增] 删除评论 Action - 现在仅用于触发 Modal
+  const handleDeleteComment = (commentId: number) => {
+    setDeleteConfirmId(commentId);
+    // 触发 daisyUI Modal
+    const modal = document.getElementById(
+      "delete_comment_modal",
+    ) as HTMLDialogElement;
+    if (modal) modal.showModal();
+  };
 
+  // [新增] 确认删除执行逻辑
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+
+    setIsDeleting(true);
     // 1. 备份当前的评论列表（用于回滚）
     const previousComments = [...comments];
 
     // 2. 乐观更新：先从界面移除
     const removeCommentFromTree = (list: Comment[]): Comment[] => {
       return list
-        .filter((c) => c.commentid !== commentId)
+        .filter((c) => c.commentid !== deleteConfirmId)
         .map((c) => ({
           ...c,
           replies: c.replies ? removeCommentFromTree(c.replies) : [],
@@ -232,17 +248,27 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
       const res = await fetch("/api/comment/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentId }),
+        body: JSON.stringify({ commentId: deleteConfirmId }),
       });
 
       if (!res.ok) {
         throw new Error("删除失败");
       }
+
+      // 关闭 Modal
+      const modal = document.getElementById(
+        "delete_comment_modal",
+      ) as HTMLDialogElement;
+      if (modal) modal.close();
+      toast.success("评论已删除");
     } catch (error) {
       console.error("Delete failed", error);
-      alert("删除失败，请稍后重试");
+      toast.error("删除失败，请稍后重试");
       // 4. 如果失败，回滚状态
       setComments(previousComments);
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -251,6 +277,47 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     if (text) {
       navigator.clipboard.writeText(text);
       // 可以加个 Toast 提示，这里略
+    }
+  };
+
+  // [新增] 举报评论 Action
+  const handleReportComment = async (comment: Comment) => {
+    try {
+      // 构造详细的举报者标识：昵称 (邮箱)
+      // @ts-expect-error - session.user 可能包含 nickname (via auth.ts callbacks)
+      const reporterName = session?.user?.email
+        ? `${session.user.nickname || "无昵称"} (${session.user.email})`
+        : "未登录游客";
+
+      // 构造详细的被举报者标识：昵称 (邮箱)
+      const authorName = comment.User
+        ? `${comment.User.user_profile?.nickname || "无昵称"} (${comment.User.email})`
+        : "未知用户";
+
+      const reportTime = new Date().toLocaleString("zh-CN");
+
+      const res = await fetch("/api/comment/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commentId: comment.commentid,
+          reporterName,
+          reportTime,
+          commentText: comment.commentText,
+          commentAt: formatDate(comment.commentAt),
+          targetUrl: window.location.href, // 包含当前剧集 ID 的完整链接
+          authorName,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("已举报");
+      } else {
+        throw new Error("举报失败");
+      }
+    } catch (error) {
+      console.error("Report failed", error);
+      toast.error("举报提交失败");
     }
   };
 
@@ -276,6 +343,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   }) => {
     const isReplying = replyingToId === comment.commentid;
     const isOwner = session?.user?.userid === comment.userid;
+    const isAdmin = session?.user?.role === "ADMIN";
 
     return (
       <div
@@ -366,9 +434,13 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
             </button>
 
             <button
-              onClick={() =>
-                setReplyingToId(isReplying ? null : comment.commentid)
-              }
+              onClick={() => {
+                if (!session) {
+                  toast.error("请先登录后再回复评论");
+                  return;
+                }
+                setReplyingToId(isReplying ? null : comment.commentid);
+              }}
               className="flex items-center gap-1.5 text-xs font-bold text-base-content/40 hover:text-primary transition-colors"
             >
               <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
@@ -396,7 +468,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                     <ClipboardDocumentIcon className="w-3.5 h-3.5" /> 复制
                   </button>
                 </li>
-                {isOwner ? (
+                {isOwner || isAdmin ? (
                   <li>
                     <button
                       onClick={() => handleDeleteComment(comment.commentid)}
@@ -408,7 +480,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
                 ) : (
                   <li>
                     <button
-                      onClick={() => alert("已举报")}
+                      onClick={() => handleReportComment(comment)}
                       className="hover:text-warning"
                     >
                       <FlagIcon className="w-3.5 h-3.5" /> 举报
@@ -566,6 +638,47 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
           )}
         </div>
       </div>
+
+      {/* [新增] 删除确认 Modal */}
+      <dialog
+        id="delete_comment_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
+        <div className="modal-box bg-base-100 border border-base-200 shadow-2xl rounded-2xl">
+          <h3 className="font-bold text-lg text-error flex items-center gap-2">
+            <TrashIcon className="w-6 h-6" />
+            确认删除评论？
+          </h3>
+          <p className="py-4 text-base-content/60">
+            此操作不可撤销。如果该评论包含回复，回复也将一并被删除。
+          </p>
+          <div className="modal-action">
+            <form method="dialog" className="flex gap-2">
+              <button
+                className="btn btn-ghost rounded-xl"
+                disabled={isDeleting}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn btn-error rounded-xl text-white"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : (
+                  "确认删除"
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button disabled={isDeleting}>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

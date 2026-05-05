@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/core/auth/guard";
 
 export async function DELETE(request: NextRequest) {
   try {
+    // [安全修复] 添加 ADMIN 角色校验 — 只有管理员才能删除剧集
+    const guard = await requireAdmin();
+    if (!guard.ok) return guard.response;
+
     // 1. 解析请求体获取 episodeid
     const { episodeid } = await request.json();
 

@@ -184,7 +184,7 @@ export default async function DiscoverPage() {
               href="/discover/channels"
               className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
             >
-              查看全部
+              查看更多
             </Link>
           </div>
           <div className="flex lg:grid lg:grid-cols-4 gap-6 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-none">

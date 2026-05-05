@@ -26,8 +26,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "评论不存在" }, { status: 404 });
     }
 
-    // 4. 权限检查：必须是评论作者 (你也可以在这里扩展管理员权限逻辑)
-    if (comment.userid !== session.user.userid) {
+    // 4. 权限检查：必须是评论作者或管理员
+    const isOwner = comment.userid === session.user.userid;
+    const isAdmin = session.user.role === "ADMIN";
+    if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "无权删除此评论" }, { status: 403 });
     }
 

@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { generateTagConnectOrCreate } from "@/lib/tools";
 import { episodeService } from "@/core/episode/episode.service";
+import { requireAdmin } from "@/core/auth/guard";
 
 export async function POST(request: Request) {
   try {
-    // 1. 权限校验
-    const session = await auth();
-    console.log("POST /api/podcast/create", session);
+    // 1. 权限校验 — [安全修复] 升级为 ADMIN 角色校验
     const internalSecret = request.headers.get("x-internal-secret");
+    const isInternalCall =
+      internalSecret === process.env.YUANLU_INTERNAL_SECRET;
 
-    if (
-      (!session || !session.user) &&
-      internalSecret !== process.env.YUANLU_INTERNAL_SECRET
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 非内部调用时，必须是已认证的 ADMIN 用户
+    if (!isInternalCall) {
+      const guard = await requireAdmin();
+      if (!guard.ok) return guard.response;
     }
 
     // 2. 从请求体中获取数据

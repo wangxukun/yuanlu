@@ -14,6 +14,19 @@ export async function POST(request: Request) {
     }
 
     const currentUserId = session.user.userid;
+
+    // [安全修复] 检查用户是否被禁止评论
+    const userRecord = await prisma.user.findUnique({
+      where: { userid: currentUserId },
+      select: { isCommentAllowed: true },
+    });
+    if (!userRecord || userRecord.isCommentAllowed === false) {
+      return NextResponse.json(
+        { error: "您的评论权限已被限制，如有疑问请联系管理员" },
+        { status: 403 },
+      );
+    }
+
     const { episodeid, content, parentId } = await request.json();
 
     if (!episodeid || !content || !content.trim()) {

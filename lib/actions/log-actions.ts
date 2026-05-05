@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { requireAdminAction } from "@/core/auth/guard";
 import { headers } from "next/headers";
 import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client"; // 引入签名函数
@@ -44,10 +45,7 @@ export async function logVisit(path: string) {
 }
 
 export async function getVisitorLogs(page = 1, pageSize = 20) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") {
-    throw new Error("Unauthorized");
-  }
+  await requireAdminAction();
 
   const skip = (page - 1) * pageSize;
 
@@ -156,8 +154,7 @@ const getLocation = async (ip: string) => {
 
 // 新增：删除日志功能
 export async function deleteVisitorLog(logId: string) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+  await requireAdminAction();
 
   try {
     await prisma.visitorLog.delete({ where: { id: logId } });

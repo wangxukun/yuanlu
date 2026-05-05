@@ -5,8 +5,11 @@ export const DEFAULT_LOGIN_REDIRECT = "/home";
 export const publicRoutes = [
   "/home",
   "/discover",
+  "/discover/trending",
+  "/discover/channels",
   "/podcast/:id",
   "/episode/:id",
+  "/channel/:id",
   "/series/:id",
   "/contact",
   "/auth/user-agreement",

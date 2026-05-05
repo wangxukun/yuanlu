@@ -2,7 +2,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { auth } from "@/auth"; // 假设你有权限校验
+import { requireAdminAction } from "@/core/auth/guard";
 
 /**
  * 核心逻辑：处理标签的创建与关联
@@ -45,8 +45,12 @@ export async function getAllTags() {
 
 // 创建标签
 export async function createTag(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "未授权" };
+  // [安全修复] 只有 ADMIN 才能创建标签
+  try {
+    await requireAdminAction();
+  } catch {
+    return { error: "未授权，需要管理员权限" };
+  }
 
   const name = formData.get("name") as string;
   if (!name || !name.trim()) return { error: "标签名称不能为空" };
@@ -65,8 +69,12 @@ export async function createTag(formData: FormData) {
 
 // 更新标签
 export async function updateTag(id: number, newName: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "未授权" };
+  // [安全修复] 只有 ADMIN 才能更新标签
+  try {
+    await requireAdminAction();
+  } catch {
+    return { error: "未授权，需要管理员权限" };
+  }
 
   if (!newName || !newName.trim()) return { error: "标签名称不能为空" };
 
@@ -85,8 +93,12 @@ export async function updateTag(id: number, newName: string) {
 
 // 删除标签
 export async function deleteTag(id: number) {
-  const session = await auth();
-  if (!session?.user) return { error: "未授权" };
+  // [安全修复] 只有 ADMIN 才能删除标签
+  try {
+    await requireAdminAction();
+  } catch {
+    return { error: "未授权，需要管理员权限" };
+  }
 
   try {
     await prisma.tag.delete({
