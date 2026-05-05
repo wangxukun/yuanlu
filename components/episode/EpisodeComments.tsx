@@ -284,7 +284,6 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const handleReportComment = async (comment: Comment) => {
     try {
       // 构造详细的举报者标识：昵称 (邮箱)
-      // @ts-expect-error - session.user 可能包含 nickname (via auth.ts callbacks)
       const reporterName = session?.user?.email
         ? `${session.user.nickname || "无昵称"} (${session.user.email})`
         : "未登录游客";
