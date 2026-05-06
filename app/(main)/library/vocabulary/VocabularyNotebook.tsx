@@ -593,8 +593,14 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
       </div>
 
       {isReviewOpen && reviewQueue.length > 0 && (
-        <dialog className="modal modal-open">
-          <div className="modal-box flex flex-col w-full h-full max-w-none max-h-none rounded-none sm:rounded-lg sm:max-w-2xl sm:h-auto sm:max-h-[90vh] bg-white dark:bg-slate-900 shadow-2xl p-0 overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsReviewOpen(false)}
+          />
+          {/* Modal Content */}
+          <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-slate-900 sm:rounded-2xl shadow-2xl overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-slate-50 dark:bg-slate-950 shrink-0 mt-safe xl:mt-0">
               <div className="flex items-center space-x-2">
@@ -798,10 +804,7 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
               </div>
             </div>
           </div>
-          <form method="dialog" className="modal-backdrop">
-            <button onClick={() => setIsReviewOpen(false)}>close</button>
-          </form>
-        </dialog>
+        </div>
       )}
     </div>
   );
