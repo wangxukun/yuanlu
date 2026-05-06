@@ -143,6 +143,22 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
     }
   };
 
+  // 播放例句音频 (Web Speech API)
+  const playContextAudio = (e: React.MouseEvent, text?: string | null) => {
+    e.stopPropagation();
+    if (!text) return;
+
+    // 停止当前正在播放的语音
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast.error("当前浏览器不支持语音合成");
+    }
+  };
+
   // --- 复习模式逻辑 ---
   const startReview = () => {
     const dueWords = vocabulary.filter((v) => isDue(v.nextReviewAt));
@@ -497,8 +513,21 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                         <h4 className="text-xs font-bold text-base-content/40 uppercase mb-2">
                           例句
                         </h4>
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg flex flex-col">
                           {renderContext(item.contextSentence, item.word)}
+                          {item.contextSentence && (
+                            <div className="mt-2 flex justify-end">
+                              <button
+                                onClick={(e) =>
+                                  playContextAudio(e, item.contextSentence)
+                                }
+                                className="p-1.5 text-base-content/40 hover:text-primary bg-slate-50 dark:bg-slate-800 rounded-full transition-colors"
+                                title="朗读例句"
+                              >
+                                <Volume2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -596,11 +625,27 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                     <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
                       补全句子
                     </div>
-                    <div className="text-xl md:text-3xl leading-relaxed font-serif text-base-content">
+                    <div className="text-xl md:text-3xl leading-relaxed font-serif text-base-content flex flex-col">
                       {renderContext(
                         reviewQueue[currentReviewIndex].contextSentence,
                         reviewQueue[currentReviewIndex].word,
                         true,
+                      )}
+                      {reviewQueue[currentReviewIndex].contextSentence && (
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            onClick={(e) =>
+                              playContextAudio(
+                                e,
+                                reviewQueue[currentReviewIndex].contextSentence,
+                              )
+                            }
+                            className="p-2 text-base-content/40 hover:text-primary bg-slate-100 dark:bg-slate-800 rounded-full transition-colors"
+                            title="朗读例句"
+                          >
+                            <Volume2 size={20} />
+                          </button>
+                        </div>
                       )}
                     </div>
                     {reviewQueue[currentReviewIndex].translation && (
@@ -651,11 +696,27 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-6 rounded-lg">
+                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-6 rounded-lg flex flex-col">
                       {renderContext(
                         reviewQueue[currentReviewIndex].contextSentence,
                         reviewQueue[currentReviewIndex].word,
                         false,
+                      )}
+                      {reviewQueue[currentReviewIndex].contextSentence && (
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            onClick={(e) =>
+                              playContextAudio(
+                                e,
+                                reviewQueue[currentReviewIndex].contextSentence,
+                              )
+                            }
+                            className="p-1.5 text-indigo-400 hover:text-indigo-600 dark:text-indigo-500 dark:hover:text-indigo-300 bg-white/50 dark:bg-slate-900/50 rounded-full transition-colors"
+                            title="朗读例句"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
                       )}
                     </div>
 
