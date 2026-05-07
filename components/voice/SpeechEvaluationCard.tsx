@@ -12,6 +12,7 @@ import {
   Cpu,
   Play,
   Pause,
+  BotMessageSquare,
 } from "lucide-react";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import { evaluateSpeech } from "@/lib/actions/speech";
@@ -79,6 +80,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   // 播放进度状态
   const [refAudioProgress, setRefAudioProgress] = useState(0); // 原音进度
   const [isUserAudioPlaying, setIsUserAudioPlaying] = useState(false); // 用户录音播放状态
+  const [isSpeaking, setIsSpeaking] = useState(false); // AI 语音合成朗读状态
 
   // --- 录音相关 Refs ---
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -118,7 +120,41 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       userAudioInstanceRef.current = null;
       setIsUserAudioPlaying(false);
     }
+
+    // 停止 AI 语音合成
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
   }, []);
+
+  // AI 朗读：使用 Web Speech API 合成语音
+  const speakWithTTS = useCallback(() => {
+    if (!("speechSynthesis" in window)) {
+      toast.error("当前浏览器不支持语音合成");
+      return;
+    }
+    // 如果正在朗读，则停止
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    // 先停止其他音频
+    stopAllAudio();
+    onPlayStart(subtitle.id);
+
+    // 延迟一点点执行 speak，避免与 stopAllAudio 中的 cancel() 冲突（这是 Web Speech API 常见的坑）
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(subtitle.textEn);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }, 50);
+  }, [isSpeaking, stopAllAudio, onPlayStart, subtitle.id, subtitle.textEn]);
 
   const stopRecordingCleanup = useCallback(() => {
     if (processorRef.current) {
@@ -406,41 +442,67 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             )}
           </div>
 
-          <button
-            onClick={playReferenceAudio}
-            disabled={refAudioProgress > 0}
-            className="shrink-0 w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
-          >
-            {refAudioProgress > 0 ? (
-              <div className="w-10 h-10 relative flex items-center justify-center">
-                <svg className="w-full h-full -rotate-90">
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="18"
-                    fill="transparent"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-indigo-200"
-                  />
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="18"
-                    fill="transparent"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-indigo-600 transition-all duration-75"
-                    strokeDasharray="113"
-                    strokeDashoffset={113 - (113 * refAudioProgress) / 100}
-                  />
-                </svg>
-                <Volume2 size={16} className="absolute" />
-              </div>
-            ) : (
-              <Volume2 size={20} />
-            )}
-          </button>
+          {/* 音频播放按钮组 */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* 原声按钮 */}
+            <div className="flex flex-col items-center gap-1">
+              <button
+                onClick={playReferenceAudio}
+                disabled={refAudioProgress > 0}
+                className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
+              >
+                {refAudioProgress > 0 ? (
+                  <div className="w-10 h-10 relative flex items-center justify-center">
+                    <svg className="w-full h-full -rotate-90">
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="18"
+                        fill="transparent"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="text-indigo-200"
+                      />
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="18"
+                        fill="transparent"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="text-indigo-600 transition-all duration-75"
+                        strokeDasharray="113"
+                        strokeDashoffset={113 - (113 * refAudioProgress) / 100}
+                      />
+                    </svg>
+                    <Volume2 size={16} className="absolute" />
+                  </div>
+                ) : (
+                  <Volume2 size={20} />
+                )}
+              </button>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                原声
+              </span>
+            </div>
+
+            {/* AI 朗读按钮 */}
+            <div className="flex flex-col items-center gap-1">
+              <button
+                onClick={speakWithTTS}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  isSpeaking
+                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 animate-pulse"
+                    : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                }`}
+              >
+                <BotMessageSquare size={20} />
+              </button>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                AI朗读
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
