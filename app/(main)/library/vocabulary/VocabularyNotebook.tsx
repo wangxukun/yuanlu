@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Search,
   Volume2,
@@ -74,6 +74,8 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [playingText, setPlayingText] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // 统计数据
   const stats = useMemo(
@@ -117,45 +119,83 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
     return list;
   }, [vocabulary, searchQuery, sortMethod]);
 
-  // 播放音频
+  // 停止所有音频
+  const stopAllAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlayingText(null);
+  };
+
+  // 播放音频 (单词)
   const playAudio = (e: React.MouseEvent, url?: string | null) => {
     e.stopPropagation();
     if (!url) {
       toast.error("暂无发音");
       return;
     }
+    stopAllAudio();
     try {
       const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => setPlayingText(null);
       audio.onerror = (err) => {
         console.error("Audio playback error:", err);
-        toast.error("播放失败：音频源无效或格式不支持");
+        toast.error("播放失败");
+        setPlayingText(null);
       };
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-          console.error("Play promise rejected:", error);
-          toast.error("播放失败，请检查音频链接");
-        });
-      }
+      audio.play();
     } catch (error) {
       console.error("Audio initialization error:", error);
       toast.error("音频初始化失败");
     }
   };
 
-  // 播放例句音频 (Web Speech API)
-  const playContextAudio = (e: React.MouseEvent, text?: string | null) => {
+  // 播放例句音频 (Youdao API)
+  const playContextAudio = async (
+    e: React.MouseEvent,
+    text?: string | null,
+  ) => {
     e.stopPropagation();
     if (!text) return;
 
-    // 停止当前正在播放的语音
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      window.speechSynthesis.speak(utterance);
-    } else {
-      toast.error("当前浏览器不支持语音合成");
+    // 如果正在播放相同的文本，则停止
+    if (playingText === text) {
+      stopAllAudio();
+      return;
+    }
+
+    stopAllAudio();
+    setPlayingText(text);
+
+    try {
+      const res = await fetch("/api/dictionary/youdao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: text }),
+      });
+
+      if (!res.ok) throw new Error("获取朗读地址失败");
+
+      const data = await res.json();
+      if (data.speakUrl) {
+        const audio = new Audio(data.speakUrl);
+        audioRef.current = audio;
+        audio.onended = () => setPlayingText(null);
+        audio.onerror = () => {
+          toast.error("播放失败");
+          setPlayingText(null);
+        };
+        await audio.play();
+      } else {
+        toast.error("暂无朗读资源");
+        setPlayingText(null);
+      }
+    } catch (error) {
+      console.error("TTS Error:", error);
+      toast.error("朗读服务暂时不可用");
+      setPlayingText(null);
     }
   };
 
@@ -521,10 +561,21 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                                 onClick={(e) =>
                                   playContextAudio(e, item.contextSentence)
                                 }
-                                className="p-1.5 text-base-content/40 hover:text-primary bg-slate-50 dark:bg-slate-800 rounded-full transition-colors"
+                                className={`p-1.5 rounded-full transition-all ${
+                                  playingText === item.contextSentence
+                                    ? "text-primary bg-primary/20 animate-pulse"
+                                    : "text-base-content/40 hover:text-primary bg-slate-50 dark:bg-slate-800"
+                                }`}
                                 title="朗读例句"
                               >
-                                <Volume2 size={16} />
+                                {playingText === item.contextSentence ? (
+                                  <Volume2
+                                    size={16}
+                                    className="animate-bounce"
+                                  />
+                                ) : (
+                                  <Volume2 size={16} />
+                                )}
                               </button>
                             </div>
                           )}
@@ -646,7 +697,12 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                                 reviewQueue[currentReviewIndex].contextSentence,
                               )
                             }
-                            className="p-2 text-base-content/40 hover:text-primary bg-slate-100 dark:bg-slate-800 rounded-full transition-colors"
+                            className={`p-2 rounded-full transition-all ${
+                              playingText ===
+                              reviewQueue[currentReviewIndex].contextSentence
+                                ? "text-primary bg-primary/20 animate-pulse"
+                                : "text-base-content/40 hover:text-primary bg-slate-100 dark:bg-slate-800"
+                            }`}
                             title="朗读例句"
                           >
                             <Volume2 size={20} />
@@ -717,7 +773,12 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
                                 reviewQueue[currentReviewIndex].contextSentence,
                               )
                             }
-                            className="p-1.5 text-indigo-400 hover:text-indigo-600 dark:text-indigo-500 dark:hover:text-indigo-300 bg-white/50 dark:bg-slate-900/50 rounded-full transition-colors"
+                            className={`p-1.5 rounded-full transition-all ${
+                              playingText ===
+                              reviewQueue[currentReviewIndex].contextSentence
+                                ? "text-indigo-600 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 animate-pulse"
+                                : "text-indigo-400 hover:text-indigo-600 dark:text-indigo-500 dark:hover:text-indigo-300 bg-white/50 dark:bg-slate-900/50"
+                            }`}
                             title="朗读例句"
                           >
                             <Volume2 size={16} />

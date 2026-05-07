@@ -80,7 +80,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   // 播放进度状态
   const [refAudioProgress, setRefAudioProgress] = useState(0); // 原音进度
   const [isUserAudioPlaying, setIsUserAudioPlaying] = useState(false); // 用户录音播放状态
-  const [isSpeaking, setIsSpeaking] = useState(false); // AI 语音合成朗读状态
+  const [isSpeaking, setIsSpeaking] = useState(false); // AI 语音朗读状态
+  const [isTTSLoading, setIsTTSLoading] = useState(false); // AI 语音加载状态
 
   // --- 录音相关 Refs ---
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -91,6 +92,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   // --- 播放相关 Refs ---
   const audioInstanceRef = useRef<HTMLAudioElement | null>(null); // 原音播放实例
   const userAudioInstanceRef = useRef<HTMLAudioElement | null>(null); // 用户录音播放实例
+  const ttsAudioInstanceRef = useRef<HTMLAudioElement | null>(null); // AI 朗读播放实例
   const rafIdRef = useRef<number | null>(null);
 
   // 用于清理的 Ref (避免 useEffect 依赖 result 导致闭包问题)
@@ -121,39 +123,68 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       setIsUserAudioPlaying(false);
     }
 
-    // 停止 AI 语音合成
+    // 停止 AI 朗读 (Youdao API)
+    if (ttsAudioInstanceRef.current) {
+      ttsAudioInstanceRef.current.pause();
+      ttsAudioInstanceRef.current = null;
+    }
+
+    // 停止 Web Speech API (兼容性保留)
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
   }, []);
 
-  // AI 朗读：使用 Web Speech API 合成语音
-  const speakWithTTS = useCallback(() => {
-    if (!("speechSynthesis" in window)) {
-      toast.error("当前浏览器不支持语音合成");
-      return;
-    }
+  // AI 朗读：使用有道 API 获取语音地址并播放
+  const speakWithTTS = useCallback(async () => {
     // 如果正在朗读，则停止
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      stopAllAudio();
       return;
     }
+
     // 先停止其他音频
     stopAllAudio();
     onPlayStart(subtitle.id);
 
-    // 延迟一点点执行 speak，避免与 stopAllAudio 中的 cancel() 冲突（这是 Web Speech API 常见的坑）
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(subtitle.textEn);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    }, 50);
+    try {
+      setIsTTSLoading(true);
+      const res = await fetch("/api/dictionary/youdao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: subtitle.textEn }),
+      });
+
+      if (!res.ok) throw new Error("获取朗读地址失败");
+
+      const data = await res.json();
+      if (data.speakUrl) {
+        const audio = new Audio(data.speakUrl);
+        ttsAudioInstanceRef.current = audio;
+
+        audio.onplay = () => setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          ttsAudioInstanceRef.current = null;
+        };
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          ttsAudioInstanceRef.current = null;
+          toast.error("播放失败");
+        };
+
+        await audio.play();
+      } else {
+        toast.error("暂无朗读资源");
+      }
+    } catch (error) {
+      console.error("TTS Error:", error);
+      toast.error("朗读服务暂时不可用");
+      setIsSpeaking(false);
+    } finally {
+      setIsTTSLoading(false);
+    }
   }, [isSpeaking, stopAllAudio, onPlayStart, subtitle.id, subtitle.textEn]);
 
   const stopRecordingCleanup = useCallback(() => {
@@ -490,13 +521,18 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={speakWithTTS}
+                disabled={isTTSLoading}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                   isSpeaking
                     ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 animate-pulse"
                     : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-                }`}
+                } disabled:opacity-50`}
               >
-                <BotMessageSquare size={20} />
+                {isTTSLoading ? (
+                  <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <BotMessageSquare size={20} />
+                )}
               </button>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                 AI朗读
