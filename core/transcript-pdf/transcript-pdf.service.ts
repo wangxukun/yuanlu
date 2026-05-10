@@ -209,11 +209,7 @@ function renderTitleBlock(
     : CONTENT_WIDTH;
 
   // Main title
-  doc
-    .font("Roboto-Bold")
-    .fontSize(18)
-    .fillColor(BLACK_TEXT)
-    .strokeColor(BLACK_TEXT);
+  doc.font("Roboto").fontSize(18).fillColor(BLACK_TEXT).strokeColor(BLACK_TEXT);
   doc.text(`${podcastTitle}`, MARGIN_LEFT, titleStartY, {
     width: textAreaWidth,
     stroke: true,
@@ -222,11 +218,7 @@ function renderTitleBlock(
 
   // Subtitle
   doc.moveDown(0.3);
-  doc
-    .font("Roboto-Bold")
-    .fontSize(14)
-    .fillColor(BRAND_BLUE)
-    .strokeColor(BRAND_BLUE);
+  doc.font("Roboto").fontSize(14).fillColor(BRAND_BLUE).strokeColor(BRAND_BLUE);
   doc.text(`${episodeTitle}`, MARGIN_LEFT, doc.y, {
     width: textAreaWidth,
     stroke: true,
