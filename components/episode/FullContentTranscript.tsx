@@ -549,6 +549,12 @@ export default function FullContentTranscript({
             className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-slate-950/50"
           >
             <div className="max-w-[900px] mx-auto px-0 sm:px-4 md:px-8 py-4 md:py-8 space-y-1 md:space-y-4">
+              {/* Disclaimer */}
+              <div className="flex justify-center mb-2 md:mb-4">
+                <div className="px-3 py-1 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-[10px] md:text-xs font-medium text-slate-400 dark:text-slate-500 border border-slate-200/30 dark:border-slate-700/30 backdrop-blur-sm">
+                  注：AI翻译 仅供参考
+                </div>
+              </div>
               <AnimatePresence>
                 {processed.map((sub, index) => (
                   <SubtitleRow
