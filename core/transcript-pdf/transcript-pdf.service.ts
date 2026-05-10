@@ -34,11 +34,23 @@ const MARGIN_TOP = 70;
 const MARGIN_BOTTOM = 70;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
-const FONT_PATH = path.join(
+const CJK_FONT_PATH = path.join(
   process.cwd(),
   "lib",
   "fonts",
   "NotoSansSC-Variable.ttf",
+);
+const ROBOTO_REGULAR_PATH = path.join(
+  process.cwd(),
+  "lib",
+  "fonts",
+  "Roboto-Regular.woff",
+);
+const ROBOTO_BOLD_PATH = path.join(
+  process.cwd(),
+  "lib",
+  "fonts",
+  "Roboto-Bold.woff",
 );
 
 // ─── Helper: Fetch cover image as Buffer ──────────────────────────────────────
@@ -61,7 +73,7 @@ export async function generateTranscriptPdf(
   const { episodeTitle, podcastTitle, subtitles, coverUrl } = input;
 
   // Verify font file exists
-  if (!fs.existsSync(FONT_PATH)) {
+  if (!fs.existsSync(CJK_FONT_PATH)) {
     throw new Error(
       "CJK font file not found. Please ensure NotoSansSC-Variable.ttf is in lib/fonts/",
     );
@@ -85,7 +97,7 @@ export async function generateTranscriptPdf(
         right: MARGIN_RIGHT,
       },
       bufferPages: true, // Enable buffering so we can add page numbers after
-      font: FONT_PATH, // 显式指定字体，防止 PDFKit 加载默认的 Helvetica 导致路径错误
+      font: CJK_FONT_PATH, // 显式指定字体，防止 PDFKit 加载默认的 Helvetica 导致路径错误
       info: {
         Title: `${episodeTitle} - 文稿`,
         Author: "远路播客",
@@ -98,13 +110,19 @@ export async function generateTranscriptPdf(
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    // Register CJK font
-    doc.registerFont("NotoSansSC", FONT_PATH);
+    // Register fonts
+    doc.registerFont("NotoSansSC", CJK_FONT_PATH);
+    if (fs.existsSync(ROBOTO_REGULAR_PATH)) {
+      doc.registerFont("Roboto", ROBOTO_REGULAR_PATH);
+    }
+    if (fs.existsSync(ROBOTO_BOLD_PATH)) {
+      doc.registerFont("Roboto-Bold", ROBOTO_BOLD_PATH);
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Render first page header
     // ──────────────────────────────────────────────────────────────────────────
-    renderFirstPageHeader(doc, podcastTitle, episodeTitle);
+    renderFirstPageHeader(doc, podcastTitle);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Render title block with optional cover image
@@ -115,11 +133,11 @@ export async function generateTranscriptPdf(
     // Disclaimer note
     // ──────────────────────────────────────────────────────────────────────────
     doc.moveDown(0.8);
-    doc.font("NotoSansSC").fontSize(9).fillColor(GRAY_TEXT);
-    doc.text("注：AI翻译，仅供参考。", MARGIN_LEFT, doc.y, {
-      width: CONTENT_WIDTH,
-    });
-    doc.moveDown(1);
+    // doc.font("NotoSansSC").fontSize(9).fillColor(GRAY_TEXT);
+    // doc.text("注：AI翻译，仅供参考。", MARGIN_LEFT, doc.y, {
+    //   width: CONTENT_WIDTH,
+    // });
+    // doc.moveDown(1);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Render transcript blocks
@@ -150,11 +168,7 @@ export async function generateTranscriptPdf(
 }
 
 // ─── Render: First Page Header ────────────────────────────────────────────────
-function renderFirstPageHeader(
-  doc: PDFKit.PDFDocument,
-  podcastTitle: string,
-  episodeTitle: string,
-) {
+function renderFirstPageHeader(doc: PDFKit.PDFDocument, podcastTitle: string) {
   const headerY = 25;
 
   // Left side: Brand
@@ -164,13 +178,9 @@ function renderFirstPageHeader(
     lineBreak: false,
   });
 
-  // Right side: Episode title (truncated)
-  const shortTitle =
-    episodeTitle.length > 30
-      ? episodeTitle.substring(0, 30) + "..."
-      : episodeTitle;
+  // Right side: Disclaimer note
   doc.font("NotoSansSC").fontSize(9).fillColor(GRAY_TEXT);
-  doc.text(`剧集：${shortTitle}`, MARGIN_LEFT, headerY + 2, {
+  doc.text("AI翻译 仅供参考", MARGIN_LEFT, headerY + 2, {
     width: CONTENT_WIDTH,
     align: "right",
     lineBreak: false,
@@ -199,16 +209,30 @@ function renderTitleBlock(
     : CONTENT_WIDTH;
 
   // Main title
-  doc.font("NotoSansSC").fontSize(24).fillColor(BLACK_TEXT);
-  doc.text("剧集文稿 (Transcript)", MARGIN_LEFT, titleStartY, {
+  doc
+    .font("NotoSansSC")
+    .fontSize(16)
+    .fillColor(BLACK_TEXT)
+    .strokeColor(BLACK_TEXT)
+    .lineWidth(0.3);
+  doc.text(`${podcastTitle}`, MARGIN_LEFT, titleStartY, {
     width: textAreaWidth,
+    stroke: true,
+    fill: true,
   });
 
   // Subtitle
   doc.moveDown(0.3);
-  doc.font("NotoSansSC").fontSize(12).fillColor(BRAND_BLUE);
-  doc.text(`${podcastTitle} - ${episodeTitle}`, MARGIN_LEFT, doc.y, {
+  doc
+    .font("NotoSansSC")
+    .fontSize(12)
+    .fillColor(BRAND_BLUE)
+    .strokeColor(BRAND_BLUE)
+    .lineWidth(0.2);
+  doc.text(`${episodeTitle}`, MARGIN_LEFT, doc.y, {
     width: textAreaWidth,
+    stroke: true,
+    fill: true,
   });
 
   // Cover image (top-right)
@@ -238,6 +262,8 @@ function renderTitleBlock(
     .lineWidth(1)
     .stroke();
 
+  doc.lineWidth(1); // Reset to default
+
   doc.y = dividerY + 8;
 }
 
@@ -255,18 +281,18 @@ function renderTranscriptBlock(
     doc.addPage();
   }
 
-  // English text (larger, pure black)
-  doc.font("NotoSansSC").fontSize(13).fillColor([0, 0, 0]);
+  // English text (Using Roboto for the clean English style)
+  doc.font("Roboto").fontSize(12).fillColor([0, 0, 0]);
   doc.text(textEn.trim(), MARGIN_LEFT, doc.y, {
     width: CONTENT_WIDTH,
     lineGap: 4,
     paragraphGap: 0,
   });
 
-  doc.moveDown(0.4);
+  doc.moveDown(0.3);
 
-  // Chinese translation (slightly smaller, darker gray)
-  doc.font("NotoSansSC").fontSize(11).fillColor([60, 60, 60]);
+  // Chinese translation (Back to CJK font)
+  doc.font("NotoSansSC").fontSize(10.5).fillColor([60, 60, 60]);
   doc.text(textZh.trim(), MARGIN_LEFT, doc.y, {
     width: CONTENT_WIDTH,
     lineGap: 3,
