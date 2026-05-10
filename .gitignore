@@ -44,7 +44,7 @@ next-env.d.ts
 yuanlu-project-context.xml
 
 # fonts (large font files, download during build/deploy)
-/lib/fonts/*.ttf
-/lib/fonts/*.otf
-/lib/fonts/*.woff
-/lib/fonts/*.woff2
+# /lib/fonts/*.ttf
+# /lib/fonts/*.otf
+# /lib/fonts/*.woff
+# /lib/fonts/*.woff2

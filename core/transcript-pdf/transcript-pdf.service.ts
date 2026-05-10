@@ -210,11 +210,10 @@ function renderTitleBlock(
 
   // Main title
   doc
-    .font("NotoSansSC")
-    .fontSize(16)
+    .font("Roboto-Bold")
+    .fontSize(18)
     .fillColor(BLACK_TEXT)
-    .strokeColor(BLACK_TEXT)
-    .lineWidth(0.3);
+    .strokeColor(BLACK_TEXT);
   doc.text(`${podcastTitle}`, MARGIN_LEFT, titleStartY, {
     width: textAreaWidth,
     stroke: true,
@@ -224,11 +223,10 @@ function renderTitleBlock(
   // Subtitle
   doc.moveDown(0.3);
   doc
-    .font("NotoSansSC")
-    .fontSize(12)
+    .font("Roboto-Bold")
+    .fontSize(14)
     .fillColor(BRAND_BLUE)
-    .strokeColor(BRAND_BLUE)
-    .lineWidth(0.2);
+    .strokeColor(BRAND_BLUE);
   doc.text(`${episodeTitle}`, MARGIN_LEFT, doc.y, {
     width: textAreaWidth,
     stroke: true,
@@ -292,7 +290,7 @@ function renderTranscriptBlock(
   doc.moveDown(0.3);
 
   // Chinese translation (Back to CJK font)
-  doc.font("NotoSansSC").fontSize(10.5).fillColor([60, 60, 60]);
+  doc.font("NotoSansSC").fontSize(10.5).fillColor([0, 0, 0]);
   doc.text(textZh.trim(), MARGIN_LEFT, doc.y, {
     width: CONTENT_WIDTH,
     lineGap: 3,
