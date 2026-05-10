@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Play,
@@ -13,6 +13,7 @@ import {
   Mic,
   Download,
   FileDown,
+  Loader2,
 } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
 import { useSession } from "next-auth/react";
@@ -37,6 +38,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const isCurrentEpisode = currentEpisode?.episodeid === episode.episodeid;
   const isPlayingThis = isCurrentEpisode && isPlaying;
@@ -97,6 +99,87 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       setIsLoadingFavorite(false);
     }
   };
+
+  const handleDownloadAudio = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!episode.episodeid) {
+      toast.error("单集信息不完整");
+      return;
+    }
+
+    try {
+      toast.info("准备下载中...");
+
+      // 请求后端生成合法的带附件头签名下载链接 (解决 OSS 签名不匹配问题)
+      const res = await fetch(
+        `/api/episode/download?episodeid=${episode.episodeid}`,
+      );
+      const data = await res.json();
+
+      if (!data.success || !data.downloadUrl) {
+        throw new Error(data.error || "获取下载链接失败");
+      }
+
+      // 使用带下载属性的链接或直接打开（由于后端已设置 attachment，浏览器会自动触发下载）
+      const a = document.createElement("a");
+      a.href = data.downloadUrl;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      toast.success("开始下载");
+    } catch (error: unknown) {
+      console.error("Download failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "下载启动失败，请稍后重试";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleDownloadTranscript = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!episode.episodeid) {
+        toast.error("单集信息不完整");
+        return;
+      }
+      if (isGeneratingPdf) return;
+
+      setIsGeneratingPdf(true);
+      toast.info("正在生成文稿 PDF，请稍候...");
+
+      try {
+        const res = await fetch(
+          `/api/episode/transcript-pdf?episodeid=${episode.episodeid}`,
+        );
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error || "文稿生成失败");
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${episode.title || "文稿"} - Transcript.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success("文稿已下载");
+      } catch (error: unknown) {
+        console.error("Transcript PDF download failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "文稿下载失败，请稍后重试";
+        toast.error(errorMessage);
+      } finally {
+        setIsGeneratingPdf(false);
+      }
+    },
+    [episode.episodeid, episode.title, isGeneratingPdf],
+  );
 
   const handleFeatureUnderDev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -208,18 +291,23 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             </button>
 
             <button
-              onClick={handleFeatureUnderDev}
+              onClick={handleDownloadAudio}
               className="p-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800"
               title="下载音频"
             >
               <Download className="w-5 h-5" />
             </button>
             <button
-              onClick={handleFeatureUnderDev}
-              className="p-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800"
-              title="下载文档"
+              onClick={handleDownloadTranscript}
+              disabled={isGeneratingPdf}
+              className="p-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800 disabled:opacity-50 disabled:cursor-wait"
+              title="下载文稿 PDF"
             >
-              <FileDown className="w-5 h-5" />
+              {isGeneratingPdf ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <FileDown className="w-5 h-5" />
+              )}
             </button>
           </div>
 

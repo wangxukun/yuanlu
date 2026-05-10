@@ -42,3 +42,7 @@ next-env.d.ts
 /.idea/
 
 yuanlu-project-context.xml
+
+# fonts (large CJK font files, download during build/deploy)
+/lib/fonts/*.ttf
+/lib/fonts/*.otf

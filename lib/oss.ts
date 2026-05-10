@@ -66,10 +66,12 @@ export async function uploadFile(
 export async function generateSignatureUrl(
   fileName: string,
   expire: number,
+  options?: OSS.SignatureUrlOptions,
 ): Promise<string> {
   try {
     return client.signatureUrl(fileName, {
       expires: expire,
+      ...options,
     });
   } catch (error) {
     console.error("OSS更新文件地址错误", error);

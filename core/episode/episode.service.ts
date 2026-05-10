@@ -372,4 +372,21 @@ export const episodeService = {
     );
     return items;
   },
+
+  /**
+   * 获取下载链接（带 attachment 签名）
+   */
+  async getDownloadUrl(id: string) {
+    const episode = await episodeRepository.findById(id);
+    if (!episode || !episode.audioFileName) {
+      throw new Error("音频文件不存在");
+    }
+
+    // 生成带下载响应头的签名 URL
+    return await generateSignatureUrl(episode.audioFileName, 60 * 60, {
+      response: {
+        "content-disposition": `attachment; filename="${encodeURIComponent(episode.title)}.mp3"`,
+      },
+    });
+  },
 };
