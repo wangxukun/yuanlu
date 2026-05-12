@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
-  ChevronRightIcon,
   ClockIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
@@ -14,6 +13,7 @@ import {
   PlayIcon as PlaySolidIcon,
   PauseIcon,
 } from "@heroicons/react/24/solid";
+import { Radio } from "lucide-react";
 import { usePlayerStore } from "@/store/player-store";
 import { formatTime, formatDate } from "@/lib/tools";
 import type {
@@ -26,27 +26,45 @@ import type { Episode } from "@/core/episode/episode.entity";
 // ==================== Sub-components ====================
 
 /** Top Shows horizontal scroll card */
-function ShowCard({ show }: { show: ChannelShow }) {
+function ShowCard({ show, index }: { show: ChannelShow; index?: number }) {
+  const rankColors = [
+    "bg-[#FFD700] text-white", // 01 Gold
+    "bg-[#C0C0C0] text-white", // 02 Silver
+    "bg-[#CD7F32] text-white", // 03 Bronze
+    "bg-[#666666] text-white", // 04 iron
+  ];
+
   return (
     <Link
       href={`/podcast/${show.podcastid}`}
-      className="flex-shrink-0 w-40 sm:w-44 lg:w-48 group"
+      className="flex-none w-40 sm:w-44 lg:w-auto lg:flex-initial group"
     >
-      <div className="relative aspect-square rounded-2xl overflow-hidden bg-base-200 border border-base-200/50 mb-3 shadow-sm group-hover:shadow-md transition-shadow">
-        <Image
-          src={show.coverUrl}
-          alt={show.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      </div>
-      <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
-        {show.title}
-      </h3>
-      <div className="flex items-center gap-1.5 mt-1 text-xs text-base-content/50">
-        {show.tags?.[0] && <span>{show.tags[0].name}</span>}
-        {show.tags?.[0] && <span>·</span>}
-        <span>{show.episodeCount} 集</span>
+      <div className="relative rounded-lg transition-shadow cursor-pointer">
+        {index !== undefined && (
+          <div
+            className={`absolute top-2 left-2 z-10 ${
+              index < 4 ? rankColors[index] : "bg-base-300 text-base-content"
+            } w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm`}
+          >
+            0{index + 1}
+          </div>
+        )}
+        <div className="relative aspect-square rounded-2xl overflow-hidden bg-base-200 border border-base-200/50 mb-3 shadow-sm group-hover:shadow-md">
+          <Image
+            src={show.coverUrl}
+            alt={show.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+        <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+          {show.title}
+        </h3>
+        <div className="flex items-center gap-1.5 mt-1 text-xs text-base-content/50">
+          {show.tags?.[0] && <span>{show.tags[0].name}</span>}
+          {show.tags?.[0] && <span>·</span>}
+          <span>{show.episodeCount} 集</span>
+        </div>
       </div>
     </Link>
   );
@@ -78,7 +96,7 @@ function EpisodeRow({
       onClick={() => router.push(`/episode/${episode.episodeid}`)}
     >
       {/* Cover */}
-      <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-base-200 border border-base-200/50">
+      <div className="relative w-40 aspect-video md:w-48 md:aspect-video shrink-0 rounded-xl overflow-hidden bg-base-200 border border-base-200/50">
         <Image
           src={displayCover}
           alt={episode.title}
@@ -162,35 +180,29 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 pb-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
       {/* ========== Hero Banner ========== */}
-      <div className="relative w-full bg-gradient-to-br from-emerald-800 via-teal-700 to-cyan-800 overflow-hidden">
+      <div className="bg-neutral bg-gradient-to-br from-primary to-secondary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Decorative background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.15)_0%,transparent_60%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+        <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
+          <Radio size={400} className="fill-current" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto relative z-10">
           {/* Back button */}
-          <div className="pt-6">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors font-medium group w-fit"
-            >
-              <div className="p-1.5 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
-                <ArrowLeftIcon className="w-4 h-4" />
-              </div>
-              返回
-            </button>
-          </div>
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-neutral-content/60 hover:text-neutral-content transition-colors mb-6 md:mb-8 group"
+          >
+            <ArrowLeftIcon className="w-4 h-4 mr-2" /> 返回
+          </button>
 
           {/* Banner content */}
           <div className="flex flex-col items-center py-12 sm:py-16 lg:py-20 text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3">
               {data.platformName}
             </h1>
-            <p className="text-white/60 text-sm sm:text-base font-medium">
+            <p className="text-neutral-content/60 text-sm sm:text-base font-medium">
               {data.platformName} · 频道 · {data.podcastCount} 档节目
             </p>
           </div>
@@ -201,15 +213,23 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-10 lg:space-y-14">
         {/* -------- Top Shows -------- */}
         <section>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg lg:text-xl font-bold text-base-content flex items-center gap-2">
+          <div className="flex items-center justify-between mb-6">
+            <h2
+              className="text-2xl font-bold text-base-content"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
               热门节目
-              <ChevronRightIcon className="w-5 h-5 text-base-content/40" />
             </h2>
+            <Link
+              href={`/channel/${encodeURIComponent(data.platformName)}/trending`}
+              className="text-primary text-sm font-semibold hover:underline"
+            >
+              查看更多
+            </Link>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
-            {data.topShows.map((show) => (
-              <ShowCard key={show.podcastid} show={show} />
+          <div className="flex lg:grid lg:grid-cols-4 gap-4 lg:gap-6 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-none">
+            {data.topShows.slice(0, 4).map((show, index) => (
+              <ShowCard key={show.podcastid} show={show} index={index} />
             ))}
           </div>
         </section>
@@ -218,12 +238,14 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
         {data.topEpisodes.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg lg:text-xl font-bold text-base-content flex items-center gap-2">
+              <h2
+                className="text-2xl font-bold text-base-content"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
                 热门单集
-                <ChevronRightIcon className="w-5 h-5 text-base-content/40" />
               </h2>
             </div>
-            <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-base-200/50">
+            <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-0 sm:p-0 lg:p-0">
               <div className="space-y-3">
                 {data.topEpisodes.map((episode) => (
                   <EpisodeRow

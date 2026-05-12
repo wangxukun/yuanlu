@@ -218,8 +218,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   };
 
   return (
-    // [Refactor] bg-gray-50 -> bg-base-200: 更好的深浅模式适配基础色
-    <div className="min-h-screen bg-base-200 pb-20 font-sans w-full overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 font-sans w-full overflow-x-hidden transition-colors duration-300">
       {/* Detail Header */}
       {/* [Refactor] bg-slate-900 -> bg-neutral text-neutral-content: 保持深色头部风格，但在主题系统中更语义化 */}
       <div className="bg-neutral bg-gradient-to-br from-primary to-secondary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -237,7 +236,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
 
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left">
             {/* Cover Image */}
-            <div className="w-40 aspect-16/9 md:w-64 md:aspect-16/9 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0 bg-base-300">
+            <div className="w-40 aspect-video md:w-64 md:aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0 bg-base-300">
               <img
                 src={
                   selectedPath.coverUrl ||
@@ -291,7 +290,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-8 relative z-20">
         {/* Action Bar Container */}
         {/* [Refactor] bg-white -> bg-base-100, border-gray-100 -> border-base-300 */}
-        <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-3 md:p-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 mb-6">
+        <div className="bg-base-100 rounded-xl border border-base-300 p-3 md:p-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 mb-6">
           <div className="flex gap-2 w-full md:w-auto">
             <button
               onClick={handlePlayAll}
@@ -381,7 +380,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 </div>
 
                 {/* Image */}
-                <div className="relative w-20 aspect-[16/9] md:w-20 md:aspect-[16/9] rounded-lg bg-base-300 overflow-hidden shrink-0">
+                <div className="relative w-32 aspect-[16/9] md:w-40 md:aspect-[16/9] rounded-lg bg-base-300 overflow-hidden shrink-0">
                   <img
                     src={item.episode.thumbnailUrl}
                     className="w-full h-full object-cover"
