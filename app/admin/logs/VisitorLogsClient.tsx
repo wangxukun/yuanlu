@@ -309,7 +309,7 @@ export default function VisitorLogsClient({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <code className="text-xs font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 max-w-[200px] truncate block">
+                      <code className="text-xs font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 max-w-[350px] truncate block">
                         {log.path}
                       </code>
                     </td>
