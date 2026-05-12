@@ -80,7 +80,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   currentUserId,
 }) => {
   const router = useRouter();
-  const { playEpisode } = usePlayerStore();
+  const { playEpisode, setPlaylist } = usePlayerStore();
 
   const selectedPath = initialPath;
 
@@ -108,8 +108,8 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Handlers ---
-  const onPlayEpisode = (episode: EpisodeLP) => {
-    const playedEpisode: Episode = {
+  const mapEpisodeLPToEpisode = (episode: EpisodeLP): Episode => {
+    return {
       episodeid: episode.id,
       title: episode.title,
       podcast: {
@@ -119,7 +119,19 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       coverUrl: episode.thumbnailUrl,
       duration: episode.duration,
     } as Episode;
-    playEpisode(playedEpisode);
+  };
+
+  const onPlayEpisode = (episode: EpisodeLP) => {
+    playEpisode(mapEpisodeLPToEpisode(episode));
+  };
+
+  const handlePlayAll = () => {
+    if (selectedPath.items.length === 0) return;
+    const playlist = selectedPath.items.map((item) =>
+      mapEpisodeLPToEpisode(item.episode),
+    );
+    setPlaylist(playlist);
+    playEpisode(playlist[0]);
   };
 
   const handleRemoveItem = async (e: React.MouseEvent, itemId: number) => {
@@ -225,7 +237,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
 
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left">
             {/* Cover Image */}
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0 bg-base-300">
+            <div className="w-40 aspect-16/9 md:w-64 md:aspect-16/9 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0 bg-base-300">
               <img
                 src={
                   selectedPath.coverUrl ||
@@ -282,12 +294,10 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
         <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-3 md:p-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 mb-6">
           <div className="flex gap-2 w-full md:w-auto">
             <button
-              onClick={() =>
-                selectedPath.items.length > 0 &&
-                onPlayEpisode(selectedPath.items[0].episode)
-              }
+              onClick={handlePlayAll}
+              disabled={selectedPath.items.length === 0}
               // [Refactor] shadow-indigo-200 -> shadow-primary/20: 阴影颜色适配
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-lg font-bold hover:brightness-110 transition-all shadow-md shadow-primary/20 text-sm md:text-base whitespace-nowrap"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-lg font-bold hover:brightness-110 transition-all shadow-md shadow-primary/20 text-sm md:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlayCircle size={20} /> 播放全部
             </button>
@@ -371,7 +381,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 </div>
 
                 {/* Image */}
-                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-lg bg-base-300 overflow-hidden shrink-0">
+                <div className="relative w-20 aspect-[16/9] md:w-20 md:aspect-[16/9] rounded-lg bg-base-300 overflow-hidden shrink-0">
                   <img
                     src={item.episode.thumbnailUrl}
                     className="w-full h-full object-cover"
