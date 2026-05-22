@@ -49,6 +49,23 @@ export default function SignInForm() {
     }
   };
 
+  const onForgotPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    const forgotPasswordBox = document.getElementById(
+      "forgot_password_modal_box",
+    ) as HTMLDialogElement;
+
+    const currentModal = (document.getElementById("my_modal_login") ||
+      document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
+
+    if (forgotPasswordBox) {
+      setError("");
+      setPassword("");
+      if (currentModal) currentModal.close();
+      forgotPasswordBox.showModal();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -169,6 +186,7 @@ export default function SignInForm() {
         <div className="text-center">
           <button
             type="button"
+            onClick={onForgotPassword}
             className="text-xs text-base-content/40 hover:text-primary transition-colors"
           >
             忘记密码?
