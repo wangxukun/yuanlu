@@ -2,6 +2,8 @@ import { getPodcastDetail } from "@/lib/podcast-service";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import AllEpisodesList from "@/components/podcast/AllEpisodesList";
+import { auth } from "@/auth";
+import { episodeService } from "@/core/episode/episode.service";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -32,7 +34,14 @@ export default async function EpisodesPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  const podcast = await getPodcastDetail(id);
+  const session = await auth();
+  const userId = session?.user?.userid;
+
+  // 并行请求：获取播客详情和第一页剧集数据（默认 20 条，按发布时间倒序）
+  const [podcast, episodesData] = await Promise.all([
+    getPodcastDetail(id),
+    episodeService.getPodcastEpisodes(id, { page: 1, limit: 20, userId }),
+  ]);
 
   if (!podcast) {
     notFound();
@@ -42,8 +51,10 @@ export default async function EpisodesPage(props: {
     <AllEpisodesList
       podcastId={podcast.podcastid}
       podcastTitle={podcast.title}
-      podcastCoverUrl={podcast.coverUrl}
-      episodes={podcast.episode}
+      podcastCoverUrl={podcast.coverUrl || ""}
+      initialEpisodes={episodesData.episodes}
+      total={episodesData.total}
+      hasMore={episodesData.hasMore}
     />
   );
 }

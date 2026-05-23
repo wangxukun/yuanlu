@@ -389,4 +389,190 @@ export const episodeService = {
       },
     });
   },
+
+  /**
+   * 获取指定播客的分页剧集列表（包含过滤、排序、签名及用户状态）
+   */
+  async getPodcastEpisodes(
+    podcastId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      sort?: "asc" | "desc";
+      userId?: string;
+    } = {},
+  ) {
+    const {
+      page = 1,
+      limit = 20,
+      search = "",
+      sort = "desc",
+      userId,
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.episodeWhereInput = {
+      podcastid: podcastId,
+      status: "published", // 普通用户和无线滚动只看已发布的剧集
+    };
+
+    if (search.trim()) {
+      const query = search.trim();
+      where.OR = [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+      ];
+    }
+
+    // 并行查询数据和总条数
+    const [episodes, total] = await Promise.all([
+      prisma.episode.findMany({
+        where,
+        orderBy: {
+          publishAt:
+            sort === "asc" ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
+        },
+        skip,
+        take: limit,
+        select: {
+          episodeid: true,
+          coverUrl: true,
+          coverFileName: true,
+          title: true,
+          description: true,
+          duration: true,
+          playCount: true,
+          audioUrl: true,
+          audioFileName: true,
+          subtitleEnUrl: true,
+          subtitleEnFileName: true,
+          subtitleZhUrl: true,
+          subtitleZhFileName: true,
+          publishAt: true,
+          createAt: true,
+          status: true,
+          isExclusive: true,
+          difficulty: true,
+          // 关联获取用户交互信息
+          episode_favorites: userId
+            ? {
+                where: { userid: userId },
+                select: { favoriteid: true },
+              }
+            : false,
+          listening_history: userId
+            ? {
+                where: { userid: userId },
+                select: {
+                  progressSeconds: true,
+                  isFinished: true,
+                },
+              }
+            : false,
+        },
+      }),
+      prisma.episode.count({ where }),
+    ]);
+
+    // 并行对 OSS 文件进行签名并扁平化数据
+    const processedEpisodes = await Promise.all(
+      episodes.map(async (ep) => {
+        let signedCover = ep.coverUrl;
+        let signedAudio = ep.audioUrl;
+        let signedSubEn = ep.subtitleEnUrl;
+        let signedSubZh = ep.subtitleZhUrl;
+
+        if (ep.coverFileName) {
+          try {
+            signedCover = await generateSignatureUrl(
+              ep.coverFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(
+              `Failed to sign cover for episode ${ep.episodeid}`,
+              e,
+            );
+          }
+        }
+
+        if (ep.audioFileName) {
+          try {
+            signedAudio = await generateSignatureUrl(
+              ep.audioFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(
+              `Failed to sign audio for episode ${ep.episodeid}`,
+              e,
+            );
+          }
+        }
+
+        if (ep.subtitleEnFileName) {
+          try {
+            signedSubEn = await generateSignatureUrl(
+              ep.subtitleEnFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(
+              `Failed to sign English subtitle for episode ${ep.episodeid}`,
+              e,
+            );
+          }
+        }
+
+        if (ep.subtitleZhFileName) {
+          try {
+            signedSubZh = await generateSignatureUrl(
+              ep.subtitleZhFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(
+              `Failed to sign Chinese subtitle for episode ${ep.episodeid}`,
+              e,
+            );
+          }
+        }
+
+        const history = ep.listening_history && ep.listening_history[0];
+
+        return {
+          episodeid: ep.episodeid,
+          title: ep.title,
+          description: ep.description,
+          coverUrl: signedCover,
+          coverFileName: ep.coverFileName,
+          duration: ep.duration,
+          playCount: ep.playCount || 0,
+          audioUrl: signedAudio,
+          audioFileName: ep.audioFileName,
+          subtitleEnUrl: signedSubEn,
+          subtitleEnFileName: ep.subtitleEnFileName,
+          subtitleZhUrl: signedSubZh,
+          subtitleZhFileName: ep.subtitleZhFileName,
+          publishAt: ep.publishAt,
+          createAt: ep.createAt,
+          status: ep.status,
+          isExclusive: ep.isExclusive || false,
+          difficulty: ep.difficulty || "General",
+          isFavorited: ep.episode_favorites
+            ? ep.episode_favorites.length > 0
+            : false,
+          progressSeconds: history ? history.progressSeconds : 0,
+          isFinished: history ? history.isFinished : false,
+        };
+      }),
+    );
+
+    return {
+      episodes: processedEpisodes,
+      total,
+      hasMore: skip + episodes.length < total,
+    };
+  },
 };

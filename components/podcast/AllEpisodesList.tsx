@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,7 +42,9 @@ interface AllEpisodesListProps {
   podcastId: string;
   podcastTitle: string;
   podcastCoverUrl: string;
-  episodes: EpisodeItem[];
+  initialEpisodes: EpisodeItem[];
+  total: number;
+  hasMore: boolean;
 }
 
 // ---------------------- Component ----------------------
@@ -51,39 +53,105 @@ export default function AllEpisodesList({
   podcastId,
   podcastTitle,
   podcastCoverUrl,
-  episodes,
+  initialEpisodes,
+  total,
+  hasMore,
 }: AllEpisodesListProps) {
   const router = useRouter();
   const { playEpisode, togglePlay, currentEpisode, isPlaying } =
     usePlayerStore();
 
+  // ---------------------- States ----------------------
+  const [episodes, setEpisodes] = useState<EpisodeItem[]>(initialEpisodes);
+  const [page, setPage] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [hasMoreState, setHasMoreState] = useState<boolean>(hasMore);
+  const [totalCount, setTotalCount] = useState<number>(total);
+
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Filtered + sorted episodes
-  const filteredEpisodes = useMemo(() => {
-    let result = [...(episodes || [])];
+  const isMounted = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (ep) =>
-          ep.title.toLowerCase().includes(query) ||
-          (ep.description && ep.description.toLowerCase().includes(query)),
+  // ---------------------- Debounce for Search ----------------------
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // ---------------------- Fetch Handler ----------------------
+  const fetchEpisodes = async (
+    targetPage: number,
+    resetList: boolean = false,
+  ) => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/episode/list-by-podcastid?podcastId=${podcastId}&page=${targetPage}&limit=20&search=${encodeURIComponent(
+          debouncedSearch,
+        )}&sort=${sortOrder}`,
       );
+      const json = await res.json();
+      if (json.success && json.data) {
+        if (resetList) {
+          setEpisodes(json.data.episodes);
+        } else {
+          setEpisodes((prev) => [...prev, ...json.data.episodes]);
+        }
+        setPage(targetPage);
+        setHasMoreState(json.data.hasMore);
+        setTotalCount(json.data.total);
+      }
+    } catch (err) {
+      console.error("Failed to fetch episodes", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------------- Reset List on Search/Sort Change ----------------------
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    fetchEpisodes(1, true);
+  }, [debouncedSearch, sortOrder]);
+
+  // ---------------------- Intersection Observer for Infinite Scroll ----------------------
+  useEffect(() => {
+    if (!hasMoreState || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchEpisodes(page + 1, false);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
     }
 
-    // Sort
-    result.sort((a, b) => {
-      const dateA = new Date(a.publishAt).getTime();
-      const dateB = new Date(b.publishAt).getTime();
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-    });
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [hasMoreState, loading, page, debouncedSearch, sortOrder]);
 
-    return result;
-  }, [episodes, searchQuery, sortOrder]);
+  // Map to matching state variable for visual rendering in list
+  const filteredEpisodes = episodes;
 
   // ---------------------- Handlers ----------------------
   const handleRowClick = (episode: Episode) => {
@@ -134,7 +202,7 @@ export default function AllEpisodesList({
               {podcastTitle}
             </h1>
             <p className="text-sm text-base-content/50 mt-0.5">
-              共 {episodes?.length || 0} 集
+              共 {totalCount} 集
             </p>
           </div>
         </div>
@@ -176,7 +244,7 @@ export default function AllEpisodesList({
           {/* Search result count hint */}
           {searchQuery.trim() && (
             <p className="text-xs text-base-content/50 mt-2 px-1">
-              找到 {filteredEpisodes.length} 条结果
+              找到 {totalCount} 条结果
             </p>
           )}
         </div>
@@ -236,6 +304,22 @@ export default function AllEpisodesList({
               </div>
             )}
           </div>
+          {/* sentinel 放在容器内，在列表最下方 */}
+          {hasMoreState && (
+            <div
+              ref={sentinelRef}
+              className="mt-6 text-center flex justify-center items-center"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2 text-sm text-base-content/40 py-2">
+                  <span className="loading loading-spinner loading-sm text-primary"></span>
+                  <span>正在加载更多...</span>
+                </div>
+              ) : (
+                <div className="h-4 w-full" />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
