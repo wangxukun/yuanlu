@@ -15,6 +15,7 @@ import {
   LogIn,
   MessageSquareOff,
   Globe,
+  Sparkles,
 } from "lucide-react";
 import { User } from "@/core/user/user.entity";
 
@@ -55,7 +56,9 @@ export default function UserManagementClient({
   const router = useRouter();
   const [users, setUsers] = useState<ExtendedUser[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "USER">("ALL");
+  const [roleFilter, setRoleFilter] = useState<
+    "ALL" | "ADMIN" | "USER" | "PREMIUM"
+  >("ALL");
   const [statusFilter, setStatusFilter] = useState<
     "ALL" | "ONLINE" | "OFFLINE" | "BANNED_LOGIN"
   >("ALL");
@@ -271,11 +274,14 @@ export default function UserManagementClient({
               className="select select-bordered"
               value={roleFilter}
               onChange={(e) =>
-                setRoleFilter(e.target.value as "ALL" | "USER" | "ADMIN")
+                setRoleFilter(
+                  e.target.value as "ALL" | "USER" | "ADMIN" | "PREMIUM",
+                )
               }
             >
               <option value="ALL">所有角色</option>
               <option value="ADMIN">管理员</option>
+              <option value="PREMIUM">高级会员</option>
               <option value="USER">普通用户</option>
             </select>
             <select
@@ -366,6 +372,10 @@ export default function UserManagementClient({
                       {user.role === "ADMIN" ? (
                         <div className="badge badge-primary gap-1 badge-sm">
                           <Shield size={12} /> 管理员
+                        </div>
+                      ) : user.role === "PREMIUM" ? (
+                        <div className="badge badge-warning text-warning-content gap-1 badge-sm font-semibold">
+                          <Sparkles size={12} /> 高级会员
                         </div>
                       ) : (
                         <div className="badge badge-ghost badge-sm">用户</div>

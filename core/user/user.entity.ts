@@ -1,5 +1,12 @@
 import { UserProfile } from "@/core/user-profile/user-profile.entity";
 
+export interface Subscription {
+  subscriptionid: number;
+  subscriptionType: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
 export interface User {
   userid: string; // 用户唯一标识
   email: string; // 电子邮箱
@@ -16,4 +23,5 @@ export interface User {
   registerIp?: string | null; // 注册IP地址
   emailVerified: Date;
   userProfile: UserProfile;
+  subscriptions?: Subscription[]; // 用户订阅记录（仅在 include 查询时返回）
 }

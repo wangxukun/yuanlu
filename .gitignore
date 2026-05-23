@@ -48,3 +48,5 @@ yuanlu-project-context.xml
 # /lib/fonts/*.otf
 # /lib/fonts/*.woff
 # /lib/fonts/*.woff2
+
+/.claude/

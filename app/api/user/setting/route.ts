@@ -9,8 +9,13 @@ export async function PUT(request: NextRequest) {
     if (!guard.ok) return guard.response;
 
     // 解析请求体获取 userid
-    const { userid, role, isCommentAllowed, isLoginAllowed } =
-      await request.json();
+    const {
+      userid,
+      role,
+      isCommentAllowed,
+      isLoginAllowed,
+      premiumDurationDays,
+    } = await request.json();
 
     // 验证参数有效性
     if (!userid) {
@@ -53,16 +58,73 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // 执行更新操作
-    const updateUser = await prisma.user.update({
-      where: {
-        userid: userid,
-      },
-      data: dataToUpdate,
+    // 使用事务保证 User.role 更新和 subscription 记录创建的原子性
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. 更新用户基础信息
+      const updatedUser = await tx.user.update({
+        where: { userid },
+        data: dataToUpdate,
+      });
+
+      // 2. 当角色设为 PREMIUM 时，自动创建/延期订阅记录
+      let subscription = null;
+      if (role === "PREMIUM") {
+        const durationDays = premiumDurationDays ?? 30; // 默认30天（一个月）
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + durationDays);
+
+        // 查找该用户现有的 PREMIUM 订阅
+        const existingSubscription = await tx.subscriptions.findFirst({
+          where: {
+            userid,
+            subscriptionType: "PREMIUM",
+          },
+          orderBy: { endDate: "desc" },
+        });
+
+        if (existingSubscription) {
+          // 续期：如果当前订阅未过期，则在原结束日期基础上续期；否则从现在开始
+          const baseDate =
+            existingSubscription.endDate && existingSubscription.endDate > now
+              ? existingSubscription.endDate
+              : now;
+          const newEndDate = new Date(baseDate);
+          newEndDate.setDate(newEndDate.getDate() + durationDays);
+
+          subscription = await tx.subscriptions.update({
+            where: { subscriptionid: existingSubscription.subscriptionid },
+            data: {
+              startDate:
+                existingSubscription.endDate &&
+                existingSubscription.endDate > now
+                  ? existingSubscription.startDate // 保留原始开始日期
+                  : now,
+              endDate: newEndDate,
+            },
+          });
+        } else {
+          // 新建订阅记录
+          subscription = await tx.subscriptions.create({
+            data: {
+              userid,
+              subscriptionType: "PREMIUM",
+              startDate: now,
+              endDate,
+            },
+          });
+        }
+      }
+
+      return { updatedUser, subscription };
     });
 
     return NextResponse.json(
-      { message: "User updated successfully", user: updateUser },
+      {
+        message: "User updated successfully",
+        user: result.updatedUser,
+        subscription: result.subscription,
+      },
       { status: 200 },
     );
   } catch (error) {

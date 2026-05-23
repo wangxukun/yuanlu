@@ -29,6 +29,17 @@ export async function GET(req: NextRequest) {
         isCommentAllowed: true,
         isLoginAllowed: true,
         emailVerified: true,
+        subscriptions: {
+          where: { subscriptionType: "PREMIUM" },
+          orderBy: { endDate: "desc" },
+          take: 1,
+          select: {
+            subscriptionid: true,
+            subscriptionType: true,
+            startDate: true,
+            endDate: true,
+          },
+        },
       },
     });
     return NextResponse.json(user);

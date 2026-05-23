@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
 import { Session } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -57,25 +58,49 @@ export async function requireAdmin(): Promise<AuthGuardResult> {
 }
 
 /**
+ * Check if a user has an active PREMIUM subscription in the database.
+ * This enables "subscription-based" premium access independent of the static role field.
+ */
+async function hasActivePremiumSubscription(userid: string): Promise<boolean> {
+  const activeSubscription = await prisma.subscriptions.findFirst({
+    where: {
+      userid,
+      subscriptionType: "PREMIUM",
+      endDate: { gt: new Date() },
+    },
+    select: { subscriptionid: true },
+  });
+  return activeSubscription !== null;
+}
+
+/**
  * Require the user to have PREMIUM or ADMIN role.
+ * Uses a hybrid check: static role field OR active subscription in the database.
  * Returns 401 if not authenticated, 403 if not premium/admin.
  */
 export async function requirePremium(): Promise<AuthGuardResult> {
   const result = await requireAuth();
   if (!result.ok) return result;
 
-  const role = result.session.user.role;
-  if (role !== "PREMIUM" && role !== "ADMIN") {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { success: false, error: "权限不足，需要高级会员权限" },
-        { status: 403 },
-      ),
-    };
+  const { role, userid } = result.session.user;
+
+  // Fast path: static role grants immediate access
+  if (role === "PREMIUM" || role === "ADMIN") {
+    return result;
   }
 
-  return result;
+  // Slow path: dynamic subscription check
+  if (userid && (await hasActivePremiumSubscription(userid))) {
+    return result;
+  }
+
+  return {
+    ok: false,
+    response: NextResponse.json(
+      { success: false, error: "权限不足，需要高级会员权限" },
+      { status: 403 },
+    ),
+  };
 }
 
 /**
@@ -116,13 +141,22 @@ export async function requireAdminAction(): Promise<Session> {
 
 /**
  * Require PREMIUM or ADMIN role in Server Actions.
+ * Uses a hybrid check: static role field OR active subscription in the database.
  * Throws an error if not authenticated or not premium/admin.
  */
 export async function requirePremiumAction(): Promise<Session> {
   const session = await requireAuthAction();
-  const role = session.user.role;
-  if (role !== "PREMIUM" && role !== "ADMIN") {
-    throw new Error("Forbidden: 权限不足，需要高级会员权限");
+  const { role, userid } = session.user;
+
+  // Fast path: static role grants immediate access
+  if (role === "PREMIUM" || role === "ADMIN") {
+    return session;
   }
-  return session;
+
+  // Slow path: dynamic subscription check
+  if (userid && (await hasActivePremiumSubscription(userid))) {
+    return session;
+  }
+
+  throw new Error("Forbidden: 权限不足，需要高级会员权限");
 }
