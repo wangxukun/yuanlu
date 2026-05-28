@@ -60,10 +60,13 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
             <MessageSquareIcon size={16} className="mr-3" />
             <span>评论管理</span>
           </button>
-          <button className="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-primary transition-colors">
+          <Link
+            href={`/admin/episodes/${episodeId}/cover`}
+            className="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-primary transition-colors"
+          >
             <ImageResultIcon size={16} className="mr-3" />
             <span>封面管理</span>
-          </button>
+          </Link>
           <div className="border-t border-slate-200 my-1"></div>
           {/*<button className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">*/}
           {/*  <svg*/}

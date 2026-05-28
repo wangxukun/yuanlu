@@ -770,3 +770,61 @@ export async function uploadZhSubtitle(
     return { success: false, message: "中文字幕上传失败" };
   }
 }
+
+/**
+ * 上传封面的 Server Action
+ * @param prevState 上传封面的初始状态
+ * @param formData 上传封面的表单数据
+ */
+export async function uploadEpisodeCover(
+  prevState: ActionState,
+  formData: FormData,
+) {
+  "use server";
+  const id = formData.get("episodeId") as string;
+  const file = formData.get("coverFile") as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, message: "请选择封面图片" };
+  }
+
+  // 检查文件类型
+  if (!file.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+    return { success: false, message: "请选择格式正确的图片文件" };
+  }
+
+  try {
+    // 先获取旧的封面文件名以便稍后删除
+    const { coverFileName: oldCoverFileName } =
+      await episodeService.getEpisodeOSSFiles(id);
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const fileName = `yuanlu/podcastes/episodes/covers/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到OSS
+    const result = await uploadFile(buffer, fileName);
+
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      coverUrl: result.fileUrl,
+      coverFileName: result.fileName,
+    };
+
+    await episodeService.update(id, updateData);
+
+    // 删除旧的封面图片
+    if (oldCoverFileName) {
+      await deleteOSSFile(oldCoverFileName);
+    }
+
+    return { success: true, message: "封面上传成功" };
+  } catch (error) {
+    console.error("上传封面失败:", error);
+    return { success: false, message: "封面上传失败" };
+  }
+}
