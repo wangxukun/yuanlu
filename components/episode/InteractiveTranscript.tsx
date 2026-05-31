@@ -7,6 +7,7 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { parseTimeStr } from "@/lib/tools";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 // Import new decoupled components
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
@@ -106,6 +107,7 @@ export default function InteractiveTranscript({
   const handleJump = useCallback(
     (startTime: number) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
+      if (!checkExclusivePlay(episode, session)) return;
 
       if (isPlayingThisEpisode && audioRef) {
         audioRef.currentTime = startTime;
@@ -202,7 +204,8 @@ export default function InteractiveTranscript({
         toast.success("已加入生词本");
         setIsModalOpen(false);
       } else {
-        toast.error("保存失败");
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || "保存失败");
       }
     } catch (error) {
       console.error(error);
@@ -252,6 +255,19 @@ export default function InteractiveTranscript({
             onProofread={handleProofread}
           />
         ))}
+        {!isLoggedIn && (
+          <div className="flex justify-center mt-8 pb-4">
+            <button
+              onClick={() => {
+                const modal = document.getElementById("email_check_modal_box") as HTMLDialogElement | null;
+                if (modal) modal.showModal();
+              }}
+              className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+            >
+              登录后解锁全部字幕
+            </button>
+          </div>
+        )}
       </div>
 
       <SelectionMenu

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
 import { AuthError } from "next-auth";
-import { redirect } from "next/navigation";
+import { usePathname, useRouter, redirect } from "next/navigation";
 import {
   LockClosedIcon,
   ArrowUturnLeftIcon,
@@ -20,6 +20,8 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // 创建对密码输入框的引用
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -87,8 +89,12 @@ export default function SignInForm() {
           document.getElementById("sign_in_modal_box")) as HTMLDialogElement;
         if (currentModal) currentModal.close();
 
-        // 登录成功，跳转到首页
-        redirect("/home");
+        // 登录成功，跳转到首页或刷新当前页
+        if (pathname === "/" || pathname === "/login") {
+          router.push("/home");
+        } else {
+          router.refresh();
+        }
       }
     } catch (error) {
       if (error instanceof AuthError) {

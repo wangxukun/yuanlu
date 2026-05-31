@@ -13,6 +13,8 @@ import {
 import { usePlayerStore } from "@/store/player-store";
 import { Episode } from "@/core/episode/episode.entity";
 import EpisodeCard from "./EpisodeCard";
+import { useSession } from "next-auth/react";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 // ---------------------- Types ----------------------
 interface EpisodeItem {
@@ -57,6 +59,7 @@ export default function AllEpisodesList({
   total,
   hasMore,
 }: AllEpisodesListProps) {
+  const { data: session } = useSession();
   const router = useRouter();
   const { playEpisode, togglePlay, currentEpisode, isPlaying } =
     usePlayerStore();
@@ -160,6 +163,7 @@ export default function AllEpisodesList({
 
   const handlePlayClick = (e: React.MouseEvent, episode: Episode) => {
     e.stopPropagation();
+    if (!checkExclusivePlay(episode, session)) return;
     if (currentEpisode?.episodeid === episode.episodeid) {
       togglePlay();
     } else {

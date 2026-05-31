@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { parseTimeStr } from "@/lib/tools";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
 import { VocabularyModal } from "./transcript/VocabularyModal";
@@ -286,6 +287,7 @@ export default function FullContentTranscript({
   const handleJump = useCallback(
     (t: number) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
+      if (!checkExclusivePlay(episode, session)) return;
 
       if (isPlayingThis && audioRef) {
         audioRef.currentTime = t;
@@ -383,7 +385,8 @@ export default function FullContentTranscript({
         toast.success("已加入生词本");
         setIsModalOpen(false);
       } else {
-        toast.error("保存失败");
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || "保存失败");
       }
     } catch (error) {
       console.error(error);
@@ -579,6 +582,19 @@ export default function FullContentTranscript({
                   />
                 ))}
               </AnimatePresence>
+              {!isLoggedIn && (
+                <div className="flex justify-center mt-12 mb-8 relative z-10">
+                  <button
+                    onClick={() => {
+                      const modal = document.getElementById("email_check_modal_box") as HTMLDialogElement | null;
+                      if (modal) modal.showModal();
+                    }}
+                    className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+                  >
+                    登录后解锁全部字幕
+                  </button>
+                </div>
+              )}
               <div className="h-48"></div>{" "}
               {/* Bottom spacer for PlayControlBar */}
             </div>

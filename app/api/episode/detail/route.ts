@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+import { isPremiumUser } from "@/core/auth/guard";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -53,6 +55,20 @@ export async function GET(req: NextRequest) {
         },
       },
     });
+
+    if (episode && episode.isExclusive) {
+      const session = await auth();
+      const hasPremium = await isPremiumUser(session?.user);
+      if (!hasPremium) {
+        episode.audioUrl = "";
+        episode.audioFileName = "";
+        episode.subtitleEnUrl = "";
+        episode.subtitleEnFileName = "";
+        episode.subtitleZhUrl = "";
+        episode.subtitleZhFileName = "";
+      }
+    }
+
     return NextResponse.json(episode);
   } catch (error) {
     // 确保异常时也释放连接

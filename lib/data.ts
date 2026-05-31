@@ -1,4 +1,5 @@
 import { generateSignatureUrl } from "@/lib/oss";
+import { headers } from "next/headers";
 
 import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
@@ -208,10 +209,12 @@ export async function fetchEpisodes(): Promise<Episode[]> {
  * @param id episode id
  */
 export async function fetchEpisodeById(id: string): Promise<Episode> {
+  const headersList = await headers();
+  const cookie = headersList.get("cookie") || "";
   const res = await fetch(`${baseUrl}/api/episode/detail?id=${id}`, {
     method: "GET",
-    headers: {},
-    next: { revalidate: 60 },
+    headers: { Cookie: cookie },
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error("Failed to fetch episode");

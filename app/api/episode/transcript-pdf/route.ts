@@ -3,11 +3,16 @@ import { fetchEpisodeById, mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
 import { generateTranscriptPdf } from "@/core/transcript-pdf/transcript-pdf.service";
 
+import { requirePremium } from "@/core/auth/guard";
+
 /**
  * GET /api/episode/transcript-pdf?episodeid=xxx
  * Generates and returns a beautifully formatted bilingual transcript PDF.
  */
 export async function GET(req: NextRequest) {
+  const authResult = await requirePremium();
+  if (!authResult.ok) return authResult.response;
+
   const episodeid = req.nextUrl.searchParams.get("episodeid");
 
   if (!episodeid) {

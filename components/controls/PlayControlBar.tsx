@@ -5,8 +5,10 @@ import { usePlayerStore } from "@/store/player-store";
 import { useRouter } from "next/navigation";
 import FullContentTranscript from "@/components/episode/FullContentTranscript";
 import { MergedSubtitleItem } from "@/lib/types";
+import { useSession } from "next-auth/react";
 
 export default function PlayControlBar() {
+  const { status } = useSession();
   const router = useRouter();
   const {
     currentEpisode,
@@ -50,6 +52,7 @@ export default function PlayControlBar() {
         try {
           const res = await fetch(
             `/api/episode/subtitles?id=${currentEpisode.episodeid}`,
+            { cache: "no-store" }
           );
           const data = await res.json();
           if (data.success) {
@@ -66,7 +69,7 @@ export default function PlayControlBar() {
       };
       fetchSubtitles();
     }
-  }, [isLyricsOpen, currentEpisode?.episodeid]);
+  }, [isLyricsOpen, currentEpisode?.episodeid, status]);
 
   if (!currentEpisode) return null;
 

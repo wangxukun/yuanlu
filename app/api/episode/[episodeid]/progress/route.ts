@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function PATCH(
   request: Request,
@@ -11,16 +11,9 @@ export async function PATCH(
   const episodeId = params.episodeid;
 
   try {
-    const session = await auth();
-
-    // 2. 鉴权
-    if (!session?.user?.userid) {
-      return NextResponse.json(
-        { success: false, message: "未认证用户" },
-        { status: 401 },
-      );
-    }
-
+    const authResult = await requireAuth();
+    if (!authResult.ok) return authResult.response;
+    const session = authResult.session;
     const userId = session.user.userid;
 
     // 3. 解析 Body

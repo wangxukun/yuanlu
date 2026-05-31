@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { isPremiumUser } from "@/core/auth/guard";
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. 写入数据库
+    // 3. 配额检查
+    const hasPremium = await isPremiumUser(session.user);
+    if (!hasPremium) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayCount = await prisma.vocabulary.count({
+        where: {
+          userid: userId,
+          addedDate: { gte: today },
+        },
+      });
+
+      if (todayCount >= 20) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: "普通用户每天最多保存 20 个生词。升级高级会员解锁无限制生词本！" 
+          },
+          { status: 403 },
+        );
+      }
+    }
+
+    // 4. 写入数据库
     // 策略：允许同一个词在不同语境下多次保存。
     // 如果你希望由“一个词只有一条记录”，可以使用 upsert，但精听通常建议保留不同例句。
     const newVocab = await prisma.vocabulary.create({

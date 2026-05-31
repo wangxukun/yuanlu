@@ -20,6 +20,8 @@ import { formatTime, formatDate } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 interface EpisodeWithProgress extends Episode {
   progressSeconds?: number;
@@ -47,6 +49,7 @@ export default function EpisodeCard({
   onPlayClick,
   onRowClick,
 }: EpisodeCardProps) {
+  const { data: session } = useSession();
   const {
     currentEpisode,
     addToPlaylist,
@@ -58,6 +61,7 @@ export default function EpisodeCard({
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!checkExclusivePlay(episode, session)) return;
     addToPlaylist(episode as Episode);
 
     // 如果当前没有剧集在播放器中，则设置当前剧集以显示 PlayControlBar

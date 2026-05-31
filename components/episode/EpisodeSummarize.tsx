@@ -18,6 +18,7 @@ import {
 import { Episode } from "@/core/episode/episode.entity";
 import { useSession } from "next-auth/react";
 import { usePlayerStore } from "@/store/player-store";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import Link from "next/link";
 import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
 import { toast } from "sonner";
@@ -107,9 +108,17 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       return;
     }
 
-    try {
-      toast.info("准备下载中...");
+    if (!session?.user) {
+      toast.error("请先登录");
+      return;
+    }
 
+    if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
+      toast.error("权限不足，需要高级会员权限");
+      return;
+    }
+
+    try {
       // 请求后端生成合法的带附件头签名下载链接 (解决 OSS 签名不匹配问题)
       const res = await fetch(
         `/api/episode/download?episodeid=${episode.episodeid}`,
@@ -144,6 +153,17 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
         toast.error("单集信息不完整");
         return;
       }
+
+      if (!session?.user) {
+        toast.error("请先登录");
+        return;
+      }
+
+      if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
+        toast.error("权限不足，需要高级会员权限");
+        return;
+      }
+
       if (isGeneratingPdf) return;
 
       setIsGeneratingPdf(true);
@@ -178,7 +198,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
         setIsGeneratingPdf(false);
       }
     },
-    [episode.episodeid, episode.title, isGeneratingPdf],
+    [episode.episodeid, episode.title, isGeneratingPdf, session],
   );
 
   const handleFeatureUnderDev = (e?: React.MouseEvent) => {
@@ -188,6 +208,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!checkExclusivePlay(episode, session)) return;
     if (isCurrentEpisode) {
       togglePlay();
     } else {

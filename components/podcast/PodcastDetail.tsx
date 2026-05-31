@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { usePlayerStore } from "@/store/player-store";
 import { Episode } from "@/core/episode/episode.entity";
 import { togglePodcastFavorite } from "@/lib/actions/favorite-actions";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 import PodcastHero from "./PodcastHero";
 import EpisodeList from "./EpisodeList";
@@ -109,6 +110,7 @@ export default function PodcastDetail({
   };
 
   const playEpisodeWithId = (ep: Episode) => {
+    if (!checkExclusivePlay(ep, session)) return;
     const episodeWithId = {
       ...ep,
       podcastid: ep.podcastid || podcast.podcastid,
@@ -129,6 +131,7 @@ export default function PodcastDetail({
 
   const handlePlayClick = (e: React.MouseEvent, episode: Episode) => {
     e.stopPropagation();
+    if (!checkExclusivePlay(episode, session)) return;
     if (currentEpisode?.episodeid === episode.episodeid) {
       togglePlay();
     } else {

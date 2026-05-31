@@ -1,13 +1,12 @@
 // yuanlu/app/api/user/history/recent/route.ts
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import { listeningHistoryService } from "@/core/listening-history/listening-history.service";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   try {
     // 获取最近 3 条记录

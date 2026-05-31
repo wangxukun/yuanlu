@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { favoritesService } from "@/core/favorites/favorites.service";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  // 用户认证检查
-  if (!session?.user?.userid) {
-    return NextResponse.json({
-      success: false,
-      message: "未认证用户",
-      status: 401,
-    });
-  }
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   try {
     const formData = await request.formData();

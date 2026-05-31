@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { episodeService } from "@/core/episode/episode.service";
+import { requirePremium } from "@/core/auth/guard";
 
 /**
  * 获取音频下载链接接口
@@ -7,6 +8,9 @@ import { episodeService } from "@/core/episode/episode.service";
  * 因此需要通过后端重新生成带 content-disposition=attachment 的签名链接。
  */
 export async function GET(req: NextRequest) {
+  const authResult = await requirePremium();
+  if (!authResult.ok) return authResult.response;
+
   const episodeid = req.nextUrl.searchParams.get("episodeid");
 
   if (!episodeid) {

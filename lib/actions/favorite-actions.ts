@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth"; // 假设这是 NextAuth v5 的配置
+import { requireAuthAction } from "@/core/auth/guard";
 import { revalidatePath } from "next/cache";
 import { favoritesService } from "@/core/favorites/favorites.service";
 
@@ -10,10 +10,13 @@ export async function togglePodcastFavorite(
   podcastId: string,
   pathname?: string,
 ) {
-  const session = await auth();
-  const userId = session?.user?.userid;
-
-  if (!userId) return { success: false, message: "请先登录" };
+  let session;
+  try {
+    session = await requireAuthAction();
+  } catch (error) {
+    return { success: false, message: "请先登录" };
+  }
+  const userId = session.user.userid;
 
   try {
     const result = await favoritesService.togglePodcastFavorite({
@@ -39,10 +42,13 @@ export async function toggleEpisodeFavorite(
   episodeId: string,
   pathname?: string,
 ) {
-  const session = await auth();
-  const userId = session?.user?.userid;
-
-  if (!userId) return { success: false, message: "请先登录" };
+  let session;
+  try {
+    session = await requireAuthAction();
+  } catch (error) {
+    return { success: false, message: "请先登录" };
+  }
+  const userId = session.user.userid;
 
   try {
     const result = await favoritesService.toggleEpisodeFavorite({
@@ -64,8 +70,9 @@ export async function toggleEpisodeFavorite(
 
 export async function removePodcastFavoriteAction(podcastId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.userid) {
+    const session = await requireAuthAction();
+    const userId = session.user.userid;
+    if (!userId) {
       return { success: false, message: "未登录" };
     }
 
@@ -83,8 +90,9 @@ export async function removePodcastFavoriteAction(podcastId: string) {
 
 export async function removeEpisodeFavoriteAction(episodeId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.userid) {
+    const session = await requireAuthAction();
+    const userId = session.user.userid;
+    if (!userId) {
       return { success: false, message: "未登录" };
     }
 

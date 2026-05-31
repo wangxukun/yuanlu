@@ -74,6 +74,16 @@ async function hasActivePremiumSubscription(userid: string): Promise<boolean> {
 }
 
 /**
+ * Check if a user has PREMIUM or ADMIN role (including active subscription).
+ */
+export async function isPremiumUser(user?: { role?: string | null, userid?: string }): Promise<boolean> {
+  if (!user) return false;
+  if (user.role === "PREMIUM" || user.role === "ADMIN") return true;
+  if (user.userid && (await hasActivePremiumSubscription(user.userid))) return true;
+  return false;
+}
+
+/**
  * Require the user to have PREMIUM or ADMIN role.
  * Uses a hybrid check: static role field OR active subscription in the database.
  * Returns 401 if not authenticated, 403 if not premium/admin.
@@ -82,15 +92,8 @@ export async function requirePremium(): Promise<AuthGuardResult> {
   const result = await requireAuth();
   if (!result.ok) return result;
 
-  const { role, userid } = result.session.user;
-
-  // Fast path: static role grants immediate access
-  if (role === "PREMIUM" || role === "ADMIN") {
-    return result;
-  }
-
-  // Slow path: dynamic subscription check
-  if (userid && (await hasActivePremiumSubscription(userid))) {
+  const hasPremium = await isPremiumUser(result.session.user);
+  if (hasPremium) {
     return result;
   }
 
@@ -146,15 +149,9 @@ export async function requireAdminAction(): Promise<Session> {
  */
 export async function requirePremiumAction(): Promise<Session> {
   const session = await requireAuthAction();
-  const { role, userid } = session.user;
 
-  // Fast path: static role grants immediate access
-  if (role === "PREMIUM" || role === "ADMIN") {
-    return session;
-  }
-
-  // Slow path: dynamic subscription check
-  if (userid && (await hasActivePremiumSubscription(userid))) {
+  const hasPremium = await isPremiumUser(session.user);
+  if (hasPremium) {
     return session;
   }
 

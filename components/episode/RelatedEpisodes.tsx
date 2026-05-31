@@ -8,6 +8,8 @@ import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { toast } from "sonner";
 import { PlusIcon, TvIcon } from "@heroicons/react/24/outline";
+import { useSession } from "next-auth/react";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 export default function RelatedEpisodes({
   podcast,
@@ -16,6 +18,7 @@ export default function RelatedEpisodes({
   podcast?: Podcast;
   currentId: string;
 }) {
+  const { data: session } = useSession();
   const router = useRouter();
   const {
     addToPlaylist,
@@ -33,6 +36,7 @@ export default function RelatedEpisodes({
 
   const handleAdd = (e: React.MouseEvent, ep: Episode) => {
     e.preventDefault(); // prevent Link navigation
+    if (!checkExclusivePlay(ep, session)) return;
     const enrichedEp = {
       ...ep,
       podcast: ep.podcast || { title: podcast?.title },

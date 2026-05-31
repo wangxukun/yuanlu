@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchEpisodeById, mergeSubtitles } from "@/lib/data";
+import { auth } from "@/auth";
 
 /**
  * GET /api/episode/subtitles?id=xxx
@@ -14,7 +15,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const episode = await fetchEpisodeById(id);
-    const subtitles = await mergeSubtitles(episode);
+    let subtitles = await mergeSubtitles(episode);
+
+    const session = await auth();
+    if (!session?.user) {
+      subtitles = subtitles.filter((sub: any) => sub.startTime < "00:03:00,000");
+    }
+
     return NextResponse.json({
       success: true,
       data: subtitles,
