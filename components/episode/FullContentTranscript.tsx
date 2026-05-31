@@ -576,6 +576,16 @@ export default function FullContentTranscript({
                       setLoopingIndex((prev) => (prev === index ? null : index))
                     }
                     onProofread={(sub) => {
+                      if (!session?.user) {
+                        toast("请先登录", {
+                          description: "登录后即可参与字幕校对共建！",
+                        });
+                        const loginModal = document.getElementById(
+                          "email_check_modal_box",
+                        ) as HTMLDialogElement | null;
+                        if (loginModal) loginModal.showModal();
+                        return;
+                      }
                       setProofreadSub(sub);
                       setIsProofreadOpen(true);
                     }}
@@ -586,7 +596,9 @@ export default function FullContentTranscript({
                 <div className="flex justify-center mt-12 mb-8 relative z-10">
                   <button
                     onClick={() => {
-                      const modal = document.getElementById("email_check_modal_box") as HTMLDialogElement | null;
+                      const modal = document.getElementById(
+                        "email_check_modal_box",
+                      ) as HTMLDialogElement | null;
                       if (modal) modal.showModal();
                     }}
                     className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"

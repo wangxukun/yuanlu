@@ -167,10 +167,21 @@ export default function InteractiveTranscript({
     [isPlayingThisEpisode, isPlaying, pause, setSelectionMenu],
   );
 
-  const handleProofread = useCallback((sub: ProcessedSubtitle) => {
-    setProofreadSub(sub);
-    setIsProofreadOpen(true);
-  }, []);
+  const handleProofread = useCallback(
+    (sub: ProcessedSubtitle) => {
+      if (!session?.user) {
+        toast("请先登录", { description: "登录后即可参与字幕校对共建！" });
+        const loginModal = document.getElementById(
+          "email_check_modal_box",
+        ) as HTMLDialogElement;
+        if (loginModal) loginModal.showModal();
+        return;
+      }
+      setProofreadSub(sub);
+      setIsProofreadOpen(true);
+    },
+    [session],
+  );
 
   // --- Save Logic ---
   const handleSaveVocabulary = async () => {
@@ -249,7 +260,6 @@ export default function InteractiveTranscript({
             isActive={index === activeIndex}
             isPlaying={isPlaying}
             showTranslation={showTranslation}
-            isLoggedIn={isLoggedIn}
             onJump={handleJump}
             onWordClick={handleWordClick}
             onProofread={handleProofread}
@@ -259,7 +269,9 @@ export default function InteractiveTranscript({
           <div className="flex justify-center mt-8 pb-4">
             <button
               onClick={() => {
-                const modal = document.getElementById("email_check_modal_box") as HTMLDialogElement | null;
+                const modal = document.getElementById(
+                  "email_check_modal_box",
+                ) as HTMLDialogElement | null;
                 if (modal) modal.showModal();
               }}
               className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"

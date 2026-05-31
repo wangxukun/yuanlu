@@ -436,6 +436,10 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
               onClick={() => {
                 if (!session) {
                   toast.error("请先登录后再回复评论");
+                  const modal = document.getElementById(
+                    "email_check_modal_box",
+                  ) as HTMLDialogElement | null;
+                  if (modal) modal.showModal();
                   return;
                 }
                 setReplyingToId(isReplying ? null : comment.commentid);

@@ -10,7 +10,6 @@ interface SubtitleItemProps {
   isActive: boolean;
   isPlaying: boolean;
   showTranslation: boolean;
-  isLoggedIn: boolean;
   onJump: (time: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
   onProofread?: (sub: ProcessedSubtitle) => void;
@@ -21,7 +20,6 @@ export const SubtitleItem = memo(function SubtitleItem({
   isActive,
   isPlaying,
   showTranslation,
-  isLoggedIn,
   onJump,
   onWordClick,
   onProofread,
@@ -38,7 +36,7 @@ export const SubtitleItem = memo(function SubtitleItem({
       )}
     >
       {/* Proofread icon — appears on hover in top-right corner */}
-      {isLoggedIn && onProofread && (
+      {onProofread && (
         <button
           onClick={(e) => {
             e.stopPropagation();
