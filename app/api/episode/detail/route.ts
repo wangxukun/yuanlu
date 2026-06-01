@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
         status: true,
         isExclusive: true,
         isCommentEnabled: true,
+        playCount: true,
+        difficulty: true,
         podcast: {
           select: {
             podcastid: true,

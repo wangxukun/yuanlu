@@ -14,6 +14,7 @@ import {
   Download,
   FileDown,
   Loader2,
+  Headphones,
 } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
 import { useSession } from "next-auth/react";
@@ -245,6 +246,43 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             alt={episode.title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
           />
+
+          {/* PRO and Play count badges (top left) */}
+          <div className="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex gap-1.5 items-center">
+            {episode.isExclusive && (
+              <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-2 py-1 rounded shadow-sm font-extrabold text-xs tracking-widest flex items-center">
+                👑 PRO
+              </div>
+            )}
+            {episode.playCount !== undefined && (
+              <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-2 py-1 rounded shadow-sm text-xs font-medium flex items-center tracking-wide">
+                <Headphones className="w-3.5 h-3.5 mr-1.5 opacity-80" />
+                {episode.playCount.toLocaleString()}
+              </div>
+            )}
+          </div>
+
+          {/* Difficulty badge (top right) */}
+          {episode.difficulty && (
+            <div className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
+              <div
+                className={`bg-white/95 px-2.5 py-1 rounded shadow-sm font-extrabold text-sm tracking-wide ${
+                  episode.difficulty.includes("A")
+                    ? "text-emerald-600"
+                    : episode.difficulty.includes("B1")
+                      ? "text-blue-600"
+                      : episode.difficulty.includes("B2")
+                        ? "text-purple-600"
+                        : episode.difficulty.includes("C")
+                          ? "text-rose-600"
+                          : "text-gray-700"
+                }`}
+              >
+                {episode.difficulty}
+              </div>
+            </div>
+          )}
+
           {/* Play Overlay */}
           <div
             className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"

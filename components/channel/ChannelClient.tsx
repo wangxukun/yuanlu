@@ -22,6 +22,8 @@ import type {
   ChannelEpisode,
 } from "@/core/channel/channel.service";
 import type { Episode } from "@/core/episode/episode.entity";
+import { useSession } from "next-auth/react";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 // ==================== Sub-components ====================
 
@@ -103,6 +105,13 @@ function EpisodeRow({
           fill
           className="object-cover"
         />
+        {episode.isExclusive && (
+          <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
+            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] tracking-widest flex items-center">
+              👑 PRO
+            </div>
+          </div>
+        )}
         {/* Play overlay on hover */}
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <button
@@ -160,12 +169,15 @@ function EpisodeRow({
 
 export default function ChannelClient({ data }: { data: ChannelData }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const { playEpisode, togglePlay, currentEpisode, isPlaying } =
     usePlayerStore();
 
   const handlePlayEpisode = (e: React.MouseEvent, ep: ChannelEpisode) => {
     e.stopPropagation();
     e.preventDefault();
+
+    if (!checkExclusivePlay(ep, session)) return;
 
     if (currentEpisode?.episodeid === ep.episodeid) {
       togglePlay();
