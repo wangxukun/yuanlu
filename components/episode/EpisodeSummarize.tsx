@@ -231,6 +231,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   const handleStartPractice = () => {
     if (!safeId) return;
+    if (!checkExclusivePlay(episode, session)) return;
     router.push(`/episode/${safeId}/practice`);
   };
 

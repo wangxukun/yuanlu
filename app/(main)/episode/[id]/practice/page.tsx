@@ -50,6 +50,13 @@ export default async function PracticePage({ params }: PageProps) {
     notFound();
   }
 
+  // 拦截：如果是独家剧集，仅限高级会员或管理员访问口语练习
+  if (episode.isExclusive) {
+    if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
+      redirect(`/episode/${id}`);
+    }
+  }
+
   let coverUrl = "";
   let subtitleEnUrl = "";
   let subtitleZhUrl = "";
