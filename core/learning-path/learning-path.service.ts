@@ -64,6 +64,7 @@ export const learningPathService = {
                 coverUrl: true,
                 coverFileName: true,
                 duration: true,
+                isExclusive: true,
                 podcast: {
                   select: {
                     title: true,

@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePlayerStore } from "@/store/player-store";
+import { useSession } from "next-auth/react";
+import { checkExclusivePlay } from "@/lib/client/auth-utils";
+import { toast } from "sonner";
 import {
   removeEpisodeFromPathAction,
   updateLearningPathAction,
@@ -68,6 +71,7 @@ type EpisodeLP = {
   thumbnailUrl: string;
   author: string;
   duration: number;
+  isExclusive?: boolean;
 } & Partial<Episode>;
 
 interface LearningPathDetailClientProps {
@@ -81,6 +85,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
 }) => {
   const router = useRouter();
   const { playEpisode, setPlaylist } = usePlayerStore();
+  const { data: session } = useSession();
 
   const selectedPath = initialPath;
 
@@ -122,15 +127,42 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   };
 
   const onPlayEpisode = (episode: EpisodeLP) => {
+    if (!checkExclusivePlay(episode, session)) return;
     playEpisode(mapEpisodeLPToEpisode(episode));
   };
 
   const handlePlayAll = () => {
     if (selectedPath.items.length === 0) return;
-    const playlist = selectedPath.items.map((item) =>
+
+    const hasExclusivePermission =
+      session?.user?.role === "PREMIUM" || session?.user?.role === "ADMIN";
+
+    // 过滤出当前用户有权限播放的剧集
+    const playableItems = selectedPath.items.filter((item) => {
+      if (item.episode.isExclusive && !hasExclusivePermission) {
+        return false;
+      }
+      return true;
+    });
+
+    if (playableItems.length === 0) {
+      // 如果没有任何可播放的剧集（比如全部是独占剧集且用户无权限），触发默认拦截逻辑
+      checkExclusivePlay(selectedPath.items[0].episode, session);
+      return;
+    }
+
+    const playlist = playableItems.map((item) =>
       mapEpisodeLPToEpisode(item.episode),
     );
     setPlaylist(playlist);
+
+    // 如果过滤了某些剧集，可以给用户一个提示
+    if (playableItems.length < selectedPath.items.length) {
+      toast.info(
+        `已跳过 ${selectedPath.items.length - playableItems.length} 个专属剧集`,
+      );
+    }
+
     playEpisode(playlist[0]);
   };
 
@@ -386,6 +418,14 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                     className="w-full h-full object-cover"
                     alt={item.episode.title}
                   />
+                  {/* PRO Badge */}
+                  {item.episode.isExclusive && (
+                    <div className="absolute top-1 left-1 z-10 flex gap-1.5 items-center">
+                      <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] md:text-xs tracking-widest flex items-center">
+                        👑 PRO
+                      </div>
+                    </div>
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <PlayCircle
                       size={20}
@@ -522,7 +562,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   <p className="text-sm">
                     {episodeSearchQuery
                       ? "没有剧集被找到"
-                      : "输入文字进行搜索..."}
+                      : "输入剧集标题进行搜索..."}
                   </p>
                 </div>
               )}
