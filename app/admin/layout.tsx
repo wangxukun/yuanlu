@@ -1,7 +1,6 @@
 import React from "react";
 import "../globals.css";
 import AuthProvider from "@/app/AuthProvider";
-import "@/lib/sessionCleaner";
 import SideNav from "@/components/admin/sidenav";
 import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/admin/header/Header";
