@@ -45,70 +45,82 @@ jobs:
         run: npm run lint
         # 运行 `npm run lint` 来检查代码质量，确保代码符合指定的编码规范。
 
-  #  # CD job for deployment to development environment
-  #  deploy-dev:
-  #    runs-on: ubuntu-latest
-  #    needs: build
-  #    # 这个 job 依赖于 `build` job 成功执行后再进行部署（通过 `needs: build` 实现）。
-  #
-  #    if: github.ref == 'refs/heads/develop' # 只在 `develop` 分支触发
-  #    # 只有当推送到 `develop` 分支时才触发此部署任务。
-  #
-  #    steps:
-  #      - name: Checkout code
-  #        uses: actions/checkout@v3
-  #        # 与 `build` job 一样，这里也需要签出代码。
-  #
-  #      - name: Set up SSH key for development deployment
-  #        run: |
-  #          mkdir -p ~/.ssh
-  #          echo "${{ secrets.A_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-  #          chmod 600 ~/.ssh/id_rsa
-  #        env:
-  #          A_SSH_PRIVATE_KEY: ${{ secrets.A_SSH_PRIVATE_KEY }}
-  #        # 设置 SSH 密钥，用于与阿里云 ECS 开发环境的服务器建立安全连接。
-  #        # - 创建 `~/.ssh` 目录。
-  #        # - 将 GitHub Secrets 中存储的私钥提取到 `id_rsa` 文件中，并设置文件权限。
-  #        # `A_SSH_PRIVATE_KEY` 是存储在 GitHub Secrets 中的私钥。
-  #
-  #      - name: Add ECS Development host to known hosts
-  #        run: |
-  #          mkdir -p ~/.ssh
-  #          ssh-keyscan -H ${{ secrets.A_ECS_HOST }} >> ~/.ssh/known_hosts
-  #        # 将阿里云 ECS 开发环境的主机公钥添加到 `known_hosts` 文件中，以便 SSH 连接时避免出现安全警告。
-  #        # `A_ECS_HOST` 是存储在 GitHub Secrets 中的开发环境 ECS 主机地址。
-  #
-  #      - name: Deploy to Development Server
-  #        run: |
-  #          echo "Deploying to development server..."
-  #          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "
-  #            source ~/.bashrc
-  #            cd /home/yuanlu/yuanlu/ &&
-  #            git checkout develop &&
-  #            git pull origin develop &&
-  #            npm install &&
-  #            npx prisma generate &&
-  #            npm run build &&
-  #            # 添加构建验证
-  #            if [ -d '.next' ]; then
-  #              pm2 restart yuanlu --update-env || pm2 start npm --name "yuanlu" -- start
-  #              pm2 save
-  #              echo 'Deployment successful!'
-  #            else
-  #              echo 'Build failed!' &&
-  #              exit 1
-  #            fi
-  #          "
-  #        env:
-  #          A_ECS_HOST: ${{ secrets.A_ECS_HOST }}
-  #          A_SSH_USERNAME: ${{ secrets.A_SSH_USERNAME }}
-  #        # 使用 SSH 连接到开发环境服务器，执行部署任务：
-  #        # 1. `cd /home/yuanlu/yuanlu/`: 切换到应用程序目录。
-  #        # 2. `git pull`: 拉取最新的代码。
-  #        # 3. `npm install`: 安装依赖。
-  #        # 4. `npx prisma generate`: 生成 Prisma 客户端。
-  #        # 5. `npm run build`: 构建项目。
-  #        # 6. `pm2 restart all`: 重启应用服务（假设使用 pm2 作为进程管理工具）。
+  # CD job for deployment to development environment
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs: build
+    # 这个 job 依赖于 `build` job 成功执行后再进行部署（通过 `needs: build` 实现）。
+
+    if: github.ref == 'refs/heads/develop' # 只在 `develop` 分支触发
+    # 只有当推送到 `develop` 分支时才触发此部署任务。
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to ECS via rsync
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.ECS_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.ECS_HOST }}
+          REMOTE_USER: ${{ secrets.ECS_USERNAME }}
+          REMOTE_PORT: ${{ secrets.ECS_SSH_PORT || '22' }}
+          SOURCE: "./"
+          TARGET: "/var/www/yuanlu"
+          EXCLUDE: >-
+            .git/,
+            .github/,
+            .claude/,
+            node_modules/,
+            .env,
+            .env.local
+
+      - name: Post-deploy setup & restart
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USERNAME }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          port: ${{ secrets.ECS_SSH_PORT || '22' }}
+          script: |
+            cd /var/www/yuanlu
+
+            # Ensure .env exists (first deploy needs manual creation)
+            if [ ! -f .env ]; then
+              echo "ERROR: .env file not found! Please create it manually on the server."
+              exit 1
+            fi
+
+            # Install production dependencies only
+            npm ci --omit=dev
+
+            # Generate Prisma Client for the server environment
+            npx prisma generate
+
+            # Reload or start pm2 process
+            if pm2 describe yuanlu > /dev/null 2>&1; then
+              pm2 reload yuanlu --update-env
+            else
+              pm2 start npm --name "yuanlu" -- start
+            fi
+
+            # Save pm2 process list (survives server reboot)
+            pm2 save
 
   # CD job for deployment to production environment
   deploy-prod:
