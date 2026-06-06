@@ -11,25 +11,26 @@ const config: Options = {
   // 填写Bucket名称。
   bucket: process.env.OSS_BUCKET as string,
 };
-if (
-  !config.region ||
-  !config.accessKeyId ||
-  !config.accessKeySecret ||
-  !config.bucket
-) {
-  // 注意：在构建阶段 Next.js 可能会预执行代码，这里可以加个非空判断防止 build 失败
-  if (process.env.NODE_ENV !== "production") {
-    console.warn("OSS环境变量未设置，OSS功能将不可用");
+
+let client: OSS | null = null;
+
+function getClient(): OSS {
+  if (client) return client;
+
+  if (
+    !config.region ||
+    !config.accessKeyId ||
+    !config.accessKeySecret ||
+    !config.bucket
+  ) {
+    throw new Error(
+      "OSS client is not configured. Missing environment variables.",
+    );
   }
+
+  client = new OSS(config);
+  return client;
 }
-
-const client = new OSS(config);
-
-// 获取存储空间的访问权限。
-// export async function getBucketAcl() {
-//   const result = await client.getBucketACL(process.env.OSS_BUCKET as string);
-//   console.log(`${process.env.OSS_BUCKET} acl: `, result.acl);
-// }
 
 // 上传文件
 export async function uploadFile(
@@ -42,7 +43,7 @@ export async function uploadFile(
     fileContent = Buffer.from(arrayBuffer);
   }
   try {
-    const result = await client.put(uniqueFilename, fileContent);
+    const result = await getClient().put(uniqueFilename, fileContent);
 
     if (!result.name) {
       throw new Error("文件上传失败");
@@ -69,13 +70,14 @@ export async function generateSignatureUrl(
   options?: OSS.SignatureUrlOptions,
 ): Promise<string> {
   try {
-    return client.signatureUrl(fileName, {
+    return getClient().signatureUrl(fileName, {
       expires: expire,
       ...options,
     });
   } catch (error) {
     console.error("OSS更新文件地址错误", error);
-    throw new Error("文件地址更新失败");
+    // 构建阶段如无凭证则返回原始文件名，避免构建中断
+    return fileName || "";
   }
 }
 
@@ -83,8 +85,7 @@ export async function generateSignatureUrl(
 export async function deleteObject(fileName: string) {
   try {
     // 填写Object完整路径。Object完整路径中不能包含Bucket名称。
-    // fileName="yuanlu/podcastes/covers/1742616413531_v8u19i72m4k.jpg"
-    return await client.delete(fileName);
+    return await getClient().delete(fileName);
   } catch (error) {
     console.log(error);
   }
