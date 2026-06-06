@@ -3,10 +3,7 @@
  * 定时更新用户状态为离线
  */
 
-// 绕过 Turbopack 静态分析以解决外部模块加载错误
-const cronName = "node-cron";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const cron = require(cronName);
+import cron from "node-cron";
 import prisma from "@/lib/prisma";
 
 // 每5分钟执行一次, 更新30分钟前的用户状态为离线

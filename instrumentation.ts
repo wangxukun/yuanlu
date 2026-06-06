@@ -10,38 +10,7 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    // 使用 Node.js 原生模块系统，完全绕过 Turbopack 的 externalRequire 机制
-    const { createRequire } = await import("node:module");
-    const { join } = await import("node:path");
-    const nativeRequire = createRequire(join(process.cwd(), "package.json"));
-
-    const cron = nativeRequire("node-cron");
-    const { PrismaClient } = nativeRequire("@prisma/client");
-
-    const prisma = new PrismaClient();
-
-    // 每5分钟执行一次, 更新30分钟前的用户状态为离线
-    cron.schedule("*/5 * * * *", async () => {
-      const threshold = new Date(Date.now() - 30 * 60 * 1000);
-      try {
-        await prisma.user.updateMany({
-          where: {
-            lastActiveAt: { lt: threshold },
-            isOnline: true,
-          },
-          data: { isOnline: false },
-        });
-      } catch (err: unknown) {
-        if (
-          err instanceof Error &&
-          "code" in err &&
-          (err as Error & { code: string }).code === "P2025"
-        ) {
-          console.log("No inactive users found");
-        }
-      }
-    });
-
+    await import("@/lib/sessionCleaner");
     console.log("[Instrumentation] Session cleaner cron job registered.");
   }
 }
