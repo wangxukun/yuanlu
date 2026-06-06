@@ -73,36 +73,32 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.A_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.A_SSH_PORT || '22' }} -H ${{ secrets.A_ECS_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy to ECS via rsync
-        uses: easingthemes/ssh-deploy@v5.1.0
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.A_SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.A_ECS_HOST }}
-          REMOTE_USER: ${{ secrets.A_SSH_USERNAME }}
-          REMOTE_PORT: ${{ secrets.A_SSH_PORT || '22' }}
-          SOURCE: "./"
-          TARGET: "/var/www/yuanlu"
-          EXCLUDE: >-
-            .git/,
-            .github/,
-            .claude/,
-            node_modules/,
-            .env,
-            .env.local
+        run: |
+          rsync -avz -e "ssh -p ${{ secrets.A_SSH_PORT || '22' }} -o StrictHostKeyChecking=no" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.claude/' \
+            --exclude='node_modules/' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            ./ ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }}:/var/www/yuanlu
 
       - name: Post-deploy setup & restart
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.A_ECS_HOST }}
-          username: ${{ secrets.A_SSH_USERNAME }}
-          key: ${{ secrets.A_SSH_PRIVATE_KEY }}
-          port: ${{ secrets.A_SSH_PORT || '22' }}
-          script: |
+        run: |
+          ssh -p ${{ secrets.A_SSH_PORT || '22' }} -o StrictHostKeyChecking=no ${{ secrets.A_SSH_USERNAME }}@${{ secrets.A_ECS_HOST }} "
             cd /var/www/yuanlu
 
             # Ensure .env exists (first deploy needs manual creation)
             if [ ! -f .env ]; then
-              echo "ERROR: .env file not found! Please create it manually on the server."
+              echo 'ERROR: .env file not found! Please create it manually on the server.'
               exit 1
             fi
 
@@ -116,11 +112,12 @@ jobs:
             if pm2 describe yuanlu > /dev/null 2>&1; then
               pm2 reload yuanlu --update-env
             else
-              pm2 start npm --name "yuanlu" -- start
+              pm2 start npm --name 'yuanlu' -- start
             fi
 
             # Save pm2 process list (survives server reboot)
             pm2 save
+          "
 
   # CD job for deployment to production environment
   deploy-prod:
