@@ -75,7 +75,7 @@ jobs:
 
       - name: Deploy to ECS via rsync
         uses: easingthemes/ssh-deploy@v5.1.0
-        with:
+        env:
           SSH_PRIVATE_KEY: ${{ secrets.ECS_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.ECS_HOST }}
           REMOTE_USER: ${{ secrets.ECS_USERNAME }}
