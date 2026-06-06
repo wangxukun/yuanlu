@@ -102,8 +102,8 @@ jobs:
               exit 1
             fi
 
-            # Install production dependencies only
-            npm ci --omit=dev
+            # Install production dependencies only, skipping lifecycle scripts (like prepare/husky)
+            npm ci --omit=dev --ignore-scripts
 
             # Generate Prisma Client for the server environment
             npx prisma generate
