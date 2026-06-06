@@ -76,7 +76,7 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
         author: item.episode.podcast?.title || "",
         audioUrl: item.episode.audioUrl ?? "",
         duration: item.episode.duration,
-        isExclusive: item.episode.isExclusive,
+        isExclusive: item.episode.isExclusive ?? undefined,
       },
     })),
   };
