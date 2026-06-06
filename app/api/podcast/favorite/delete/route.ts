@@ -5,7 +5,6 @@ import { requireAuth } from "@/core/auth/guard";
 export async function DELETE(request: NextRequest) {
   const authResult = await requireAuth();
   if (!authResult.ok) return authResult.response;
-  const session = authResult.session;
 
   try {
     // 从请求体中获取数据

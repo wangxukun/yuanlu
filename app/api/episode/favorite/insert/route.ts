@@ -5,7 +5,6 @@ import { requireAuth } from "@/core/auth/guard";
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!authResult.ok) return authResult.response;
-  const session = authResult.session;
 
   try {
     const formData = await request.formData();
