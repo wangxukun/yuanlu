@@ -75,11 +75,11 @@ jobs:
 
       - name: Deploy to ECS via rsync
         uses: easingthemes/ssh-deploy@v5.1.0
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.ECS_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.ECS_HOST }}
-          REMOTE_USER: ${{ secrets.ECS_USERNAME }}
-          REMOTE_PORT: ${{ secrets.ECS_SSH_PORT || '22' }}
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.A_SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.A_ECS_HOST }}
+          REMOTE_USER: ${{ secrets.A_SSH_USERNAME }}
+          REMOTE_PORT: ${{ secrets.A_SSH_PORT || '22' }}
           SOURCE: "./"
           TARGET: "/var/www/yuanlu"
           EXCLUDE: >-
@@ -93,10 +93,10 @@ jobs:
       - name: Post-deploy setup & restart
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.ECS_HOST }}
-          username: ${{ secrets.ECS_USERNAME }}
-          key: ${{ secrets.ECS_SSH_KEY }}
-          port: ${{ secrets.ECS_SSH_PORT || '22' }}
+          host: ${{ secrets.A_ECS_HOST }}
+          username: ${{ secrets.A_SSH_USERNAME }}
+          key: ${{ secrets.A_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.A_SSH_PORT || '22' }}
           script: |
             cd /var/www/yuanlu
 
