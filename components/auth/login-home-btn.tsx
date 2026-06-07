@@ -94,9 +94,16 @@ export default function LoginHomeBtn() {
         </div>
 
         {/* 用户名 (仅在中等屏幕以上显示) */}
-        <div className="hidden md:flex flex-col items-start text-sm max-w-[100px]">
-          <span className="font-medium text-base-content truncate w-full text-left">
+        <div className="hidden md:flex flex-col items-start max-w-[100px]">
+          <span className="text-xs font-semibold text-base-content truncate w-full text-left font-mono">
             {displayName}
+          </span>
+          <span className="text-[10px] text-base-content opacity-50 truncate w-full text-left font-medium">
+            {user.role === "ADMIN"
+              ? "管理员"
+              : user.role === "PREMIUM"
+                ? "高级会员"
+                : "普通用户"}
           </span>
         </div>
 
@@ -112,7 +119,13 @@ export default function LoginHomeBtn() {
         <div className="absolute right-0 mt-2 w-64 bg-base-100 rounded-xl shadow-xl border border-base-200 py-2 z-50 transform origin-top-right transition-all animate-in fade-in slide-in-from-top-2 duration-200">
           {/* 头部信息 */}
           <div className="px-4 py-3 border-b border-base-200 mb-1">
-            <p className="text-xs text-base-content/60">当前登录</p>
+            <p className="text-xs text-base-content opacity-50">
+              {user.role === "ADMIN"
+                ? "管理员"
+                : user.role === "PREMIUM"
+                  ? "高级会员"
+                  : "普通用户"}
+            </p>
             <p
               className="text-sm font-semibold text-base-content truncate"
               title={user.email}

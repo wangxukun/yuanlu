@@ -6,7 +6,6 @@ import NavLinks from "@/components/main/nav-links";
 import AcmeLogo from "@/components/acme-logo";
 import { useSession } from "next-auth/react";
 import NavLinksLogined from "@/components/main/nav-links-logined";
-import { toast } from "sonner";
 
 export default function SideNav() {
   const { data: session, status } = useSession();
@@ -36,31 +35,6 @@ export default function SideNav() {
           )}
         </nav>
       </div>
-
-      {status === "authenticated" && session && (
-        <div className="mt-auto pt-8">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-[2rem]">
-            <p
-              className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-2"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              远路会员
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              探索无限精彩，开启深度旅程。
-            </p>
-            <button
-              onClick={() =>
-                toast.success("目前您已经拥有访问该网站所有功能权限")
-              }
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              className="block w-full bg-indigo-600 text-white py-2 px-4 rounded-[2rem] font-bold text-xs text-center hover:bg-indigo-700 transition-colors"
-            >
-              立即升级
-            </button>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }

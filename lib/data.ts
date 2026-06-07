@@ -1,5 +1,6 @@
 import { generateSignatureUrl } from "@/lib/oss";
 import { headers } from "next/headers";
+import prisma from "@/lib/prisma";
 
 import { Tag } from "@/core/tag/tag.entity";
 import { Podcast } from "@/core/podcast/podcast.entity";
@@ -70,30 +71,34 @@ export async function fetchUserById(id: string): Promise<User> {
  */
 interface OnlineUsersData {
   numberOfOnlineUsers: number;
-  onlineUsers: Array<{ userid: string; phone: string; role: string }>;
+  onlineUsers: Array<{ userid: string; role: string }>;
 }
 
 /**
  * 获取在线用户数和用户列表
  */
 export async function fetchOnlineUsers(): Promise<OnlineUsersData> {
-  const res = await fetch(`${baseUrl}/api/auth/online-users`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
+  try {
+    const onlineUsersRaw = await prisma.user.findMany({
+      where: { isOnline: true },
+      select: { userid: true, role: true },
+    });
+    const onlineUsers = onlineUsersRaw.map((user) => ({
+      userid: user.userid,
+      role: user.role || "USER",
+    }));
+
+    return {
+      numberOfOnlineUsers: onlineUsersRaw.length,
+      onlineUsers,
+    };
+  } catch (error) {
+    console.error("Failed to fetch online users from DB:", error);
     return {
       numberOfOnlineUsers: 0,
       onlineUsers: [],
     };
   }
-  const data = await res.json();
-  const numberOfOnlineUsers = data.count;
-  const onlineUsers = data.users;
-  return {
-    numberOfOnlineUsers,
-    onlineUsers,
-  };
 }
 
 /**
