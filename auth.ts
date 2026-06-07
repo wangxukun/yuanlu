@@ -207,7 +207,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               }
             }
 
-            token.role = currentRole;
+            token.role = currentRole || "USER";
           }
           token.lastRoleCheck = now;
         } catch (error) {
