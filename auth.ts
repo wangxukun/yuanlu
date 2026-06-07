@@ -28,6 +28,11 @@ type UserFromPrisma = {
     avatarUrl: string | null;
     nickname: string | null;
   } | null;
+  subscriptions: {
+    subscriptionid: number;
+    subscriptionType: string;
+    endDate: Date | null;
+  }[];
 };
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -52,11 +57,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { email },
             include: {
               user_profile: true, // 关联查询资料表
+              subscriptions: {
+                where: { subscriptionType: "PREMIUM" },
+                orderBy: { endDate: "desc" },
+              },
             },
           })) as UserFromPrisma | null;
 
           if (!user) {
             throw new Error("Invalid credentials.");
+          }
+
+          // 检测会员是否过期并降级
+          if (user.role === "PREMIUM") {
+            const activeSub = user.subscriptions?.[0];
+            const now = new Date();
+            // 如果没有订阅记录，或者最新的订阅已经过期
+            if (!activeSub || (activeSub.endDate && activeSub.endDate < now)) {
+              await prisma.$transaction([
+                prisma.user.update({
+                  where: { userid: user.userid },
+                  data: { role: "USER" },
+                }),
+                prisma.subscriptions.deleteMany({
+                  where: { userid: user.userid, subscriptionType: "PREMIUM" },
+                }),
+              ]);
+              user.role = "USER"; // 更新当前对象状态
+            }
           }
 
           // [新增] 检查登录权限限制功能

@@ -98,13 +98,17 @@ export default function LoginHomeBtn() {
           <span className="text-xs font-semibold text-base-content truncate w-full text-left font-mono">
             {displayName}
           </span>
-          <span className="text-[10px] text-base-content opacity-50 truncate w-full text-left font-medium">
-            {user.role === "ADMIN"
-              ? "管理员"
-              : user.role === "PREMIUM"
-                ? "高级会员"
-                : "普通用户"}
-          </span>
+          <div className="flex items-center w-full truncate text-[10px] font-medium text-left mt-0.5">
+            {user.role === "ADMIN" ? (
+              <span className="text-primary font-bold">管理员</span>
+            ) : user.role === "PREMIUM" ? (
+              <span className="text-orange-500 font-bold bg-orange-500/10 px-1.5 py-0.5 rounded-md leading-none">
+                高级会员
+              </span>
+            ) : (
+              <span className="text-base-content/50">普通用户</span>
+            )}
+          </div>
         </div>
 
         <ChevronDownIcon
