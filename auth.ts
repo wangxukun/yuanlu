@@ -161,13 +161,66 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.avatarFileName = session.user.avatarFileName;
       }
 
-      // 3. [核心修复] 检测浏览器会话恢复（cookie 自动登录）
+      const now = Date.now();
+
+      // 3. [修复] 定期（5分钟）同步 PREMIUM 用户的角色状态
+      // 解决用户关闭浏览器后再次打开时，Token 中的 PREMIUM 角色由于未经过 authorize 而无法降级的问题
+      const lastRoleCheck = (token.lastRoleCheck as number) || 0;
+      if (
+        token.role === "PREMIUM" &&
+        token.userid &&
+        now - lastRoleCheck > 5 * 60 * 1000
+      ) {
+        try {
+          const userInDb = await prisma.user.findUnique({
+            where: { userid: token.userid as string },
+            include: {
+              subscriptions: {
+                where: { subscriptionType: "PREMIUM" },
+                orderBy: { endDate: "desc" },
+              },
+            },
+          });
+
+          if (userInDb) {
+            let currentRole = userInDb.role;
+
+            if (currentRole === "PREMIUM") {
+              const activeSub = userInDb.subscriptions?.[0];
+              if (
+                !activeSub ||
+                (activeSub.endDate && activeSub.endDate < new Date(now))
+              ) {
+                await prisma.$transaction([
+                  prisma.user.update({
+                    where: { userid: userInDb.userid },
+                    data: { role: "USER" },
+                  }),
+                  prisma.subscriptions.deleteMany({
+                    where: {
+                      userid: userInDb.userid,
+                      subscriptionType: "PREMIUM",
+                    },
+                  }),
+                ]);
+                currentRole = "USER";
+              }
+            }
+
+            token.role = currentRole;
+          }
+          token.lastRoleCheck = now;
+        } catch (error) {
+          console.error("Failed to sync user role in jwt callback", error);
+        }
+      }
+
+      // 4. [核心修复] 检测浏览器会话恢复（cookie 自动登录）
       // 当 token 中已有 userid（非首次登录）且距上次访问超过30分钟时，
       // 认为这是一次新的浏览器会话恢复，递增 loginCount
       if (!user && token.userid) {
         const SESSION_GAP_THRESHOLD = 30 * 60 * 1000; // 30 minutes in ms
         const lastSeenAt = (token.lastSeenAt as number) || 0;
-        const now = Date.now();
 
         if (now - lastSeenAt > SESSION_GAP_THRESHOLD) {
           try {
