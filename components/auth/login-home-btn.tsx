@@ -157,18 +157,21 @@ export default function LoginHomeBtn() {
             </Link>
 
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={async () => {
+                setIsOpen(false);
+                router.push("/auth/subscribe");
+              }}
               className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
             >
               <CreditCardIcon className="w-5 h-5" />
               <span>我的订阅</span>
-              <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                Pro
-              </span>
             </button>
 
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={async () => {
+                setIsOpen(false);
+                router.push("/contact");
+              }}
               className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
             >
               <QuestionMarkCircleIcon className="w-5 h-5" />
