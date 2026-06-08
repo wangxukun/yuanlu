@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   ClipboardCopy,
   Send,
@@ -12,7 +13,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AFDIAN_PLANS = [
@@ -140,8 +140,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
   const [isVipFreshActive, setIsVipFreshActive] = useState(false);
   const [flashMessage, setFlashMessage] = useState("");
   const [isPolling, setIsPolling] = useState(false);
+  const { update: updateSession } = useSession();
   const router = useRouter();
-  const { update } = useSession();
 
   // 轮询后端接口，当检测到会员激活或续费时显示动画横幅
   useEffect(() => {
@@ -183,10 +183,11 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               setTimeout(() => setIsVipFreshActive(false), 5000);
               setIsPolling(false);
 
-              // 强制更新前端的 Session Cookie，使角色立即生效
-              await update();
+              // Update the NextAuth session token with the new role
+              // so that useSession() across all components reflects PREMIUM
+              await updateSession({ user: { role: data.role } });
 
-              router.refresh(); // 刷新 Server Component 获取最新状态
+              router.refresh(); // Refresh Server Components for latest data
               clearInterval(interval);
               clearTimeout(timeout);
             }
@@ -201,7 +202,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
         clearTimeout(timeout);
       };
     }
-  }, [user, isPolling, router, update]);
+  }, [user, isPolling, router, updateSession]);
 
   const handleCopyEmail = () => {
     if (!user) return;

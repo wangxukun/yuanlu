@@ -154,36 +154,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       // 2. 处理客户端的 update() 调用
-      if (trigger === "update") {
-        console.log("Updating session token:", session?.user || session);
-        if (session?.user?.nickname) token.nickname = session.user.nickname;
-        if (session?.user?.avatarFileName)
+      if (trigger === "update" && session?.user) {
+        console.log("Updating session token:", session.user);
+        if (session.user.nickname) token.nickname = session.user.nickname;
+        if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
-
-        // [修复] 客户端主动调用 update() 时，同步数据库中最新的角色
-        if (token.userid) {
-          try {
-            const userInDb = await prisma.user.findUnique({
-              where: { userid: token.userid as string },
-              select: { role: true },
-            });
-            if (userInDb && userInDb.role) {
-              token.role = userInDb.role;
-              token.lastRoleCheck = Date.now();
-            }
-          } catch (error) {
-            console.error("Failed to sync role on update", error);
-          }
-        }
+        if (session.user.role) token.role = session.user.role;
       }
 
       const now = Date.now();
 
-      // 3. [修复] 定期（5分钟）同步 PREMIUM 用户的角色状态
-      // 解决用户关闭浏览器后再次打开时，Token 中的 PREMIUM 角色由于未经过 authorize 而无法降级的问题
+      // 3. [修复] 定期（5分钟）同步用户角色状态（双向：升级 + 降级）
+      // - 降级：PREMIUM 用户关闭浏览器后再次打开时，Token 中的角色需降级
+      // - 升级：USER 用户通过爱发电 Webhook 激活后，Token 中的角色需升级为 PREMIUM
       const lastRoleCheck = (token.lastRoleCheck as number) || 0;
       if (
-        token.role === "PREMIUM" &&
+        token.role !== "ADMIN" &&
         token.userid &&
         now - lastRoleCheck > 5 * 60 * 1000
       ) {
@@ -201,6 +187,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (userInDb) {
             let currentRole = userInDb.role;
 
+            // PREMIUM 降级检测：订阅已过期则降为 USER
             if (currentRole === "PREMIUM") {
               const activeSub = userInDb.subscriptions?.[0];
               if (

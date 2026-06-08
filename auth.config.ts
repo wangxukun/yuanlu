@@ -35,8 +35,7 @@ export const authConfig = {
         if (session.user.nickname) token.nickname = session.user.nickname;
         if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
-
-        // 如果有其他需要更新的字段，也在这里赋值
+        if (session.user.role) token.role = session.user.role;
       }
 
       return token;
