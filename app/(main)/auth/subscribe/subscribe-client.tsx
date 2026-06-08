@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AFDIAN_PLANS = [
@@ -140,6 +141,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
   const [flashMessage, setFlashMessage] = useState("");
   const [isPolling, setIsPolling] = useState(false);
   const router = useRouter();
+  const { update } = useSession();
 
   // 轮询后端接口，当检测到会员激活或续费时显示动画横幅
   useEffect(() => {
@@ -180,6 +182,10 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               setIsVipFreshActive(true);
               setTimeout(() => setIsVipFreshActive(false), 5000);
               setIsPolling(false);
+
+              // 强制更新前端的 Session Cookie，使角色立即生效
+              await update();
+
               router.refresh(); // 刷新 Server Component 获取最新状态
               clearInterval(interval);
               clearTimeout(timeout);
@@ -195,7 +201,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
         clearTimeout(timeout);
       };
     }
-  }, [user, isPolling, router]);
+  }, [user, isPolling, router, update]);
 
   const handleCopyEmail = () => {
     if (!user) return;

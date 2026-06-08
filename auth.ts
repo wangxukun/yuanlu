@@ -154,11 +154,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       // 2. 处理客户端的 update() 调用
-      if (trigger === "update" && session?.user) {
-        console.log("Updating session token:", session.user);
-        if (session.user.nickname) token.nickname = session.user.nickname;
-        if (session.user.avatarFileName)
+      if (trigger === "update") {
+        console.log("Updating session token:", session?.user || session);
+        if (session?.user?.nickname) token.nickname = session.user.nickname;
+        if (session?.user?.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
+
+        // [修复] 客户端主动调用 update() 时，同步数据库中最新的角色
+        if (token.userid) {
+          try {
+            const userInDb = await prisma.user.findUnique({
+              where: { userid: token.userid as string },
+              select: { role: true },
+            });
+            if (userInDb && userInDb.role) {
+              token.role = userInDb.role;
+              token.lastRoleCheck = Date.now();
+            }
+          } catch (error) {
+            console.error("Failed to sync role on update", error);
+          }
+        }
       }
 
       const now = Date.now();
