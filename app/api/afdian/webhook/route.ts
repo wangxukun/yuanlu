@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { notificationService } from "@/core/notification/notification.service";
+import { formatChineseDate } from "@/lib/tools";
 
 const AFDIAN_WEBHOOK_SECRET =
   process.env.AFDIAN_WEBHOOK_SECRET || "YuanluSecret_2026_Prod";
@@ -212,6 +214,25 @@ export async function POST(req: NextRequest) {
     console.log(
       `[Webhook] 成功激活用户 ${targetEmail} 的 ${daysAdded} 天 VIP 权益。新到期时间: ${newExpiryDate.toISOString()}`,
     );
+
+    // Send in-app system notification to the user
+    const formattedExpiry = formatChineseDate(newExpiryDate);
+    const notificationMessage = activeSub
+      ? `【系统恭喜】您的付款已被爱发电成功捕获！会员资格已延长至${formattedExpiry}！`
+      : "【系统恭喜】您的付款已被爱发电成功捕获！会员资格已秒级自动充值并生效激活！";
+
+    try {
+      await notificationService.createNotification({
+        userid: matched.userid,
+        notificationText: notificationMessage,
+        type: "SYSTEM",
+        targetUrl: "/auth/subscribe",
+      });
+      console.log(`[Webhook] 已向用户 ${targetEmail} 发送充值成功系统通知`);
+    } catch (notifyError) {
+      // Notification failure should not block the webhook response
+      console.error("[Webhook] 发送系统通知失败:", notifyError);
+    }
 
     return NextResponse.json({
       ec: 200,
