@@ -187,7 +187,12 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               // so that useSession() across all components reflects PREMIUM
               await updateSession({ user: { role: data.role } });
 
-              router.refresh(); // Refresh Server Components for latest data
+              // Delay router.refresh() until after the flash banner animation
+              // completes (5s). Calling it immediately would re-render Server
+              // Components, which rebuilds the `user` prop and resets all
+              // local state — causing the congratulations banner to vanish.
+              setTimeout(() => router.refresh(), 5500);
+
               clearInterval(interval);
               clearTimeout(timeout);
             }
