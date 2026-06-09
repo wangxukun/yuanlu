@@ -10,10 +10,8 @@ import {
   UserCheck,
   AlertTriangle,
   Crown,
-  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 
 const AFDIAN_PLANS = [
   {
@@ -137,13 +135,13 @@ interface SubscribeClientProps {
 
 export function SubscribeClient({ user }: SubscribeClientProps) {
   const [copied, setCopied] = useState(false);
-  const [isVipFreshActive, setIsVipFreshActive] = useState(false);
-  const [flashMessage, setFlashMessage] = useState("");
   const [isPolling, setIsPolling] = useState(false);
   const { update: updateSession } = useSession();
   const router = useRouter();
 
-  // 轮询后端接口，当检测到会员激活或续费时显示动画横幅
+  // Polling: detect subscription activation, persist flash message to
+  // sessionStorage so the global SubscriptionFlashToast can display it
+  // after the inevitable page redirect.
   useEffect(() => {
     if (user && isPolling) {
       // 设定 5 分钟超时时间，超过后自动停止轮询以节省资源
@@ -178,21 +176,15 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             }
 
             if (activated) {
-              setFlashMessage(message);
-              setIsVipFreshActive(true);
-              setTimeout(() => setIsVipFreshActive(false), 5000);
+              // Persist the congratulations message to sessionStorage so the
+              // global toast component can display it after page redirect.
+              sessionStorage.setItem("subscription_flash_message", message);
               setIsPolling(false);
 
               // Update the NextAuth session token with the new role
-              // so that useSession() across all components reflects PREMIUM
               await updateSession({ user: { role: data.role } });
 
-              // Delay router.refresh() until after the flash banner animation
-              // completes (5s). Calling it immediately would re-render Server
-              // Components, which rebuilds the `user` prop and resets all
-              // local state — causing the congratulations banner to vanish.
-              setTimeout(() => router.refresh(), 5500);
-
+              router.refresh();
               clearInterval(interval);
               clearTimeout(timeout);
             }
@@ -236,22 +228,6 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
 
   return (
     <>
-      {/* 📢 VIP Activation Flash Banner */}
-      <AnimatePresence>
-        {isVipFreshActive && (
-          <motion.div
-            id="vipv-fresh-banner"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="bg-orange-500 text-white py-3.5 px-4 shadow-lg text-center font-bold text-xs sm:text-sm flex items-center justify-center gap-2 relative z-50"
-          >
-            <Sparkles className="w-4 h-4 text-yellow-300 animate-bounce" />
-            <span>{flashMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div
         id="plans-grid-root"
         className="space-y-10 max-w-6xl mx-auto px-4 py-12"

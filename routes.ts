@@ -14,7 +14,6 @@ export const publicRoutes = [
   "/contact",
   "/auth/user-agreement",
   "/auth/privacy-policy",
-  "/auth/subscribe",
 ];
 
 export const userRoutes = [

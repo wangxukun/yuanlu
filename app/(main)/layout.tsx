@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 import PageTracker from "@/components/main/PageTracker";
 import { ModalProvider } from "@/components/providers/ModalProvider";
 import GlobalAudio from "@/components/player/GlobalAudio"; // <--- 新增引入
+import SubscriptionFlashToast from "@/components/subscription/SubscriptionFlashToast";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -51,6 +52,7 @@ export default function RootLayout({
               <PageTracker />
             </Suspense>
             <Toaster richColors />
+            <SubscriptionFlashToast />
             <ModalProvider />
 
             {/* 挂载全局音频引擎，不随页面切换销毁 */}
