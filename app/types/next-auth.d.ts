@@ -12,6 +12,7 @@ declare module "next-auth" {
     avatarUrl?: string | null;
     avatarFileName?: string | null;
     nickname?: string | null;
+    sessionVersion?: number;
   }
 
   interface Session {
@@ -25,6 +26,7 @@ declare module "next-auth" {
       avatarUrl?: string | null;
       avatarFileName?: string | null;
       nickname?: string | null;
+      sessionVersion?: number;
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
     error?: string;
   }
@@ -39,5 +41,6 @@ declare module "next-auth/jwt" {
     avatarUrl?: string | null;
     avatarFileName?: string | null;
     nickname?: string | null;
+    sessionVersion: number;
   }
 }

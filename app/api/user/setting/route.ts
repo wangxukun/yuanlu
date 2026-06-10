@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin, isValidRole } from "@/core/auth/guard";
+import { Prisma } from "@prisma/client";
 
 export async function PUT(request: NextRequest) {
   try {
@@ -41,12 +42,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 预备更新的数据对象
-    const dataToUpdate: {
-      role: string;
-      isCommentAllowed: boolean;
-      isLoginAllowed?: boolean;
-      isOnline?: boolean;
-    } = {
+    const dataToUpdate: Prisma.UserUpdateInput = {
       role: role,
       isCommentAllowed: isCommentAllowed,
     };
@@ -56,12 +52,16 @@ export async function PUT(request: NextRequest) {
       dataToUpdate.isLoginAllowed = isLoginAllowed;
       if (isLoginAllowed === false) {
         dataToUpdate.isOnline = false;
+        dataToUpdate.sessionVersion = { increment: 1 };
       }
     }
 
     // 处理单独的离线状态更新（如：踢出用户）
     if (isOnline !== undefined) {
       dataToUpdate.isOnline = isOnline;
+      if (isOnline === false) {
+        dataToUpdate.sessionVersion = { increment: 1 };
+      }
     }
 
     // 使用事务保证 User.role 更新和 subscription 记录创建的原子性

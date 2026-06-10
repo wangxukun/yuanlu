@@ -19,6 +19,7 @@ type UserFromPrisma = {
   createAt: Date;
   updateAt: Date;
   isOnline: boolean;
+  sessionVersion: number;
   lastActiveAt: Date | null;
   isCommentAllowed: boolean;
   isLoginAllowed: boolean;
@@ -118,6 +119,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             avatarUrl: avatarUrl || null,
             avatarFileName: user.user_profile?.avatarFileName || null,
             nickname: user.user_profile?.nickname || null,
+            sessionVersion: user.sessionVersion,
           } as User;
         } catch (error) {
           if (error instanceof ZodError) {
@@ -150,6 +152,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
         token.avatarFileName = user.avatarFileName;
+        token.sessionVersion = user.sessionVersion;
         token.lastSeenAt = Date.now(); // 标记首次登录时间
       }
 
@@ -212,8 +215,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             token.role = currentRole || "USER";
 
-            // [新增] 检查用户是否被管理员踢出（isOnline === false 但依然带着有效的 token 访问）
-            if (userInDb.isOnline === false) {
+            // [新增] 检查用户是否被管理员踢出（判断 sessionVersion 是否变化）
+            if (userInDb.sessionVersion !== token.sessionVersion) {
               token.error = "SessionExpired";
             } else {
               delete token.error;
@@ -234,13 +237,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (now - lastSeenAt > SESSION_GAP_THRESHOLD) {
           try {
-            // 在恢复会话前，先检查用户是否被踢出
+            // 在恢复会话前，先检查用户是否被踢出（判断 sessionVersion 是否变化）
             const dbUser = await prisma.user.findUnique({
               where: { userid: token.userid as string },
-              select: { isOnline: true },
+              select: { sessionVersion: true },
             });
 
-            if (dbUser && dbUser.isOnline === false) {
+            if (dbUser && dbUser.sessionVersion !== token.sessionVersion) {
               // 用户已被踢出，不能恢复会话
               token.error = "SessionExpired";
             } else {
