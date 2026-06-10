@@ -71,7 +71,7 @@ export default function AllEpisodesList({
   const [hasMoreState, setHasMoreState] = useState<boolean>(hasMore);
   const [totalCount, setTotalCount] = useState<number>(total);
 
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("asc");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
