@@ -171,11 +171,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // - 降级：PREMIUM 用户关闭浏览器后再次打开时，Token 中的角色需降级
       // - 升级：USER 用户通过爱发电 Webhook 激活后，Token 中的角色需升级为 PREMIUM
       const lastRoleCheck = (token.lastRoleCheck as number) || 0;
-      if (
-        token.role !== "ADMIN" &&
-        token.userid &&
-        now - lastRoleCheck > 5 * 60 * 1000
-      ) {
+      if (token.userid && now - lastRoleCheck > 5 * 60 * 1000) {
         try {
           const userInDb = await prisma.user.findUnique({
             where: { userid: token.userid as string },
@@ -287,6 +283,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role as string;
         session.user.nickname = token.nickname as string | null;
         session.user.emailVerified = token.emailVerified as Date | null;
+        session.user.sessionVersion = token.sessionVersion as number;
 
         if (token.error) {
           session.error = token.error as string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 const HEARTBEAT_INTERVAL = 60 * 1000; // 每 60 秒发送一次心跳
 const ACTIVITY_THROTTLE = 60 * 1000; // 用户操作 60 秒内最多记录一次
@@ -11,10 +11,15 @@ const ACTIVITY_THROTTLE = 60 * 1000; // 用户操作 60 秒内最多记录一次
  */
 async function sendActivePing() {
   try {
-    await fetch("/api/auth/update-activity", {
+    const res = await fetch("/api/auth/update-activity", {
       method: "POST",
       keepalive: true, // 页面关闭时也能发出请求
     });
+
+    // 如果返回 401（可能是 sessionExpired 或被踢出），则立刻在前端执行登出
+    if (res.status === 401) {
+      await signOut({ redirect: true, callbackUrl: "/home" });
+    }
   } catch (err) {
     console.error("Failed to send activity ping:", err);
   }
