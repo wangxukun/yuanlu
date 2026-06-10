@@ -30,7 +30,7 @@ export default function EpisodeList({
   onPlayClick,
   onRowClick,
 }: EpisodeListProps) {
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("asc");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const allSortedEpisodes = [...(episodes || [])].sort((a, b) => {
