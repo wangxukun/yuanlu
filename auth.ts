@@ -152,7 +152,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
         token.avatarFileName = user.avatarFileName;
-        token.sessionVersion = user.sessionVersion;
+        token.sessionVersion = user.sessionVersion as number;
         token.lastSeenAt = Date.now(); // 标记首次登录时间
       }
 
