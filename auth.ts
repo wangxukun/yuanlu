@@ -211,6 +211,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
 
             token.role = currentRole || "USER";
+
+            // [新增] 检查用户是否被管理员踢出（isOnline === false 但依然带着有效的 token 访问）
+            if (userInDb.isOnline === false) {
+              token.error = "SessionExpired";
+            } else {
+              delete token.error;
+            }
           }
           token.lastRoleCheck = now;
         } catch (error) {
@@ -227,22 +234,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (now - lastSeenAt > SESSION_GAP_THRESHOLD) {
           try {
-            await prisma.user.updateMany({
-              where: {
-                userid: token.userid as string,
-                OR: [
-                  { lastActiveAt: null },
-                  {
-                    lastActiveAt: { lt: new Date(now - SESSION_GAP_THRESHOLD) },
-                  },
-                ],
-              },
-              data: {
-                isOnline: true,
-                lastActiveAt: new Date(now),
-                loginCount: { increment: 1 },
-              },
+            // 在恢复会话前，先检查用户是否被踢出
+            const dbUser = await prisma.user.findUnique({
+              where: { userid: token.userid as string },
+              select: { isOnline: true },
             });
+
+            if (dbUser && dbUser.isOnline === false) {
+              // 用户已被踢出，不能恢复会话
+              token.error = "SessionExpired";
+            } else {
+              await prisma.user.updateMany({
+                where: {
+                  userid: token.userid as string,
+                  OR: [
+                    { lastActiveAt: null },
+                    {
+                      lastActiveAt: {
+                        lt: new Date(now - SESSION_GAP_THRESHOLD),
+                      },
+                    },
+                  ],
+                },
+                data: {
+                  isOnline: true,
+                  lastActiveAt: new Date(now),
+                  loginCount: { increment: 1 },
+                },
+              });
+            }
           } catch (e) {
             console.error(
               "Failed to increment loginCount on session restore:",
@@ -264,6 +284,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role as string;
         session.user.nickname = token.nickname as string | null;
         session.user.emailVerified = token.emailVerified as Date | null;
+
+        if (token.error) {
+          session.error = token.error as string;
+        }
 
         // [核心修复逻辑]
         // 如果 Token 中有文件名，每次获取 Session 时都重新生成签名 URL

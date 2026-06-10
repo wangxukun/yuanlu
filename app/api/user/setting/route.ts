@@ -15,6 +15,7 @@ export async function PUT(request: NextRequest) {
       isCommentAllowed,
       isLoginAllowed,
       premiumDurationDays,
+      isOnline,
     } = await request.json();
 
     // 验证参数有效性
@@ -56,6 +57,11 @@ export async function PUT(request: NextRequest) {
       if (isLoginAllowed === false) {
         dataToUpdate.isOnline = false;
       }
+    }
+
+    // 处理单独的离线状态更新（如：踢出用户）
+    if (isOnline !== undefined) {
+      dataToUpdate.isOnline = isOnline;
     }
 
     // 使用事务保证 User.role 更新和 subscription 记录创建的原子性

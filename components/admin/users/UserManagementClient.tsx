@@ -9,7 +9,7 @@ import {
   UserX,
   Clock,
   Mail,
-  Edit3,
+  LogOut,
   Trash2,
   UserCheck,
   LogIn,
@@ -169,6 +169,31 @@ export default function UserManagementClient({
         }),
       );
       console.error(`Failed to toggle ${type} ban`, error);
+    }
+  };
+
+  // 处理踢出登录
+  const handleKickOut = async (userid: string) => {
+    if (!confirm("确定要踢出该用户吗？此操作将强制该用户下线。")) return;
+
+    // 乐观更新
+    setUsers((prev) =>
+      prev.map((u) => (u.userid === userid ? { ...u, isOnline: false } : u)),
+    );
+
+    try {
+      const res = await fetch(`/api/user/setting`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userid, isOnline: false }),
+      });
+      if (!res.ok) throw new Error("Failed to kick out user");
+    } catch (error) {
+      // 出现错误时，因为不知道之前的状态是否一定为在线，保守起见可能需要重新获取，但这里简单回滚
+      setUsers((prev) =>
+        prev.map((u) => (u.userid === userid ? { ...u, isOnline: true } : u)),
+      );
+      console.error("Failed to kick out user", error);
     }
   };
 
@@ -466,13 +491,12 @@ export default function UserManagementClient({
                           )}
                         </button>
                         <button
-                          className="btn btn-square btn-ghost btn-sm join-item hover:text-primary"
-                          title="编辑用户"
-                          onClick={() =>
-                            router.push(`/admin/users/${user.userid}/edit`)
-                          }
+                          className="btn btn-square btn-ghost btn-sm join-item hover:text-warning"
+                          title="踢出登录"
+                          onClick={() => handleKickOut(user.userid)}
+                          disabled={!user.isOnline}
                         >
-                          <Edit3 size={16} />
+                          <LogOut size={16} />
                         </button>
                         <button
                           className="btn btn-square btn-ghost btn-sm join-item hover:text-primary"

@@ -36,18 +36,20 @@ export default auth((req) => {
 
   // 如果用户已登录但 token 已过期，则重定向到登录页面
   if (isLoggedIn) {
-    // 检查JWT是否真的过期
+    // 检查JWT是否真的过期或被管理员踢出
     const tokenExp = req.auth?.expires;
-    if (tokenExp) {
-      const expiryDate = new Date(tokenExp);
+    const isSessionExpired = req.auth?.error === "SessionExpired";
+    if (tokenExp || isSessionExpired) {
+      const expiryDate = tokenExp ? new Date(tokenExp) : new Date(0);
       const now = new Date();
-      // 如果token已过期, 则重定向到登录页面
-      if (now > expiryDate) {
+      // 如果token已过期或被管理员踢出, 则重定向到登录页面
+      if (now > expiryDate || isSessionExpired) {
         const response = NextResponse.redirect(
           new URL(DEFAULT_LOGIN_REDIRECT, nextUrl),
         );
         // 清除认证cookie
         response.cookies.delete("authjs.session-token");
+        response.cookies.delete("__Secure-authjs.session-token");
         return response;
       }
     }

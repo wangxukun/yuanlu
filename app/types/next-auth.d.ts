@@ -26,6 +26,7 @@ declare module "next-auth" {
       avatarFileName?: string | null;
       nickname?: string | null;
     } & DefaultSession["user"]; // 保留默认字段(email/name等)
+    error?: string;
   }
 }
 
