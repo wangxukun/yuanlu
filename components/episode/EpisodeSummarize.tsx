@@ -117,7 +117,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     }
 
     if (!session?.user) {
-      toast.error("请先登录");
+      toast.error("音频下载仅对会员开放");
       return;
     }
 
@@ -163,7 +163,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       }
 
       if (!session?.user) {
-        toast.error("请先登录");
+        toast.error("文稿下载仅对会员开放");
         return;
       }
 
@@ -242,7 +242,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
     if (episode.isExclusive) {
       if (!session?.user) {
-        toast.error("仅对会员开放");
+        toast.error("PRO剧集语音评测仅对会员开放");
         return;
       }
       if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
@@ -372,7 +372,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               className="bg-[#5830E0] text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold hover:bg-[#470fd0] transition-colors"
             >
               <Mic className="w-5 h-5" />
-              <span>口语练习</span>
+              <span>语音评测</span>
             </button>
 
             <button
