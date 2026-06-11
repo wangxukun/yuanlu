@@ -103,6 +103,20 @@ export default function EpisodeCard({
     }
   };
 
+  const handleShare = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      const shareUrl = `${window.location.origin}/episode/${episode.episodeid}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("播客剧集链接地址已复制");
+      if (isMenuOpen) {
+        onMenuToggle(null);
+      }
+    } catch {
+      toast.error("复制链接失败");
+    }
+  };
+
   const progressSeconds = episode.progressSeconds || 0;
   const isFinished = episode.isFinished || false;
   const duration = episode.duration || 0;
@@ -261,9 +275,7 @@ export default function EpisodeCard({
             </button>
             <button
               className="p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
+              onClick={handleShare}
             >
               <ShareIcon className="w-5 h-5" />
             </button>
@@ -298,7 +310,10 @@ export default function EpisodeCard({
                     <span>标记为已播</span>
                   </button>
                   <div className="h-px bg-base-200 my-1"></div>
-                  <button className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
+                  <button
+                    onClick={handleShare}
+                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                  >
                     <ShareIcon className="w-3.5 h-3.5" />
                     <span>分享</span>
                   </button>

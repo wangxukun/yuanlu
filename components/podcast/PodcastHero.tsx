@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Play, Bookmark, Share2, Tv, Headphones } from "lucide-react";
+import { toast } from "sonner";
 
 interface PodcastHeroProps {
   podcast: {
@@ -26,6 +27,15 @@ export default function PodcastHero({
   onPlayLatest,
   onToggleFavorite,
 }: PodcastHeroProps) {
+  const handleShare = async () => {
+    try {
+      const shareUrl = `${window.location.origin}${window.location.pathname}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("播客链接地址已复制");
+    } catch {
+      toast.error("复制链接失败");
+    }
+  };
   return (
     <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 lg:sticky lg:top-12 flex flex-col items-center lg:items-start text-center lg:text-left z-20">
       {/* 封面 */}
@@ -108,6 +118,7 @@ export default function PodcastHero({
           </button>
 
           <button
+            onClick={handleShare}
             className="flex items-center gap-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors"
             title="分享"
           >

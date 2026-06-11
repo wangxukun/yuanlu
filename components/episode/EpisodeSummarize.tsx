@@ -209,9 +209,15 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     [episode.episodeid, episode.title, isGeneratingPdf, session],
   );
 
-  const handleFeatureUnderDev = (e?: React.MouseEvent) => {
+  const handleShare = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    toast.info("功能开发中...");
+    try {
+      const shareUrl = `${window.location.origin}/episode/${episode.episodeid}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("播客剧集链接地址已复制");
+    } catch {
+      toast.error("复制链接失败");
+    }
   };
 
   const handlePlay = (e: React.MouseEvent) => {
@@ -431,7 +437,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             </button>
 
             <button
-              onClick={handleFeatureUnderDev}
+              onClick={handleShare}
               className="flex items-center gap-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors"
             >
               <Share2 className="w-5 h-5" />
