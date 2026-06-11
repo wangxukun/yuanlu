@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Play,
   Pause,
+  Lock,
   Bookmark,
   Share2,
   Calendar,
@@ -45,6 +46,11 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   const isCurrentEpisode = currentEpisode?.episodeid === episode.episodeid;
   const isPlayingThis = isCurrentEpisode && isPlaying;
+
+  const isLocked =
+    episode.isExclusive &&
+    (!session?.user ||
+      (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN"));
 
   const router = useRouter();
   const safeId = episode.episodeid;
@@ -236,7 +242,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
     if (episode.isExclusive) {
       if (!session?.user) {
-        toast.error("仅对登录会员开放");
+        toast.error("仅对会员开放");
         return;
       }
       if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
@@ -308,6 +314,8 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             <button className="bg-[#5830E0] text-white p-5 rounded-full shadow-2xl transform transition-transform hover:scale-110">
               {isPlayingThis ? (
                 <Pause className="w-10 h-10 fill-current" />
+              ) : isLocked ? (
+                <Lock className="w-10 h-10" />
               ) : (
                 <Play className="w-10 h-10 ml-1 fill-current" />
               )}
@@ -399,6 +407,8 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               <div className="bg-[#5830E0] text-white p-2 rounded-full">
                 {isPlayingThis ? (
                   <Pause className="w-4 h-4 fill-current" />
+                ) : isLocked ? (
+                  <Lock className="w-4 h-4" />
                 ) : (
                   <Play className="w-4 h-4 fill-current ml-0.5" />
                 )}

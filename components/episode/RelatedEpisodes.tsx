@@ -72,12 +72,19 @@ export default function RelatedEpisodes({
             href={`/episode/${ep.episodeid}`}
             className="flex gap-4 group cursor-pointer relative"
           >
-            <div className="w-28 shrink-0 aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+            <div className="relative w-28 shrink-0 aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
               <img
                 src={ep.coverUrl}
                 alt={ep.title}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
               />
+              {ep.isExclusive && (
+                <div className="absolute top-1.5 left-1.5 z-10 flex items-center">
+                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[8px] tracking-widest flex items-center">
+                    👑 PRO
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-col justify-center min-w-0 pr-8">
               <span className="text-[10px] text-[#5830E0] font-bold mb-0.5 uppercase tracking-widest">

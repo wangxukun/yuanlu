@@ -12,6 +12,7 @@ import {
 import {
   PlayIcon as PlaySolidIcon,
   PauseIcon,
+  LockClosedIcon as LockClosedSolidIcon,
 } from "@heroicons/react/24/solid";
 import { Radio } from "lucide-react";
 import { usePlayerStore } from "@/store/player-store";
@@ -77,11 +78,13 @@ function EpisodeRow({
   episode,
   isPlaying,
   isCurrentEpisode,
+  isLocked,
   onPlayClick,
 }: {
   episode: ChannelEpisode;
   isPlaying: boolean;
   isCurrentEpisode: boolean;
+  isLocked: boolean;
   onPlayClick: (e: React.MouseEvent) => void;
 }) {
   const router = useRouter();
@@ -120,6 +123,8 @@ function EpisodeRow({
           >
             {isCurrentEpisode && isPlaying ? (
               <PauseIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            ) : isLocked ? (
+              <LockClosedSolidIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             ) : (
               <PlaySolidIcon className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
             )}
@@ -259,17 +264,25 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
             </div>
             <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-0 sm:p-0 lg:p-0">
               <div className="space-y-3">
-                {data.topEpisodes.map((episode) => (
-                  <EpisodeRow
-                    key={episode.episodeid}
-                    episode={episode}
-                    isPlaying={isPlaying}
-                    isCurrentEpisode={
-                      currentEpisode?.episodeid === episode.episodeid
-                    }
-                    onPlayClick={(e) => handlePlayEpisode(e, episode)}
-                  />
-                ))}
+                {data.topEpisodes.map((episode) => {
+                  const isLocked =
+                    episode.isExclusive &&
+                    (!session?.user ||
+                      (session.user.role !== "PREMIUM" &&
+                        session.user.role !== "ADMIN"));
+                  return (
+                    <EpisodeRow
+                      key={episode.episodeid}
+                      episode={episode}
+                      isPlaying={isPlaying}
+                      isCurrentEpisode={
+                        currentEpisode?.episodeid === episode.episodeid
+                      }
+                      isLocked={!!isLocked}
+                      onPlayClick={(e) => handlePlayEpisode(e, episode)}
+                    />
+                  );
+                })}
               </div>
             </div>
           </section>

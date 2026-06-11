@@ -14,6 +14,7 @@ import {
   PlayIcon as PlaySolidIcon,
   CheckCircleIcon as CheckCircleSolidIcon,
   PauseIcon,
+  LockClosedIcon as LockClosedSolidIcon,
 } from "@heroicons/react/24/solid";
 import { Headphones } from "lucide-react";
 import { formatTime, formatDate } from "@/lib/tools";
@@ -118,6 +119,11 @@ export default function EpisodeCard({
 
   const isMenuOpen = activeMenuId === episode.episodeid;
 
+  const isLocked =
+    episode.isExclusive &&
+    (!session?.user ||
+      (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN"));
+
   return (
     <div
       className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-2xl transition-all duration-300 cursor-pointer relative ${
@@ -199,6 +205,8 @@ export default function EpisodeCard({
           >
             {isCurrentPlaying ? (
               <PauseIcon className="w-6 h-6" />
+            ) : isLocked ? (
+              <LockClosedSolidIcon className="w-6 h-6" />
             ) : (
               <PlaySolidIcon className="w-6 h-6 ml-1" />
             )}
@@ -212,6 +220,8 @@ export default function EpisodeCard({
           >
             {isCurrentPlaying ? (
               <PauseIcon className="w-5 h-5" />
+            ) : isLocked ? (
+              <LockClosedSolidIcon className="w-5 h-5" />
             ) : (
               <PlaySolidIcon className="w-5 h-5 ml-1" />
             )}

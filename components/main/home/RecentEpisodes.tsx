@@ -1,10 +1,11 @@
 import React from "react";
 import Image from "next/image";
-import { PlayIcon } from "@heroicons/react/24/solid";
+import { PlayIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import { ClockIcon as ClockOutlineIcon } from "@heroicons/react/24/outline";
 import { Headphones } from "lucide-react";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import HorizontalScrollContainer from "@/components/discover/HorizontalScrollContainer";
+import { useSession } from "next-auth/react";
 
 interface RecentEpisodesProps {
   episodes: RecommendedEpisodeDto[];
@@ -15,6 +16,8 @@ export default function RecentEpisodes({
   episodes,
   onPlay,
 }: RecentEpisodesProps) {
+  const { data: session } = useSession();
+
   if (!episodes || episodes.length === 0) return null;
   return (
     <HorizontalScrollContainer title="最新发布">
@@ -25,6 +28,11 @@ export default function RecentEpisodes({
         else if (diffLevel.includes("B1")) diffColor = "text-blue-600";
         else if (diffLevel.includes("B2")) diffColor = "text-purple-600";
         else if (diffLevel.includes("C")) diffColor = "text-rose-600";
+
+        const isLocked =
+          episode.isExclusive &&
+          (!session?.user ||
+            (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN"));
 
         return (
           <div
@@ -81,7 +89,11 @@ export default function RecentEpisodes({
               {/* Play overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
-                  <PlayIcon className="w-5 h-5 ml-0.5" />
+                  {isLocked ? (
+                    <LockClosedIcon className="w-5 h-5" />
+                  ) : (
+                    <PlayIcon className="w-5 h-5 ml-0.5" />
+                  )}
                 </div>
               </div>
             </figure>
