@@ -233,8 +233,24 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
   const handleStartPractice = () => {
     if (!safeId) return;
-    if (!checkExclusivePlay(episode, session)) return;
-    router.push(`/episode/${safeId}/practice`);
+
+    if (episode.isExclusive) {
+      if (!session?.user) {
+        toast.error("仅对登录会员开放");
+        return;
+      }
+      if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
+        useUIStore.getState().openPremiumModal();
+        return;
+      }
+      router.push(`/episode/${safeId}/practice`);
+    } else {
+      if (!session?.user) {
+        toast.error("请先登录");
+        return;
+      }
+      router.push(`/episode/${safeId}/practice`);
+    }
   };
 
   return (

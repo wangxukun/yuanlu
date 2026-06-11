@@ -37,12 +37,12 @@ export default function PremiumModal() {
 
         {/* Title */}
         <h3 className="text-2xl font-black text-base-content mb-3 tracking-tight">
-          这里是会员专享频道。
+          这里是会员专享内容
         </h3>
 
         {/* Content description based on Scheme 3 (resonance) */}
         <p className="text-sm text-base-content/75 leading-relaxed font-semibold mb-8 px-1">
-          为了支持网站长期高质量运行，此功能仅向赞助会员开放。如果您喜欢这里的内容，欢迎加入我们的会员社区，支持独立创作并享受专属权益。
+          为了支持网站长期高质量运转，此内容仅向赞助会员开放。如果您喜欢这里的内容，欢迎加入我们的会员社区，享受专属权益。
         </p>
 
         {/* Action buttons */}

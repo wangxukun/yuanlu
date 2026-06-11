@@ -140,11 +140,27 @@ export default async function PracticePage({ params }: PageProps) {
     }),
   );
 
+  // 6. 处理非会员的试用模式 (非独享 + 普通用户)
+  let isTrialMode = false;
+  const isPremiumOrAdmin =
+    session.user.role === "PREMIUM" || session.user.role === "ADMIN";
+  if (!episode.isExclusive && !isPremiumOrAdmin) {
+    isTrialMode = true;
+    // 随机选取 5 组练习卡片，并按时间线顺序排列
+    if (subtitles.length > 5) {
+      const shuffled = [...subtitles].sort(() => 0.5 - Math.random());
+      subtitles = shuffled
+        .slice(0, 5)
+        .sort((a, b) => a.startSeconds - b.startSeconds);
+    }
+  }
+
   return (
     <VoiceEvaluationClient
       episode={episodeData}
       subtitles={subtitles}
       previousRecords={formattedRecords}
+      isTrialMode={isTrialMode}
     />
   );
 }

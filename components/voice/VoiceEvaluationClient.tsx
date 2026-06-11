@@ -15,17 +15,20 @@ import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types"; // 引入 Server Action
+import { useUIStore } from "@/store/ui-store";
 
 interface VoiceEvaluationClientProps {
   episode: Episode;
   subtitles: Subtitle[];
   previousRecords: SpeechPracticeRecord[];
+  isTrialMode?: boolean;
 }
 
 const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
   episode,
   subtitles,
   previousRecords,
+  isTrialMode = false,
 }) => {
   const router = useRouter();
 
@@ -221,24 +224,42 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
         </div>
 
         {/* Completion State */}
-        {stats.progress >= 100 && subtitles.length > 0 && (
-          <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-emerald-200 dark:border-emerald-900/50 animate-in fade-in slide-in-from-bottom-4">
-            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 size={40} className="text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              会话已完成！
+        {isTrialMode ? (
+          <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-indigo-100 dark:border-indigo-900/50">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+              体验已结束
             </h2>
             <p className="text-slate-500 mb-6">
-              你已经练习了这段视频里的每一句话。做得好！
+              升级为 PRO 会员，解锁本集全部练习卡片及更多独家内容。
             </p>
             <button
-              onClick={() => router.back()}
+              onClick={() => useUIStore.getState().openPremiumModal()}
               className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
             >
-              返回剧集
+              解锁全部
             </button>
           </div>
+        ) : (
+          stats.progress >= 100 &&
+          subtitles.length > 0 && (
+            <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-emerald-200 dark:border-emerald-900/50 animate-in fade-in slide-in-from-bottom-4">
+              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 size={40} className="text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                会话已完成！
+              </h2>
+              <p className="text-slate-500 mb-6">
+                你已经练习了这段视频里的每一句话。做得好！
+              </p>
+              <button
+                onClick={() => router.back()}
+                className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+              >
+                返回剧集
+              </button>
+            </div>
+          )
         )}
       </div>
     </div>

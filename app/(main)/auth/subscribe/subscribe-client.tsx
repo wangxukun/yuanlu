@@ -295,7 +295,13 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               </p>
             </div>
             <button
-              onClick={() => router.push("/auth/login")}
+              onClick={() => {
+                (
+                  document.getElementById(
+                    "email_check_modal_box",
+                  ) as HTMLDialogElement
+                )?.showModal();
+              }}
               className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4 py-2 rounded-xl h-fit transition active:scale-95 shadow cursor-pointer"
             >
               立即登录/注册账号
