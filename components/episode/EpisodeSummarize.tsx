@@ -24,6 +24,7 @@ import Link from "next/link";
 import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
 import { toast } from "sonner";
 import { formatChineseDate } from "@/lib/tools";
+import { useUIStore } from "@/store/ui-store";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const pathname = usePathname();
@@ -115,7 +116,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
     }
 
     if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-      toast.error("权限不足，需要高级会员权限");
+      useUIStore.getState().openPremiumModal();
       return;
     }
 
@@ -161,7 +162,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       }
 
       if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-        toast.error("权限不足，需要高级会员权限");
+        useUIStore.getState().openPremiumModal();
         return;
       }
 

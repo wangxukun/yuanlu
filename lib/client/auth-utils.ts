@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { Session } from "next-auth";
+import { useUIStore } from "@/store/ui-store";
 
 export function checkExclusivePlay(
   episode: { isExclusive?: boolean | null },
@@ -7,7 +7,7 @@ export function checkExclusivePlay(
 ): boolean {
   if (episode.isExclusive) {
     if (!session?.user) {
-      toast.error("权限不足，需要高级会员权限");
+      useUIStore.getState().openPremiumModal();
       const loginModal = document.getElementById(
         "email_check_modal_box",
       ) as HTMLDialogElement;
@@ -15,7 +15,7 @@ export function checkExclusivePlay(
       return false;
     }
     if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-      toast.error("权限不足，需要高级会员权限");
+      useUIStore.getState().openPremiumModal();
       return false;
     }
   }
