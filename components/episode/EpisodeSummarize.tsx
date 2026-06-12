@@ -286,7 +286,9 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       router.push(`/episode/${safeId}/practice`);
     } else {
       if (!session?.user) {
-        toast.error("请先登录");
+        (
+          document.getElementById("email_check_modal_box") as HTMLDialogElement
+        )?.showModal();
         return;
       }
       router.push(`/episode/${safeId}/practice`);
@@ -428,7 +430,11 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               onClick={handleStartPractice}
               className="bg-[#5830E0] text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold hover:bg-[#470fd0] transition-colors"
             >
-              <Mic className="w-5 h-5" />
+              {isLocked ? (
+                <Lock className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
               <span>语音评测</span>
             </button>
 
