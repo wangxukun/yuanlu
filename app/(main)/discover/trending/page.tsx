@@ -7,8 +7,6 @@ import {
   ArrowLeftIcon,
   ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
-import { PlayIcon } from "@heroicons/react/24/solid";
-import { Headphones, Layers } from "lucide-react";
 import { getTrendingPodcasts } from "@/lib/discover-service";
 
 export const metadata: Metadata = {
@@ -22,14 +20,14 @@ export default async function TrendingPage() {
   const trendingPodcasts = await getTrendingPodcasts(50); // Get top 50
 
   return (
-    <div className="bg-base-200 min-h-screen pb-20">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 py-6 xl:py-8 space-y-6 xl:space-y-8">
         {/* Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/discover"
-              className="p-2 hover:bg-base-300 rounded-lg text-base-content/60 hover:text-base-content transition-colors"
+              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </Link>
@@ -37,10 +35,13 @@ export default async function TrendingPage() {
               <ArrowTrendingUpIcon className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h1 className="text-2xl xl:text-3xl font-bold text-base-content">
+              <h1
+                className="text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-100"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
                 热门播客
               </h1>
-              <p className="text-sm text-base-content/60 mt-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 大家都在收听的精选节目
               </p>
             </div>
@@ -49,84 +50,64 @@ export default async function TrendingPage() {
 
         {/* Grid List */}
         {trendingPodcasts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 xl:gap-6 pt-4">
-            {trendingPodcasts.map((podcast, index) => (
-              <Link
-                href={`/podcast/${podcast.podcastid}`}
-                key={podcast.podcastid}
-                className="card bg-base-100 shadow-sm hover:shadow-lg border border-base-200 hover:border-primary/20 transition-all duration-300 group overflow-hidden"
-              >
-                {/* Cover image */}
-                <figure className="relative aspect-square overflow-hidden">
-                  <Image
-                    src={podcast.coverUrl}
-                    alt={podcast.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Rank badge */}
-                  <div className="absolute top-2 left-2">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
+            {trendingPodcasts.map((podcast, index) => {
+              const rankColors = [
+                "bg-[#FFD700] text-white", // 01 Gold
+                "bg-[#C0C0C0] text-white", // 02 Silver
+                "bg-[#CD7F32] text-white", // 03 Bronze
+                "bg-[#666666] text-white", // 04 iron
+              ];
+              const rankBg =
+                rankColors[index] ||
+                "bg-slate-400 dark:bg-slate-600 text-white";
+              const rankText =
+                index + 1 < 10 ? `0${index + 1}` : `${index + 1}`;
+
+              return (
+                <Link
+                  href={`/podcast/${podcast.podcastid}`}
+                  key={podcast.podcastid}
+                  className="group cursor-pointer"
+                >
+                  <div className="rounded-lg transition-shadow relative">
                     <div
-                      className={`w-8 h-8 xl:w-10 xl:h-10 rounded-xl flex items-center justify-center text-sm xl:text-base font-extrabold shadow-lg ${
-                        index === 0
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                          : index === 1
-                            ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
-                            : index === 2
-                              ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
-                              : "bg-black/50 text-white backdrop-blur-sm"
-                      }`}
+                      className={`absolute top-2 left-2 z-10 ${rankBg} w-8 h-8 rounded-full flex items-center justify-center font-black text-sm italic shadow-sm`}
                     >
-                      {index + 1}
+                      {rankText}
                     </div>
-                  </div>
-                  {/* Category badge */}
-                  {podcast.category && (
-                    <div className="absolute bottom-2 left-2">
-                      <div className="badge badge-sm bg-black/50 border-none text-white backdrop-blur-sm px-3 py-3">
-                        {podcast.category}
-                      </div>
+                    <div className="aspect-square rounded-lg overflow-hidden mb-4 relative bg-slate-100 dark:bg-slate-800">
+                      <Image
+                        src={podcast.coverUrl}
+                        alt={podcast.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                     </div>
-                  )}
-                  {/* Play overlay on hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-xl">
-                      <PlayIcon className="w-6 h-6 ml-1" />
-                    </div>
-                  </div>
-                </figure>
-                {/* Card body */}
-                <div className="card-body p-4 xl:p-5">
-                  <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
-                    {podcast.title}
-                  </h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex items-center gap-2 text-sm text-base-content/50 truncate">
-                      {podcast.platform && (
-                        <span className="truncate max-w-[150px]">
-                          {podcast.platform}
+                    <p className="text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-1 truncate">
+                      {podcast.platform || "热门趋势"}
+                    </p>
+                    <h3
+                      className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2 truncate group-hover:text-indigo-600 transition-colors"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    >
+                      {podcast.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500 font-semibold">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">
+                          headphones
                         </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-4 text-xs font-medium text-base-content/40">
-                      <span className="flex items-center gap-1.5">
-                        <Layers className="w-4 h-4" />
-                        {podcast.episodeCount} 集
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Headphones className="w-4 h-4" />
-                        {podcast.totalPlays.toLocaleString()}
+                        {(podcast.totalPlays / 1000).toFixed(1)}k 收听者
                       </span>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
-          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-sm p-16 text-center text-base-content/40 text-lg">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-16 text-center text-slate-400 dark:text-slate-500 text-lg">
             暂无热门播客数据
           </div>
         )}
