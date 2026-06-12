@@ -21,7 +21,7 @@ export default function Page() {
             <h1 className="text-3xl font-extrabold mb-4 text-primary">
               用户协议
             </h1>
-            <p className="text-sm text-base-content/70 mb-6">
+            <p className="text-sm text-base-content opacity-70 mb-6">
               最后更新：2025年11月
             </p>
 
@@ -98,7 +98,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="hidden lg:block lg:w-80 bg-gradient-to-b from-primary to-secondary p-8">
+          <div className="hidden lg:block lg:w-100 bg-gradient-to-b from-primary to-secondary p-8">
             <div className="text-white">
               <h3 className="text-xl font-bold mb-2">关于远路播客</h3>
               <p className="text-sm opacity-90">

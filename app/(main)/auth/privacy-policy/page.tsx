@@ -20,7 +20,7 @@ export default function Page() {
           <h1 className="text-3xl font-extrabold text-primary mb-2">
             隐私政策
           </h1>
-          <p className="text-sm text-base-content/70 mb-6">
+          <p className="text-sm text-base-content opacity-70 mb-6">
             最后更新：2025年11月
           </p>
 
@@ -87,7 +87,7 @@ export default function Page() {
               我们可能会不时更新本政策。若政策发生重大变化，我们将在网站显著位置通知您。
             </p>
 
-            <p className="mt-4">
+            <p className="mt-4 text-base-content opacity-80">
               <strong>联系方式：</strong> wxk-zd@qq.com
             </p>
           </section>

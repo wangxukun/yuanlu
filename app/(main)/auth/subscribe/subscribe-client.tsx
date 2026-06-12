@@ -251,9 +251,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">赞助方案</h1>
-          <p className="text-base-content/60 text-lg max-w-2xl mx-auto">
+          {/* <p className="text-base-content/60 text-lg max-w-2xl mx-auto">
             解锁全部播客学习功能，体验无限制的沉浸式学习。
-          </p>
+          </p> */}
 
           {user?.isPremium && (
             <div className="mt-4 inline-flex items-center gap-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold px-3 py-0.5 rounded-full">
@@ -289,7 +289,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                   {" "}
                   远路播客{" "}
                 </span>{" "}
-                会员资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的邮箱，实现秒级自动激活！
+                会员资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的邮箱，实现秒级自动激活！用户在支付时，需确保填写的邮箱信息准确无误。该邮箱将作为系统自动激活会员资格的唯一凭证。会员有效期自支付成功之时起算。若用户在现有会员有效期内再次购买任何订阅方案，新的有效期将在当前剩余时间基础上进行对应天数的累加。
               </p>
             </div>
             <button
@@ -423,6 +423,19 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               </div>
             );
           })}
+        </div>
+        <div className="mt-6 flex items-center justify-center">
+          <p className="text-[10px] text-base-content opacity-60 font-bold tracking-wider">
+            订阅即代表您知晓并接受
+            <a
+              href="/auth/subscription-agreement"
+              target="_blank"
+              className="link link-secondary link-hover mx-1"
+            >
+              《会员订阅服务协议》
+            </a>
+            ，感谢您的善意支持。
+          </p>
         </div>
       </div>
     </div>
