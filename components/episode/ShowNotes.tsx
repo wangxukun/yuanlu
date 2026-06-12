@@ -2,11 +2,14 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Episode } from "@/core/episode/episode.entity";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Languages, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ShowNotes({ episode }: { episode: Episode }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
+  const [isTranslatingDesc, setIsTranslatingDesc] = useState(false);
+  const [translatedDesc, setTranslatedDesc] = useState("");
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,7 +20,6 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
         setIsTruncated(scrollHeight > clientHeight);
       }
     };
-
     // 延迟执行以确保渲染完成
     const timer = setTimeout(checkTruncation, 100);
     window.addEventListener("resize", checkTruncation);
@@ -26,20 +28,67 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
       clearTimeout(timer);
       window.removeEventListener("resize", checkTruncation);
     };
-  }, [episode.description, isExpanded]);
+  }, [episode.description, isExpanded, translatedDesc]);
+
+  const handleTranslateDesc = async () => {
+    if (translatedDesc) {
+      setTranslatedDesc("");
+      return;
+    }
+    if (!episode.description) return;
+
+    try {
+      setIsTranslatingDesc(true);
+      const res = await fetch("/api/dictionary/youdao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: episode.description }),
+      });
+      const data = await res.json();
+      if (res.ok && data.definition) {
+        setTranslatedDesc(data.definition);
+      } else {
+        toast.error("翻译失败，请稍后重试");
+      }
+    } catch {
+      toast.error("翻译请求出错");
+    } finally {
+      setIsTranslatingDesc(false);
+    }
+  };
 
   return (
     <section className="flex flex-col gap-6">
-      <h2 className="text-2xl font-bold border-b border-slate-200 dark:border-slate-800 pb-4 text-slate-900 dark:text-slate-50">
-        节目介绍
-      </h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+          节目介绍
+        </h2>
+        <button
+          onClick={handleTranslateDesc}
+          disabled={isTranslatingDesc}
+          className={`p-2 rounded-xl transition-all ${
+            translatedDesc
+              ? "bg-[#5830E0]/10 text-[#5830E0]"
+              : "text-slate-400 hover:text-[#5830E0] hover:bg-[#5830E0]/5"
+          }`}
+          title="有道智云翻译"
+        >
+          {isTranslatingDesc ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Languages className="w-5 h-5" />
+          )}
+        </button>
+      </div>
       <article className="text-lg text-slate-600 dark:text-slate-300 space-y-6 leading-relaxed font-serif relative">
         <div
           ref={contentRef}
           className={`[&>p]:mb-6 [&>p]:leading-relaxed [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:py-2 [&>blockquote]:italic [&>blockquote]:bg-slate-50 [&>blockquote]:dark:bg-slate-900/50 [&>blockquote]:rounded-r-xl [&>blockquote]:my-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6 transition-all duration-300 ${
             !isExpanded ? "line-clamp-3 md:line-clamp-none overflow-hidden" : ""
           }`}
-          dangerouslySetInnerHTML={{ __html: episode.description || "" }}
+          dangerouslySetInnerHTML={{
+            __html: translatedDesc || episode.description || "",
+          }}
         />
 
         {/* Mobile "Show All" Toggle */}

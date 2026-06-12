@@ -16,6 +16,7 @@ import {
   FileDown,
   Loader2,
   Headphones,
+  Languages,
 } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
 import { useSession } from "next-auth/react";
@@ -43,6 +44,33 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isTranslatingTitle, setIsTranslatingTitle] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState("");
+
+  const handleTranslateTitle = async () => {
+    if (translatedTitle) {
+      setTranslatedTitle("");
+      return;
+    }
+    try {
+      setIsTranslatingTitle(true);
+      const res = await fetch("/api/dictionary/youdao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: episode.title }),
+      });
+      const data = await res.json();
+      if (res.ok && data.definition) {
+        setTranslatedTitle(data.definition);
+      } else {
+        toast.error("翻译失败，请稍后重试");
+      }
+    } catch {
+      toast.error("翻译请求出错");
+    } finally {
+      setIsTranslatingTitle(false);
+    }
+  };
 
   const isCurrentEpisode = currentEpisode?.episodeid === episode.episodeid;
   const isPlayingThis = isCurrentEpisode && isPlaying;
@@ -355,9 +383,32 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
           </div>
 
           {/* Title */}
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
-            {episode.title}
-          </h1>
+          <div className="flex items-start justify-between gap-4 group/title">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
+              {episode.title}
+              {translatedTitle && (
+                <span className="block text-lg font-medium text-slate-600 dark:text-slate-300 mt-2">
+                  {translatedTitle}
+                </span>
+              )}
+            </h1>
+            <button
+              onClick={handleTranslateTitle}
+              disabled={isTranslatingTitle}
+              className={`p-2 rounded-xl transition-all shrink-0 ${
+                translatedTitle
+                  ? "bg-[#5830E0]/10 text-[#5830E0]"
+                  : "text-slate-400 hover:text-[#5830E0] hover:bg-[#5830E0]/5 md:opacity-0 md:group-hover/title:opacity-100"
+              }`}
+              title="有道智云翻译"
+            >
+              {isTranslatingTitle ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Languages className="w-5 h-5" />
+              )}
+            </button>
+          </div>
 
           {/* Podcast Title */}
           <Link
