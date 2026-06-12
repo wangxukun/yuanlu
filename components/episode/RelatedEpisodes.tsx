@@ -7,7 +7,7 @@ import { Podcast } from "@/core/podcast/podcast.entity";
 import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { toast } from "sonner";
-import { PlusIcon, TvIcon } from "@heroicons/react/24/outline";
+import { QueueListIcon, TvIcon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
@@ -102,10 +102,10 @@ export default function RelatedEpisodes({
             </div>
             <button
               onClick={(e) => handleAdd(e, ep)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-[#5830E0] transition-all rounded-full hover:bg-[#5830E0]/5"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-[#5830E0] transition-all rounded-full hover:bg-[#5830E0]/5"
               title="加入播放列表"
             >
-              <PlusIcon className="w-5 h-5" />
+              <QueueListIcon className="w-5 h-5" />
             </button>
           </Link>
         ))}
