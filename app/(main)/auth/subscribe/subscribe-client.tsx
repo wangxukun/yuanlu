@@ -211,23 +211,40 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
   const getLevelBadge = (level: string) => {
     switch (level) {
       case "WEEKLY":
-        return { text: "7 天", color: "bg-slate-100 text-slate-500" };
+        return {
+          text: "7 天",
+          color:
+            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        };
       case "MONTHLY":
         return {
           text: "30 天",
-          color: "bg-orange-200 text-orange-700 font-bold",
+          color:
+            "bg-orange-200 text-orange-700 font-bold dark:bg-orange-950/50 dark:text-orange-400",
         };
       case "QUARTERLY":
-        return { text: "90 天", color: "bg-slate-100 text-slate-500" };
+        return {
+          text: "90 天",
+          color:
+            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        };
       case "YEARLY":
-        return { text: "365 天", color: "bg-slate-100 text-slate-500" };
+        return {
+          text: "365 天",
+          color:
+            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        };
       default:
-        return { text: "免费", color: "bg-slate-100 text-slate-500" };
+        return {
+          text: "免费",
+          color:
+            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        };
     }
   };
 
   return (
-    <>
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 pb-24">
       <div
         id="plans-grid-root"
         className="space-y-10 max-w-6xl mx-auto px-4 py-12"
@@ -284,13 +301,13 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             </button>
           </div>
         ) : (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-orange-950 space-y-1">
+          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-orange-950 dark:text-orange-200 space-y-1">
               <h4 className="font-bold text-sm flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-orange-600" />
+                <HelpCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                 未检测到用户登录信息
               </h4>
-              <p className="text-xs text-orange-900/85">
+              <p className="text-xs text-orange-900/85 dark:text-orange-300/80">
                 目前您还是游客状态。在爱发电充值时必须填写您注册在远路播客站点的对应邮箱，否则无法进行自动匹配激活。
               </p>
             </div>
@@ -326,8 +343,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 key={plan.level}
                 className={`rounded-2xl p-6 flex flex-col relative transition-all duration-300 group justify-between ${
                   isMonthly
-                    ? "bg-orange-50 border-2 border-orange-500 shadow-sm"
-                    : "bg-white border border-slate-200 hover:border-orange-200 shadow-sm"
+                    ? "bg-orange-50 dark:bg-orange-950/10 border-2 border-orange-500 shadow-sm"
+                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-900/50 shadow-sm"
                 }`}
               >
                 {isMonthly && (
@@ -344,15 +361,15 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                       >
                         {badge.text}
                       </span>
-                      <div className="text-2xl font-black text-slate-900">
+                      <div className="text-2xl font-black text-slate-900 dark:text-white">
                         ¥{plan.price}
                       </div>
                     </div>
 
-                    <h4 className="text-xl font-bold mb-2 text-slate-900">
+                    <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
                       {plan.name}
                     </h4>
-                    <ul className="text-sm text-slate-500 space-y-2 mb-auto">
+                    <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 mb-auto">
                       {plan.features.map((feat, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <span className="text-orange-500">•</span> {feat}
@@ -361,14 +378,14 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                     </ul>
                   </div>
 
-                  <div className="pt-4 mt-6 border-t border-slate-100">
+                  <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
                     {!user ? (
                       <button
                         onClick={() => router.push("/auth/login")}
                         className={`w-full py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
                           isMonthly
                             ? "bg-orange-500 text-white hover:bg-orange-600"
-                            : "bg-slate-100 text-slate-800 hover:bg-orange-500 hover:text-white"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-white dark:hover:text-white"
                         }`}
                       >
                         登录后订阅
@@ -386,8 +403,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                         onClick={() => setIsPolling(true)}
                         className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
                           isMonthly
-                            ? "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-200"
-                            : "bg-slate-100 text-slate-800 hover:bg-orange-500 hover:text-white"
+                            ? "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-200 dark:shadow-none"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-white dark:hover:text-white"
                         }`}
                       >
                         <Send className="w-3.5 h-3.5" />
@@ -408,6 +425,6 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }
