@@ -24,3 +24,14 @@ export interface UserProfileStatsDto {
   streakDays: number;
   wordsLearned: number;
 }
+
+// 每周活动图表 - 每日数据项
+export interface WeeklyActivityItemDto {
+  day: string; // 星期几的中文简称（如"周一"）
+  minutes: number; // 当日学习分钟数
+}
+
+// 每周活动图表数据
+export interface WeeklyActivityDto {
+  weeklyActivity: WeeklyActivityItemDto[];
+}

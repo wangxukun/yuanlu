@@ -17,7 +17,7 @@ import {
   LockClosedIcon as LockClosedSolidIcon,
 } from "@heroicons/react/24/solid";
 import { Headphones } from "lucide-react";
-import { formatTime, formatDate } from "@/lib/tools";
+import { formatTime, formatChineseDate } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
 import { toast } from "sonner";
@@ -331,7 +331,7 @@ export default function EpisodeCard({
           <div className="flex items-center gap-3 text-xs font-medium text-base-content/50">
             <span className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-lg border border-base-200/50">
               <CalendarIcon className="w-3.5 h-3.5" />
-              {formatDate(episode.publishAt)}
+              {formatChineseDate(episode.publishAt)}
             </span>
             {/* <span className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-lg border border-base-200/50">
               <ClockIcon className="w-3.5 h-3.5" />

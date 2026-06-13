@@ -6,6 +6,7 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { UserProfile } from "@/core/user-profile/user-profile.entity";
+import { formatChineseDate } from "@/lib/tools";
 
 // [新增] 难度映射表：将用户配置的粗粒度等级映射为剧集的细粒度 CEFR 标准
 const LEVEL_MAPPING: Record<string, string> = {
@@ -67,7 +68,7 @@ export default function ProfileCard({
           </div>
           <div className="flex items-center justify-center space-x-2">
             <CalendarDaysIcon className="w-4 h-4" />
-            <span>{profile.joinDate} 加入</span>
+            <span>{formatChineseDate(profile.joinDate)} 加入</span>
           </div>
         </div>
 

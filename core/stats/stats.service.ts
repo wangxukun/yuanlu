@@ -4,6 +4,7 @@ import {
   endOfWeek,
   subWeeks,
   startOfDay,
+  addDays,
   subDays,
   isSameDay,
 } from "date-fns";
@@ -11,6 +12,7 @@ import {
   UpdateUserActivityDto,
   UserHomeStatsDto,
   UserProfileStatsDto,
+  WeeklyActivityDto,
 } from "./dto";
 import { Prisma } from "@prisma/client";
 
@@ -104,7 +106,7 @@ export const statsService = {
     ]);
 
     const totalListeningSeconds = totalSecondsResult._sum.listeningSeconds || 0;
-    const totalHours = Math.round(totalListeningSeconds / 3600);
+    const totalHours = parseFloat((totalListeningSeconds / 3600).toFixed(1));
 
     return {
       totalHours,
@@ -207,6 +209,58 @@ export const statsService = {
       totalUsers,
       vipUsers,
     };
+  },
+
+  /**
+   * 获取用户一周每日活动数据（用于个人中心活动图表）
+   * @param userId 用户ID
+   * @param weekOffset 0=本周, 1=上周
+   */
+  async getWeeklyActivityChart(
+    userId: string,
+    weekOffset: number = 0,
+  ): Promise<WeeklyActivityDto> {
+    const now = new Date();
+    const targetWeek = weekOffset > 0 ? subWeeks(now, weekOffset) : now;
+    const weekStart = startOfWeek(targetWeek, { weekStartsOn: 1 }); // 周一开始
+
+    const DAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+
+    // 查询该周的所有活动记录
+    const weekEnd = addDays(weekStart, 6);
+    const activities = await prisma.user_daily_activity.findMany({
+      where: {
+        userid: userId,
+        date: {
+          gte: weekStart,
+          lte: weekEnd,
+        },
+      },
+      select: {
+        date: true,
+        listeningSeconds: true,
+      },
+    });
+
+    // 构建日期到秒数的映射
+    const dateMap = new Map<string, number>();
+    for (const activity of activities) {
+      const key = startOfDay(activity.date).toISOString();
+      dateMap.set(key, activity.listeningSeconds);
+    }
+
+    // 生成完整的7天数据（没有记录的天数为0）
+    const weeklyActivity = DAY_LABELS.map((label, index) => {
+      const dayDate = addDays(weekStart, index);
+      const key = startOfDay(dayDate).toISOString();
+      const seconds = dateMap.get(key) || 0;
+      return {
+        day: label,
+        minutes: Math.round(seconds / 60),
+      };
+    });
+
+    return { weeklyActivity };
   },
 
   // --- 私有辅助方法 (Private Helpers) ---
