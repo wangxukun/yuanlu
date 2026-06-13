@@ -87,15 +87,15 @@ function getLayoutConfig(format: "A4" | "A5"): PdfLayoutConfig {
       contentWidth: pageWidth - marginLeft - marginRight,
       headerY: 18,
       footerYOffset: 30,
-      coverSize: 45,
+      coverSize: 55,
       fonts: {
-        headerBrand: 10,
-        headerNote: 7.5,
-        titleMain: 14,
-        titleSub: 11,
-        transcriptEn: 10,
-        transcriptZh: 9,
-        footer: 7,
+        headerBrand: 12,
+        headerNote: 9,
+        titleMain: 17,
+        titleSub: 13,
+        transcriptEn: 13,
+        transcriptZh: 12,
+        footer: 8.5,
       },
     };
   }
@@ -118,13 +118,13 @@ function getLayoutConfig(format: "A4" | "A5"): PdfLayoutConfig {
     footerYOffset: 45,
     coverSize: 65,
     fonts: {
-      headerBrand: 12,
-      headerNote: 9,
-      titleMain: 18,
-      titleSub: 14,
-      transcriptEn: 12,
-      transcriptZh: 10.5,
-      footer: 8,
+      headerBrand: 12.5,
+      headerNote: 11,
+      titleMain: 20,
+      titleSub: 16,
+      transcriptEn: 14.5,
+      transcriptZh: 12.5,
+      footer: 9.5,
     },
   };
 }
@@ -289,9 +289,11 @@ function renderTitleBlock(
   layout: PdfLayoutConfig,
 ) {
   const titleStartY = layout.marginTop;
-  const coverSize = layout.coverSize;
+  const targetCoverHeight = layout.coverSize;
+  const expectedCoverWidth = targetCoverHeight * (16 / 9);
+
   const textAreaWidth = coverImageBuffer
-    ? layout.contentWidth - coverSize - 16
+    ? layout.contentWidth - expectedCoverWidth - 16
     : layout.contentWidth;
 
   // Main title
@@ -306,30 +308,48 @@ function renderTitleBlock(
     fill: true,
   });
 
-  // Subtitle
-  doc.moveDown(0.3);
+  // Calculate Subtitle Y position
   doc
     .font("Roboto")
     .fontSize(layout.fonts.titleSub)
     .fillColor(BRAND_BLUE)
     .strokeColor(BRAND_BLUE);
-  doc.text(`${episodeTitle}`, layout.marginLeft, doc.y, {
+
+  const subtitleHeight = doc.heightOfString(`${episodeTitle}`, {
+    width: textAreaWidth,
+  });
+
+  // Default next line Y (minimum spacing)
+  const minSubtitleY = doc.y + doc.currentLineHeight() * 0.3;
+
+  // Target Y to align bottom with targetCoverHeight
+  const alignedSubtitleY = titleStartY + targetCoverHeight - subtitleHeight;
+
+  // Actual Y is the maximum of the two to prevent overlap
+  const subtitleY = Math.max(minSubtitleY, alignedSubtitleY);
+
+  doc.text(`${episodeTitle}`, layout.marginLeft, subtitleY, {
     width: textAreaWidth,
     stroke: true,
     fill: true,
   });
+
+  // Now calculate the final cover height based on text block height.
+  const finalCoverHeight = doc.y - titleStartY;
+  const finalCoverWidth = finalCoverHeight * (16 / 9); // Preserve 16:9 ratio
 
   // Cover image (top-right)
   if (coverImageBuffer) {
     try {
       doc.image(
         coverImageBuffer,
-        layout.pageWidth - layout.marginRight - coverSize,
+        layout.pageWidth - layout.marginRight - finalCoverWidth,
         titleStartY,
         {
-          width: coverSize,
-          height: coverSize,
-          fit: [coverSize, coverSize],
+          width: finalCoverWidth,
+          height: finalCoverHeight,
+          // Explicitly forcing width and height stretches the image to these dimensions,
+          // guaranteeing the 16:9 shape and exact top/bottom alignment.
         },
       );
     } catch (err) {
@@ -338,7 +358,7 @@ function renderTitleBlock(
   }
 
   // Divider line below title
-  const dividerY = Math.max(doc.y + 12, titleStartY + coverSize + 12);
+  const dividerY = Math.max(doc.y + 12, titleStartY + finalCoverHeight + 12);
   doc
     .moveTo(layout.marginLeft, dividerY)
     .lineTo(layout.pageWidth - layout.marginRight, dividerY)
