@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   if (!authResult.ok) return authResult.response;
 
   const episodeid = req.nextUrl.searchParams.get("episodeid");
+  const format = req.nextUrl.searchParams.get("format") as "A4" | "A5" | null;
 
   if (!episodeid) {
     return NextResponse.json(
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       podcastTitle: episode.podcast?.title || "远路播客",
       coverUrl,
       subtitles,
+      format: format === "A5" ? "A5" : "A4",
     });
 
     // 5. Return PDF response

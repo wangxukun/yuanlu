@@ -18,6 +18,30 @@ export interface TranscriptPdfInput {
     textEn: string;
     textZh: string;
   }[];
+  format?: "A4" | "A5";
+}
+
+export interface PdfLayoutConfig {
+  format: "A4" | "A5";
+  pageWidth: number;
+  pageHeight: number;
+  marginLeft: number;
+  marginRight: number;
+  marginTop: number;
+  marginBottom: number;
+  contentWidth: number;
+  headerY: number;
+  footerYOffset: number;
+  coverSize: number;
+  fonts: {
+    headerBrand: number;
+    headerNote: number;
+    titleMain: number;
+    titleSub: number;
+    transcriptEn: number;
+    transcriptZh: number;
+    footer: number;
+  };
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -25,14 +49,6 @@ const BRAND_BLUE: [number, number, number] = [0, 51, 102];
 const GRAY_TEXT: [number, number, number] = [102, 102, 102];
 const BLACK_TEXT: [number, number, number] = [33, 33, 33];
 const DIVIDER_COLOR: [number, number, number] = [200, 200, 200];
-
-const PAGE_WIDTH = 595.28; // A4
-const PAGE_HEIGHT = 841.89;
-const MARGIN_LEFT = 56;
-const MARGIN_RIGHT = 56;
-const MARGIN_TOP = 70;
-const MARGIN_BOTTOM = 70;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
 const CJK_FONT_PATH = path.join(
   process.cwd(),
@@ -53,6 +69,66 @@ const ROBOTO_BOLD_PATH = path.join(
   "Roboto-Bold.woff",
 );
 
+// ─── Layout Configs ───────────────────────────────────────────────────────────
+function getLayoutConfig(format: "A4" | "A5"): PdfLayoutConfig {
+  if (format === "A5") {
+    const pageWidth = 419.53;
+    const pageHeight = 595.28;
+    const marginLeft = 40;
+    const marginRight = 40;
+    return {
+      format: "A5",
+      pageWidth,
+      pageHeight,
+      marginLeft,
+      marginRight,
+      marginTop: 50,
+      marginBottom: 50,
+      contentWidth: pageWidth - marginLeft - marginRight,
+      headerY: 18,
+      footerYOffset: 30,
+      coverSize: 45,
+      fonts: {
+        headerBrand: 10,
+        headerNote: 7.5,
+        titleMain: 14,
+        titleSub: 11,
+        transcriptEn: 10,
+        transcriptZh: 9,
+        footer: 7,
+      },
+    };
+  }
+
+  // Default A4
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const marginLeft = 56;
+  const marginRight = 56;
+  return {
+    format: "A4",
+    pageWidth,
+    pageHeight,
+    marginLeft,
+    marginRight,
+    marginTop: 70,
+    marginBottom: 70,
+    contentWidth: pageWidth - marginLeft - marginRight,
+    headerY: 25,
+    footerYOffset: 45,
+    coverSize: 65,
+    fonts: {
+      headerBrand: 12,
+      headerNote: 9,
+      titleMain: 18,
+      titleSub: 14,
+      transcriptEn: 12,
+      transcriptZh: 10.5,
+      footer: 8,
+    },
+  };
+}
+
 // ─── Helper: Fetch cover image as Buffer ──────────────────────────────────────
 async function fetchCoverImage(url: string): Promise<Buffer | null> {
   try {
@@ -70,7 +146,14 @@ async function fetchCoverImage(url: string): Promise<Buffer | null> {
 export async function generateTranscriptPdf(
   input: TranscriptPdfInput,
 ): Promise<Buffer> {
-  const { episodeTitle, podcastTitle, subtitles, coverUrl } = input;
+  const {
+    episodeTitle,
+    podcastTitle,
+    subtitles,
+    coverUrl,
+    format = "A4",
+  } = input;
+  const layout = getLayoutConfig(format);
 
   // Verify font file exists
   if (!fs.existsSync(CJK_FONT_PATH)) {
@@ -89,12 +172,12 @@ export async function generateTranscriptPdf(
     const chunks: Buffer[] = [];
 
     const doc = new PDFDocument({
-      size: "A4",
+      size: layout.format,
       margins: {
-        top: MARGIN_TOP,
-        bottom: MARGIN_BOTTOM,
-        left: MARGIN_LEFT,
-        right: MARGIN_RIGHT,
+        top: layout.marginTop,
+        bottom: layout.marginBottom,
+        left: layout.marginLeft,
+        right: layout.marginRight,
       },
       bufferPages: true, // Enable buffering so we can add page numbers after
       font: CJK_FONT_PATH, // 显式指定字体，防止 PDFKit 加载默认的 Helvetica 导致路径错误
@@ -122,28 +205,23 @@ export async function generateTranscriptPdf(
     // ──────────────────────────────────────────────────────────────────────────
     // Render first page header
     // ──────────────────────────────────────────────────────────────────────────
-    renderFirstPageHeader(doc, podcastTitle);
+    renderFirstPageHeader(doc, podcastTitle, layout);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Render title block with optional cover image
     // ──────────────────────────────────────────────────────────────────────────
-    renderTitleBlock(doc, podcastTitle, episodeTitle, coverImageBuffer);
+    renderTitleBlock(doc, podcastTitle, episodeTitle, coverImageBuffer, layout);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Disclaimer note
     // ──────────────────────────────────────────────────────────────────────────
     doc.moveDown(0.8);
-    // doc.font("NotoSansSC").fontSize(9).fillColor(GRAY_TEXT);
-    // doc.text("注：AI翻译，仅供参考。", MARGIN_LEFT, doc.y, {
-    //   width: CONTENT_WIDTH,
-    // });
-    // doc.moveDown(1);
 
     // ──────────────────────────────────────────────────────────────────────────
     // Render transcript blocks
     // ──────────────────────────────────────────────────────────────────────────
     for (const sub of subtitles) {
-      renderTranscriptBlock(doc, sub.textEn, sub.textZh);
+      renderTranscriptBlock(doc, sub.textEn, sub.textZh, layout);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -157,7 +235,7 @@ export async function generateTranscriptPdf(
       const bottom = doc.page.margins.bottom;
       doc.page.margins.bottom = 0;
 
-      renderFooter(doc, i + 1, totalPages);
+      renderFooter(doc, i + 1, totalPages, layout);
 
       // Restore bottom margin
       doc.page.margins.bottom = bottom;
@@ -168,28 +246,35 @@ export async function generateTranscriptPdf(
 }
 
 // ─── Render: First Page Header ────────────────────────────────────────────────
-function renderFirstPageHeader(doc: PDFKit.PDFDocument, podcastTitle: string) {
-  const headerY = 25;
+function renderFirstPageHeader(
+  doc: PDFKit.PDFDocument,
+  podcastTitle: string,
+  layout: PdfLayoutConfig,
+) {
+  const headerY = layout.headerY;
 
   // Left side: Brand
-  doc.font("NotoSansSC").fontSize(12).fillColor(BRAND_BLUE);
-  doc.text(`远路播客 | ${podcastTitle}`, MARGIN_LEFT, headerY, {
-    width: CONTENT_WIDTH * 0.6,
+  doc
+    .font("NotoSansSC")
+    .fontSize(layout.fonts.headerBrand)
+    .fillColor(BRAND_BLUE);
+  doc.text(`远路播客 | ${podcastTitle}`, layout.marginLeft, headerY, {
+    width: layout.contentWidth * 0.6,
     lineBreak: false,
   });
 
   // Right side: Disclaimer note
-  doc.font("NotoSansSC").fontSize(9).fillColor(GRAY_TEXT);
-  doc.text("AI翻译 仅供参考", MARGIN_LEFT, headerY + 2, {
-    width: CONTENT_WIDTH,
+  doc.font("NotoSansSC").fontSize(layout.fonts.headerNote).fillColor(GRAY_TEXT);
+  doc.text("AI翻译 仅供参考", layout.marginLeft, headerY + 2, {
+    width: layout.contentWidth,
     align: "right",
     lineBreak: false,
   });
 
   // Header divider line
   doc
-    .moveTo(MARGIN_LEFT, headerY + 22)
-    .lineTo(PAGE_WIDTH - MARGIN_RIGHT, headerY + 22)
+    .moveTo(layout.marginLeft, headerY + 22)
+    .lineTo(layout.pageWidth - layout.marginRight, headerY + 22)
     .strokeColor(DIVIDER_COLOR)
     .lineWidth(0.5)
     .stroke();
@@ -201,16 +286,21 @@ function renderTitleBlock(
   podcastTitle: string,
   episodeTitle: string,
   coverImageBuffer: Buffer | null,
+  layout: PdfLayoutConfig,
 ) {
-  const titleStartY = MARGIN_TOP;
-  const coverSize = 65;
+  const titleStartY = layout.marginTop;
+  const coverSize = layout.coverSize;
   const textAreaWidth = coverImageBuffer
-    ? CONTENT_WIDTH - coverSize - 16
-    : CONTENT_WIDTH;
+    ? layout.contentWidth - coverSize - 16
+    : layout.contentWidth;
 
   // Main title
-  doc.font("Roboto").fontSize(18).fillColor(BLACK_TEXT).strokeColor(BLACK_TEXT);
-  doc.text(`${podcastTitle}`, MARGIN_LEFT, titleStartY, {
+  doc
+    .font("Roboto")
+    .fontSize(layout.fonts.titleMain)
+    .fillColor(BLACK_TEXT)
+    .strokeColor(BLACK_TEXT);
+  doc.text(`${podcastTitle}`, layout.marginLeft, titleStartY, {
     width: textAreaWidth,
     stroke: true,
     fill: true,
@@ -218,8 +308,12 @@ function renderTitleBlock(
 
   // Subtitle
   doc.moveDown(0.3);
-  doc.font("Roboto").fontSize(14).fillColor(BRAND_BLUE).strokeColor(BRAND_BLUE);
-  doc.text(`${episodeTitle}`, MARGIN_LEFT, doc.y, {
+  doc
+    .font("Roboto")
+    .fontSize(layout.fonts.titleSub)
+    .fillColor(BRAND_BLUE)
+    .strokeColor(BRAND_BLUE);
+  doc.text(`${episodeTitle}`, layout.marginLeft, doc.y, {
     width: textAreaWidth,
     stroke: true,
     fill: true,
@@ -230,7 +324,7 @@ function renderTitleBlock(
     try {
       doc.image(
         coverImageBuffer,
-        PAGE_WIDTH - MARGIN_RIGHT - coverSize,
+        layout.pageWidth - layout.marginRight - coverSize,
         titleStartY,
         {
           width: coverSize,
@@ -246,8 +340,8 @@ function renderTitleBlock(
   // Divider line below title
   const dividerY = Math.max(doc.y + 12, titleStartY + coverSize + 12);
   doc
-    .moveTo(MARGIN_LEFT, dividerY)
-    .lineTo(PAGE_WIDTH - MARGIN_RIGHT, dividerY)
+    .moveTo(layout.marginLeft, dividerY)
+    .lineTo(layout.pageWidth - layout.marginRight, dividerY)
     .strokeColor([50, 50, 50])
     .lineWidth(1)
     .stroke();
@@ -262,19 +356,20 @@ function renderTranscriptBlock(
   doc: PDFKit.PDFDocument,
   textEn: string,
   textZh: string,
+  layout: PdfLayoutConfig,
 ) {
   const blockStartY = doc.y;
-  const neededSpace = 80; // Minimum space needed for a block
+  const neededSpace = 80; // Minimum space needed for a block (approx)
 
   // Check if we need a new page
-  if (blockStartY + neededSpace > PAGE_HEIGHT - MARGIN_BOTTOM) {
+  if (blockStartY + neededSpace > layout.pageHeight - layout.marginBottom) {
     doc.addPage();
   }
 
   // English text (Using Roboto for the clean English style)
-  doc.font("Roboto").fontSize(12).fillColor([0, 0, 0]);
-  doc.text(textEn.trim(), MARGIN_LEFT, doc.y, {
-    width: CONTENT_WIDTH,
+  doc.font("Roboto").fontSize(layout.fonts.transcriptEn).fillColor([0, 0, 0]);
+  doc.text(textEn.trim(), layout.marginLeft, doc.y, {
+    width: layout.contentWidth,
     lineGap: 4,
     paragraphGap: 0,
   });
@@ -282,9 +377,12 @@ function renderTranscriptBlock(
   doc.moveDown(0.3);
 
   // Chinese translation (Back to CJK font)
-  doc.font("NotoSansSC").fontSize(10.5).fillColor([0, 0, 0]);
-  doc.text(textZh.trim(), MARGIN_LEFT, doc.y, {
-    width: CONTENT_WIDTH,
+  doc
+    .font("NotoSansSC")
+    .fontSize(layout.fonts.transcriptZh)
+    .fillColor([0, 0, 0]);
+  doc.text(textZh.trim(), layout.marginLeft, doc.y, {
+    width: layout.contentWidth,
     lineGap: 3,
     paragraphGap: 0,
   });
@@ -297,29 +395,35 @@ function renderFooter(
   doc: PDFKit.PDFDocument,
   pageNum: number,
   totalPages: number,
+  layout: PdfLayoutConfig,
 ) {
-  const footerY = PAGE_HEIGHT - 45;
+  const footerY = layout.pageHeight - layout.footerYOffset;
 
   // Footer divider line
   doc
-    .moveTo(MARGIN_LEFT, footerY - 5)
-    .lineTo(PAGE_WIDTH - MARGIN_RIGHT, footerY - 5)
+    .moveTo(layout.marginLeft, footerY - 5)
+    .lineTo(layout.pageWidth - layout.marginRight, footerY - 5)
     .strokeColor(DIVIDER_COLOR)
     .lineWidth(0.4)
     .stroke();
 
   // Left side: branding
-  doc.font("NotoSansSC").fontSize(8).fillColor(GRAY_TEXT);
-  doc.text("远路播客    wxkzd.com", MARGIN_LEFT, footerY, {
-    width: CONTENT_WIDTH * 0.5,
+  doc.font("NotoSansSC").fontSize(layout.fonts.footer).fillColor(GRAY_TEXT);
+  doc.text("远路播客    wxkzd.com", layout.marginLeft, footerY, {
+    width: layout.contentWidth * 0.5,
     lineBreak: false,
   });
 
   // Right side: page numbers
-  doc.font("NotoSansSC").fontSize(8).fillColor(GRAY_TEXT);
-  doc.text(`共 ${totalPages} 页，第 ${pageNum} 页`, MARGIN_LEFT, footerY, {
-    width: CONTENT_WIDTH,
-    align: "right",
-    lineBreak: false,
-  });
+  doc.font("NotoSansSC").fontSize(layout.fonts.footer).fillColor(GRAY_TEXT);
+  doc.text(
+    `共 ${totalPages} 页，第 ${pageNum} 页`,
+    layout.marginLeft,
+    footerY,
+    {
+      width: layout.contentWidth,
+      align: "right",
+      lineBreak: false,
+    },
+  );
 }

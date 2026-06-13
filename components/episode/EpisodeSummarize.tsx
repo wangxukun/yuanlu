@@ -229,8 +229,9 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       toast.info("正在生成文稿 PDF，请稍候...");
 
       try {
+        const format = window.innerWidth < 768 ? "A5" : "A4";
         const res = await fetch(
-          `/api/episode/transcript-pdf?episodeid=${episode.episodeid}`,
+          `/api/episode/transcript-pdf?episodeid=${episode.episodeid}&format=${format}`,
         );
 
         if (!res.ok) {
