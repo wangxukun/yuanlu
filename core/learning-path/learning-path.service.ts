@@ -252,6 +252,42 @@ export const learningPathService = {
         creationAt: Prisma.SortOrder.desc,
       },
     });
+
+    const pathIds = paths.map((p) => p.pathid);
+    const allItems = await prisma.learning_path_items.findMany({
+      where: { pathid: { in: pathIds } },
+      select: { pathid: true, episodeid: true },
+    });
+
+    const episodeIds = allItems.map((item) => item.episodeid);
+    const finishedHistories = await prisma.listening_history.findMany({
+      where: {
+        userid: userid,
+        episodeid: { in: episodeIds },
+        isFinished: true,
+      },
+      select: { episodeid: true },
+    });
+    const finishedEpisodeIds = new Set(
+      finishedHistories.map((h) => h.episodeid),
+    );
+
+    const progressMap = new Map<number, number>();
+    for (const pathId of pathIds) {
+      const itemsForPath = allItems.filter((item) => item.pathid === pathId);
+      if (itemsForPath.length === 0) {
+        progressMap.set(pathId, 0);
+      } else {
+        const finishedCount = itemsForPath.filter((item) =>
+          finishedEpisodeIds.has(item.episodeid),
+        ).length;
+        progressMap.set(
+          pathId,
+          Math.round((finishedCount / itemsForPath.length) * 100),
+        );
+      }
+    }
+
     // TODO coverUrl签名处理
     // 遍历 paths 数组并异步处理每个 episode 的 coverUrl
     const pathsWithSignedUrls = await Promise.all(
@@ -274,8 +310,7 @@ export const learningPathService = {
           coverUrl: signedCoverUrl || null,
           creatorName: p.User?.user_profile?.nickname || "我",
           creationAt: p.creationAt,
-          // 暂时模拟进度，后续可关联 user_daily_activity 计算
-          progress: 0,
+          progress: progressMap.get(p.pathid) || 0,
           isOfficial: false,
         };
       }),
@@ -337,6 +372,42 @@ export const learningPathService = {
       take: 20, // 限制数量
     });
 
+    const pathIds = paths.map((p) => p.pathid);
+    const allItems = await prisma.learning_path_items.findMany({
+      where: { pathid: { in: pathIds } },
+      select: { pathid: true, episodeid: true },
+    });
+
+    let finishedEpisodeIds = new Set<string>();
+    if (excludeUserId) {
+      const episodeIds = allItems.map((item) => item.episodeid);
+      const finishedHistories = await prisma.listening_history.findMany({
+        where: {
+          userid: excludeUserId,
+          episodeid: { in: episodeIds },
+          isFinished: true,
+        },
+        select: { episodeid: true },
+      });
+      finishedEpisodeIds = new Set(finishedHistories.map((h) => h.episodeid));
+    }
+
+    const progressMap = new Map<number, number>();
+    for (const pathId of pathIds) {
+      const itemsForPath = allItems.filter((item) => item.pathid === pathId);
+      if (itemsForPath.length === 0) {
+        progressMap.set(pathId, 0);
+      } else {
+        const finishedCount = itemsForPath.filter((item) =>
+          finishedEpisodeIds.has(item.episodeid),
+        ).length;
+        progressMap.set(
+          pathId,
+          Math.round((finishedCount / itemsForPath.length) * 100),
+        );
+      }
+    }
+
     const result = await Promise.all(
       paths.map(async (p) => {
         const episode = p.items[0]?.episode;
@@ -354,7 +425,7 @@ export const learningPathService = {
           coverUrl: signedCoverUrl,
           creatorName: p.User?.user_profile?.nickname || "Unknown",
           creationAt: p.creationAt,
-          progress: 0,
+          progress: progressMap.get(p.pathid) || 0,
           isOfficial: false,
         };
       }),

@@ -102,7 +102,7 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
           <div className="mb-4">
             {/* [Refactor] text-gray-400 -> text-base-content/40 */}
             <div className="flex justify-between text-xs font-medium text-base-content/40 mb-1">
-              <span>Progress</span>
+              <span>进度</span>
               <span>{path.progress}%</span>
             </div>
             {/* [Refactor] bg-gray-100 -> bg-base-200 */}
@@ -119,7 +119,7 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
         <div className="pt-4 flex items-center justify-between text-xs font-medium text-base-content/40">
           <div className="flex items-center">
             <Layers size={14} className="mr-1.5" />
-            {path.itemCount} Items
+            {path.itemCount} 集
           </div>
           <div className="flex items-center">{path.creatorName}</div>
         </div>

@@ -55,6 +55,18 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
     creatorName = creator?.user_profile?.nickname || "User";
   }
 
+  // 获取播放历史
+  let histories: import("@prisma/client").listening_history[] = [];
+  if (session?.user?.userid) {
+    histories = await prisma.listening_history.findMany({
+      where: {
+        userid: session.user.userid,
+        episodeid: { in: rawPath.items.map((item) => item.episodeid) },
+      },
+    });
+  }
+  const historyMap = new Map(histories.map((h) => [h.episodeid, h]));
+
   // 转换数据结构以匹配 UI 组件
   const transformedPath = {
     pathid: rawPath.pathid,
@@ -77,6 +89,8 @@ export default async function LearningPathDetailPage({ params }: PageProps) {
         audioUrl: item.episode.audioUrl ?? "",
         duration: item.episode.duration,
         isExclusive: item.episode.isExclusive ?? undefined,
+        progressSeconds: historyMap.get(item.episodeid)?.progressSeconds || 0,
+        isFinished: historyMap.get(item.episodeid)?.isFinished || false,
       },
     })),
   };

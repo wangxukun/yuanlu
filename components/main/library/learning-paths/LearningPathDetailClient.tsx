@@ -61,6 +61,8 @@ export interface DetailPathData {
       author: string;
       duration: number;
       audioUrl?: string;
+      progressSeconds?: number;
+      isFinished?: boolean;
     } & Partial<Episode>;
   }[];
 }
@@ -72,6 +74,8 @@ type EpisodeLP = {
   author: string;
   duration: number;
   isExclusive?: boolean;
+  progressSeconds?: number;
+  isFinished?: boolean;
 } & Partial<Episode>;
 
 interface LearningPathDetailClientProps {
@@ -218,6 +222,19 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
     } else {
       alert(res?.error || "更新失败");
     }
+  };
+
+  const handleSharePath = () => {
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        toast.success("路径链接地址已复制");
+      })
+      .catch((err) => {
+        toast.error("复制失败，请手动复制浏览器地址栏链接");
+        console.error("Failed to copy URL: ", err);
+      });
+    setIsMoreMenuOpen(false);
   };
 
   useEffect(() => {
@@ -384,7 +401,10 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                             <Trash2 size={16} /> 删除路径
                           </button>
                           <div className="h-px bg-base-200 my-1"></div>
-                          <button className="w-full text-left px-4 py-2.5 text-sm text-base-content/80 hover:bg-base-200 flex items-center gap-2">
+                          <button
+                            onClick={handleSharePath}
+                            className="w-full text-left px-4 py-2.5 text-sm text-base-content/80 hover:bg-base-200 flex items-center gap-2"
+                          >
                             <Globe size={16} /> 分享路径
                           </button>
                         </div>
@@ -399,69 +419,113 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
         {/* List Items */}
         <div className="space-y-3">
           {selectedPath.items.length > 0 ? (
-            selectedPath.items.map((item, index) => (
-              <div
-                key={item.id}
-                onClick={() => onPlayEpisode(item.episode)}
-                // [Refactor] bg-white -> bg-base-100, hover:border-indigo-100 -> hover:border-primary/50
-                className="group bg-base-100 p-2 md:p-4 rounded-xl border border-base-300 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
-              >
-                {/* Index */}
-                <div className="w-5 md:w-8 text-center font-bold text-base-content/30 group-hover:text-primary transition-colors text-xs md:text-base shrink-0">
-                  {index + 1}
-                </div>
+            selectedPath.items.map((item, index) => {
+              const progressSeconds = item.episode.progressSeconds || 0;
+              const isFinished = item.episode.isFinished || false;
+              const duration = item.episode.duration || 0;
+              let progressPercentage = 0;
+              if (isFinished) {
+                progressPercentage = 100;
+              } else if (duration > 0) {
+                progressPercentage = Math.min(
+                  (progressSeconds / duration) * 100,
+                  100,
+                );
+              }
 
-                {/* Image */}
-                <div className="relative w-32 aspect-[16/9] md:w-40 md:aspect-[16/9] rounded-lg bg-base-300 overflow-hidden shrink-0">
-                  <img
-                    src={item.episode.thumbnailUrl}
-                    className="w-full h-full object-cover"
-                    alt={item.episode.title}
-                  />
-                  {/* PRO Badge */}
-                  {item.episode.isExclusive && (
-                    <div className="absolute top-1 left-1 z-10 flex gap-1.5 items-center">
-                      <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] md:text-xs tracking-widest flex items-center">
-                        👑 PRO
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <PlayCircle
-                      size={20}
-                      className="text-white drop-shadow-md"
-                    />
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => onPlayEpisode(item.episode)}
+                  // [Refactor] bg-white -> bg-base-100, hover:border-indigo-100 -> hover:border-primary/50
+                  className="group bg-base-100 p-2 md:p-4 rounded-xl border border-base-300 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
+                >
+                  {/* Index */}
+                  <div className="w-5 md:w-8 text-center font-bold text-base-content/30 group-hover:text-primary transition-colors text-xs md:text-base shrink-0">
+                    {index + 1}
                   </div>
-                </div>
 
-                {/* Text Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <h3
-                    className="font-bold text-base-content line-clamp-2 break-words group-hover:text-primary transition-colors text-sm md:text-base leading-snug mb-0.5"
-                    title={item.episode.title}
-                  >
-                    {item.episode.title}
-                  </h3>
-                  <p className="text-xs text-base-content/60 truncate">
-                    {item.episode.author} •{" "}
-                    {formatDuration(item.episode.duration)}
-                  </p>
-                </div>
-
-                {/* Actions */}
-                {!selectedPath.isOfficial &&
-                  selectedPath.userid === currentUserId && (
-                    <div className="flex items-center gap-1 md:gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => handleRemoveItem(e, item.id)}
-                        className="p-2 text-base-content/30 hover:text-error hover:bg-error/10 rounded-full transition-colors shrink-0"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                  {/* Image */}
+                  <div className="relative w-32 aspect-[16/9] md:w-40 md:aspect-[16/9] rounded-lg bg-base-300 overflow-hidden shrink-0">
+                    <img
+                      src={item.episode.thumbnailUrl}
+                      className="w-full h-full object-cover"
+                      alt={item.episode.title}
+                    />
+                    {/* PRO Badge */}
+                    {item.episode.isExclusive && (
+                      <div className="absolute top-1 left-1 z-10 flex gap-1.5 items-center">
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] md:text-xs tracking-widest flex items-center">
+                          👑 PRO
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <PlayCircle
+                        size={20}
+                        className="text-white drop-shadow-md"
+                      />
                     </div>
-                  )}
-              </div>
-            ))
+                    {/* 移动端进度条 */}
+                    {progressPercentage > 0 && (
+                      <div className="sm:hidden absolute bottom-0 left-0 w-full h-1 bg-base-300/50 z-30">
+                        <div
+                          className={`h-full ${isFinished ? "bg-success" : "bg-primary"}`}
+                          style={{ width: `${progressPercentage}%` }}
+                        ></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text Info */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <h3
+                      className="font-bold text-base-content line-clamp-2 break-words group-hover:text-primary transition-colors text-sm md:text-base leading-snug mb-0.5"
+                      title={item.episode.title}
+                    >
+                      {item.episode.title}
+                    </h3>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-base-content/60 truncate">
+                        {item.episode.author} •{" "}
+                        {formatDuration(item.episode.duration)}
+                      </p>
+                      {/* 桌面端进度条 */}
+                      {progressPercentage > 0 && (
+                        <div className="hidden sm:flex items-center gap-2 w-24 md:w-32 mr-4">
+                          <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                isFinished ? "bg-success" : "bg-primary"
+                              }`}
+                              style={{
+                                width: `${progressPercentage}%`,
+                              }}
+                            ></div>
+                          </div>
+                          {isFinished && (
+                            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {!selectedPath.isOfficial &&
+                    selectedPath.userid === currentUserId && (
+                      <div className="flex items-center gap-1 md:gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => handleRemoveItem(e, item.id)}
+                          className="p-2 text-base-content/30 hover:text-error hover:bg-error/10 rounded-full transition-colors shrink-0"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    )}
+                </div>
+              );
+            })
           ) : (
             <div className="text-center py-12 text-base-content/40 bg-base-100 rounded-xl border border-dashed border-base-300">
               <ListPlus size={40} className="mx-auto mb-3 opacity-20" />
