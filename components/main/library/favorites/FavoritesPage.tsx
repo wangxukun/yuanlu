@@ -19,6 +19,7 @@ import {
 } from "@/lib/actions/favorite-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatChineseDate } from "@/lib/tools";
 
 interface FavoritesPageProps {
   favoritePodcasts: FavoriteSeries[];
@@ -257,7 +258,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                     </div>
                     <div className="flex items-center">
                       <Headphones size={12} className="mr-1" />
-                      {(series.plays / 1000).toFixed(0)}k 播放
+                      {(series.plays / 1000).toFixed(0)} 播放
                     </div>
                     <div className="flex items-center">
                       <Heart size={12} className="mr-1" />
@@ -334,14 +335,14 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       •
                     </span>
                     <span className="hidden xl:inline text-[10px] text-base-content/40 font-medium">
-                      {episode.date}
+                      {formatChineseDate(episode.date)}
                     </span>
                   </div>
                   <h4 className="text-base xl:text-lg font-bold text-base-content line-clamp-2 xl:truncate group-hover:text-primary transition-colors">
                     {episode.title}
                   </h4>
                   <p className="text-xs xl:text-sm text-base-content/60 truncate mt-1 xl:mt-0">
-                    系列: {episode.author}
+                    {episode.author}
                   </p>
                 </div>
 
