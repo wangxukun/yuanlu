@@ -71,7 +71,7 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
               ? "bg-[#5830E0]/10 text-[#5830E0]"
               : "text-slate-400 hover:text-[#5830E0] hover:bg-[#5830E0]/5"
           }`}
-          title="有道智云翻译"
+          title="翻译"
         >
           {isTranslatingDesc ? (
             <Loader2 className="w-5 h-5 animate-spin" />
