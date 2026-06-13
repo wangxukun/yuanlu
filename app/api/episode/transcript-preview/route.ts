@@ -68,14 +68,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 4. Return limited preview data (max 4 subtitle pairs)
+    // 4. Return limited preview data (max 5 subtitle pairs)
     return NextResponse.json({
       success: true,
       data: {
         podcastTitle: episode.podcast?.title || "远路播客",
         episodeTitle: episode.title,
         coverUrl,
-        subtitles: subtitles.slice(0, 4).map((s) => ({
+        subtitles: subtitles.slice(0, 5).map((s) => ({
           textEn: s.textEn,
           textZh: s.textZh,
         })),
