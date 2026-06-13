@@ -483,18 +483,18 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             {/* Audio Download */}
             <button
               onClick={handleDownloadAudio}
-              className="p-2.5 sm:px-4 sm:py-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800 flex items-center gap-2 font-medium justify-center flex-1 sm:flex-none"
+              className="p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 sm:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 sm:flex-none text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 sm:hover:bg-transparent"
               title="下载音频"
             >
               <Download className="w-5 h-5" />
-              <span className="hidden sm:inline">下载音频</span>
+              <span className="hidden sm:inline">音频</span>
             </button>
 
             {/* Transcript Download */}
             <button
               onClick={handleDownloadTranscript}
               disabled={isGeneratingPdf}
-              className="p-2.5 sm:px-4 sm:py-2.5 text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 rounded-xl transition-all border border-slate-100 dark:border-slate-800 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2 font-medium justify-center flex-1 sm:flex-none"
+              className="p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 sm:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 sm:flex-none text-slate-500 hover:text-[#5830E0] hover:bg-[#5830E0]/5 sm:hover:bg-transparent disabled:opacity-50 disabled:cursor-wait"
               title="下载文稿 PDF"
             >
               {isGeneratingPdf ? (
@@ -502,7 +502,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               ) : (
                 <FileDown className="w-5 h-5" />
               )}
-              <span className="hidden sm:inline">下载文稿</span>
+              <span className="hidden sm:inline">文稿</span>
             </button>
 
             {/* Favorite */}
@@ -544,7 +544,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
             {/* Close Button */}
             <button
               onClick={() => setIsTranscriptPreviewOpen(false)}
-              className="absolute right-6 top-6 p-2 rounded-xl text-base-content/40 hover:text-base-content hover:bg-base-200 transition-colors active:scale-95 z-20"
+              className="absolute right-6 top-6 p-2 rounded-xl text-base-content opacity-40 hover:opacity-100 hover:bg-base-200 transition-colors active:scale-95"
               aria-label="关闭"
             >
               <X size={20} />
@@ -555,13 +555,6 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
               <Sparkles size={12} className="fill-current animate-pulse" />{" "}
               文稿预览
             </div>
-
-            {/* <h3 className="text-xl sm:text-2xl font-black text-base-content mb-2 tracking-tight">
-              {episode.title} - 双语精研文稿
-            </h3>
-            <p className="text-xs text-base-content/40 mb-6 font-semibold">
-              以下是文稿第一页的真实排版预览，感受精校双语排版的品质：
-            </p> */}
 
             {/* ── PDF Page Replica ── */}
             <div className="relative rounded-xl overflow-hidden mb-6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-200 dark:border-gray-600">
@@ -696,15 +689,18 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
             {/* Intercept Card with Sincere Advocacy */}
             <div className="bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-2xl p-6 border border-indigo-500/10 text-center space-y-4 relative">
-              <div className="w-10 h-10 bg-indigo-500/10 text-indigo-600 rounded-xl flex items-center justify-center mx-auto shadow-sm">
+              {/* <div className="w-10 h-10 bg-indigo-500/10 text-indigo-600 rounded-xl flex items-center justify-center mx-auto shadow-sm">
                 <Crown size={20} />
-              </div>
+              </div> */}
 
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-sm shadow-indigo-500">
+                <Crown size={20} className="animate-pulse" />
+              </div>
               <h4 className="text-lg font-black text-indigo-950 dark:text-indigo-300">
                 这里是会员专享内容
               </h4>
 
-              <p className="text-xs sm:text-sm text-base-content/85 leading-relaxed font-semibold px-2">
+              <p className="text-xs sm:text-sm text-base-content opacity-75 leading-relaxed font-semibold px-2">
                 为了支持网站长期高质量运转，此内容仅向赞助会员开放。如果您喜欢这里的内容，欢迎加入我们的会员社区，享受专属权益。
               </p>
 
@@ -720,7 +716,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
                 </button>
                 <button
                   onClick={() => setIsTranscriptPreviewOpen(false)}
-                  className="btn btn-ghost h-11 min-h-[44px] rounded-xl text-xs font-bold text-base-content/50 hover:bg-base-200/50 transition-colors"
+                  className="btn btn-ghost h-11 min-h-[44px] rounded-xl text-xs font-bold text-base-content opacity-50 hover:bg-base-200 opacity-50 transition-colors"
                 >
                   暂不需要
                 </button>
