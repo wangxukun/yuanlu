@@ -389,7 +389,11 @@ export const learningPathService = {
         },
         select: { episodeid: true },
       });
-      finishedEpisodeIds = new Set(finishedHistories.map((h) => h.episodeid));
+      finishedEpisodeIds = new Set(
+        finishedHistories
+          .map((h) => h.episodeid)
+          .filter((id): id is string => id !== null),
+      );
     }
 
     const progressMap = new Map<number, number>();
