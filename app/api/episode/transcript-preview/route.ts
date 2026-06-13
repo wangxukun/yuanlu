@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchEpisodeById, mergeSubtitles } from "@/lib/data";
+import { mergeSubtitles } from "@/lib/data";
+import { episodeRepository } from "@/core/episode/episode.repository";
 import { generateSignatureUrl } from "@/lib/oss";
 import { auth } from "@/auth";
 
@@ -27,11 +28,24 @@ export async function GET(req: NextRequest) {
 
   try {
     // 1. Fetch episode data
-    const episode = await fetchEpisodeById(episodeid);
+    const episode = await episodeRepository.findById(episodeid);
     if (!episode) {
       return NextResponse.json(
         { success: false, error: "未找到对应单集" },
         { status: 404 },
+      );
+    }
+
+    if (episode.subtitleEnFileName) {
+      episode.subtitleEnUrl = await generateSignatureUrl(
+        episode.subtitleEnFileName,
+        60 * 5,
+      );
+    }
+    if (episode.subtitleZhFileName) {
+      episode.subtitleZhUrl = await generateSignatureUrl(
+        episode.subtitleZhFileName,
+        60 * 5,
       );
     }
 
