@@ -72,7 +72,10 @@ export default function HomeClient({
             </div>
 
             <div className="relative z-10">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+              <h1
+                className="text-2xl md:text-3xl font-bold mb-2"
+                suppressHydrationWarning
+              >
                 {greeting}, {displayName}!
               </h1>
               <p className="text-indigo-100 mb-6 max-w-md text-sm sm:text-base leading-relaxed">

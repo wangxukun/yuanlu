@@ -220,7 +220,6 @@ export const statsService = {
       orderBy: {
         date: Prisma.SortOrder.desc,
       },
-      take: 60,
     });
 
     if (activities.length === 0) return 0;
