@@ -37,7 +37,12 @@ export const episodeService = {
    * 音频管理列表
    * 支持根据 query (标题/描述) 和 podcastId 过滤
    */
-  async getManagementList(query?: string, podcastId?: string) {
+  async getManagementList(
+    query?: string,
+    podcastId?: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     const where: Prisma.episodeWhereInput = {};
 
     if (podcastId) {
@@ -51,17 +56,33 @@ export const episodeService = {
       ];
     }
 
-    const episodes = await episodeRepository.findAll(where);
+    const skip = (page - 1) * limit;
+
+    const [episodes, total] = await Promise.all([
+      episodeRepository.findAll(where, skip, limit),
+      prisma.episode.count({ where }),
+    ]);
 
     if (episodes.length > 0) {
-      for (const episode of episodes) {
-        episode.coverUrl = await generateSignatureUrl(
-          episode.coverFileName,
-          60 * 60 * 3,
-        );
-      }
+      await Promise.all(
+        episodes.map(async (episode) => {
+          if (episode.coverFileName) {
+            try {
+              episode.coverUrl = await generateSignatureUrl(
+                episode.coverFileName,
+                60 * 60 * 3,
+              );
+            } catch (e) {
+              console.error("Failed to sign cover", e);
+            }
+          }
+        }),
+      );
     }
-    return episodes.map(EpisodeMapper.toManagementItem);
+    return {
+      items: episodes.map(EpisodeMapper.toManagementItem),
+      total,
+    };
   },
 
   async getEditItem(id: string) {

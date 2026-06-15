@@ -18,11 +18,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get("query") || undefined;
     const podcastId = searchParams.get("podcastId") || undefined;
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
 
     // [修改] 将参数传递给 service
-    const list = await episodeService.getManagementList(query, podcastId);
+    const data = await episodeService.getManagementList(
+      query,
+      podcastId,
+      page,
+      limit,
+    );
 
-    return NextResponse.json(list);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("获取剧集列表时出错:", error);
     return NextResponse.json({

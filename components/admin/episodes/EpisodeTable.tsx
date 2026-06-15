@@ -19,37 +19,38 @@ import {
 } from "@/core/episode/dto/episode-management-item";
 import Link from "next/link";
 import { Headphones } from "lucide-react";
-
-const ITEMS_PER_PAGE = 10;
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function EpisodeTable({
-  episodeManagementItems,
+  items = [],
+  total = 0,
+  currentPage = 1,
+  limit = 10,
 }: {
-  episodeManagementItems: EpisodeManagementItem[];
+  items: EpisodeManagementItem[];
+  total: number;
+  currentPage: number;
+  limit: number;
 }) {
   const [isClient, setIsClient] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // [修复 1]: 移除 const [data] = useState(...)
-  // 我们直接使用 props 中的 episodeManagementItems，确保父组件更新数据时这里也能同步更新
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // [修复 2]: 当数据源(搜索结果)变化时，自动回到第一页
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [episodeManagementItems]);
+  const totalPages = Math.ceil(total / limit);
+  const startIndex = (currentPage - 1) * limit;
 
-  // [修复 3]: 直接使用 props 计算分页
-  const totalPages = Math.ceil(episodeManagementItems.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  // 安全处理：防止搜索结果为空时 slice 报错（虽然 slice 不会报错，但防御性编程是好习惯）
-  const currentItems = episodeManagementItems.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE,
-  );
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const currentItems = items;
 
   const formatNumber = (num: number) => {
     return num >= 1000 ? (num / 1000).toFixed(1) + "k" : num.toString();
@@ -253,7 +254,7 @@ export default function EpisodeTable({
         </div>
 
         {/* Pagination */}
-        {episodeManagementItems.length > 0 && (
+        {total > 0 && (
           <div className="p-4 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-sm text-slate-500">
               显示{" "}
@@ -262,20 +263,14 @@ export default function EpisodeTable({
               </span>{" "}
               到{" "}
               <span className="font-medium text-slate-900">
-                {Math.min(
-                  startIndex + ITEMS_PER_PAGE,
-                  episodeManagementItems.length,
-                )}
+                {Math.min(startIndex + limit, total)}
               </span>{" "}
-              条，共{" "}
-              <span className="font-medium text-slate-900">
-                {episodeManagementItems.length}
-              </span>{" "}
+              条，共 <span className="font-medium text-slate-900">{total}</span>{" "}
               条
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="px-3 py-1 rounded-md border border-slate-300 bg-white text-slate-600 text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
@@ -302,7 +297,7 @@ export default function EpisodeTable({
                   return (
                     <button
                       key={page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => handlePageChange(page)}
                       className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
                         currentPage === page
                           ? "bg-primary text-white border border-primary shadow-sm"
@@ -316,7 +311,7 @@ export default function EpisodeTable({
               )}
               <button
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  handlePageChange(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 rounded-md border border-slate-300 bg-white text-slate-600 text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"

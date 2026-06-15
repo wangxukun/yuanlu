@@ -18,9 +18,15 @@ import { Prisma } from "@prisma/client";
 
 export const episodeRepository = {
   // [修改] 增加 where 参数，允许传递筛选条件
-  async findAll(where?: Prisma.episodeWhereInput): Promise<Episode[]> {
+  async findAll(
+    where?: Prisma.episodeWhereInput,
+    skip?: number,
+    take?: number,
+  ): Promise<Episode[]> {
     const episodes = await prisma.episode.findMany({
       where, // 应用筛选条件
+      skip,
+      take,
       orderBy: {
         publishAt: Prisma.SortOrder.desc, // 默认按发布时间倒序，体验更好
       },

@@ -29,11 +29,16 @@ export default async function Page(props: PageProps) {
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";
   const podcastId = searchParams?.podcastId || "";
+  const pageStr = searchParams?.page || "1";
+  const currentPage = parseInt(pageStr, 10) || 1;
+  const limit = 10;
 
   // 2. 构建 API 参数
   const params = new URLSearchParams();
   if (query) params.set("query", query);
   if (podcastId) params.set("podcastId", podcastId);
+  params.set("page", currentPage.toString());
+  params.set("limit", limit.toString());
 
   // 3. 请求数据
   // [关键修复]: 添加 cache: 'no-store' 禁用缓存，解决搜索后列表不更新的问题
@@ -45,9 +50,9 @@ export default async function Page(props: PageProps) {
   );
 
   // 安全处理 JSON 解析，防止空数据报错
-  let episodeManagementItems = [];
+  let episodeData = { items: [], total: 0 };
   try {
-    episodeManagementItems = await result.json();
+    episodeData = await result.json();
   } catch (e) {
     console.error("Failed to parse episodes", e);
   }
@@ -157,7 +162,12 @@ export default async function Page(props: PageProps) {
         )}
 
         {/* 数据表格 */}
-        <EpisodeTable episodeManagementItems={episodeManagementItems} />
+        <EpisodeTable
+          items={episodeData.items}
+          total={episodeData.total}
+          currentPage={currentPage}
+          limit={limit}
+        />
       </div>
     </main>
   );
