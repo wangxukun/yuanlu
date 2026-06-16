@@ -74,10 +74,24 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
       if (res.ok && data.definition) {
         setTranslatedTitle(data.definition);
       } else {
-        toast.error("翻译失败，请稍后重试");
+        if (!session?.user) {
+          (
+            document.getElementById(
+              "email_check_modal_box",
+            ) as HTMLDialogElement
+          )?.showModal();
+        } else {
+          toast.error("翻译失败，请稍后重试");
+        }
       }
     } catch {
-      toast.error("翻译请求出错");
+      if (!session?.user) {
+        (
+          document.getElementById("email_check_modal_box") as HTMLDialogElement
+        )?.showModal();
+      } else {
+        toast.error("翻译请求出错");
+      }
     } finally {
       setIsTranslatingTitle(false);
     }
@@ -426,7 +440,7 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
                   ? "bg-[#5830E0]/10 text-[#5830E0]"
                   : "text-slate-400 hover:text-[#5830E0] hover:bg-[#5830E0]/5 md:opacity-0 md:group-hover/title:opacity-100"
               }`}
-              title="有道智云翻译"
+              title="翻译"
             >
               {isTranslatingTitle ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

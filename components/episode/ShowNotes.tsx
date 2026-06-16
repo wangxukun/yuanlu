@@ -4,8 +4,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { Episode } from "@/core/episode/episode.entity";
 import { ChevronDown, ChevronUp, Languages, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export default function ShowNotes({ episode }: { episode: Episode }) {
+  const { data: session } = useSession();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const [isTranslatingDesc, setIsTranslatingDesc] = useState(false);
@@ -48,10 +50,24 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
       if (res.ok && data.definition) {
         setTranslatedDesc(data.definition);
       } else {
-        toast.error("翻译失败，请稍后重试");
+        if (!session?.user) {
+          (
+            document.getElementById(
+              "email_check_modal_box",
+            ) as HTMLDialogElement
+          )?.showModal();
+        } else {
+          toast.error("翻译失败，请稍后重试");
+        }
       }
     } catch {
-      toast.error("翻译请求出错");
+      if (!session?.user) {
+        (
+          document.getElementById("email_check_modal_box") as HTMLDialogElement
+        )?.showModal();
+      } else {
+        toast.error("翻译请求出错");
+      }
     } finally {
       setIsTranslatingDesc(false);
     }
