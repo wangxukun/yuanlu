@@ -105,6 +105,26 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
     if (episodeId) fetchComments();
   }, [episodeId]);
 
+  // --- Handle Hash Scrolling ---
+  useEffect(() => {
+    if (!isLoading && comments.length > 0) {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#comment-")) {
+        setTimeout(() => {
+          const element = document.getElementById(hash.substring(1));
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            // 添加高亮效果
+            element.classList.add("bg-primary/10", "rounded-xl");
+            setTimeout(() => {
+              element.classList.remove("bg-primary/10", "rounded-xl");
+            }, 3000);
+          }
+        }, 100);
+      }
+    }
+  }, [isLoading, comments]);
+
   // --- Actions ---
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -346,8 +366,9 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
 
     return (
       <div
+        id={`comment-${comment.commentid}`}
         className={clsx(
-          "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 border-b border-base-300 last:border-0 p-4",
+          "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 border-b border-base-300 last:border-0 p-4 transition-all",
           isReply ? "mt-4" : "mt-6",
         )}
       >

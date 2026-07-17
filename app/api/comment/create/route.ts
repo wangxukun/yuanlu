@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       newComment.User?.user_profile?.nickname ||
       newComment.User?.email ||
       "有人";
-    const targetUrl = `/episode/${episodeid}`;
+    const targetUrl = `/episode/${episodeid}#comment-${newComment.commentid}`;
 
     void triggerCommentNotification({
       parentId: parentId ?? null,
@@ -164,6 +164,32 @@ async function triggerCommentNotification({
           targetUrl,
         });
       }
+    }
+
+    // 场景三：通知所有管理员
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN" },
+      select: { userid: true },
+    });
+
+    const adminIdsToNotify = admins
+      .map((admin) => admin.userid)
+      .filter((id) => id !== currentUserId);
+
+    if (adminIdsToNotify.length > 0) {
+      const episode = await prisma.episode.findUnique({
+        where: { episodeid },
+        select: { title: true },
+      });
+      const episodeTitle = episode?.title || "某剧集";
+
+      const actionText = parentId ? "回复了评论" : "发表了新评论";
+
+      await notificationService.triggerSystemNotification(
+        adminIdsToNotify,
+        `用户 ${commenterNickname} 在剧集「${episodeTitle}」${actionText}`,
+        targetUrl,
+      );
     }
   } catch (err) {
     // 通知失败不影响评论发布成功
