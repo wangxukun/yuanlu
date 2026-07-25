@@ -43,6 +43,7 @@ export default function NavLinks() {
           >
             <span
               className="material-symbols-outlined"
+              translate="no"
               style={{
                 fontVariationSettings:
                   pathname === link.href ? "'FILL' 1" : "'FILL' 0",
