@@ -1,6 +1,5 @@
 import { X, Sparkles, Crown } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
-import { Subtitle } from "@/lib/types";
 import { UseEpisodeSummarizeReturn } from "./useEpisodeSummarize";
 
 export function TranscriptPreviewModal({
@@ -101,7 +100,7 @@ export function TranscriptPreviewModal({
                 {transcriptPreview?.subtitles &&
                 transcriptPreview.subtitles.length > 0 ? (
                   transcriptPreview.subtitles.map(
-                    (sub: Subtitle, i: number) => (
+                    (sub: { textEn: string; textZh: string }, i: number) => (
                       <div key={i}>
                         <p
                           className="text-[0.6rem] sm:text-[0.65rem] leading-relaxed"
