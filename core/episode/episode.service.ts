@@ -85,6 +85,48 @@ export const episodeService = {
     };
   },
 
+  /**
+   * 搜索可添加的单集（给学习路径使用）
+   */
+  async searchForLearningPath(query: string) {
+    const episodes = await prisma.episode.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+        status: "published",
+      },
+      take: 20,
+      select: {
+        episodeid: true,
+        title: true,
+        coverFileName: true,
+        coverUrl: true,
+        duration: true,
+        podcast: {
+          select: { title: true },
+        },
+      },
+    });
+
+    return await Promise.all(
+      episodes.map(async (e) => {
+        const signedCoverUrl = e.coverFileName
+          ? await generateSignatureUrl(e.coverFileName, 3600)
+          : e.coverUrl;
+
+        return {
+          id: e.episodeid,
+          title: e.title,
+          thumbnailUrl: signedCoverUrl || "/static/images/episode-light.png",
+          author: e.podcast?.title || "Unknown",
+          duration: e.duration,
+        };
+      }),
+    );
+  },
+
   async getEditItem(id: string) {
     const episode = await episodeRepository.findById(id);
     episode.audioUrl = await generateSignatureUrl(

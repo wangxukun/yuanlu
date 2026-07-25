@@ -264,61 +264,73 @@ export default function EpisodeCard({
           >
             {episode.title}
           </h3>
-          {/* 桌面端操作 */}
-          <div className="hidden sm:flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* 操作按钮组 (移动端常显，桌面端悬浮显示) */}
+          <div className="flex items-center gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
-              className="p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
               onClick={handleAdd}
               title="加入播放队列"
             >
               <QueueListIcon className="w-5 h-5" />
             </button>
             <button
-              className="p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
               onClick={handleShare}
             >
               <ShareIcon className="w-5 h-5" />
             </button>
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() =>
-                  onMenuToggle(isMenuOpen ? null : episode.episodeid)
-                }
-                className="p-2 text-base-content/40 hover:text-base-content rounded-full hover:bg-base-300 transition-colors"
-              >
-                <EllipsisHorizontalIcon className="w-5 h-5" />
-              </button>
 
-              {isMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-base-100 rounded-xl shadow-xl border border-base-200 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                  <button className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors">
-                    <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-                    <span>下载</span>
+            {/* DaisyUI Dropdown for more actions */}
+            <div
+              className="dropdown dropdown-end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                tabIndex={0}
+                role="button"
+                className="p-2 text-base-content/60 hover:text-base-content rounded-full hover:bg-base-300 transition-colors"
+              >
+                <EllipsisHorizontalIcon className="w-6 h-6 sm:w-5 sm:h-5" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-xl z-[100] w-48 p-2 shadow-xl border border-base-200 mt-2"
+              >
+                <li>
+                  <button className="flex items-center gap-3">
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    下载
                   </button>
+                </li>
+                <li>
                   <button
                     onClick={handleAdd}
-                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                    className="flex items-center gap-3"
                   >
-                    <QueueListIcon className="w-3.5 h-3.5" />
-                    <span>加入播放队列</span>
+                    <QueueListIcon className="w-4 h-4" />
+                    加入播放队列
                   </button>
+                </li>
+                <li>
                   <button
                     onClick={handleMarkAsPlayed}
-                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                    className="flex items-center gap-3"
                   >
-                    <ArrowPathIcon className="w-3.5 h-3.5" />
-                    <span>标记为已播</span>
+                    <ArrowPathIcon className="w-4 h-4" />
+                    标记为已播
                   </button>
-                  <div className="h-px bg-base-200 my-1"></div>
+                </li>
+                <div className="divider my-0"></div>
+                <li>
                   <button
                     onClick={handleShare}
-                    className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 flex items-center space-x-3 transition-colors"
+                    className="flex items-center gap-3"
                   >
-                    <ShareIcon className="w-3.5 h-3.5" />
-                    <span>分享</span>
+                    <ShareIcon className="w-4 h-4" />
+                    分享
                   </button>
-                </div>
-              )}
+                </li>
+              </ul>
             </div>
           </div>
         </div>

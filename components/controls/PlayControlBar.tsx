@@ -52,7 +52,7 @@ export default function PlayControlBar() {
         try {
           const res = await fetch(
             `/api/episode/subtitles?id=${currentEpisode.episodeid}`,
-            { cache: "no-store" }
+            { cache: "no-store" },
           );
           const data = await res.json();
           if (data.success) {
@@ -118,7 +118,7 @@ export default function PlayControlBar() {
         className={`fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] ${
           isLyricsOpen
             ? "bottom-0 left-0 w-full max-w-none bg-white dark:bg-slate-900 px-4 py-4 md:px-8 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-none transform-none"
-            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 xl:left-[calc(50%+144px)] md:w-[calc(100%-4rem)] md:max-w-4xl bg-white/95 dark:bg-slate-900/95 md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-2xl p-4 md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:shadow-[0_20px_40px_rgba(90,66,232,0.1)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] md:dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-t md:border border-slate-100 dark:border-slate-800 pb-safe"
+            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-white/95 dark:bg-slate-900/95 md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-2xl p-4 md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:shadow-[0_20px_40px_rgba(90,66,232,0.1)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] md:dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-t md:border border-slate-100 dark:border-slate-800 pb-safe"
         }`}
       >
         {/* Mobile Progress Bar - Positioned at the very top of the bar */}
@@ -261,7 +261,7 @@ export default function PlayControlBar() {
                   className="absolute left-0 top-0 h-full bg-indigo-600 rounded-full transition-all duration-150"
                   style={{ width: `${progressPercent}%` }}
                 >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md opacity-100 transition-transform scale-75 group-hover/progress:scale-100 active:scale-110" />
                 </div>
                 <input
                   type="range"

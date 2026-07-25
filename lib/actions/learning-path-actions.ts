@@ -5,8 +5,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { CreateLearningPathSchema } from "@/core/learning-path/dto";
 import { learningPathService } from "@/core/learning-path/learning-path.service";
-import { generateSignatureUrl } from "@/lib/oss";
-import prisma from "@/lib/prisma";
+import { episodeService } from "@/core/episode/episode.service";
 
 // 1. 定义泛型 ActionState，替代 data?: any
 export type ActionState<T = undefined> = {
@@ -195,44 +194,5 @@ export async function removeEpisodeFromPathAction(
  * 修正：直接查询数据库以获取正确的类型（Status string 和 Duration number）
  */
 export async function searchEpisodesAction(query: string) {
-  // 直接使用 Prisma 查询，避免 Service 层 DTO 类型冲突 (Status Enum vs String)
-  const episodes = await prisma.episode.findMany({
-    where: {
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
-      ],
-      status: "published", // 这里可以直接比较字符串
-    },
-    take: 20,
-    select: {
-      episodeid: true,
-      title: true,
-      coverFileName: true,
-      coverUrl: true,
-      duration: true, // 保持为 Int (number)
-      podcast: {
-        select: { title: true },
-      },
-    },
-  });
-
-  // 处理封面签名并返回前端需要的格式
-  const results = await Promise.all(
-    episodes.map(async (e) => {
-      const signedCoverUrl = e.coverFileName
-        ? await generateSignatureUrl(e.coverFileName, 3600)
-        : e.coverUrl;
-
-      return {
-        id: e.episodeid,
-        title: e.title,
-        thumbnailUrl: signedCoverUrl || "/static/images/episode-light.png",
-        author: e.podcast?.title || "Unknown",
-        duration: e.duration, // number, 解决了前端需要 number 进行格式化的问题
-      };
-    }),
-  );
-
-  return results;
+  return await episodeService.searchForLearningPath(query);
 }
