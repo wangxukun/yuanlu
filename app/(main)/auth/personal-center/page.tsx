@@ -127,65 +127,68 @@ export default function PersonalCenterPage() {
       {/* 头部身份区 */}
       <div className="bg-white dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 shadow-sm relative z-nav pt-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8">
-            {/* 头像 */}
-            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-e2 border-4 border-white dark:border-ink-800 bg-ink-100 flex-shrink-0">
-              {profile.avatarUrl &&
-              profile.avatarUrl !== "default_avatar_url" ? (
-                <Image
-                  src={profile.avatarUrl}
-                  alt={profile.nickname}
-                  width={112}
-                  height={112}
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-ink-300">
-                  <UserCircleIcon className="w-16 h-16" />
-                </div>
-              )}
-            </div>
-
-            {/* 信息 */}
-            <div className="flex-1 space-y-3 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-ink-900 dark:text-ink-100">
-                  {profile.nickname || "User"}
-                </h1>
-                <div className="inline-flex items-center justify-center gap-1 bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400 px-3 py-1 rounded-full text-xs font-bold border border-accent-200 dark:border-accent-800 self-center md:self-auto">
-                  <span className="material-symbols-outlined text-[14px]">
-                    hiking
-                  </span>
-                  <span>
-                    远行客 ·{" "}
-                    {LEVEL_MAPPING[profile.learnLevel] || profile.learnLevel}
-                  </span>
-                </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 pb-8">
+            {/* 头像与信息 */}
+            <div className="flex flex-row items-start sm:items-center gap-4 sm:gap-6 flex-1">
+              {/* 头像 */}
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-e2 border-4 border-white dark:border-ink-800 bg-ink-100 flex-shrink-0">
+                {profile.avatarUrl &&
+                profile.avatarUrl !== "default_avatar_url" ? (
+                  <Image
+                    src={profile.avatarUrl}
+                    alt={profile.nickname}
+                    width={112}
+                    height={112}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-ink-300">
+                    <UserCircleIcon className="w-12 h-12 sm:w-16 sm:h-16" />
+                  </div>
+                )}
               </div>
-              <p className="text-ink-500 dark:text-ink-400 text-sm max-w-2xl leading-relaxed mx-auto md:mx-0">
-                {profile.bio}
-              </p>
-              <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-medium text-ink-400">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">
-                    calendar_month
-                  </span>
-                  <span>{formatDate(profile.joinDate)} 加入</span>
+
+              {/* 信息 */}
+              <div className="flex-1 min-w-0 space-y-2 sm:space-y-3 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-ink-900 dark:text-ink-100 truncate">
+                    {profile.nickname || "User"}
+                  </h1>
+                  <div className="inline-flex items-center gap-1 bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-bold border border-accent-200 dark:border-accent-800 self-start sm:self-auto w-fit">
+                    <span className="material-symbols-outlined text-[14px]">
+                      hiking
+                    </span>
+                    <span>
+                      远行客 ·{" "}
+                      {LEVEL_MAPPING[profile.learnLevel] || profile.learnLevel}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">
-                    location_on
-                  </span>
-                  <span>中国</span>
+                <p className="text-ink-500 dark:text-ink-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                  {profile.bio}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-medium text-ink-400">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">
+                      calendar_month
+                    </span>
+                    <span>{formatDate(profile.joinDate)} 加入</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">
+                      location_on
+                    </span>
+                    <span>中国</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* 操作 */}
-            <div className="flex justify-center md:justify-end mt-2 md:mt-0">
+            <div className="flex justify-end mt-2 md:mt-0">
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="px-6 h-10 rounded-xl border border-ink-200 dark:border-ink-700 text-sm font-medium text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors shadow-sm"
+                className="w-full sm:w-auto px-6 h-10 rounded-xl border border-ink-200 dark:border-ink-700 text-sm font-medium text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors shadow-sm"
               >
                 编辑资料
               </button>

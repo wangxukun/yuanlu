@@ -91,6 +91,13 @@
 - `tailwind.config.mjs`：正式将 `app/globals.css` 中的 `--r-*`, `--e*`, `--z-*` 等变量注册为 Tailwind 配置（覆盖 `borderRadius` 的 sm/md/lg/xl，新增 `boxShadow` e1/e2/e3 及 `zIndex` 别名）
 - 个人中心重构：废弃大横幅设计，改为卡片化风格，包含居中的头像和「远行客 Lv.X」身份徽章，引入「旅程数据」「里程碑」「最近听过」三大下划线 Tab 切页，并彻底下线遗留的 `ProfileCard` 组件。
 
+### ✅ Step 12：响应式布局优化与按钮风格统一
+
+- **个人中心移动端布局** (`personal-center/page.tsx`)：移动端头像与个人信息调整为 `flex-row` 左右列布局，信息文本左对齐，并优化了各种窄屏设备的响应式间距与元素遮挡。
+- **单集详情页平板端收拢** (`episode/[id]/page.tsx` & `ActionButtons.tsx`)：将单集详情页网格断点由 `md` 提升至 `lg`，使平板端统一应用全宽单列布局；`ActionButtons` 响应式断点下调至 `md`，实现在平板端所有按钮呈一行优雅排版。
+- **按钮视觉风格统一** (`ActionButtons.tsx` & `LearningPathsClient.tsx`)：剥离 DaisyUI `.btn` 自带的修饰阴影与微缩放，统一采用 `PodcastHero` 的纯粹原生 Tailwind 色块风格（`bg-[#1F7A5C] hover:bg-[#1A6349]` 等）。
+- **频道页 Banner 与暗色模式修复** (`ChannelClient.tsx`)：显式指定浅色模式深绿底色 `bg-[#1F7A5C]` 解决原 `bg-primary` 失效导致对比度缺失问题，增加 `antialiased` 修复深色背景上的文字边缘发虚，并添加 `dark:bg-ink-950` 实现暗色模式下的沉浸式纯黑底板。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。

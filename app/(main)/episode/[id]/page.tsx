@@ -64,9 +64,9 @@ export default async function EpisodePage({
       />
 
       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-10 pt-8 md:pt-12 pb-32">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12">
-          {/* --- Left Column: Main Content (tablet: 5/12, desktop: 8/12) --- */}
-          <div className="md:col-span-5 lg:col-span-8 flex flex-col gap-12 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* --- Left Column: Main Content (mobile & tablet: 12/12, desktop: 8/12) --- */}
+          <div className="lg:col-span-8 flex flex-col gap-12 min-w-0">
             {/* Hero Section: EpisodeSummarize handles Player + Title + Meta */}
             <EpisodeSummarize episode={episode} />
 
@@ -82,8 +82,8 @@ export default async function EpisodePage({
             </section>
           </div>
 
-          {/* --- Right Column: Sidebar (tablet: 7/12, desktop: 4/12) --- */}
-          <aside className="md:col-span-7 lg:col-span-4">
+          {/* --- Right Column: Sidebar (mobile & tablet: 12/12, desktop: 4/12) --- */}
+          <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-24 self-start">
               <RelatedEpisodes
                 podcast={podcast}

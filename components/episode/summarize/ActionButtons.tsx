@@ -41,13 +41,13 @@ export function ActionButtons({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center gap-4 py-2 border-y border-ink-100 dark:border-ink-800">
-      {/* Row 1: Play & Practice (Full display on mobile, left portion on desktop) */}
-      <div className="flex items-center gap-3 w-full sm:w-auto">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 py-2 border-y border-ink-100 dark:border-ink-800">
+      {/* Row 1 on mobile / Left group on tablet & desktop */}
+      <div className="flex items-center gap-3 w-full md:w-auto">
         {/* 开始精听（主 CTA） */}
         <button
           onClick={handleImmersivePlay}
-          className="btn btn-primary px-6 py-2.5 min-h-0 h-auto rounded-xl flex items-center gap-2 font-bold transition-colors border-none text-white flex-1 sm:flex-none justify-center sm:justify-start"
+          className="bg-[#1F7A5C] hover:bg-[#1A6349] text-white px-5 sm:px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-colors flex-1 md:flex-none justify-center md:justify-start"
         >
           {isPlayingThis ? (
             <Pause className="w-5 h-5 fill-current" />
@@ -62,7 +62,7 @@ export function ActionButtons({
         {/* Practice Button */}
         <button
           onClick={handleStartPractice}
-          className="btn btn-secondary px-6 py-2.5 min-h-0 h-auto rounded-xl flex items-center gap-2 font-bold transition-colors border-none text-white flex-1 sm:flex-none justify-center sm:justify-start"
+          className="bg-accent-500 hover:bg-accent-600 text-white px-5 sm:px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-colors flex-1 md:flex-none justify-center md:justify-start"
         >
           {isLocked ? (
             <Lock className="w-5 h-5" />
@@ -73,23 +73,23 @@ export function ActionButtons({
         </button>
       </div>
 
-      {/* Row 2: Audio/Transcript Download, Favorite, Share (Icons only on mobile, full display on desktop) */}
-      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+      {/* Row 2 on mobile / Right group on tablet & desktop */}
+      <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-start">
         {/* Audio Download */}
         <button
           onClick={handleDownloadAudio}
-          className="p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 sm:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 sm:flex-none text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 sm:hover:bg-transparent"
+          className="p-2.5 md:px-4 md:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 md:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 md:flex-none text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 md:hover:bg-transparent"
           title="下载音频"
         >
           <Download className="w-5 h-5" />
-          <span className="hidden min-[821px]:inline">音频</span>
+          <span className="hidden md:inline">音频</span>
         </button>
 
         {/* Transcript Download */}
         <button
           onClick={handleDownloadTranscript}
           disabled={isGeneratingPdf}
-          className="p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 sm:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 sm:flex-none text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 sm:hover:bg-transparent disabled:opacity-50 disabled:cursor-wait"
+          className="p-2.5 md:px-4 md:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 md:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 md:flex-none text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 md:hover:bg-transparent disabled:opacity-50 disabled:cursor-wait"
           title="下载文稿 PDF"
         >
           {isGeneratingPdf ? (
@@ -97,7 +97,7 @@ export function ActionButtons({
           ) : (
             <FileDown className="w-5 h-5" />
           )}
-          <span className="hidden min-[821px]:inline">文稿</span>
+          <span className="hidden md:inline">文稿</span>
         </button>
 
         {/* Favorite */}
@@ -105,16 +105,16 @@ export function ActionButtons({
           onClick={handleToggleFavorite}
           title={isFavorited ? "取消收藏" : "收藏"}
           aria-label={isFavorited ? "取消收藏" : "收藏"}
-          className={`p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 sm:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 sm:flex-none ${
+          className={`p-2.5 md:px-4 md:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 md:border-none flex items-center gap-1.5 font-medium transition-colors justify-center flex-1 md:flex-none ${
             isFavorited
-              ? "text-[#1F7A5C] bg-[#1F7A5C]/5 sm:bg-transparent"
-              : "text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 sm:hover:bg-transparent"
+              ? "text-[#1F7A5C] bg-[#1F7A5C]/5 md:bg-transparent"
+              : "text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 md:hover:bg-transparent"
           }`}
         >
           <Bookmark
             className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`}
           />
-          <span className="hidden min-[821px]:inline">收藏</span>
+          <span className="hidden md:inline">收藏</span>
         </button>
 
         {/* Share */}
@@ -122,10 +122,10 @@ export function ActionButtons({
           onClick={handleShare}
           title="分享"
           aria-label="分享"
-          className="p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 sm:border-none flex items-center gap-1.5 font-medium text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 sm:hover:bg-transparent transition-colors justify-center flex-1 sm:flex-none"
+          className="p-2.5 md:px-4 md:py-2.5 rounded-xl border border-ink-100 dark:border-ink-800 md:border-none flex items-center gap-1.5 font-medium text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 md:hover:bg-transparent transition-colors justify-center flex-1 md:flex-none"
         >
           <Share2 className="w-5 h-5" />
-          <span className="hidden min-[821px]:inline">分享</span>
+          <span className="hidden md:inline">分享</span>
         </button>
       </div>
     </div>

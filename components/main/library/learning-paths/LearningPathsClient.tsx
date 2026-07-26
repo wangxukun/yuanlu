@@ -77,10 +77,10 @@ export default function LearningPathsClient({
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="btn btn-primary rounded-lg font-bold"
+          className="bg-[#1F7A5C] hover:bg-[#1A6349] text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-colors"
         >
-          <Plus size={20} className="mr-2" />
-          创建新路径
+          <Plus size={20} />
+          <span>创建新路径</span>
         </button>
       </div>
 

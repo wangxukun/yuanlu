@@ -198,7 +198,7 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950 pb-24">
       {/* ========== Hero Banner ========== */}
-      <div className="bg-primary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="bg-[#1F7A5C] dark:bg-ink-950 text-white antialiased pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Decorative background pattern */}
         <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
           <Radio size={400} className="fill-current" />
@@ -208,17 +208,17 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
           {/* Back button */}
           <button
             onClick={() => router.back()}
-            className="flex items-center text-neutral-content/60 hover:text-neutral-content transition-colors mb-6 md:mb-8 group"
+            className="flex items-center text-white/70 hover:text-white transition-colors mb-6 md:mb-8 group"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" /> 返回
           </button>
 
           {/* Banner content */}
-          <div className="flex flex-col items-center py-12 sm:py-16 lg:py-20 text-center">
+          <div className="flex flex-col items-center py-12 sm:py-16 lg:py-20 text-center text-white">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3">
               {data.platformName}
             </h1>
-            <p className="text-neutral-content/60 text-sm sm:text-base font-medium">
+            <p className="text-white/80 text-sm sm:text-base font-medium">
               {data.platformName} · 频道 · {data.podcastCount} 档节目
             </p>
           </div>
