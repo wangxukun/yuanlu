@@ -6,7 +6,6 @@ import {
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -45,13 +44,13 @@ export default function ActivityChart() {
   };
 
   return (
-    <div className="bg-base-100 p-6 rounded-2xl shadow-sm border border-base-200">
+    <div className="bg-white dark:bg-ink-900 p-6 rounded-2xl border border-ink-100 dark:border-ink-800">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-base-content">
-          每周学习活动
+        <h3 className="text-lg font-semibold text-ink-900 dark:text-ink-50">
+          本周行程记录
         </h3>
         <select
-          className="select select-sm select-bordered bg-base-200/50"
+          className="select select-sm select-bordered bg-ink-50 dark:bg-ink-800 border-ink-200 dark:border-ink-700 text-ink-700 dark:text-ink-300"
           value={weekOffset}
           onChange={handleWeekChange}
         >
@@ -62,49 +61,70 @@ export default function ActivityChart() {
       <div className="h-64 w-full">
         {loading ? (
           <div className="h-full flex items-center justify-center">
-            <span className="loading loading-spinner loading-md text-primary"></span>
+            <span className="loading loading-spinner loading-md text-primary" />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1F7A5C" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#1F7A5C" stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor="var(--primary-500)"
+                    stopOpacity={0.15}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--primary-500)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="rgba(0,0,0,0.1)"
-              />
+              {/* CartesianGrid removed — cleaner single-color aesthetic */}
               <XAxis
                 dataKey="day"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#A79E8A", fontSize: 12 }}
+                tick={{ fill: "var(--ink-400)", fontSize: 12 }}
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#A79E8A", fontSize: 12 }}
+                tick={{ fill: "var(--ink-400)", fontSize: 12 }}
                 unit="m"
+                width={36}
               />
               <Tooltip
                 contentStyle={{
-                  borderRadius: "12px",
-                  border: "none",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                  borderRadius: "var(--r-md)",
+                  border: "1px solid var(--ink-200)",
+                  boxShadow: "var(--e1)",
+                  backgroundColor: "var(--ink-50)",
+                  color: "var(--ink-900)",
                 }}
+                labelStyle={{ color: "var(--ink-500)", fontWeight: 500 }}
+                cursor={{ stroke: "var(--primary-300)", strokeWidth: 1 }}
               />
               <Area
                 type="monotone"
                 dataKey="minutes"
-                stroke="#1F7A5C"
-                strokeWidth={3}
+                stroke="var(--primary-600)"
+                strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#colorMinutes)"
+                dot={{
+                  r: 3,
+                  fill: "var(--primary-600)",
+                  stroke: "white",
+                  strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 5,
+                  fill: "var(--primary-600)",
+                  stroke: "white",
+                  strokeWidth: 2,
+                }}
               />
             </AreaChart>
           </ResponsiveContainer>

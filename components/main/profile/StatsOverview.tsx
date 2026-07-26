@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  BookOpenIcon,
-} from "@heroicons/react/24/outline";
 import { UserProfileStatsDto } from "@/core/stats/dto";
+
+/** 步行速度 5km/h → 1 小时收听 = 5km 里程 */
+const KM_PER_HOUR = 5;
 
 export default function StatsOverview() {
   const [stats, setStats] = useState<UserProfileStatsDto>({
@@ -22,7 +20,6 @@ export default function StatsOverview() {
         const res = await fetch("/api/user/stats/overview");
         if (res.ok) {
           const data = await res.json();
-          // 确保没有返回 error 对象
           if (!data.error) {
             setStats(data);
           }
@@ -37,15 +34,16 @@ export default function StatsOverview() {
     fetchStats();
   }, []);
 
+  const totalKm = stats.totalHours * KM_PER_HOUR;
+
   if (loading) {
-    // 简单的骨架屏占位
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-pulse">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="bg-base-100 p-5 rounded-2xl shadow-sm border border-base-200 h-24"
-          ></div>
+            className="bg-white dark:bg-ink-900 p-5 rounded-2xl border border-ink-100 dark:border-ink-800 h-28"
+          />
         ))}
       </div>
     );
@@ -53,53 +51,80 @@ export default function StatsOverview() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {/* Total Hours */}
-      <div className="bg-base-100 p-5 rounded-2xl shadow-sm border border-base-200">
+      {/* 累计里程 */}
+      <div className="bg-white dark:bg-ink-900 p-5 rounded-2xl border border-ink-100 dark:border-ink-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-              总小时数
+            <p className="text-xs font-medium text-ink-400 uppercase tracking-wider">
+              累计里程
             </p>
-            <p className="mt-1 text-2xl font-bold text-base-content">
-              {stats.totalHours}h
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="font-display text-3xl font-bold text-ink-900 dark:text-ink-50">
+                {totalKm.toFixed(1)}
+              </span>
+              <span className="text-sm font-medium text-ink-400">km</span>
+            </div>
+            <p className="mt-0.5 text-[11px] text-ink-400">
+              {stats.totalHours}h 精听
             </p>
           </div>
-          <div className="bg-info/10 p-2 rounded-lg">
-            <ClockIcon className="w-5 h-5 text-info" />
+          <div className="bg-primary-50 dark:bg-primary-900/30 p-2.5 rounded-xl">
+            <span
+              className="material-symbols-outlined text-xl text-primary-600 dark:text-primary-400"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              hiking
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Streak */}
-      <div className="bg-base-100 p-5 rounded-2xl shadow-sm border border-base-200">
+      {/* 连续天数 */}
+      <div className="bg-white dark:bg-ink-900 p-5 rounded-2xl border border-ink-100 dark:border-ink-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+            <p className="text-xs font-medium text-ink-400 uppercase tracking-wider">
               连续天数
             </p>
-            <p className="mt-1 text-2xl font-bold text-base-content">
-              {stats.streakDays}
-            </p>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-bold text-ink-900 dark:text-ink-50">
+                {stats.streakDays}
+              </span>
+              <span className="text-sm font-medium text-ink-400">天</span>
+            </div>
           </div>
-          <div className="bg-error/10 p-2 rounded-lg">
-            <ArrowTrendingUpIcon className="w-5 h-5 text-error" />
+          <div className="bg-accent-50 dark:bg-accent-900/30 p-2.5 rounded-xl">
+            <span
+              className="material-symbols-outlined text-xl text-accent-600 dark:text-accent-400"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              local_fire_department
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Words */}
-      <div className="bg-base-100 p-5 rounded-2xl shadow-sm border border-base-200">
+      {/* 词汇路标 */}
+      <div className="bg-white dark:bg-ink-900 p-5 rounded-2xl border border-ink-100 dark:border-ink-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-              词汇
+            <p className="text-xs font-medium text-ink-400 uppercase tracking-wider">
+              词汇路标
             </p>
-            <p className="mt-1 text-2xl font-bold text-base-content">
-              {stats.wordsLearned}
-            </p>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-bold text-ink-900 dark:text-ink-50">
+                {stats.wordsLearned}
+              </span>
+              <span className="text-sm font-medium text-ink-400">词</span>
+            </div>
           </div>
-          <div className="bg-secondary/10 p-2 rounded-lg">
-            <BookOpenIcon className="w-5 h-5 text-secondary" />
+          <div className="bg-info-50 dark:bg-info-900/30 p-2.5 rounded-xl">
+            <span
+              className="material-symbols-outlined text-xl text-info-500 dark:text-info-400"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              bookmark
+            </span>
           </div>
         </div>
       </div>

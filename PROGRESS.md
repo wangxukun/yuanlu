@@ -68,6 +68,14 @@
 - 品牌波形微交互：播放中封面图叠加半透明黑底 + 4 柱 `animate-eq` 白色跳动波形，同步应用至桌面控制条、播放列表当前项及移动端 `MobilePlayerBar` Mini 播放器
 - 下线清理：彻底清理并删除废弃遗留组件 `components/player/Player.tsx`
 
+### ✅ Step 10：学习报告页旅程化
+
+- `StatsOverview` 旅程仪表盘：累计里程 km 大数字（`totalHours × 5`）+ 连续天数🔥 + 词汇路标，统一 ink/primary/accent 设计令牌
+- `MilestoneRoadmap` SVG 里程碑路图：新建 5 节点（1/5/21.1/42.2/100km）蜿蜒旅程路径，已达成节点着远青色+曙光橙旗帜，当前位置脉冲动画圆点
+- `ActivityChart` 单色化去网格：删除 CartesianGrid 降低视觉噪音，Tooltip 改为暖纸色系，标题更新为「本周行程记录」
+- `AchievementsCard` 里程碑化：标题改为「远路里程碑」，解锁/未解锁双态配色统一至 ink/primary 设计令牌
+- `personal-center/page.tsx` 页面组装：在 StatsOverview 和 ActivityChart 之间嵌入 MilestoneRoadmap
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
@@ -90,7 +98,7 @@
 - [ ] **Step 4**：`components/ui/PodcastCard.tsx` 统一播客卡（4:3 封面、≤1 角标、meta 行难度圆点），替换 discover 页 3 处内联实现
 - [x] **Step 8**：播放器统一——`PlayControlBar` 悬浮药丸规范（h-16、rounded-full、e3）、进度条 h-1 + 12px 白圆点、播放中封面 4 柱 `animate-eq` 波形；下线遗留 `components/player/Player.tsx`
 - [ ] **Step 9**：**听写模式**（新功能）——逐字稿区内 Tab 切换（非新路由）：单句循环 + 0.8x、隐藏 input 逐词比对（正确 `text-primary-600` / 错误 `text-error line-through` 保留用户输入 / 待填 dashed 下划线）、3 次失败出「提示」、句点进度 + 正确率
-- [ ] **Step 10**：学习报告页——累计里程大数字（分钟 ÷ 12 = km）、SVG 里程碑路图（1/5/21.1/42.2/100km 旗帜）、`ActivityChart` 单色化去网格、成就墙改里程碑体系
+- [x] **Step 10**：学习报告页——累计里程大数字（分钟 ÷ 12 = km）、SVG 里程碑路图（1/5/21.1/42.2/100km 旗帜）、`ActivityChart` 单色化去网格、成就墙改里程碑体系
 - [ ] **Step 11**：z-index token 落地
 
 ### 已知小问题
@@ -102,9 +110,8 @@
 
 ## 四、下一步计划（建议顺序）
 
-1. **Step 10 学习报告页**——旅程可视化的主战场，与首页 WeeklyMileageCard/JourneyStrip 形成数据叙事闭环
-2. **Step 9 听写模式**——唯一的新功能开发，工作量最大，需设计逐词比对逻辑
-3. **Step 4 播客卡统一** + 圆角/阴影阶梯推广（可合并为一次"组件规范化"提交）
+1. **Step 9 听写模式**——唯一的新功能开发，工作量最大，需设计逐词比对逻辑
+2. **Step 4 播客卡统一** + 圆角/阴影阶梯推广（可合并为一次"组件规范化"提交）
 
 ## 五、工作方式备忘
 

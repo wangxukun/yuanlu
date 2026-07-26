@@ -12,6 +12,7 @@ import ProfileCard from "@/components/main/profile/ProfileCard";
 import AchievementsCard from "@/components/main/profile/AchievementsCard";
 import StatsOverview from "@/components/main/profile/StatsOverview";
 import ActivityChart from "@/components/main/profile/ActivityChart";
+import MilestoneRoadmap from "@/components/main/profile/MilestoneRoadmap";
 import RecentHistory from "@/components/main/profile/RecentHistory";
 
 export default function PersonalCenterPage() {
@@ -132,6 +133,7 @@ export default function PersonalCenterPage() {
           {/* Right Column: Stats, Chart & History */}
           <div className="lg:col-span-2 space-y-6">
             <StatsOverview />
+            <MilestoneRoadmap />
             <ActivityChart />
             <RecentHistory />
           </div>
