@@ -5,15 +5,15 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/tools";
 
-// 引入拆分的组件
 import { UserProfile } from "@/core/user-profile/user-profile.entity";
 import EditProfileModal from "@/components/main/profile/EditProfileModal";
-import ProfileCard from "@/components/main/profile/ProfileCard";
 import AchievementsCard from "@/components/main/profile/AchievementsCard";
 import StatsOverview from "@/components/main/profile/StatsOverview";
 import ActivityChart from "@/components/main/profile/ActivityChart";
 import MilestoneRoadmap from "@/components/main/profile/MilestoneRoadmap";
 import RecentHistory from "@/components/main/profile/RecentHistory";
+import Image from "next/image";
+import { UserCircleIcon } from "@heroicons/react/24/outline";
 
 export default function PersonalCenterPage() {
   const { data: session, update: updateSession } = useSession();
@@ -32,6 +32,16 @@ export default function PersonalCenterPage() {
     user: undefined,
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "journey" | "achievements" | "history"
+  >("journey");
+
+  const LEVEL_MAPPING: Record<string, string> = {
+    Beginner: "初级",
+    Intermediate: "中级",
+    Advanced: "高级",
+    General: "未分级",
+  };
 
   // 获取数据
   const fetchProfile = async () => {
@@ -105,7 +115,7 @@ export default function PersonalCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ink-50 dark:bg-ink-950 text-ink-900 dark:text-ink-100 pb-12">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-950 pb-12">
       {/* Edit Modal */}
       <EditProfileModal
         isOpen={isEditModalOpen}
@@ -114,30 +124,129 @@ export default function PersonalCenterPage() {
         onSave={handleUpdateProfile}
       />
 
-      {/* Header Background */}
-      <div className="h-48 bg-primary w-full relative">
-        <div className="absolute inset-0 bg-black/10"></div>
-      </div>
+      {/* 头部身份区 */}
+      <div className="bg-white dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 shadow-sm relative z-nav pt-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8">
+            {/* 头像 */}
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-e2 border-4 border-white dark:border-ink-800 bg-ink-100 flex-shrink-0">
+              {profile.avatarUrl &&
+              profile.avatarUrl !== "default_avatar_url" ? (
+                <Image
+                  src={profile.avatarUrl}
+                  alt={profile.nickname}
+                  width={112}
+                  height={112}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-ink-300">
+                  <UserCircleIcon className="w-16 h-16" />
+                </div>
+              )}
+            </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: User Card & Achievements */}
-          <div className="lg:col-span-1 space-y-6">
-            <ProfileCard
-              profile={profile}
-              onEditClick={() => setIsEditModalOpen(true)}
-            />
-            <AchievementsCard />
+            {/* 信息 */}
+            <div className="flex-1 space-y-3 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-ink-900 dark:text-ink-100">
+                  {profile.nickname || "User"}
+                </h1>
+                <div className="inline-flex items-center justify-center gap-1 bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400 px-3 py-1 rounded-full text-xs font-bold border border-accent-200 dark:border-accent-800 self-center md:self-auto">
+                  <span className="material-symbols-outlined text-[14px]">
+                    hiking
+                  </span>
+                  <span>
+                    远行客 ·{" "}
+                    {LEVEL_MAPPING[profile.learnLevel] || profile.learnLevel}
+                  </span>
+                </div>
+              </div>
+              <p className="text-ink-500 dark:text-ink-400 text-sm max-w-2xl leading-relaxed mx-auto md:mx-0">
+                {profile.bio}
+              </p>
+              <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-medium text-ink-400">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">
+                    calendar_month
+                  </span>
+                  <span>{formatDate(profile.joinDate)} 加入</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">
+                    location_on
+                  </span>
+                  <span>中国</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 操作 */}
+            <div className="flex justify-center md:justify-end mt-2 md:mt-0">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-6 h-10 rounded-xl border border-ink-200 dark:border-ink-700 text-sm font-medium text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800 transition-colors shadow-sm"
+              >
+                编辑资料
+              </button>
+            </div>
           </div>
 
-          {/* Right Column: Stats, Chart & History */}
-          <div className="lg:col-span-2 space-y-6">
-            <StatsOverview />
-            <MilestoneRoadmap />
-            <ActivityChart />
-            <RecentHistory />
+          {/* Tabs */}
+          <div className="flex space-x-6 md:space-x-8 border-t border-transparent translate-y-[1px] overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => setActiveTab("journey")}
+              className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
+                activeTab === "journey"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-300"
+              }`}
+            >
+              旅程数据
+            </button>
+            <button
+              onClick={() => setActiveTab("achievements")}
+              className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
+                activeTab === "achievements"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-300"
+              }`}
+            >
+              里程碑
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
+                activeTab === "history"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-300"
+              }`}
+            >
+              最近听过
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* 选项卡内容区 */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        {activeTab === "journey" && (
+          <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <StatsOverview />
+            <ActivityChart />
+          </div>
+        )}
+        {activeTab === "achievements" && (
+          <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <MilestoneRoadmap />
+            <AchievementsCard />
+          </div>
+        )}
+        {activeTab === "history" && (
+          <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <RecentHistory />
+          </div>
+        )}
       </div>
     </div>
   );

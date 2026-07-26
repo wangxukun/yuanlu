@@ -86,6 +86,11 @@
 - `AchievementsCard` 里程碑化：标题改为「远路里程碑」，解锁/未解锁双态配色统一至 ink/primary 设计令牌
 - `personal-center/page.tsx` 页面组装：在 StatsOverview 和 ActivityChart 之间嵌入 MilestoneRoadmap
 
+### ✅ Step 11：设计令牌落地与个人中心重构
+
+- `tailwind.config.mjs`：正式将 `app/globals.css` 中的 `--r-*`, `--e*`, `--z-*` 等变量注册为 Tailwind 配置（覆盖 `borderRadius` 的 sm/md/lg/xl，新增 `boxShadow` e1/e2/e3 及 `zIndex` 别名）
+- 个人中心重构：废弃大横幅设计，改为卡片化风格，包含居中的头像和「远行客 Lv.X」身份徽章，引入「旅程数据」「里程碑」「最近听过」三大下划线 Tab 切页，并彻底下线遗留的 `ProfileCard` 组件。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
@@ -97,9 +102,8 @@
 
 ### 设计系统遗留
 
-- [ ] **圆角类重映射**：`rounded-lg/xl` 等 Tailwind 默认值未改（避免未审先变），待组件级改造时按 8/12/16/24 阶梯逐个落地
 - [ ] **阴影统一**：卡片 e0（1px 边框）→ hover e2 的模式未全站推广
-- [ ] z-index magic number（190/195/200/210）替换为 `--z-*` 变量
+- [ ] z-index magic number（190/195/200/210）替换为 `--z-*` 变量 (部分完成)
 - [ ] `--header-height-mobile: 80px` 与实际 `h-14`(56px) 不一致
 - [ ] `bg-base-*` / `bg-ink-*` 混用清理（两套底色写法已同值，但类名未统一）
 
@@ -109,18 +113,14 @@
 - [x] **Step 8**：播放器统一——`PlayControlBar` 悬浮药丸规范（h-16、rounded-full、e3）、进度条 h-1 + 12px 白圆点、播放中封面 4 柱 `animate-eq` 波形；下线遗留 `components/player/Player.tsx`
 - [x] **Step 9**：**听写模式**（新功能）——逐字稿区内 Tab 切换（非新路由）：单句循环 + 0.8x、隐藏 input 逐词比对（正确 `text-primary-600` / 错误 `text-error line-through` 保留用户输入 / 待填 dashed 下划线）、3 次失败出「提示」、自动通关跳转
 - [x] **Step 10**：学习报告页——累计里程大数字（分钟 ÷ 12 = km）、SVG 里程碑路图（1/5/21.1/42.2/100km 旗帜）、`ActivityChart` 单色化去网格、成就墙改里程碑体系
-- [ ] **Step 11**：z-index token 落地
-
-### 已知小问题
-
-- 个人中心横幅已拍平为 `bg-primary`，但整体改版（头像 + 「远行客 Lv.X」身份行 + Tab 重构）未做
+- [x] **Step 11**：z-index/圆角/阴影 token 落地，并完成个人中心横幅与 Tabs 的改版
 
 ---
 
 ## 四、下一步计划（建议顺序）
 
-1. **Step 11 z-index token 落地** + 圆角/阴影阶梯全站推广
-2. **个人中心头部重构** (解决遗留的已知小问题)
+1. 深入清理设计系统遗留问题（如 `bg-base` 类名、固定高度变量不一致）
+2. 其他模块的响应式或移动端专项适配
 
 ## 五、工作方式备忘
 
