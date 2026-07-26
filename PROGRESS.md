@@ -97,21 +97,20 @@
 
 - [x] **Step 4**：`components/ui/PodcastCard.tsx` 统一播客卡（4:3 封面、≤1 角标、meta 行难度圆点），替换 discover 页 3 处内联实现
 - [x] **Step 8**：播放器统一——`PlayControlBar` 悬浮药丸规范（h-16、rounded-full、e3）、进度条 h-1 + 12px 白圆点、播放中封面 4 柱 `animate-eq` 波形；下线遗留 `components/player/Player.tsx`
-- [ ] **Step 9**：**听写模式**（新功能）——逐字稿区内 Tab 切换（非新路由）：单句循环 + 0.8x、隐藏 input 逐词比对（正确 `text-primary-600` / 错误 `text-error line-through` 保留用户输入 / 待填 dashed 下划线）、3 次失败出「提示」、句点进度 + 正确率
+- [x] **Step 9**：**听写模式**（新功能）——逐字稿区内 Tab 切换（非新路由）：单句循环 + 0.8x、隐藏 input 逐词比对（正确 `text-primary-600` / 错误 `text-error line-through` 保留用户输入 / 待填 dashed 下划线）、3 次失败出「提示」、自动通关跳转
 - [x] **Step 10**：学习报告页——累计里程大数字（分钟 ÷ 12 = km）、SVG 里程碑路图（1/5/21.1/42.2/100km 旗帜）、`ActivityChart` 单色化去网格、成就墙改里程碑体系
 - [ ] **Step 11**：z-index token 落地
 
 ### 已知小问题
 
 - 个人中心横幅已拍平为 `bg-primary`，但整体改版（头像 + 「远行客 Lv.X」身份行 + Tab 重构）未做
-- 听写功能在 PRD 中是核心功能，代码库中目前完全不存在（现有 `practice` 页是口语评测）
 
 ---
 
 ## 四、下一步计划（建议顺序）
 
-1. **Step 9 听写模式**——唯一的新功能开发，工作量最大，需设计逐词比对逻辑
-2. **Step 11 z-index token 落地** + 圆角/阴影阶梯全站推广
+1. **Step 11 z-index token 落地** + 圆角/阴影阶梯全站推广
+2. **个人中心头部重构** (解决遗留的已知小问题)
 
 ## 五、工作方式备忘
 

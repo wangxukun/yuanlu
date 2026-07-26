@@ -12,6 +12,7 @@ import { checkExclusivePlay } from "@/lib/client/auth-utils";
 // Import new decoupled components
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { SubtitleItem } from "./transcript/SubtitleItem";
+import { DictationItem } from "./transcript/DictationItem";
 import { TranscriptToolbar } from "./transcript/TranscriptToolbar";
 import { SelectionMenu } from "./transcript/SelectionMenu";
 import { VocabularyModal } from "./transcript/VocabularyModal";
@@ -42,6 +43,7 @@ export default function InteractiveTranscript({
     currentEpisode,
     setCurrentEpisode,
     setCurrentAudioUrl,
+    setPlaybackRate,
   } = usePlayerStore();
 
   const isPlayingThisEpisode = currentEpisode?.episodeid === episode.episodeid;
@@ -49,6 +51,9 @@ export default function InteractiveTranscript({
   // 3. Local State
   const [showTranslation, setShowTranslation] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
+    "read",
+  );
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +107,53 @@ export default function InteractiveTranscript({
     containerRef,
     processedSubtitles,
   );
+
+  // --- Dictation Mode Logic ---
+  // 1. Playback Rate
+  React.useEffect(() => {
+    if (transcriptMode === "dictate") {
+      setPlaybackRate(0.8);
+    } else {
+      setPlaybackRate(1.0);
+    }
+  }, [transcriptMode]);
+
+  // 2. Single Sentence Loop
+  React.useEffect(() => {
+    if (
+      transcriptMode === "dictate" &&
+      isPlayingThisEpisode &&
+      isPlaying &&
+      audioRef
+    ) {
+      const activeSub = processedSubtitles[activeIndex];
+      // If we overshoot the end of the current sentence, loop back to start
+      if (activeSub && currentTime >= activeSub.end) {
+        audioRef.currentTime = activeSub.start;
+        setCurrentTime(activeSub.start);
+      }
+    }
+  }, [
+    transcriptMode,
+    isPlayingThisEpisode,
+    isPlaying,
+    audioRef,
+    currentTime,
+    activeIndex,
+    processedSubtitles,
+    setCurrentTime,
+  ]);
+
+  const handleDictationSuccess = useCallback(() => {
+    // Jump to next subtitle or pause
+    const nextSub = processedSubtitles[activeIndex + 1];
+    if (nextSub && audioRef) {
+      audioRef.currentTime = nextSub.start;
+      setCurrentTime(nextSub.start);
+    } else if (pause) {
+      pause();
+    }
+  }, [activeIndex, processedSubtitles, audioRef, setCurrentTime, pause]);
 
   // --- 交互逻辑 ---
   const handleJump = useCallback(
@@ -240,6 +292,8 @@ export default function InteractiveTranscript({
         setAutoScroll={setAutoScroll}
         showTranslation={showTranslation}
         setShowTranslation={setShowTranslation}
+        transcriptMode={transcriptMode}
+        setTranscriptMode={setTranscriptMode}
       />
 
       {!session?.user && (
@@ -253,18 +307,34 @@ export default function InteractiveTranscript({
 
       {/* --- 字幕内容区 --- */}
       <div className="space-y-1 pb-20" ref={containerRef}>
-        {processedSubtitles.map((sub, index) => (
-          <SubtitleItem
-            key={sub.id || index}
-            sub={sub}
-            isActive={index === activeIndex}
-            isPlaying={isPlaying}
-            showTranslation={showTranslation}
-            onJump={handleJump}
-            onWordClick={handleWordClick}
-            onProofread={handleProofread}
-          />
-        ))}
+        {processedSubtitles.map((sub, index) => {
+          const isActive = index === activeIndex;
+          if (transcriptMode === "dictate" && isActive) {
+            return (
+              <DictationItem
+                key={sub.id || index}
+                sub={sub}
+                isActive={isActive}
+                isPlaying={isPlaying}
+                showTranslation={showTranslation}
+                onJump={handleJump}
+                onSuccess={handleDictationSuccess}
+              />
+            );
+          }
+          return (
+            <SubtitleItem
+              key={sub.id || index}
+              sub={sub}
+              isActive={isActive}
+              isPlaying={isPlaying}
+              showTranslation={showTranslation}
+              onJump={handleJump}
+              onWordClick={handleWordClick}
+              onProofread={handleProofread}
+            />
+          );
+        })}
         {!isLoggedIn && (
           <div className="flex justify-center mt-8 pb-4">
             <button

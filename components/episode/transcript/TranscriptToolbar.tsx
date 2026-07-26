@@ -13,6 +13,8 @@ interface TranscriptToolbarProps {
   setAutoScroll: (val: boolean) => void;
   showTranslation: boolean;
   setShowTranslation: (val: boolean) => void;
+  transcriptMode: "read" | "dictate";
+  setTranscriptMode: (mode: "read" | "dictate") => void;
 }
 
 export function TranscriptToolbar({
@@ -21,9 +23,11 @@ export function TranscriptToolbar({
   setAutoScroll,
   showTranslation,
   setShowTranslation,
+  transcriptMode,
+  setTranscriptMode,
 }: TranscriptToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-300 border-opacity-60 sticky top-0 bg-base-100 bg-opacity-95 backdrop-blur z-10 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-ink-200 dark:border-ink-800 sticky top-0 bg-white dark:bg-ink-950 bg-opacity-95 dark:bg-opacity-95 backdrop-blur z-20 py-2">
       <div className="flex items-center gap-2">
         {isPlayingThisEpisode ? (
           <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">
@@ -36,14 +40,40 @@ export function TranscriptToolbar({
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Mode Switch (Read vs Dictate) */}
+      <div className="flex bg-ink-50 dark:bg-ink-900 rounded-lg p-1">
+        <button
+          onClick={() => setTranscriptMode("read")}
+          className={clsx(
+            "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
+            transcriptMode === "read"
+              ? "bg-white dark:bg-ink-800 text-primary-600 dark:text-primary-400 shadow-sm"
+              : "text-ink-500 hover:text-ink-700 dark:hover:text-ink-300",
+          )}
+        >
+          📖 精读
+        </button>
+        <button
+          onClick={() => setTranscriptMode("dictate")}
+          className={clsx(
+            "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
+            transcriptMode === "dictate"
+              ? "bg-white dark:bg-ink-800 text-primary-600 dark:text-primary-400 shadow-sm"
+              : "text-ink-500 hover:text-ink-700 dark:hover:text-ink-300",
+          )}
+        >
+          ✍️ 听写
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setAutoScroll(!autoScroll)}
           className={clsx(
             "btn btn-xs sm:btn-sm btn-ghost gap-1.5 transition-colors",
             autoScroll
-              ? "text-primary bg-primary/5 "
-              : "text-base-content text-opacity-40",
+              ? "text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+              : "text-ink-400 hover:text-ink-600",
           )}
           title="开启/关闭自动跟随滚动"
         >
@@ -58,8 +88,8 @@ export function TranscriptToolbar({
           className={clsx(
             "btn btn-xs sm:btn-sm btn-ghost gap-1.5 transition-colors",
             showTranslation
-              ? "text-primary bg-primary/5"
-              : "text-base-content/40",
+              ? "text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+              : "text-ink-400 hover:text-ink-600",
           )}
         >
           <LanguageIcon className="w-3.5 h-3.5" />
