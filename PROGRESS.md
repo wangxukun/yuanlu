@@ -68,6 +68,16 @@
 - 品牌波形微交互：播放中封面图叠加半透明黑底 + 4 柱 `animate-eq` 白色跳动波形，同步应用至桌面控制条、播放列表当前项及移动端 `MobilePlayerBar` Mini 播放器
 - 下线清理：彻底清理并删除废弃遗留组件 `components/player/Player.tsx`
 
+### ✅ Step 4：播客卡统一
+
+- `components/ui/PodcastCard.tsx`：抽象通用播客卡片，采用 `aspect-square` 正方形封面、角标插槽（如 01/02/03 排行榜与 New 标签）、圆点分隔的 Meta 信息行及 Hover 缩放微交互
+- 重构 `app/(main)/discover/page.tsx`：替换热门节目 (Trending)、为您推荐 (For You)、新节目 (New Programs) 3 处内联重复实现，精简代码
+
+### ✅ Step 9：听写模式（核心新功能）
+
+- `DictationItem.tsx`：隐藏 Input 捕获键盘与手机软键盘输入，实时逐词比对引擎（正确 `text-primary-600` / 错误 `text-error line-through` / 待填 `border-dashed` 虚线下划线），同句 3 次拼写错误触发提示
+- `InteractiveTranscript.tsx` 与 `FullContentTranscript.tsx` 双端集成：内联与全屏沉浸逐字稿均支持「📖 精读 / ✍️ 听写」模式切换，听写模式下自动切至 0.8x 慢速播放、当前句子单句死循环播放以及拼写完成后自动跳至下一句
+
 ### ✅ Step 10：学习报告页旅程化
 
 - `StatsOverview` 旅程仪表盘：累计里程 km 大数字（`totalHours × 5`）+ 连续天数🔥 + 词汇路标，统一 ink/primary/accent 设计令牌
