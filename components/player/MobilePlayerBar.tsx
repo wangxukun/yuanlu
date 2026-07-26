@@ -41,12 +41,32 @@ export default function MobilePlayerBar() {
         >
           <div className="flex items-center gap-3 px-4 h-[var(--mini-player-height)]">
             {/* Cover thumbnail */}
-            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-ink-200/50 dark:border-ink-700/50 shadow-sm">
+            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-ink-200/50 dark:border-ink-700/50 shadow-sm relative">
               <img
                 src={currentEpisode.coverUrl}
                 alt={currentEpisode.title}
                 className="w-full h-full object-cover"
               />
+              {isPlaying && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-[1.5px] backdrop-blur-[1px]">
+                  <div
+                    className="w-[2px] h-3 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <div
+                    className="w-[2px] h-3 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "200ms" }}
+                  />
+                  <div
+                    className="w-[2px] h-3 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "400ms" }}
+                  />
+                  <div
+                    className="w-[2px] h-3 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "600ms" }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Title & podcast name */}

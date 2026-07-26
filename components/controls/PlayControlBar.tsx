@@ -119,7 +119,7 @@ export default function PlayControlBar() {
         className={`fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] ${
           isLyricsOpen
             ? "bottom-0 left-0 w-full max-w-none bg-white dark:bg-ink-900 px-4 py-4 md:px-8 border-t border-ink-200 dark:border-ink-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-none transform-none"
-            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-white/95 dark:bg-ink-900/95 md:bg-white/80 md:dark:bg-ink-900/80 backdrop-blur-2xl p-4 md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:shadow-[0_20px_40px_rgba(31,122,92,0.1)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] md:dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-t md:border border-ink-100 dark:border-ink-800 pb-safe"
+            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-white/95 dark:bg-ink-900/95 md:bg-white/80 md:dark:bg-ink-900/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] md:shadow-[var(--e3)] md:dark:shadow-[var(--e3)] border-t md:border border-ink-100 dark:border-ink-800 pb-safe"
         }`}
       >
         {/* Mobile Progress Bar - Positioned at the very top of the bar */}
@@ -146,12 +146,32 @@ export default function PlayControlBar() {
             className="flex items-center gap-2 md:gap-4 w-auto md:w-1/4 md:min-w-[120px] cursor-pointer group"
             onClick={handleInfoClick}
           >
-            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-ink-200 dark:border-ink-800">
+            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-ink-200 dark:border-ink-800 relative">
               <img
                 alt="当前播放"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 src={currentEpisode.coverUrl}
               />
+              {isPlaying && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-[2px] backdrop-blur-[1px]">
+                  <div
+                    className="w-[3px] h-3.5 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <div
+                    className="w-[3px] h-3.5 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "200ms" }}
+                  />
+                  <div
+                    className="w-[3px] h-3.5 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "400ms" }}
+                  />
+                  <div
+                    className="w-[3px] h-3.5 bg-white rounded-full animate-eq"
+                    style={{ animationDelay: "600ms" }}
+                  />
+                </div>
+              )}
             </div>
             <div className="hidden sm:flex flex-col justify-center overflow-hidden">
               <h4 className="font-bold text-sm text-ink-900 dark:text-ink-100 truncate group-hover:text-primary-600 transition-colors">
@@ -254,7 +274,7 @@ export default function PlayControlBar() {
               <span className="text-[10px] text-ink-400 font-medium w-8 text-right">
                 {formatTime(currentTime)}
               </span>
-              <div className="flex-1 h-1.5 bg-ink-100 dark:bg-ink-800 rounded-full relative group/progress">
+              <div className="flex-1 h-1 bg-ink-100 dark:bg-ink-800 rounded-full relative group/progress">
                 <div
                   className="absolute left-0 top-0 h-full bg-primary-600 rounded-full transition-all duration-150"
                   style={{ width: `${progressPercent}%` }}
@@ -366,10 +386,23 @@ export default function PlayControlBar() {
                       className="w-full h-full object-cover"
                     />
                     {currentEpisode.episodeid === ep.episodeid && isPlaying && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[16px] text-white animate-pulse">
-                          volume_up
-                        </span>
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-[1.5px]">
+                        <div
+                          className="w-[2px] h-2.5 bg-white rounded-full animate-eq"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <div
+                          className="w-[2px] h-2.5 bg-white rounded-full animate-eq"
+                          style={{ animationDelay: "200ms" }}
+                        />
+                        <div
+                          className="w-[2px] h-2.5 bg-white rounded-full animate-eq"
+                          style={{ animationDelay: "400ms" }}
+                        />
+                        <div
+                          className="w-[2px] h-2.5 bg-white rounded-full animate-eq"
+                          style={{ animationDelay: "600ms" }}
+                        />
                       </div>
                     )}
                   </div>
