@@ -22,6 +22,7 @@ import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
+import { DictationItem } from "./transcript/DictationItem";
 
 // We will use standard string template literals or clsx if needed. Let's just use string templates for simplicity, or provide a simple cn equivalent.
 function cn(...classes: (string | undefined | null | false)[]) {
@@ -206,6 +207,7 @@ export default function FullContentTranscript({
     currentEpisode,
     setCurrentEpisode,
     setCurrentAudioUrl,
+    setPlaybackRate,
   } = usePlayerStore();
 
   const isPlayingThis = currentEpisode?.episodeid === episode.episodeid;
@@ -218,6 +220,9 @@ export default function FullContentTranscript({
   const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>("both");
   const [isProofreadingMode, setIsProofreadingMode] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
+    "read",
+  );
 
   // Proofread Modal State
   const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
@@ -269,7 +274,7 @@ export default function FullContentTranscript({
     "fct-sub-",
   );
 
-  // ── Single-sentence loop ──
+  // ── Single-sentence loop (Read mode explicit loop) ──
   useEffect(() => {
     if (loopingIndex === null || !isPlayingThis || !audioRef) return;
     const sub = processed[loopingIndex];
@@ -282,6 +287,49 @@ export default function FullContentTranscript({
     const iv = setInterval(check, 100);
     return () => clearInterval(iv);
   }, [loopingIndex, isPlayingThis, audioRef, processed]);
+
+  // ── Dictation Mode Logic ──
+  useEffect(() => {
+    if (transcriptMode === "dictate") {
+      setPlaybackRate(0.8);
+    } else {
+      setPlaybackRate(1.0);
+    }
+  }, [transcriptMode, setPlaybackRate]);
+
+  useEffect(() => {
+    if (
+      transcriptMode === "dictate" &&
+      isPlayingThis &&
+      isPlaying &&
+      audioRef
+    ) {
+      const activeSub = processed[activeIndex];
+      if (activeSub && currentTime >= activeSub.end) {
+        audioRef.currentTime = activeSub.start;
+        setCurrentTime(activeSub.start);
+      }
+    }
+  }, [
+    transcriptMode,
+    isPlayingThis,
+    isPlaying,
+    audioRef,
+    currentTime,
+    activeIndex,
+    processed,
+    setCurrentTime,
+  ]);
+
+  const handleDictationSuccess = useCallback(() => {
+    const nextSub = processed[activeIndex + 1];
+    if (nextSub && audioRef) {
+      audioRef.currentTime = nextSub.start;
+      setCurrentTime(nextSub.start);
+    } else if (pause) {
+      pause();
+    }
+  }, [activeIndex, processed, audioRef, setCurrentTime, pause]);
 
   // ── Handlers ──
   const handleJump = useCallback(
@@ -496,6 +544,35 @@ export default function FullContentTranscript({
 
               {/* ── Function Groups (Right) ── */}
               <div className="absolute right-2 md:right-8 flex items-center gap-2 md:gap-4">
+                {/* ── Dictation Mode Toggle ── */}
+                <button
+                  onClick={() =>
+                    setTranscriptMode(
+                      transcriptMode === "read" ? "dictate" : "read",
+                    )
+                  }
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
+                    transcriptMode === "dictate"
+                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800"
+                      : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
+                  )}
+                  title={
+                    transcriptMode === "dictate"
+                      ? "退出听写模式"
+                      : "进入听写模式"
+                  }
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {transcriptMode === "dictate"
+                      ? "edit_note"
+                      : "edit_document"}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {transcriptMode === "dictate" ? "听写中" : "听写"}
+                  </span>
+                </button>
+
                 {/* ── Auto Scroll Toggle ── */}
                 <button
                   onClick={() => setAutoScroll(!autoScroll)}
@@ -559,38 +636,58 @@ export default function FullContentTranscript({
                 </div>
               </div>
               <AnimatePresence>
-                {processed.map((sub, index) => (
-                  <SubtitleRow
-                    key={sub.id || index}
-                    sub={sub}
-                    isActive={index === activeIndex}
-                    isLooping={loopingIndex === index}
-                    isLoggedIn={isLoggedIn}
-                    visibilityMode={visibilityMode}
-                    isProofreadingMode={isProofreadingMode}
-                    onJump={handleJump}
-                    onWordClick={(word, en, zh) =>
-                      handleWordClick(word, en, zh)
-                    }
-                    onToggleLoop={() =>
-                      setLoopingIndex((prev) => (prev === index ? null : index))
-                    }
-                    onProofread={(sub) => {
-                      if (!session?.user) {
-                        toast("请先登录", {
-                          description: "登录后即可参与字幕校对共建！",
-                        });
-                        const loginModal = document.getElementById(
-                          "email_check_modal_box",
-                        ) as HTMLDialogElement | null;
-                        if (loginModal) loginModal.showModal();
-                        return;
+                {processed.map((sub, index) => {
+                  const isActive = index === activeIndex;
+                  if (transcriptMode === "dictate" && isActive) {
+                    return (
+                      <DictationItem
+                        key={sub.id || index}
+                        sub={sub}
+                        isActive={isActive}
+                        isPlaying={isPlaying}
+                        showTranslation={
+                          visibilityMode === "zh" || visibilityMode === "both"
+                        }
+                        onJump={handleJump}
+                        onSuccess={handleDictationSuccess}
+                      />
+                    );
+                  }
+                  return (
+                    <SubtitleRow
+                      key={sub.id || index}
+                      sub={sub}
+                      isActive={isActive}
+                      isLooping={loopingIndex === index}
+                      isLoggedIn={isLoggedIn}
+                      visibilityMode={visibilityMode}
+                      isProofreadingMode={isProofreadingMode}
+                      onJump={handleJump}
+                      onWordClick={(word, en, zh) =>
+                        handleWordClick(word, en, zh)
                       }
-                      setProofreadSub(sub);
-                      setIsProofreadOpen(true);
-                    }}
-                  />
-                ))}
+                      onToggleLoop={() =>
+                        setLoopingIndex((prev) =>
+                          prev === index ? null : index,
+                        )
+                      }
+                      onProofread={(sub) => {
+                        if (!session?.user) {
+                          toast("请先登录", {
+                            description: "登录后即可参与字幕校对共建！",
+                          });
+                          const loginModal = document.getElementById(
+                            "email_check_modal_box",
+                          ) as HTMLDialogElement | null;
+                          if (loginModal) loginModal.showModal();
+                          return;
+                        }
+                        setProofreadSub(sub);
+                        setIsProofreadOpen(true);
+                      }}
+                    />
+                  );
+                })}
               </AnimatePresence>
               {!isLoggedIn && (
                 <div className="flex justify-center mt-12 mb-8 relative z-10">
