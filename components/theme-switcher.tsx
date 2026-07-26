@@ -31,7 +31,7 @@ export default function ThemeSwitcher({
       onClick={toggleTheme}
       className={
         className ||
-        "w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+        "w-10 h-10 flex items-center justify-center hover:bg-ink-100 dark:hover:bg-ink-800 rounded-full transition-colors text-ink-400"
       }
       aria-label="切换主题"
     >

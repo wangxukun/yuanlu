@@ -63,9 +63,7 @@ export default function SignInDialog() {
       <div className="modal-box p-0 rounded-3xl shadow-2xl bg-base-100 max-w-md w-full overflow-hidden relative">
         {/* Header 区域 */}
         <div className="relative px-8 pt-8 pb-2 text-center">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            欢迎回来
-          </h3>
+          <h3 className="text-2xl font-bold text-primary">欢迎回来</h3>
           <p className="text-sm text-base-content/60 mt-2">
             登录您的账户，继续精彩旅程
           </p>

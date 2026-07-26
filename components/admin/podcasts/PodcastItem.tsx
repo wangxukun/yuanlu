@@ -41,7 +41,7 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative">
+    <div className="bg-white rounded-3xl border border-ink-100 shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative">
       {/* 推荐角标 */}
       {podcast.isEditorPick && (
         <div className="absolute top-3 right-3 z-20">
@@ -52,7 +52,7 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
       )}
 
       {/* 封面区域 */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-ink-100">
         <img
           src={podcast.coverUrl || "/static/images/default_cover.png"}
           alt={podcast.title}
@@ -65,7 +65,7 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
           <div className="flex gap-2 w-full justify-end">
             <Link
               href={`/admin/podcasts/${podcast.podcastid}/edit`}
-              className="p-2 bg-white/90 text-indigo-600 rounded-lg hover:bg-white hover:text-indigo-700 transition-colors shadow-sm"
+              className="p-2 bg-white/90 text-primary-600 rounded-lg hover:bg-white hover:text-primary-700 transition-colors shadow-sm"
               title="编辑合集信息"
             >
               <Pencil size={16} />
@@ -73,7 +73,7 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
             <button
               onClick={handleDelete}
               disabled={isPending}
-              className="p-2 bg-red-500/90 text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
+              className="p-2 bg-error-500/90 text-white rounded-lg hover:bg-error-600 transition-colors shadow-sm disabled:opacity-50"
               title="删除合集"
             >
               {isPending ? (
@@ -93,13 +93,13 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
             {podcast.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag.id}
-                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded uppercase"
+                className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded uppercase"
               >
                 {tag.name}
               </span>
             ))}
           </div>
-          <div className="flex items-center text-gray-400 text-xs shrink-0">
+          <div className="flex items-center text-ink-400 text-xs shrink-0">
             <Layers size={12} className="mr-1" />
             <span>{podcast.episodeCount} 集</span>
           </div>
@@ -107,12 +107,12 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
 
         <div>
           <h3
-            className="font-bold text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors text-lg"
+            className="font-bold text-ink-900 line-clamp-1 group-hover:text-primary-600 transition-colors text-lg"
             title={podcast.title}
           >
             {podcast.title}
           </h3>
-          <p className="text-xs text-gray-500 mt-1 flex items-center">
+          <p className="text-xs text-ink-500 mt-1 flex items-center">
             {podcast.platform && (
               <span className="badge badge-ghost badge-xs mr-2">
                 {podcast.platform}
@@ -121,12 +121,12 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
           </p>
         </div>
 
-        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed flex-1">
+        <p className="text-xs text-ink-500 line-clamp-2 leading-relaxed flex-1">
           {podcast.description || "暂无简介"}
         </p>
 
-        <div className="pt-4 border-t border-gray-50 flex items-center justify-between mt-auto">
-          <div className="flex items-center text-xs text-gray-400">
+        <div className="pt-4 border-t border-ink-50 flex items-center justify-between mt-auto">
+          <div className="flex items-center text-xs text-ink-400">
             <Headphones size={12} className="mr-1" />
             {(podcast.totalPlays / 1000).toFixed(1)}k
           </div>
@@ -134,7 +134,7 @@ export default function PodcastItem({ podcast }: PodcastItemProps) {
           {/* 核心操作：跳转到该 Podcast 下的音频管理 */}
           <Link
             href={`/admin/episodes?podcastId=${podcast.podcastid}`}
-            className="btn btn-sm btn-ghost text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 px-2 -mr-2"
+            className="btn btn-sm btn-ghost text-primary-600 hover:bg-primary-50 hover:text-primary-700 px-2 -mr-2"
           >
             管理音频
             <ExternalLink size={14} className="ml-1" />

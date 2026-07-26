@@ -25,7 +25,7 @@ export function CreateTagGroupBtn() {
   return (
     <Link
       href="/admin/tag-groups/create"
-      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 items-center rounded-lg bg-info-600 px-4 text-sm font-medium text-white transition-colors hover:bg-info-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-600"
     >
       <span className="hidden md:block">创建标签组</span>{" "}
       <PlusIcon className="h-5 md:ml-4" />
@@ -38,7 +38,7 @@ export function CreateEpisodeBtn() {
   return (
     <Link
       href="/admin/episodes/create"
-      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 items-center rounded-lg bg-info-600 px-4 text-sm font-medium text-white transition-colors hover:bg-info-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-600"
     >
       <span className="hidden md:block">创建剧集</span>{" "}
       <ArrowUpTrayIcon className="h-5 md:ml-4" />
@@ -51,7 +51,7 @@ export function ContributeEpisodeBtn() {
   return (
     <Link
       href="/admin/episodes/contribute"
-      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 items-center rounded-lg bg-info-600 px-4 text-sm font-medium text-white transition-colors hover:bg-info-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-600"
     >
       <span className="hidden md:block">投稿</span>{" "}
       <ArrowUpTrayIcon className="h-5 md:ml-4" />
@@ -64,7 +64,7 @@ export function CreatePodcastBtn() {
   return (
     <Link
       href="/admin/podcasts/create"
-      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 items-center rounded-lg bg-info-600 px-4 text-sm font-medium text-white transition-colors hover:bg-info-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-600"
     >
       <span className="hidden md:block">创建播客</span>{" "}
       <PlusIcon className="h-5 md:ml-4" />
@@ -77,7 +77,7 @@ export function UpdatePodcastBtn({ id }: { id: string }) {
   return (
     <Link
       href={`/admin/podcasts/${id}/edit`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-ink-100"
     >
       <PencilIcon className="w-5" />
     </Link>
@@ -110,7 +110,7 @@ export function DeletePodcastBtn({ id, coverFileName }: DeletePodcastProps) {
   }, [state]);
   return (
     <form action={formAction}>
-      <button type="submit" className="rounded-md border p-2 hover:bg-gray-100">
+      <button type="submit" className="rounded-md border p-2 hover:bg-ink-100">
         <span className="sr-only">delete</span>
         <TrashIcon className="w-5" />
       </button>
@@ -123,7 +123,7 @@ export function UpdateEpisodeBtn({ id }: { id: string }) {
   return (
     <Link
       href={`/admin/episodes/${id}/edit`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-ink-100"
     >
       <PencilIcon className="w-5" />
     </Link>
@@ -173,7 +173,7 @@ export function DeleteEpisodeBtn({
   }, [state]);
   return (
     <form action={formAction}>
-      <button type="submit" className="rounded-md border p-2 hover:bg-gray-100">
+      <button type="submit" className="rounded-md border p-2 hover:bg-ink-100">
         <span className="sr-only">delete</span>
         <TrashIcon className="w-5" />
       </button>
@@ -185,7 +185,7 @@ export function ReadUserBtn({ id }: { id: string }) {
   return (
     <Link
       href={`/admin/users/${id}`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-ink-100"
     >
       <IdentificationIcon className="w-5" />
     </Link>
@@ -197,7 +197,7 @@ export function UpdateUserBtn({ id }: { id: string }) {
   return (
     <Link
       href={`/admin/users/${id}/setting`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-ink-100"
     >
       <ShieldCheckIcon className="w-5" />
     </Link>
@@ -251,7 +251,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
       {/* 删除按钮 */}
       <button
         onClick={openModal}
-        className="flex items-center rounded-md border border-red-500 bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        className="flex items-center rounded-md border border-error-500 bg-error-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-error-600 focus:outline-hidden focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
       >
         <span className="sr-only">delete</span>
         <TrashIcon className="h-5 w-5" />
@@ -267,16 +267,16 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
             className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()} // 阻止点击模态框内容时关闭
           >
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">
+            <h3 className="mb-4 text-lg font-semibold text-ink-800">
               确认删除
             </h3>
-            <p className="mb-6 text-sm text-gray-600">
+            <p className="mb-6 text-sm text-ink-600">
               确定要删除该用户吗？此操作不可撤销！
             </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={closeModal}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rounded-md border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-100 focus:outline-hidden focus:ring-2 focus:ring-info-500 focus:ring-offset-2"
               >
                 取消
               </button>
@@ -289,7 +289,7 @@ export function DeleteUserBtn({ id, avatarFileName }: DeleteUserProps) {
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="rounded-md bg-error-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-error-600 focus:outline-hidden focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
                 >
                   确认删除
                 </button>
@@ -321,7 +321,7 @@ export function DeleteCoverBtn({
   return (
     <button
       onClick={handleDelete}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-ink-100"
     >
       <span className="sr-only">删除</span>
       <TrashIcon className="w-5" />

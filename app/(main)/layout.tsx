@@ -1,7 +1,7 @@
 // app/(main)/layout.tsx
 import type { Metadata } from "next";
 import React, { Suspense } from "react";
-import { inter, lusitana } from "@/components/fonts";
+import { jakarta, sourceSerif } from "@/components/fonts";
 import "@/app/globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
@@ -13,8 +13,10 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import PageTracker from "@/components/main/PageTracker";
 import { ModalProvider } from "@/components/providers/ModalProvider";
-import GlobalAudio from "@/components/player/GlobalAudio"; // <--- 新增引入
+import GlobalAudio from "@/components/player/GlobalAudio";
 import SubscriptionFlashToast from "@/components/subscription/SubscriptionFlashToast";
+import MobileBottomNav from "@/components/main/MobileBottomNav";
+import MobilePlayerBar from "@/components/player/MobilePlayerBar";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -29,9 +31,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-          rel="stylesheet"
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -39,7 +41,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${lusitana.variable} font-sans antialiased bg-base-200 text-base-content min-h-screen flex flex-col`}
+        className={`${jakarta.variable} ${sourceSerif.variable} font-sans antialiased bg-base-200 text-base-content min-h-screen flex flex-col`}
       >
         <AuthProvider>
           <ThemeProvider
@@ -68,12 +70,16 @@ export default function RootLayout({
               <div className="drawer-content flex flex-col relative w-full transition-all duration-300">
                 <Header />
 
-                <main className="flex-1 flex flex-col w-full">
+                <main className="flex-1 flex flex-col w-full pb-[var(--mobile-bottom-total)] md:pb-0">
                   <div className="flex-1 w-full">{children}</div>
-                  <Footer />
+                  {/* Footer: 桌面端显示，移动端隐藏 */}
+                  <div className="hidden md:block">
+                    <Footer />
+                  </div>
                 </main>
               </div>
 
+              {/* 侧边栏: 移动端隐藏 drawer-side, 桌面端 xl:drawer-open */}
               <div className="drawer-side z-[100]">
                 <label
                   htmlFor="main-drawer"
@@ -84,7 +90,16 @@ export default function RootLayout({
               </div>
             </div>
 
-            <PlayControlBar />
+            {/* 桌面端/平板端：浮动播放控制条 */}
+            <div className="hidden md:block">
+              <PlayControlBar />
+            </div>
+
+            {/* 移动端专属：Mini Player + 底部导航栏 */}
+            <div className="md:hidden">
+              <MobilePlayerBar />
+              <MobileBottomNav />
+            </div>
           </ThemeProvider>
         </AuthProvider>
       </body>

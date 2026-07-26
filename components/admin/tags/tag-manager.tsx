@@ -91,17 +91,17 @@ export default function TagManager({
   return (
     <div className="space-y-6">
       {/* 顶部工具栏 */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-ink-100 shadow-sm">
         <div className="relative w-full sm:w-72">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <MagnifyingGlassIcon
-              className="h-5 w-5 text-gray-400"
+              className="h-5 w-5 text-ink-400"
               aria-hidden="true"
             />
           </div>
           <input
             type="text"
-            className="block w-full rounded-lg border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+            className="block w-full rounded-lg border-0 py-2 pl-10 text-ink-900 ring-1 ring-inset ring-ink-200 placeholder:text-ink-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
             placeholder="搜索标签..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -119,7 +119,7 @@ export default function TagManager({
 
       {/* 新建标签表单 (可折叠) */}
       {isCreating && (
-        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 animate-in slide-in-from-top-2">
+        <div className="bg-info-50/50 border border-info-100 rounded-xl p-4 animate-in slide-in-from-top-2">
           <form
             id="create-tag-form"
             action={handleCreate}
@@ -159,7 +159,7 @@ export default function TagManager({
             className={`group relative bg-white p-4 rounded-xl border transition-all duration-200 ${
               editingId === tag.id
                 ? "border-primary ring-1 ring-primary shadow-md"
-                : "border-gray-100 hover:border-gray-200 hover:shadow-sm"
+                : "border-ink-100 hover:border-ink-200 hover:shadow-sm"
             }`}
           >
             {editingId === tag.id ? (
@@ -190,21 +190,21 @@ export default function TagManager({
               // 展示模式
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3 overflow-hidden">
-                  <div className="mt-1 p-2 bg-gray-50 rounded-lg text-gray-400 group-hover:text-primary group-hover:bg-primary/5 transition-colors">
+                  <div className="mt-1 p-2 bg-ink-50 rounded-lg text-ink-400 group-hover:text-primary group-hover:bg-primary/5 transition-colors">
                     <TagIcon className="w-5 h-5" />
                   </div>
                   <div>
                     <h3
-                      className="font-semibold text-gray-900 truncate"
+                      className="font-semibold text-ink-900 truncate"
                       title={tag.name}
                     >
                       {tag.name}
                     </h3>
-                    <div className="flex gap-3 mt-1.5 text-xs text-gray-500">
-                      <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                    <div className="flex gap-3 mt-1.5 text-xs text-ink-500">
+                      <span className="flex items-center gap-1 bg-ink-50 px-2 py-0.5 rounded-full border border-ink-100">
                         🎙️ {tag._count.podcasts} 播客
                       </span>
-                      <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                      <span className="flex items-center gap-1 bg-ink-50 px-2 py-0.5 rounded-full border border-ink-100">
                         🎵 {tag._count.episodes} 单集
                       </span>
                     </div>
@@ -215,14 +215,14 @@ export default function TagManager({
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => startEdit(tag)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="p-1.5 text-ink-400 hover:text-info-600 hover:bg-info-50 rounded-md transition-colors"
                     title="编辑"
                   >
                     <PencilSquareIcon className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(tag.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-ink-400 hover:text-error-600 hover:bg-error-50 rounded-md transition-colors"
                     title="删除"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function TagManager({
         ))}
 
         {filteredTags.length === 0 && (
-          <div className="col-span-full py-12 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+          <div className="col-span-full py-12 text-center text-ink-400 bg-ink-50 rounded-xl border border-dashed border-ink-200">
             <TagIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p>没有找到相关标签</p>
           </div>

@@ -135,7 +135,7 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
       <div className="modal-box">
         <div className="flex justify-start items-center gap-4">
           <h3 className="font-bold text-sm">上传字幕</h3>
-          <span className="text-xs text-slate-500">支持srt格式</span>
+          <span className="text-xs text-ink-500">支持srt格式</span>
         </div>
         <div className="form-control w-80 flex flex-row m-10 gap-6">
           <select

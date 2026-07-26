@@ -15,25 +15,25 @@ export default async function ChannelsPage() {
   const channels = await getRecommendedChannels();
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 py-6 xl:py-8 space-y-6 xl:space-y-8">
         {/* Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/discover"
-              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+              className="p-2 hover:bg-ink-200 dark:hover:bg-ink-800 rounded-lg text-ink-500 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </Link>
-            <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg">
-              <SignalIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-lg">
+              <SignalIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h1 className="text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              <h1 className="text-2xl xl:text-3xl font-bold text-ink-900 dark:text-ink-100">
                 全部频道
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
                 探索各大优质播客平台与独立频道源
               </p>
             </div>
@@ -48,17 +48,14 @@ export default async function ChannelsPage() {
                 href={`/channel/${encodeURIComponent(channel.name)}`}
                 key={channel.name}
               >
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
-                  <h3
-                    className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2"
-                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                  >
+                <div className="bg-primary-50 dark:bg-primary-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
+                  <h3 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
                     {channel.name}
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-8">
+                  <p className="text-ink-500 dark:text-ink-400 text-sm font-medium mb-8">
                     {channel.podcastCount} 档节目
                   </p>
-                  <div className="mt-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-slate-800/50 text-indigo-600 dark:text-indigo-400 text-[12px] font-bold group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors">
+                  <div className="mt-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-ink-800/50 text-primary-600 dark:text-primary-400 text-[12px] font-bold group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
                     <span className="material-symbols-outlined text-[18px]">
                       computer
                     </span>
@@ -69,7 +66,7 @@ export default async function ChannelsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-16 text-center text-slate-400 dark:text-slate-500 text-lg">
+          <div className="bg-white dark:bg-ink-900 rounded-lg border border-ink-200 dark:border-ink-800 shadow-sm p-16 text-center text-ink-400 dark:text-ink-500 text-lg">
             暂无频道数据
           </div>
         )}

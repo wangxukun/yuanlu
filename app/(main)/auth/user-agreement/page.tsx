@@ -98,7 +98,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="hidden lg:block lg:w-100 bg-gradient-to-b from-primary to-secondary p-8">
+          <div className="hidden lg:block lg:w-100 bg-primary p-8">
             <div className="text-white">
               <h3 className="text-xl font-bold mb-2">关于远路播客</h3>
               <p className="text-sm opacity-90">

@@ -1,4 +1,6 @@
 import React from "react";
+import DifficultyBadge from "@/components/ui/DifficultyBadge";
+import ProBadge from "@/components/ui/ProBadge";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -160,11 +162,7 @@ export default function EpisodeCard({
 
         {/* PRO and Play count badges (top left) */}
         <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
-          {episode.isExclusive && (
-            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] tracking-widest flex items-center">
-              👑 PRO
-            </div>
-          )}
+          {episode.isExclusive && <ProBadge size="sm" />}
           {episode.playCount !== undefined && (
             <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded shadow-sm text-[11px] font-medium flex items-center tracking-wide">
               <Headphones className="w-3 h-3 mr-1 opacity-80" />
@@ -176,28 +174,14 @@ export default function EpisodeCard({
         {/* Difficulty badge (top right) */}
         {episode.difficulty && (
           <div className="absolute top-2 right-2 z-10">
-            <div
-              className={`bg-white/95 px-2 py-0.5 rounded shadow-sm font-extrabold text-sm tracking-wide ${
-                episode.difficulty.includes("A")
-                  ? "text-emerald-600"
-                  : episode.difficulty.includes("B1")
-                    ? "text-blue-600"
-                    : episode.difficulty.includes("B2")
-                      ? "text-purple-600"
-                      : episode.difficulty.includes("C")
-                        ? "text-rose-600"
-                        : "text-gray-700"
-              }`}
-            >
-              {episode.difficulty}
-            </div>
+            <DifficultyBadge level={episode.difficulty} />
           </div>
         )}
 
         {/* Category badge (bottom left) */}
         {episode.tags && episode.tags.length > 0 && (
           <div className="absolute bottom-2 left-2 z-10">
-            <div className="flex bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded shadow-sm font-bold text-xs items-center">
+            <div className="flex bg-error-100/95 text-error-700 px-2 py-0.5 rounded shadow-sm font-bold text-xs items-center">
               <PlaySolidIcon className="w-3 h-3 mr-1" />
               {episode.tags[0].name}
             </div>

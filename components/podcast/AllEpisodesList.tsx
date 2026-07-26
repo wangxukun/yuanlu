@@ -176,7 +176,7 @@ export default function AllEpisodesList({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans pb-24 relative w-full overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-900 font-sans pb-24 relative w-full overflow-x-hidden transition-colors duration-300">
       {/* Immersive blurred background */}
       <div className="absolute top-0 left-0 w-full h-[500px] overflow-hidden -z-10 pointer-events-none">
         <Image
@@ -185,7 +185,7 @@ export default function AllEpisodesList({
           fill
           className="object-cover opacity-20 blur-[80px] saturate-150 scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/80 to-slate-50 dark:via-slate-900/80 dark:to-slate-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-ink-50/80 to-ink-50 dark:via-ink-900/80 dark:to-ink-900"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-12 relative z-10">
@@ -195,7 +195,7 @@ export default function AllEpisodesList({
             href={`/podcast/${podcastId}`}
             className="flex items-center gap-2 text-base-content/60 hover:text-primary transition-colors font-medium group w-fit shrink-0"
           >
-            <div className="p-1.5 rounded-full bg-slate-200 dark:bg-slate-800 group-hover:bg-primary/10 transition-colors">
+            <div className="p-1.5 rounded-full bg-ink-200 dark:bg-ink-800 group-hover:bg-primary/10 transition-colors">
               <ArrowLeftIcon className="w-4 h-4" />
             </div>
             <span className="hidden sm:inline">返回</span>
@@ -212,7 +212,7 @@ export default function AllEpisodesList({
         </div>
 
         {/* Toolbar: Search + Sort */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-3 sm:p-4 dark:border-slate-800/50 mb-6">
+        <div className="bg-white/80 dark:bg-ink-900/80 backdrop-blur-xl rounded-2xl p-3 sm:p-4 dark:border-ink-800/50 mb-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search input */}
             <div className="relative flex-1">
@@ -222,12 +222,12 @@ export default function AllEpisodesList({
                 placeholder="搜索剧集标题或描述..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input input-bordered w-full pl-10 pr-10 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm"
+                className="input input-bordered w-full pl-10 pr-10 rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-base-content/40 hover:text-base-content hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-base-content/40 hover:text-base-content hover:bg-ink-200 dark:hover:bg-ink-800 transition-colors"
                 >
                   <XMarkIcon className="w-4 h-4" />
                 </button>
@@ -236,7 +236,7 @@ export default function AllEpisodesList({
 
             {/* Sort select */}
             <select
-              className="select select-bordered rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-base-content/70 w-full sm:w-36 text-sm"
+              className="select select-bordered rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-base-content/70 w-full sm:w-36 text-sm"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
             >
@@ -254,7 +254,7 @@ export default function AllEpisodesList({
         </div>
 
         {/* Episodes list */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 dark:border-slate-800/50">
+        <div className="bg-white/80 dark:bg-ink-900/80 backdrop-blur-xl rounded-[2rem] p-4 sm:p-6 lg:p-8 dark:border-ink-800/50">
           <div className="space-y-3 sm:space-y-4">
             {filteredEpisodes.length > 0 ? (
               filteredEpisodes.map((episode) => (
@@ -276,8 +276,8 @@ export default function AllEpisodesList({
                 />
               ))
             ) : (
-              <div className="py-20 text-center flex flex-col items-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+              <div className="py-20 text-center flex flex-col items-center border-2 border-dashed border-ink-200 dark:border-ink-800 rounded-3xl">
+                <div className="w-16 h-16 bg-ink-100 dark:bg-ink-800 rounded-full flex items-center justify-center mb-4">
                   <MusicalNoteIcon className="w-8 h-8 text-base-content/30" />
                 </div>
                 {searchQuery.trim() ? (

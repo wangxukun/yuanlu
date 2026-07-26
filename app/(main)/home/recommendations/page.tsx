@@ -1,4 +1,6 @@
 import React from "react";
+import DifficultyBadge from "@/components/ui/DifficultyBadge";
+import ProBadge from "@/components/ui/ProBadge";
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,32 +33,29 @@ export default async function RecommendationsPage() {
   const level = data.level;
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 py-6 xl:py-8 space-y-6 xl:space-y-8">
         {/* Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/home"
-              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-base-content/60 hover:text-base-content transition-colors"
+              className="p-2 hover:bg-white dark:hover:bg-ink-800 rounded-lg text-base-content/60 hover:text-base-content transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </Link>
-            <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg">
-              <span className="w-6 h-6 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-base">
+            <div className="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-lg">
+              <span className="w-6 h-6 flex items-center justify-center text-primary-600 dark:text-primary-400 font-extrabold text-base">
                 ✨
               </span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1
-                  className="text-2xl xl:text-3xl font-bold text-base-content"
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                >
+                <h1 className="text-2xl xl:text-3xl font-bold text-base-content">
                   为你推荐
                 </h1>
                 {level && (
-                  <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md dark:bg-indigo-900/30 dark:text-indigo-300">
+                  <span className="text-xs font-semibold bg-primary-100 text-primary-700 px-2 py-0.5 rounded-md dark:bg-primary-900/30 dark:text-primary-300">
                     {level === "General" ? "精选" : level}
                   </span>
                 )}
@@ -73,16 +72,11 @@ export default async function RecommendationsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 xl:gap-6 pt-4">
             {episodes.map((episode) => {
               const diffLevel = episode.difficulty || level || "General";
-              let diffColor = "text-gray-700";
-              if (diffLevel.includes("A")) diffColor = "text-emerald-600";
-              else if (diffLevel.includes("B1")) diffColor = "text-blue-600";
-              else if (diffLevel.includes("B2")) diffColor = "text-purple-600";
-              else if (diffLevel.includes("C")) diffColor = "text-rose-600";
 
               return (
                 <div
                   key={episode.id}
-                  className="bg-white dark:bg-slate-900 rounded-lg hover:scale-[1.02] transition-all duration-300 group overflow-hidden relative cursor-pointer"
+                  className="bg-white dark:bg-ink-900 rounded-lg hover:scale-[1.02] transition-all duration-300 group overflow-hidden relative cursor-pointer"
                 >
                   {/* Cover image */}
                   <figure className="relative aspect-[16/9] overflow-hidden">
@@ -97,11 +91,7 @@ export default async function RecommendationsPage() {
                     />
                     {/* PRO and Play count badges (top left) */}
                     <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
-                      {episode.isExclusive && (
-                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded font-extrabold text-[10px] tracking-widest flex items-center">
-                          👑 PRO
-                        </div>
-                      )}
+                      {episode.isExclusive && <ProBadge size="sm" />}
                       {episode.playCount !== undefined && (
                         <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-medium flex items-center tracking-wide">
                           <Headphones className="w-3 h-3 mr-1 opacity-80" />
@@ -111,16 +101,12 @@ export default async function RecommendationsPage() {
                     </div>
                     {/* Difficulty badge (top right) */}
                     <div className="absolute top-2 right-2 z-10">
-                      <div
-                        className={`bg-white/95 px-2 py-0.5 rounded font-extrabold text-sm tracking-wide ${diffColor}`}
-                      >
-                        {diffLevel}
-                      </div>
+                      <DifficultyBadge level={diffLevel} />
                     </div>
                     {/* Category badge (bottom left) */}
                     {episode.category && (
                       <div className="absolute bottom-2 left-2 z-10">
-                        <div className="bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded font-bold text-xs flex items-center">
+                        <div className="bg-error-100/95 text-error-700 px-2 py-0.5 rounded font-bold text-xs flex items-center">
                           <PlayIcon className="w-3 h-3 mr-1" />
                           {episode.category}
                         </div>
@@ -163,7 +149,7 @@ export default async function RecommendationsPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-16 text-center text-base-content/40 text-lg">
+          <div className="bg-white dark:bg-ink-900 rounded-lg p-16 text-center text-base-content/40 text-lg">
             暂无推荐内容，请先去收听一些节目吧！
           </div>
         )}

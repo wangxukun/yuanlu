@@ -55,10 +55,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
   const getScoreColor = (score: number) => {
     if (score >= 85)
-      return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50";
+      return "text-primary-600 bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800/50";
     if (score >= 70)
-      return "text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50";
-    return "text-rose-600 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/50";
+      return "text-accent-600 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/50";
+    return "text-error-600 bg-error-50 dark:bg-error-900/20 border-error-200 dark:border-error-800/50";
   };
 
   const MetricItem = ({
@@ -71,13 +71,13 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     unit?: string;
   }) => (
     <div className="flex flex-col items-center">
-      <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">
+      <div className="text-[10px] uppercase font-bold text-ink-400 dark:text-ink-500 mb-1">
         {label}
       </div>
-      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+      <div className="text-sm font-bold text-ink-800 dark:text-ink-200">
         {value !== undefined ? value : "-"}
         {unit && (
-          <span className="text-xs font-normal text-slate-400 ml-0.5">
+          <span className="text-xs font-normal text-ink-400 ml-0.5">
             {unit}
           </span>
         )}
@@ -86,16 +86,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   );
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
+    <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-100 dark:border-ink-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
       {/* 1. Target Text Section */}
-      <div className="p-6 border-b border-slate-50 dark:border-slate-700 relative">
+      <div className="p-6 border-b border-ink-50 dark:border-ink-700 relative">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-2">
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 leading-relaxed font-serif">
+            <h3 className="text-lg font-medium text-ink-900 dark:text-ink-100 leading-relaxed font-serif">
               "{subtitle.textEn}"
             </h3>
             {subtitle.textZh && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-ink-500 dark:text-ink-400">
                 {subtitle.textZh}
               </p>
             )}
@@ -108,7 +108,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               <button
                 onClick={playReferenceAudio}
                 disabled={refAudioProgress > 0}
-                className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
+                className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors disabled:opacity-50"
               >
                 {refAudioProgress > 0 ? (
                   <div className="w-10 h-10 relative flex items-center justify-center">
@@ -120,7 +120,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         fill="transparent"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-indigo-200"
+                        className="text-primary-200"
                       />
                       <circle
                         cx="20"
@@ -129,7 +129,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         fill="transparent"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-indigo-600 transition-all duration-75"
+                        className="text-primary-600 transition-all duration-75"
                         strokeDasharray="113"
                         strokeDashoffset={113 - (113 * refAudioProgress) / 100}
                       />
@@ -140,7 +140,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   <Volume2 size={20} />
                 )}
               </button>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+              <span className="text-[10px] text-ink-400 dark:text-ink-500 font-medium">
                 原声
               </span>
             </div>
@@ -152,17 +152,17 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 disabled={isTTSLoading}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                   isSpeaking
-                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 animate-pulse"
-                    : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                    ? "bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 animate-pulse"
+                    : "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
                 } disabled:opacity-50`}
               >
                 {isTTSLoading ? (
-                  <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <BotMessageSquare size={20} />
                 )}
               </button>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+              <span className="text-[10px] text-ink-400 dark:text-ink-500 font-medium">
                 AI朗读
               </span>
             </div>
@@ -171,16 +171,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       </div>
 
       {/* 2. Recording & Result Section */}
-      <div className="bg-slate-50/50 dark:bg-slate-900/30 min-h-[140px] flex flex-col justify-center">
+      <div className="bg-ink-50/50 dark:bg-ink-900/30 min-h-[140px] flex flex-col justify-center">
         {/* 状态: IDLE (有结果 或 无结果) */}
         {!isRecording && !isProcessing && (
           <div className="p-6">
             {result ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                 {/* A. 单词级反馈 */}
-                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-ink-800 p-4 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                    <span className="text-xs font-bold uppercase text-ink-400 dark:text-ink-500 flex items-center gap-1">
                       <Mic size={12} /> 识别结果
                     </span>
                     {/* 播放用户录音 */}
@@ -189,8 +189,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         onClick={toggleUserAudio}
                         className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                           isUserAudioPlaying
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            ? "bg-primary-600 text-white"
+                            : "bg-ink-100 dark:bg-ink-700 text-ink-600 dark:text-ink-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400"
                         }`}
                       >
                         {isUserAudioPlaying ? (
@@ -210,10 +210,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                           key={i}
                           className={`mr-1.5 inline-block ${
                             w.score >= 80
-                              ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                              ? "text-primary-600 dark:text-primary-400 font-medium"
                               : w.score < 60
-                                ? "text-rose-500 dark:text-rose-400"
-                                : "text-slate-900 dark:text-slate-100"
+                                ? "text-error-500 dark:text-error-400"
+                                : "text-ink-900 dark:text-ink-100"
                           }`}
                           title={`Score: ${w.score}`}
                         >
@@ -221,9 +221,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         </span>
                       ))
                     ) : (
-                      <span className="text-slate-900">
-                        {result.speechText}
-                      </span>
+                      <span className="text-ink-900">{result.speechText}</span>
                     )}
                   </p>
                 </div>
@@ -231,8 +229,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 {/* B. 详细仪表盘 */}
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 items-center">
                   {/* 综合评分 (大图标) */}
-                  <div className="col-span-4 sm:col-span-1 flex flex-row sm:flex-col items-center justify-between sm:justify-center bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-0 sm:mb-1">
+                  <div className="col-span-4 sm:col-span-1 flex flex-row sm:flex-col items-center justify-between sm:justify-center bg-white dark:bg-ink-800 p-3 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
+                    <span className="text-xs font-bold uppercase text-ink-400 dark:text-ink-500 mb-0 sm:mb-1">
                       综合评分
                     </span>
                     {/* 综合分使用 accuracyScore 或计算平均值 */}
@@ -246,13 +244,13 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </div>
 
                   {/* 详细指标 */}
-                  <div className="col-span-4 grid grid-cols-4 gap-2 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <div className="col-span-4 grid grid-cols-4 gap-2 bg-white dark:bg-ink-800 p-3 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
                     <MetricItem label="发音" value={result.accuracyScore} />
-                    <div className="w-px bg-slate-100 dark:bg-slate-700 h-8 self-center"></div>
+                    <div className="w-px bg-ink-100 dark:bg-ink-700 h-8 self-center"></div>
                     <MetricItem label="流利度" value={result.fluencyScore} />
-                    <div className="w-px bg-slate-100 dark:bg-slate-700 h-8 self-center"></div>
+                    <div className="w-px bg-ink-100 dark:bg-ink-700 h-8 self-center"></div>
                     <MetricItem label="完整度" value={result.integrityScore} />
-                    <div className="w-px bg-slate-100 dark:bg-slate-700 h-8 self-center"></div>
+                    <div className="w-px bg-ink-100 dark:bg-ink-700 h-8 self-center"></div>
                     <MetricItem label="语速" value={result.speed} unit="" />
                   </div>
                 </div>
@@ -261,7 +259,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={startRecording}
-                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-bold transition-colors text-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-ink-800 border border-primary-200 dark:border-primary-900/50 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/30 font-bold transition-colors text-sm"
                   >
                     <RotateCcw size={16} />
                     再试一次
@@ -270,15 +268,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <div className="flex-1 text-slate-400 dark:text-slate-500">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
+                <div className="flex-1 text-ink-400 dark:text-ink-500">
+                  <p className="text-sm font-medium text-ink-600 dark:text-ink-300 mb-1">
                     准备好了吗？
                   </p>
                   <p className="text-xs">点击麦克风开始跟读练习。</p>
                 </div>
                 <button
                   onClick={startRecording}
-                  className="w-14 h-14 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center transition-all transform hover:scale-105 active:scale-95"
+                  className="w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg flex items-center justify-center transition-all transform hover:scale-105 active:scale-95"
                 >
                   <Mic size={24} />
                 </button>
@@ -291,15 +289,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         {isRecording && (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <div className="relative">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+              <span className="absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75 animate-ping"></span>
               <button
                 onClick={stopRecording}
-                className="relative w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-xl hover:bg-red-600 transition-colors"
+                className="relative w-16 h-16 rounded-full bg-error-500 text-white flex items-center justify-center shadow-xl hover:bg-error-600 transition-colors"
               >
                 <Square size={24} fill="currentColor" />
               </button>
             </div>
-            <p className="text-sm font-medium text-red-500 animate-pulse">
+            <p className="text-sm font-medium text-error-500 animate-pulse">
               正在录音... 点击停止
             </p>
             {/* Fake Visualizer */}
@@ -307,7 +305,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-1.5 bg-red-400 rounded-full animate-bounce"
+                  className="w-1.5 bg-error-400 rounded-full animate-bounce"
                   style={{
                     height: `${Math.random() * 20 + 4}px`,
                     animationDuration: `${0.5 + Math.random() * 0.5}s`,
@@ -321,8 +319,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         {/* 状态: PROCESSING */}
         {isProcessing && (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
-            <Cpu className="text-indigo-600 animate-spin" size={32} />
-            <p className="text-sm font-bold text-indigo-600">正在分析发音...</p>
+            <Cpu className="text-primary-600 animate-spin" size={32} />
+            <p className="text-sm font-bold text-primary-600">
+              正在分析发音...
+            </p>
           </div>
         )}
       </div>

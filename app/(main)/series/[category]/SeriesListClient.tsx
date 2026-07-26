@@ -71,7 +71,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
   return (
     <div className="min-h-screen bg-base-200 pb-20 font-sans">
       {/* Header Banner */}
-      <div className="bg-slate-900 text-white pt-8 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="bg-ink-900 text-white pt-8 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-12 opacity-10 transform translate-x-1/3 -translate-y-1/4">
           <Hash size={400} />
         </div>
@@ -80,7 +80,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
         <div className="max-w-7xl mx-auto relative z-10">
           <button
             onClick={handleBack}
-            className="flex items-center text-gray-400 hover:text-white transition-colors mb-6 group cursor-pointer"
+            className="flex items-center text-ink-400 hover:text-white transition-colors mb-6 group cursor-pointer"
           >
             <div className="p-1 rounded-full bg-white/10 group-hover:bg-white/20 mr-2 transition-colors">
               <ArrowLeft size={16} />
@@ -89,11 +89,11 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
           </button>
 
           <div className="flex items-center space-x-4">
-            <div className="bg-indigo-500/20 p-4 rounded-3xl border border-indigo-500/30 backdrop-blur-sm">
-              <Hash size={48} className="text-indigo-400" />
+            <div className="bg-primary-500/20 p-4 rounded-3xl border border-primary-500/30 backdrop-blur-sm">
+              <Hash size={48} className="text-primary-400" />
             </div>
             <div>
-              <span className="text-indigo-400 font-bold tracking-wider uppercase text-sm">
+              <span className="text-primary-400 font-bold tracking-wider uppercase text-sm">
                 主题合集
               </span>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mt-1 capitalize">
@@ -102,7 +102,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
             </div>
           </div>
 
-          <p className="mt-6 text-gray-400 max-w-2xl text-lg leading-relaxed">
+          <p className="mt-6 text-ink-400 max-w-2xl text-lg leading-relaxed">
             探索我们精心挑选的
             <span className="text-white font-medium">{tagName}</span>
             主题播客系列。
@@ -125,7 +125,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
                 }
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   filterLevel === level
-                    ? "bg-slate-900 text-white shadow-md"
+                    ? "bg-ink-900 text-white shadow-md"
                     : "text-base-content/60 hover:bg-base-200 hover:text-base-content"
                 }`}
               >

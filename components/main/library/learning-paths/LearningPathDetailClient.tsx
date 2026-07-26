@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import ProBadge from "@/components/ui/ProBadge";
 import {
   PlayCircle,
   MoreHorizontal,
@@ -267,10 +268,10 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 font-sans w-full overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-950 pb-20 font-sans w-full overflow-x-hidden transition-colors duration-300">
       {/* Detail Header */}
-      {/* [Refactor] bg-slate-900 -> bg-neutral text-neutral-content: 保持深色头部风格，但在主题系统中更语义化 */}
-      <div className="bg-neutral bg-gradient-to-br from-primary to-secondary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* [Refactor] bg-ink-900 -> bg-neutral text-neutral-content: 保持深色头部风格，但在主题系统中更语义化 */}
+      <div className="bg-primary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
           <Map size={400} className="fill-current" />
         </div>
@@ -338,13 +339,13 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
       {/* Action Bar & List */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-8 relative z-20">
         {/* Action Bar Container */}
-        {/* [Refactor] bg-white -> bg-base-100, border-gray-100 -> border-base-300 */}
+        {/* [Refactor] bg-white -> bg-base-100, border-ink-100 -> border-base-300 */}
         <div className="bg-base-100 rounded-xl border border-base-300 p-3 md:p-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 mb-6">
           <div className="flex gap-2 w-full md:w-auto">
             <button
               onClick={handlePlayAll}
               disabled={selectedPath.items.length === 0}
-              // [Refactor] shadow-indigo-200 -> shadow-primary/20: 阴影颜色适配
+              // [Refactor] shadow-primary-200 -> shadow-primary/20: 阴影颜色适配
               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-lg font-bold hover:brightness-110 transition-all shadow-md shadow-primary/20 text-sm md:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlayCircle size={20} /> 播放全部
@@ -363,7 +364,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <>
                   <button
                     onClick={() => setIsAddEpisodeModalOpen(true)}
-                    // [Refactor] text-gray-600 -> text-base-content/80
+                    // [Refactor] text-ink-600 -> text-base-content/80
                     className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 md:py-2 text-sm font-bold text-base-content/80 hover:bg-base-200 rounded-lg transition-colors border md:border-none border-base-200 whitespace-nowrap"
                   >
                     <ListPlus size={18} />
@@ -437,7 +438,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <div
                   key={item.id}
                   onClick={() => onPlayEpisode(item.episode)}
-                  // [Refactor] bg-white -> bg-base-100, hover:border-indigo-100 -> hover:border-primary/50
+                  // [Refactor] bg-white -> bg-base-100, hover:border-primary-100 -> hover:border-primary/50
                   className="group bg-base-100 p-2 md:p-4 rounded-xl border border-base-300 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
                 >
                   {/* Index */}
@@ -455,9 +456,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                     {/* PRO Badge */}
                     {item.episode.isExclusive && (
                       <div className="absolute top-1 left-1 z-10 flex gap-1.5 items-center">
-                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] md:text-xs tracking-widest flex items-center">
-                          👑 PRO
-                        </div>
+                        <ProBadge size="sm" />
                       </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -560,7 +559,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   type="text"
                   autoFocus
                   placeholder="搜索..."
-                  // [Refactor] bg-gray-50 -> bg-base-200
+                  // [Refactor] bg-ink-50 -> bg-base-200
                   className="w-full pl-9 pr-4 py-2.5 bg-base-200 border border-transparent focus:bg-base-100 focus:border-primary rounded-xl focus:outline-none focus:ring-0 transition-all text-sm text-base-content placeholder:text-base-content/40"
                   value={episodeSearchQuery}
                   onChange={(e) => setEpisodeSearchQuery(e.target.value)}

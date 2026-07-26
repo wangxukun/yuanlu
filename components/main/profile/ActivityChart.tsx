@@ -69,8 +69,8 @@ export default function ActivityChart() {
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#1F7A5C" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#1F7A5C" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -82,13 +82,13 @@ export default function ActivityChart() {
                 dataKey="day"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#94a3b8", fontSize: 12 }}
+                tick={{ fill: "#A79E8A", fontSize: 12 }}
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#94a3b8", fontSize: 12 }}
+                tick={{ fill: "#A79E8A", fontSize: 12 }}
                 unit="m"
               />
               <Tooltip
@@ -101,7 +101,7 @@ export default function ActivityChart() {
               <Area
                 type="monotone"
                 dataKey="minutes"
-                stroke="#4f46e5"
+                stroke="#1F7A5C"
                 strokeWidth={3}
                 fillOpacity={1}
                 fill="url(#colorMinutes)"

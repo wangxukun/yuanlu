@@ -115,7 +115,7 @@ export default function EpisodeEditForm({ episode }: Props) {
       {/* 标题 */}
       <div className="flex flex-row items-center">
         <label className="w-24 font-semibold text-right mr-4">
-          <span className="text-red-500 mr-1">*</span>标题
+          <span className="text-error-500 mr-1">*</span>标题
         </label>
         <input
           value={title}
@@ -129,7 +129,7 @@ export default function EpisodeEditForm({ episode }: Props) {
       {/* 简介 */}
       <div className="flex flex-row items-start">
         <label className="w-24 font-semibold text-right mr-4 mt-2">
-          <span className="text-red-500 mr-1">*</span>简介
+          <span className="text-error-500 mr-1">*</span>简介
         </label>
         <textarea
           rows={4}
@@ -143,7 +143,7 @@ export default function EpisodeEditForm({ episode }: Props) {
       {/* [修改] 标签 */}
       <div className="flex flex-row items-start">
         <label className="w-24 font-semibold text-right mr-4 mt-2">
-          <span className="text-red-500 mr-1">*</span>标签
+          <span className="text-error-500 mr-1">*</span>标签
         </label>
         <div className="flex-1">
           <TagSelector

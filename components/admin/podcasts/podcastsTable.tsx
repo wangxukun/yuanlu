@@ -9,7 +9,7 @@ export default async function PodCastsTable() {
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
-        <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
+        <div className="rounded-lg bg-ink-50 p-2 md:pt-0">
           <div className="md:hidden">
             {podcasts?.map((podcast) => (
               <div
@@ -21,7 +21,7 @@ export default async function PodCastsTable() {
                     <div className="mb-2 flex items-center">
                       {podcast.title}
                     </div>
-                    <p className="text-sm text-gray-500">{podcast.platform}</p>
+                    <p className="text-sm text-ink-500">{podcast.platform}</p>
                   </div>
                   <div className="h-8 w-28">按钮在此处</div>
                 </div>
@@ -39,7 +39,7 @@ export default async function PodCastsTable() {
               </div>
             ))}
           </div>
-          <table className="hidden min-w-full text-gray-900 md:table">
+          <table className="hidden min-w-full text-ink-900 md:table">
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr>
                 <th scope="col" className="px-7 py-5 ">

@@ -36,12 +36,12 @@ export function TranscriptPreviewModal({
         </button>
 
         {/* Glowing Label / Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 w-fit mb-4">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 w-fit mb-4">
           <Sparkles size={12} className="fill-current animate-pulse" /> 文稿预览
         </div>
 
         {/* ── PDF Page Replica ── */}
-        <div className="relative rounded-xl overflow-hidden mb-6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-200 dark:border-gray-600">
+        <div className="relative rounded-xl overflow-hidden mb-6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-ink-200 dark:border-ink-600">
           <div
             className="bg-white select-none"
             style={{ aspectRatio: "595 / 560" }}
@@ -65,7 +65,7 @@ export function TranscriptPreviewModal({
                   AI翻译 仅供参考
                 </span>
               </div>
-              <div className="h-[0.5px] bg-gray-300 mb-3 sm:mb-4"></div>
+              <div className="h-[0.5px] bg-ink-300 mb-3 sm:mb-4"></div>
 
               {/* ── Title Block with Cover ── */}
               <div className="flex items-start gap-2 sm:gap-3 mb-1">
@@ -93,7 +93,7 @@ export function TranscriptPreviewModal({
                   />
                 )}
               </div>
-              <div className="h-[1px] bg-gray-700 my-1.5 sm:my-2"></div>
+              <div className="h-[1px] bg-ink-700 my-1.5 sm:my-2"></div>
 
               {/* ── Transcript Blocks (max 4) ── */}
               <div className="flex-1 space-y-2.5 sm:space-y-3 mt-1">
@@ -134,7 +134,7 @@ export function TranscriptPreviewModal({
 
               {/* ── Page Footer ── */}
               <div className="mt-auto pt-1">
-                <div className="h-[0.4px] bg-gray-300 mb-1"></div>
+                <div className="h-[0.4px] bg-ink-300 mb-1"></div>
                 <div className="flex justify-between">
                   <span
                     className="text-[0.4rem] sm:text-[0.42rem]"
@@ -171,11 +171,11 @@ export function TranscriptPreviewModal({
         </div>
 
         {/* Intercept Card with Sincere Advocacy */}
-        <div className="bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-2xl p-6 border border-indigo-500/10 text-center space-y-4 relative">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-sm shadow-indigo-500">
+        <div className="bg-gradient-to-r from-primary-500/5 to-accent-500/5 rounded-2xl p-6 border border-primary-500/10 text-center space-y-4 relative">
+          <div className="w-10 h-10 bg-primary-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-sm shadow-primary-500">
             <Crown size={20} className="animate-pulse" />
           </div>
-          <h4 className="text-lg font-black text-indigo-950 dark:text-indigo-300">
+          <h4 className="text-lg font-black text-primary-950 dark:text-primary-300">
             这里是会员专享内容
           </h4>
 

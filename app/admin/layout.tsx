@@ -4,7 +4,7 @@ import AuthProvider from "@/app/AuthProvider";
 import SideNav from "@/components/admin/sidenav";
 import { LeaveConfirmProvider } from "@/components/LeaveConfirmProvider";
 import Header from "@/components/admin/header/Header";
-import { lusitana } from "@/components/fonts";
+import { jakarta } from "@/components/fonts";
 import { Toaster } from "sonner";
 import { Metadata } from "next";
 
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <AuthProvider>
       <html lang="en">
-        <body className={lusitana.className}>
+        <body className={jakarta.className}>
           <Toaster richColors />
           <LeaveConfirmProvider>
             <div className="drawer lg:drawer-open h-screen overflow-hidden">

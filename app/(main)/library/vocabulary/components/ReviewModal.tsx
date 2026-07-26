@@ -41,19 +41,19 @@ export function ReviewModal({
         onClick={() => setIsReviewOpen(false)}
       />
       {/* Modal Content */}
-      <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-slate-900 sm:rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-ink-900 sm:rounded-2xl shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-slate-50 dark:bg-slate-950 shrink-0 mt-safe xl:mt-0">
+        <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-ink-50 dark:bg-ink-950 shrink-0 mt-safe xl:mt-0">
           <div className="flex items-center space-x-2">
             <BrainCircuit className="text-primary" size={20} />
             <span className="font-bold text-base-content/90">复习中</span>
-            <span className="bg-slate-200 dark:bg-slate-800 text-base-content/80 text-xs px-2 py-0.5 rounded-full">
+            <span className="bg-ink-200 dark:bg-ink-800 text-base-content/80 text-xs px-2 py-0.5 rounded-full">
               {currentReviewIndex + 1} / {reviewQueue.length}
             </span>
           </div>
           <button
             onClick={() => setIsReviewOpen(false)}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full text-base-content/40 transition-colors"
+            className="p-2 hover:bg-ink-200 dark:hover:bg-ink-800 rounded-full text-base-content/40 transition-colors"
           >
             <X size={20} />
           </button>
@@ -63,7 +63,7 @@ export function ReviewModal({
         <div className="flex-1 flex flex-col relative overflow-y-auto">
           {/* 正反面切换区域 */}
           <div
-            className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-slate-100/30 dark:hover:bg-slate-800/20 transition-colors min-h-[300px]"
+            className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-ink-100/30 dark:hover:bg-ink-800/20 transition-colors min-h-[300px]"
             onClick={() => !isCardFlipped && setIsCardFlipped(true)}
           >
             {!isCardFlipped ? (
@@ -91,7 +91,7 @@ export function ReviewModal({
                           playingText ===
                           reviewQueue[currentReviewIndex].contextSentence
                             ? "text-primary bg-primary/20 animate-pulse"
-                            : "text-base-content/40 hover:text-primary bg-slate-100 dark:bg-slate-800"
+                            : "text-base-content/40 hover:text-primary bg-ink-100 dark:bg-ink-800"
                         }`}
                         title="朗读例句"
                       >
@@ -117,7 +117,7 @@ export function ReviewModal({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
                     >
                       <ExternalLink size={14} />
                       查看词典
@@ -135,7 +135,7 @@ export function ReviewModal({
                         onClick={(e) =>
                           playAudio(e, reviewQueue[currentReviewIndex].speakUrl)
                         }
-                        className="p-1 hover:text-primary bg-slate-100 dark:bg-slate-800 rounded-full"
+                        className="p-1 hover:text-primary bg-ink-100 dark:bg-ink-800 rounded-full"
                       >
                         <Volume2 size={16} />
                       </button>
@@ -143,7 +143,7 @@ export function ReviewModal({
                   </div>
                 </div>
 
-                <div className="bg-indigo-50 dark:bg-indigo-950/30 p-6 rounded-lg flex flex-col">
+                <div className="bg-primary-50 dark:bg-primary-950/30 p-6 rounded-lg flex flex-col">
                   {renderContext(
                     reviewQueue[currentReviewIndex].contextSentence,
                     reviewQueue[currentReviewIndex].word,
@@ -161,8 +161,8 @@ export function ReviewModal({
                         className={`p-1.5 rounded-full transition-all ${
                           playingText ===
                           reviewQueue[currentReviewIndex].contextSentence
-                            ? "text-indigo-600 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 animate-pulse"
-                            : "text-indigo-400 hover:text-indigo-600 dark:text-indigo-500 dark:hover:text-indigo-300 bg-white/50 dark:bg-slate-900/50"
+                            ? "text-primary-600 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/50 animate-pulse"
+                            : "text-primary-400 hover:text-primary-600 dark:text-primary-500 dark:hover:text-primary-300 bg-white/50 dark:bg-ink-900/50"
                         }`}
                         title="朗读例句"
                       >
@@ -180,7 +180,7 @@ export function ReviewModal({
           </div>
 
           {/* 控制栏 Footer */}
-          <div className="p-4 xl:p-6 border-t border-base-200 bg-slate-50 dark:bg-slate-950 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
+          <div className="p-4 xl:p-6 border-t border-base-200 bg-ink-50 dark:bg-ink-950 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
             {!isCardFlipped ? (
               <button
                 onClick={() => setIsCardFlipped(true)}
@@ -193,7 +193,7 @@ export function ReviewModal({
                 <button
                   disabled={isSubmitting}
                   onClick={() => handleSRS(ReviewQuality.FORGOT)}
-                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-error transition-all group disabled:opacity-50"
+                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-ink-800 text-base-content/80 hover:text-error transition-all group disabled:opacity-50"
                 >
                   <RotateCcw
                     size={20}
@@ -206,7 +206,7 @@ export function ReviewModal({
                 <button
                   disabled={isSubmitting}
                   onClick={() => handleSRS(ReviewQuality.HARD)}
-                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-warning transition-all group disabled:opacity-50"
+                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-ink-800 text-base-content/80 hover:text-warning transition-all group disabled:opacity-50"
                 >
                   <Clock
                     size={20}
@@ -220,7 +220,7 @@ export function ReviewModal({
                 <button
                   disabled={isSubmitting}
                   onClick={() => handleSRS(ReviewQuality.GOOD)}
-                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-success transition-all group disabled:opacity-50"
+                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-ink-800 text-base-content/80 hover:text-success transition-all group disabled:opacity-50"
                 >
                   <CheckCircle
                     size={20}
@@ -234,7 +234,7 @@ export function ReviewModal({
                 <button
                   disabled={isSubmitting}
                   onClick={() => handleSRS(ReviewQuality.EASY)}
-                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-slate-800 text-base-content/80 hover:text-info transition-all group disabled:opacity-50"
+                  className="flex flex-col items-center p-2 xl:p-3 rounded-lg bg-white dark:bg-ink-800 text-base-content/80 hover:text-info transition-all group disabled:opacity-50"
                 >
                   <Award
                     size={20}

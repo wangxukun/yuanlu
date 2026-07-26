@@ -23,7 +23,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-400 italic text-sm">
+              <p className="text-ink-400 italic text-sm">
                 还没有人发言，来抢沙发吧！
               </p>
             </div>

@@ -38,13 +38,12 @@ export default function NavLinksLogined() {
             key={link.name}
             href={link.href}
             onClick={closeDrawer}
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             className={clsx(
               "flex items-center gap-4 px-4 py-3 text-sm transition-all duration-200 scale-95 active:scale-90 transition-transform",
               {
-                "font-bold text-indigo-700 border-r-4 border-indigo-600 bg-indigo-50/50":
+                "font-bold text-primary-700 border-r-4 border-primary-600 bg-primary-50/50":
                   pathname === link.href,
-                "font-medium text-slate-500 rounded-[1rem] hover:text-indigo-500 hover:bg-indigo-50/50":
+                "font-medium text-ink-500 rounded-[1rem] hover:text-primary-500 hover:bg-primary-50/50":
                   pathname !== link.href,
               },
             )}
@@ -55,7 +54,7 @@ export default function NavLinksLogined() {
               style={{
                 fontVariationSettings:
                   pathname === link.href ? "'FILL' 1" : "'FILL' 0",
-                color: pathname === link.href ? "#4338ca" : "#94a3b8",
+                color: pathname === link.href ? "#1A6349" : "#A79E8A",
               }}
             >
               {link.iconName}

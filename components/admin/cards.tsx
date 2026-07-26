@@ -5,7 +5,7 @@ import {
   InboxIcon,
   MicrophoneIcon,
 } from "@heroicons/react/24/outline";
-import { lusitana } from "@/components/fonts";
+import { sourceSerif } from "@/components/fonts";
 import { fetchOnlineUsers } from "@/lib/data";
 import { statsService } from "@/core/stats/stats.service";
 
@@ -51,13 +51,13 @@ export function Card({
   const Icon = iconMap[type];
 
   return (
-    <div className="rounded-xl bg-gray-50 p-2 shadow-xs">
+    <div className="rounded-xl bg-ink-50 p-2 shadow-xs">
       <div className="flex p-4">
-        {Icon ? <Icon className="h-5 w-5 text-gray-700" /> : null}
+        {Icon ? <Icon className="h-5 w-5 text-ink-700" /> : null}
         <h3 className="ml-2 text-sm font-medium">{title}</h3>
       </div>
       <p
-        className={`${lusitana.className}
+        className={`${sourceSerif.className}
           truncate rounded-xl bg-white px-4 py-8 text-center text-2xl`}
       >
         {value}

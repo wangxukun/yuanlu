@@ -48,9 +48,9 @@ export function VocabularyModal({
         isModalOpen && "modal-open",
       )}
     >
-      <div className="modal-box mb-[100px] md:mb-0 bg-base-100 dark:bg-slate-900 sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-slate-800 flex flex-col">
+      <div className="modal-box mb-[100px] md:mb-0 bg-base-100 dark:bg-ink-900 sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-ink-800 flex flex-col">
         <div className="bg-primary/5 dark:bg-primary/10 px-6 py-4 flex justify-between items-center border-b border-primary/10 dark:border-primary/20 shrink-0">
-          <h3 className="text-lg font-bold flex items-center gap-2 text-primary dark:text-indigo-400">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-primary dark:text-primary-400">
             <BookOpenIcon className="w-5 h-5" /> 查词助手
           </h3>
           <button
@@ -64,7 +64,7 @@ export function VocabularyModal({
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-3">
-              <h2 className="text-3xl font-serif font-black text-slate-800 dark:text-slate-100 break-all">
+              <h2 className="text-3xl font-serif font-black text-ink-800 dark:text-ink-100 break-all">
                 {selectedWord}
               </h2>
               {wordDetails.speakUrl && (
@@ -80,7 +80,7 @@ export function VocabularyModal({
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-base-content/40 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-base-content/40 dark:text-ink-400 uppercase tracking-wider">
                 定义
               </label>
               {isLoadingDefinition && (
@@ -88,7 +88,7 @@ export function VocabularyModal({
               )}
             </div>
             <textarea
-              className="textarea textarea-bordered w-full h-24 bg-base-200/30 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-200 text-base leading-relaxed focus:bg-white focus:dark:bg-slate-800 transition-colors resize-none"
+              className="textarea textarea-bordered w-full h-24 bg-base-200/30 dark:bg-ink-800/50 dark:border-ink-700 dark:text-ink-200 text-base leading-relaxed focus:bg-white focus:dark:bg-ink-800 transition-colors resize-none"
               placeholder="输入释义..."
               value={definition}
               onChange={(e) => setDefinition(e.target.value)}
@@ -108,17 +108,17 @@ export function VocabularyModal({
             </div>
           </div>
 
-          <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30">
-            <p className="text-sm text-slate-700 dark:text-slate-300 font-serif italic mb-2">
+          <div className="bg-accent-50 dark:bg-accent-950/20 p-4 rounded-xl border border-accent-100 dark:border-accent-900/30">
+            <p className="text-sm text-ink-700 dark:text-ink-300 font-serif italic mb-2">
               “{selectedContext}”
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-ink-500 dark:text-ink-400">
               {selectedTranslation}
             </p>
           </div>
         </div>
 
-        <div className="p-4 bg-base-200/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-slate-800 safe-pb-4">
+        <div className="p-4 pb-safe bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800">
           <button
             className="btn btn-ghost rounded-xl"
             onClick={() => setIsModalOpen(false)}

@@ -17,7 +17,7 @@ export default function ImmersiveCard({
   return (
     <>
       <section>
-        <div className="card bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-xl rounded-2xl overflow-hidden relative group">
+        <div className="card bg-primary-600 text-white shadow-xl rounded-2xl overflow-hidden relative group">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="card-body p-8 md:p-10 relative z-10 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
             <div className="flex flex-col gap-2">
@@ -28,7 +28,7 @@ export default function ImmersiveCard({
             </div>
             <button
               onClick={() => setIsOpen(true)}
-              className="btn bg-white hover:bg-slate-100 text-primary border-none btn-lg rounded-xl font-bold shrink-0 shadow-lg"
+              className="btn bg-white hover:bg-ink-100 text-primary border-none btn-lg rounded-xl font-bold shrink-0 shadow-lg"
             >
               立即进入沉浸模式
             </button>

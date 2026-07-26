@@ -37,7 +37,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
     >
       <button
         type="button"
-        className={`p-2 rounded-full transition-colors duration-200 ${isOpen ? "bg-indigo-50 text-primary" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
+        className={`p-2 rounded-full transition-colors duration-200 ${isOpen ? "bg-primary-50 text-primary" : "text-ink-400 hover:text-ink-600 hover:bg-ink-100"}`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -51,24 +51,24 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
         <div className="py-1">
           <Link
             href={`/admin/episodes/${episodeId}/subtitles`}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-primary transition-colors"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
           >
             <FileTextIcon size={16} className="mr-3" />
             <span>字幕管理</span>
           </Link>
-          <button className="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-primary transition-colors">
+          <button className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors">
             <MessageSquareIcon size={16} className="mr-3" />
             <span>评论管理</span>
           </button>
           <Link
             href={`/admin/episodes/${episodeId}/cover`}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-primary transition-colors"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
           >
             <ImageResultIcon size={16} className="mr-3" />
             <span>封面管理</span>
           </Link>
-          <div className="border-t border-slate-200 my-1"></div>
-          {/*<button className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">*/}
+          <div className="border-t border-ink-200 my-1"></div>
+          {/*<button className="flex w-full items-center px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 hover:text-error-700 transition-colors">*/}
           {/*  <svg*/}
           {/*    xmlns="http://www.w3.org/2000/svg"*/}
           {/*    className="h-4 w-4 mr-3"*/}

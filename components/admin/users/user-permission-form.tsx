@@ -87,24 +87,24 @@ export default function UserPermissionForm({ user }: { user: User }) {
         onSubmit={handleSubmit}
         className="space-y-3 max-w-7xl mx-auto mt-6"
       >
-        <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
-          <h2 className="text-lg font-bold text-slate-500">设置用户</h2>
+        <div className="flex-1 rounded-lg bg-ink-50 px-6 pb-4 pt-8">
+          <h2 className="text-lg font-bold text-ink-500">设置用户</h2>
           <div className="pl-4">
-            <p className="text-sm text-slate-400 py-4">
+            <p className="text-sm text-ink-400 py-4">
               确定用户
-              <span className="text-red-400">{user.email}</span>
+              <span className="text-error-400">{user.email}</span>
               的角色，并设置用户是否允许评论。
             </p>
 
             <div className="flex flex-row items-center justify-start py-6 space-x-9">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink-700">
                 用户角色
               </label>
-              <div className="min-w-64 bg-amber-100">
+              <div className="min-w-64 bg-accent-100">
                 <select
                   id="role"
                   name="role"
-                  className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                  className="peer block w-full cursor-pointer rounded-md border border-ink-200 py-2 pl-10 text-sm outline-2 placeholder:text-ink-500"
                   value={selectedRole}
                   onChange={(e) =>
                     setSelectedRole(
@@ -125,14 +125,14 @@ export default function UserPermissionForm({ user }: { user: User }) {
             {/* PREMIUM subscription duration selector - shown only when PREMIUM is selected */}
             {selectedRole === "PREMIUM" && (
               <div
-                className="rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 mt-2 mb-4"
+                className="rounded-lg border border-accent-200 bg-gradient-to-r from-accent-50 to-accent-50 p-5 mt-2 mb-4"
                 style={{
                   animation: "fadeIn 0.3s ease-in-out",
                 }}
               >
                 <div className="flex items-center gap-2 mb-4">
-                  <StarIcon className="h-5 w-5 text-amber-500" />
-                  <h3 className="text-sm font-semibold text-amber-700">
+                  <StarIcon className="h-5 w-5 text-accent-500" />
+                  <h3 className="text-sm font-semibold text-accent-700">
                     高级会员订阅设置
                   </h3>
                 </div>
@@ -140,10 +140,10 @@ export default function UserPermissionForm({ user }: { user: User }) {
                 {/* Current subscription status */}
                 {currentSubscription && (
                   <div className="mb-4 rounded-md bg-white/70 px-4 py-3 text-sm">
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       当前订阅状态：
                       {isSubscriptionActive ? (
-                        <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-primary-600 font-medium">
                           <CheckIcon className="h-4 w-4" />
                           有效（至{" "}
                           {new Date(
@@ -152,7 +152,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
                           ）
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-red-500 font-medium">
+                        <span className="inline-flex items-center gap-1 text-error-500 font-medium">
                           <ClockIcon className="h-4 w-4" />
                           已过期（
                           {currentSubscription.endDate
@@ -165,7 +165,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
                       )}
                     </p>
                     {isSubscriptionActive && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-ink-400 mt-1">
                         提示：再次设置将在当前有效期基础上续期
                       </p>
                     )}
@@ -174,7 +174,7 @@ export default function UserPermissionForm({ user }: { user: User }) {
 
                 {/* Duration selection */}
                 <div className="flex flex-row items-center gap-4">
-                  <label className="block text-sm font-medium text-amber-700 whitespace-nowrap">
+                  <label className="block text-sm font-medium text-accent-700 whitespace-nowrap">
                     订阅有效期
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -185,8 +185,8 @@ export default function UserPermissionForm({ user }: { user: User }) {
                         onClick={() => setPremiumDurationDays(option.value)}
                         className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 ${
                           premiumDurationDays === option.value
-                            ? "bg-amber-500 text-white shadow-md scale-105"
-                            : "bg-white text-gray-600 border border-gray-200 hover:border-amber-300 hover:text-amber-600"
+                            ? "bg-accent-500 text-white shadow-md scale-105"
+                            : "bg-white text-ink-600 border border-ink-200 hover:border-accent-300 hover:text-accent-600"
                         }`}
                       >
                         {option.label}
@@ -198,10 +198,10 @@ export default function UserPermissionForm({ user }: { user: User }) {
             )}
 
             <fieldset className="flex flex-row items-center justify-start space-x-9 mt-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink-700">
                 登录权限
               </label>
-              <div className="rounded-md border border-gray-200 bg-white px-4 py-1">
+              <div className="rounded-md border border-ink-200 bg-white px-4 py-1">
                 <div className="flex gap-9 min-w-48">
                   <div className="flex items-center">
                     <input
@@ -211,11 +211,11 @@ export default function UserPermissionForm({ user }: { user: User }) {
                       value="no"
                       checked={isLoginAllowed === false}
                       onChange={() => setIsLoginAllowed(false)}
-                      className="text-white-600 h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
+                      className="text-white-600 h-4 w-4 cursor-pointer border-ink-300 bg-ink-100 focus:ring-2"
                     />
                     <label
                       htmlFor="login-no"
-                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-ink-100 px-3 py-1.5 text-xs font-medium text-ink-600"
                     >
                       禁止 <ClockIcon className="h-4 w-4" />
                     </label>
@@ -228,11 +228,11 @@ export default function UserPermissionForm({ user }: { user: User }) {
                       checked={isLoginAllowed === true}
                       onChange={() => setIsLoginAllowed(true)}
                       value="yes"
-                      className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                      className="h-4 w-4 cursor-pointer border-ink-300 bg-ink-100 text-ink-600 focus:ring-2"
                     />
                     <label
                       htmlFor="login-yes"
-                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-primary-500 px-3 py-1.5 text-xs font-medium text-white"
                     >
                       允许 <CheckIcon className="h-4 w-4" />
                     </label>
@@ -241,10 +241,10 @@ export default function UserPermissionForm({ user }: { user: User }) {
               </div>
             </fieldset>
             <fieldset className="flex flex-row items-center justify-start space-x-9 mt-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink-700">
                 评论权限
               </label>
-              <div className="rounded-md border border-gray-200 bg-white px-4 py-1">
+              <div className="rounded-md border border-ink-200 bg-white px-4 py-1">
                 <div className="flex gap-9 min-w-48">
                   <div className="flex items-center">
                     <input
@@ -254,11 +254,11 @@ export default function UserPermissionForm({ user }: { user: User }) {
                       value="no"
                       checked={isCommentAllowed === false}
                       onChange={() => setIsCommentAllowed(false)}
-                      className="text-white-600 h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
+                      className="text-white-600 h-4 w-4 cursor-pointer border-ink-300 bg-ink-100 focus:ring-2"
                     />
                     <label
                       htmlFor="no"
-                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-ink-100 px-3 py-1.5 text-xs font-medium text-ink-600"
                     >
                       禁止 <ClockIcon className="h-4 w-4" />
                     </label>
@@ -271,11 +271,11 @@ export default function UserPermissionForm({ user }: { user: User }) {
                       checked={isCommentAllowed === true}
                       onChange={() => setIsCommentAllowed(true)}
                       value="yes"
-                      className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                      className="h-4 w-4 cursor-pointer border-ink-300 bg-ink-100 text-ink-600 focus:ring-2"
                     />
                     <label
                       htmlFor="yes"
-                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
+                      className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-primary-500 px-3 py-1.5 text-xs font-medium text-white"
                     >
                       允许 <CheckIcon className="h-4 w-4" />
                     </label>

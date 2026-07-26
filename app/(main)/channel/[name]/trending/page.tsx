@@ -83,11 +83,11 @@ export default async function ChannelTrendingPage({ params }: Props) {
                     <div
                       className={`w-8 h-8 xl:w-10 xl:h-10 rounded-xl flex items-center justify-center text-sm xl:text-base font-extrabold shadow-lg ${
                         index === 0
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                          ? "bg-gradient-to-br from-accent-400 to-accent-500 text-white"
                           : index === 1
-                            ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
+                            ? "bg-gradient-to-br from-ink-300 to-ink-400 text-ink-800"
                             : index === 2
-                              ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
+                              ? "bg-gradient-to-br from-accent-600 to-accent-700 text-white"
                               : "bg-black/50 text-white backdrop-blur-sm"
                       }`}
                     >

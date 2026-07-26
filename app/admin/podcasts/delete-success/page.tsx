@@ -15,10 +15,10 @@ export default function RegisterSuccess() {
   }, [router]);
 
   return (
-    <div className="bg-gray-50 rounded-xl p-6 w-full max-w-7xl mx-auto mt-40">
+    <div className="bg-ink-50 rounded-xl p-6 w-full max-w-7xl mx-auto mt-40">
       <div className="flex flex-col items-center justify-center space-y-4">
-        <h2 className="text-lg font-bold text-slate-500">删除成功</h2>
-        <p className="text-sm text-gray-500">删除成功，将在3秒后跳转...</p>
+        <h2 className="text-lg font-bold text-ink-500">删除成功</h2>
+        <p className="text-sm text-ink-500">删除成功，将在3秒后跳转...</p>
       </div>
     </div>
   );

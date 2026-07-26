@@ -7,6 +7,7 @@ import { ResumeData } from "@/components/main/home/ResumeButton";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import { episodeService } from "@/core/episode/episode.service";
+import { WeeklyActivityItemDto } from "@/core/stats/dto";
 
 export const metadata: Metadata = {
   title: "我的主页 | 远路播客",
@@ -21,6 +22,7 @@ export default async function HomePage() {
   // 用于继续收听列表的数据
   let recentHistoryList: RecentHistoryItemDto[] = [];
   let userStats = null;
+  let weeklyActivity: WeeklyActivityItemDto[] = [];
   // 推荐数据
   let recommendedData = {
     level: "General",
@@ -48,11 +50,20 @@ export default async function HomePage() {
       .getRecommendedEpisodes(user.userid) // 获取推荐
       .catch(() => ({ level: "General", items: [] }));
 
+    // 我的路：本周每日学习分钟数
+    const weeklyActivityPromise = statsService
+      .getWeeklyActivityChart(user.userid)
+      .catch((e) => {
+        console.error("Fetch weekly activity failed", e);
+        return { weeklyActivity: [] };
+      });
+
     console.log("STATS_PROMISE: ", statsPromise);
 
     userStats = await statsPromise;
     const history = await historyPromise;
     recommendedData = await recommendedPromise;
+    weeklyActivity = (await weeklyActivityPromise).weeklyActivity;
 
     if (history && history.length > 0) {
       // 1. 第一条给 Welcome Section 的 ResumeButton
@@ -88,6 +99,7 @@ export default async function HomePage() {
       user={user}
       latestHistory={latestHistory}
       userStats={userStats}
+      weeklyActivity={weeklyActivity}
       recentHistory={recentHistoryList} // 传递剩余历史记录
       recommendedEpisodes={recommendedData.items}
       recommendedLevel={recommendedData.level}

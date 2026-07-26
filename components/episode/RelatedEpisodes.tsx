@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ProBadge from "@/components/ui/ProBadge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Podcast } from "@/core/podcast/podcast.entity";
@@ -62,17 +63,17 @@ export default function RelatedEpisodes({
 
   return (
     <div className="flex flex-col gap-6">
-      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+      <h3 className="text-xl font-bold text-ink-900 dark:text-ink-50">
         相关剧集
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {otherEpisodes.map((ep, index) => (
           <Link
             key={ep.episodeid}
             href={`/episode/${ep.episodeid}`}
             className="flex gap-4 group cursor-pointer relative"
           >
-            <div className="relative w-28 shrink-0 aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+            <div className="relative w-28 shrink-0 aspect-video rounded-xl overflow-hidden bg-ink-100 dark:bg-ink-800 border border-ink-100 dark:border-ink-800">
               <img
                 src={ep.coverUrl}
                 alt={ep.title}
@@ -80,20 +81,18 @@ export default function RelatedEpisodes({
               />
               {ep.isExclusive && (
                 <div className="absolute top-1.5 left-1.5 z-10 flex items-center">
-                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[8px] tracking-widest flex items-center">
-                    👑 PRO
-                  </div>
+                  <ProBadge size="sm" />
                 </div>
               )}
             </div>
             <div className="flex flex-col justify-center min-w-0 pr-8">
-              <span className="text-[10px] text-[#5830E0] font-bold mb-0.5 uppercase tracking-widest">
+              <span className="text-[10px] text-[#1F7A5C] font-bold mb-0.5 uppercase tracking-widest">
                 EPISODE {index + 1}
               </span>
-              <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#5830E0] transition-colors line-clamp-2 leading-tight">
+              <h4 className="text-sm font-semibold text-ink-800 dark:text-ink-200 group-hover:text-[#1F7A5C] transition-colors line-clamp-2 leading-tight">
                 {ep.title}
               </h4>
-              <div className="flex items-center gap-1 mt-1 text-slate-400">
+              <div className="flex items-center gap-1 mt-1 text-ink-400">
                 <TvIcon className="w-3 h-3" />
                 <span className="text-[11px] font-medium truncate">
                   {podcast?.title || "远路英语"}
@@ -102,7 +101,7 @@ export default function RelatedEpisodes({
             </div>
             <button
               onClick={(e) => handleAdd(e, ep)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-[#5830E0] transition-all rounded-full hover:bg-[#5830E0]/5"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-ink-400 hover:text-[#1F7A5C] transition-all rounded-full hover:bg-[#1F7A5C]/5"
               title="加入播放列表"
             >
               <QueueListIcon className="w-5 h-5" />
@@ -114,7 +113,7 @@ export default function RelatedEpisodes({
       {/* View More Button */}
       <button
         onClick={handleViewMore}
-        className="w-full py-3 mt-2 text-sm font-bold text-[#5830E0] bg-[#5830E0]/5 hover:bg-[#5830E0]/10 rounded-xl transition-all uppercase tracking-widest border border-[#5830E0]/10"
+        className="w-full py-3 mt-2 text-sm font-bold text-[#1F7A5C] bg-[#1F7A5C]/5 hover:bg-[#1F7A5C]/10 rounded-xl transition-all uppercase tracking-widest border border-[#1F7A5C]/10"
       >
         查看更多内容
       </button>

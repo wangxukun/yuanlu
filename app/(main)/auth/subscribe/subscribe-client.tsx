@@ -213,38 +213,34 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
       case "WEEKLY":
         return {
           text: "7 天",
-          color:
-            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          color: "bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400",
         };
       case "MONTHLY":
         return {
           text: "30 天",
           color:
-            "bg-orange-200 text-orange-700 font-bold dark:bg-orange-950/50 dark:text-orange-400",
+            "bg-accent-200 text-accent-700 font-bold dark:bg-accent-950/50 dark:text-accent-400",
         };
       case "QUARTERLY":
         return {
           text: "90 天",
-          color:
-            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          color: "bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400",
         };
       case "YEARLY":
         return {
           text: "365 天",
-          color:
-            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          color: "bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400",
         };
       default:
         return {
           text: "免费",
-          color:
-            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          color: "bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400",
         };
     }
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen text-ink-900 dark:text-ink-100 pb-24">
       <div
         id="plans-grid-root"
         className="space-y-10 max-w-6xl mx-auto px-4 py-12"
@@ -256,8 +252,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
           </p> */}
 
           {user?.isPremium && (
-            <div className="mt-4 inline-flex items-center gap-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold px-3 py-0.5 rounded-full">
-              <Crown className="w-3.5 h-3.5 fill-orange-400" />
+            <div className="mt-4 inline-flex items-center gap-1 bg-accent-500/20 text-accent-400 border border-accent-500/30 text-xs font-bold px-3 py-0.5 rounded-full">
+              <Crown className="w-3.5 h-3.5 fill-accent-400" />
               {user.role === "ADMIN"
                 ? "您是系统管理员（永久高级权限）"
                 : user.expiryDate
@@ -269,28 +265,28 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
 
         {/* Email copy banner */}
         {user ? (
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-6 border border-slate-800">
+          <div className="bg-ink-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-6 border border-ink-800">
             <div className="space-y-1 text-center md:text-left">
-              <span className="text-xs bg-orange-65 bg-orange-600/30 text-orange-300 border border-orange-500/30 px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 mb-2">
+              <span className="text-xs bg-accent-65 bg-accent-600/30 text-accent-300 border border-accent-500/30 px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 mb-2">
                 <UserCheck className="w-3.5 h-3.5" />
                 当前已登录用户身份
               </span>
               <h4 className="text-lg font-bold font-sans">
                 充值激活邮箱：
-                <span className="text-yellow-400 font-mono underline">
+                <span className="text-accent-400 font-mono underline">
                   {user.email}
                 </span>
               </h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-400">
                 通过{" "}
-                <span className="text-orange-400 font-bold italic">爱发电</span>{" "}
+                <span className="text-accent-400 font-bold italic">爱发电</span>{" "}
                 无缝激活您的{" "}
-                <span className="text-orange-400 font-bold italic">
+                <span className="text-accent-400 font-bold italic">
                   {" "}
                   远路播客会员{" "}
                 </span>{" "}
                 资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的邮箱，实现秒级自动激活！用户在支付时，需确保填写的邮箱信息准确无误。
-                <span className="text-orange-400 font-bold italic">
+                <span className="text-accent-400 font-bold italic">
                   该邮箱将作为系统自动激活会员资格的唯一凭证
                 </span>
                 。会员有效期自支付成功之时起算。若用户在现有会员有效期内再次购买任何订阅方案，新的有效期将在当前剩余时间基础上进行对应天数的累加。
@@ -298,20 +294,20 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             </div>
             <button
               onClick={handleCopyEmail}
-              className="flex-shrink-0 bg-white hover:bg-slate-100 text-slate-950 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow cursor-pointer"
+              className="flex-shrink-0 bg-white hover:bg-ink-100 text-ink-950 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow cursor-pointer"
             >
-              <ClipboardCopy className="w-4 h-4 text-slate-700" />
+              <ClipboardCopy className="w-4 h-4 text-ink-700" />
               {copied ? "已复制到剪贴板！" : "复制当前激活邮箱"}
             </button>
           </div>
         ) : (
-          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-orange-950 dark:text-orange-200 space-y-1">
+          <div className="bg-accent-50 dark:bg-accent-950/20 border border-accent-200 dark:border-accent-900/30 rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-accent-950 dark:text-accent-200 space-y-1">
               <h4 className="font-bold text-sm flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <HelpCircle className="w-4 h-4 text-accent-600 dark:text-accent-400" />
                 未检测到用户登录信息
               </h4>
-              <p className="text-xs text-orange-900/85 dark:text-orange-300/80">
+              <p className="text-xs text-accent-900/85 dark:text-accent-300/80">
                 目前您还是游客状态。在爱发电充值时必须填写您注册在远路播客站点的对应邮箱，否则无法进行自动匹配激活。
               </p>
             </div>
@@ -323,7 +319,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                   ) as HTMLDialogElement
                 )?.showModal();
               }}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4 py-2 rounded-xl h-fit transition active:scale-95 shadow cursor-pointer"
+              className="bg-accent-600 hover:bg-accent-700 text-white font-bold text-xs px-4 py-2 rounded-xl h-fit transition active:scale-95 shadow cursor-pointer"
             >
               立即登录/注册账号
             </button>
@@ -347,12 +343,12 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 key={plan.level}
                 className={`rounded-2xl p-6 flex flex-col relative transition-all duration-300 group justify-between ${
                   isMonthly
-                    ? "bg-orange-50 dark:bg-orange-950/10 border-2 border-orange-500 shadow-sm"
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-900/50 shadow-sm"
+                    ? "bg-accent-50 dark:bg-accent-950/10 border-2 border-accent-500 shadow-sm"
+                    : "bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800 hover:border-accent-200 dark:hover:border-accent-900/50 shadow-sm"
                 }`}
               >
                 {isMonthly && (
-                  <div className="absolute top-0 right-6 -translate-y-1/2 bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                  <div className="absolute top-0 right-6 -translate-y-1/2 bg-accent-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
                     MOST POPULAR
                   </div>
                 )}
@@ -365,37 +361,37 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                       >
                         {badge.text}
                       </span>
-                      <div className="text-2xl font-black text-slate-900 dark:text-white">
+                      <div className="text-2xl font-black text-ink-900 dark:text-white">
                         ¥{plan.price}
                       </div>
                     </div>
 
-                    <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                    <h4 className="text-xl font-bold mb-2 text-ink-900 dark:text-white">
                       {plan.name}
                     </h4>
-                    <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 mb-auto">
+                    <ul className="text-sm text-ink-500 dark:text-ink-400 space-y-2 mb-auto">
                       {plan.features.map((feat, i) => (
                         <li key={i} className="flex items-center gap-2">
-                          <span className="text-orange-500">•</span> {feat}
+                          <span className="text-accent-500">•</span> {feat}
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
+                  <div className="pt-4 mt-6 border-t border-ink-100 dark:border-ink-800">
                     {!user ? (
                       <button
                         onClick={() => router.push("/auth/login")}
                         className={`w-full py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
                           isMonthly
-                            ? "bg-orange-500 text-white hover:bg-orange-600"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-white dark:hover:text-white"
+                            ? "bg-accent-500 text-white hover:bg-accent-600"
+                            : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
                         }`}
                       >
                         登录后订阅
                       </button>
                     ) : !planId ? (
-                      <div className="flex items-center justify-center gap-1 text-amber-600 text-xs py-3">
+                      <div className="flex items-center justify-center gap-1 text-accent-600 text-xs py-3">
                         <AlertTriangle className="w-3.5 h-3.5" />
                         请先配置 Plan ID
                       </div>
@@ -407,8 +403,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                         onClick={() => setIsPolling(true)}
                         className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
                           isMonthly
-                            ? "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-200 dark:shadow-none"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-white dark:hover:text-white"
+                            ? "bg-accent-500 text-white hover:bg-accent-600 shadow-md shadow-accent-200 dark:shadow-none"
+                            : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
                         }`}
                       >
                         <Send className="w-3.5 h-3.5" />
@@ -417,9 +413,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                       </a>
                     )}
                     {user && planId && (
-                      <p className="text-[10px] text-slate-400 text-center mt-2">
+                      <p className="text-[10px] text-ink-400 text-center mt-2">
                         点击跳转至爱发电完成支付，留言已预填{" "}
-                        <code className="text-orange-500">{user.email}</code>
+                        <code className="text-accent-500">{user.email}</code>
                       </p>
                     )}
                   </div>

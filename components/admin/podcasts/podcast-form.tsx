@@ -73,13 +73,13 @@ export default function PodcastForm({
   }, [state]);
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-sm border border-ink-100 overflow-hidden">
       {/* 顶部标题区（可选，如果页面已有标题可移除） */}
-      <div className="px-8 py-6 border-b border-gray-50">
-        <h2 className="text-xl font-bold text-gray-900">
+      <div className="px-8 py-6 border-b border-ink-50">
+        <h2 className="text-xl font-bold text-ink-900">
           {mode === "edit" ? "编辑播客信息" : "创建新播客"}
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-ink-500 mt-1">
           {mode === "edit"
             ? "更新现有的播客详细信息和设置"
             : "填写以下信息以发布一个新的英语学习播客合集"}
@@ -91,13 +91,13 @@ export default function PodcastForm({
           {/* 左侧：封面与设置 */}
           <div className="space-y-6">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase block">
-                封面图 <span className="text-red-500">*</span>
+              <label className="text-xs font-bold text-ink-500 uppercase block">
+                封面图 <span className="text-error-500">*</span>
               </label>
 
-              <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:bg-gray-100/50 transition-all">
+              <div className="bg-ink-50 rounded-2xl border-2 border-dashed border-ink-200 p-5 flex flex-col items-center justify-center text-center hover:border-primary-300 hover:bg-ink-100/50 transition-all">
                 {coverUrl ? (
-                  <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-sm mb-4 border border-gray-100">
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-sm mb-4 border border-ink-100">
                     <Image
                       src={coverUrl}
                       alt="Cover Preview"
@@ -106,7 +106,7 @@ export default function PodcastForm({
                     />
                   </div>
                 ) : (
-                  <div className="w-full aspect-square rounded-xl bg-white border border-gray-100 flex items-center justify-center mb-4 text-gray-300">
+                  <div className="w-full aspect-square rounded-xl bg-white border border-ink-100 flex items-center justify-center mb-4 text-ink-300">
                     <ImageIcon size={48} strokeWidth={1.5} />
                   </div>
                 )}
@@ -119,7 +119,7 @@ export default function PodcastForm({
                   />
                 </div>
 
-                <p className="text-[10px] text-gray-400 mt-3 font-medium">
+                <p className="text-[10px] text-ink-400 mt-3 font-medium">
                   {mode === "edit"
                     ? "上传新图片将覆盖当前封面"
                     : "支持 JPG/PNG，建议 1000x1000px"}
@@ -139,22 +139,22 @@ export default function PodcastForm({
             {/* 标题与平台 - 双列布局 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase">
-                  标题 <span className="text-red-500">*</span>
+                <label className="text-xs font-bold text-ink-500 uppercase">
+                  标题 <span className="text-error-500">*</span>
                 </label>
                 <input
                   name="podcastName"
                   value={podcastName}
                   onChange={(e) => setPodcastName(e.target.value)}
                   type="text"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300"
+                  className="w-full px-4 py-3 rounded-xl border border-ink-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-ink-300"
                   placeholder="例如：Business English Pod"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase">
+                <label className="text-xs font-bold text-ink-500 uppercase">
                   发布平台
                 </label>
                 <input
@@ -162,7 +162,7 @@ export default function PodcastForm({
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
                   type="text"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300"
+                  className="w-full px-4 py-3 rounded-xl border border-ink-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-ink-300"
                   placeholder="例如：BBC, VOA"
                 />
               </div>
@@ -170,7 +170,7 @@ export default function PodcastForm({
 
             {/* 标签 */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase">
+              <label className="text-xs font-bold text-ink-500 uppercase">
                 标签
               </label>
               <div className="p-1">
@@ -192,13 +192,13 @@ export default function PodcastForm({
 
             {/* 简介 */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase">
+              <label className="text-xs font-bold text-ink-500 uppercase">
                 简介
               </label>
               <textarea
                 name="description"
                 rows={6}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all placeholder:text-gray-300"
+                className="w-full px-4 py-3 rounded-xl border border-ink-200 focus:ring-2 focus:ring-primary-500 outline-none resize-none transition-all placeholder:text-ink-300"
                 placeholder="请详细描述这个播客合集的内容，这有助于用户搜索到它..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -206,10 +206,10 @@ export default function PodcastForm({
             </div>
 
             {/* 选项开关 */}
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center justify-between">
+            <div className="bg-ink-50 rounded-2xl p-4 border border-ink-100 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-gray-700">编辑推荐</h3>
-                <p className="text-xs text-gray-400 mt-0.5">将此合集置顶显示</p>
+                <h3 className="text-sm font-bold text-ink-700">编辑推荐</h3>
+                <p className="text-xs text-ink-400 mt-0.5">将此合集置顶显示</p>
               </div>
               <input
                 name="isEditorPick"
@@ -223,17 +223,17 @@ export default function PodcastForm({
         </div>
 
         {/* 底部按钮栏 */}
-        <div className="pt-6 border-t border-gray-50 flex items-center justify-end gap-3">
+        <div className="pt-6 border-t border-ink-50 flex items-center justify-end gap-3">
           <Link
             href="/admin/podcasts"
-            className="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 transition-all"
+            className="px-6 py-3 rounded-xl font-bold text-ink-600 bg-ink-50 hover:bg-ink-100 transition-all"
           >
             取消
           </Link>
           <button
             disabled={isPending}
             type="submit"
-            className="px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-8 py-3 rounded-xl font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 flex items-center disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {mode === "edit" ? "保存更改" : "立即创建"}
@@ -242,9 +242,9 @@ export default function PodcastForm({
 
         {/* 错误提示区域 */}
         {state?.message && !state.message.startsWith("redirect:") && (
-          <div className="rounded-xl bg-red-50 p-4 border border-red-100 flex items-start animate-in fade-in slide-in-from-bottom-2">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm font-medium text-red-600">
+          <div className="rounded-xl bg-error-50 p-4 border border-error-100 flex items-start animate-in fade-in slide-in-from-bottom-2">
+            <AlertCircle className="w-5 h-5 text-error-500 mr-2 flex-shrink-0 mt-0.5" />
+            <span className="text-sm font-medium text-error-600">
               {state.message}
             </span>
           </div>

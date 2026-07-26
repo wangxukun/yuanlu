@@ -59,29 +59,29 @@ export default function EpisodeTable({
   const getStatusColor = (status: Status) => {
     switch (status) {
       case Status.PUBLISHED:
-        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+        return "bg-primary-100 text-primary-800 border-primary-200";
       case Status.REVIEWING:
-        return "bg-amber-100 text-amber-800 border-amber-200";
+        return "bg-accent-100 text-accent-800 border-accent-200";
       default:
-        return "bg-slate-100 text-slate-800";
+        return "bg-ink-100 text-ink-800";
     }
   };
 
   const getAccessColor = (access: Access) => {
     switch (access) {
       case Access.FREE:
-        return "bg-sky-100 text-sky-700";
+        return "bg-info-100 text-info-700";
       case Access.MEMBER:
-        return "bg-purple-100 text-purple-700";
+        return "bg-accent-100 text-accent-700";
       default:
-        return "bg-slate-100 text-slate-700";
+        return "bg-ink-100 text-ink-700";
     }
   };
 
   if (!isClient) {
     return (
       <div className="w-full flex flex-col gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-ink-200 overflow-hidden">
           <div className="min-h-[600px] flex items-center justify-center">
             <div className="loading loading-spinner loading-md"></div>
           </div>
@@ -92,12 +92,12 @@ export default function EpisodeTable({
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-ink-200 overflow-hidden">
         {/* Table Container */}
         <div className="overflow-x-auto min-h-[600px] visible">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-ink-50 border-b border-ink-200 text-xs font-semibold text-ink-500 uppercase tracking-wider">
                 <th className="px-6 py-4 w-[350px]">播客信息</th>
                 <th className="px-4 py-4 text-center">状态</th>
                 <th className="px-4 py-4 text-center">权限</th>
@@ -105,10 +105,10 @@ export default function EpisodeTable({
                 <th className="px-6 py-4 text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-ink-100">
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20 text-slate-400">
+                  <td colSpan={5} className="text-center py-20 text-ink-400">
                     没有找到符合条件的音频
                   </td>
                 </tr>
@@ -116,12 +116,12 @@ export default function EpisodeTable({
                 currentItems.map((episode) => (
                   <tr
                     key={episode.id}
-                    className="hover:bg-slate-50/80 transition-colors group"
+                    className="hover:bg-ink-50/80 transition-colors group"
                   >
                     {/* Episode Info */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-sm border border-slate-100">
+                        <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-sm border border-ink-100">
                           <img
                             src={episode.coverUrl}
                             alt={episode.title}
@@ -130,12 +130,12 @@ export default function EpisodeTable({
                         </div>
                         <div className="min-w-0">
                           <h3
-                            className="text-sm font-semibold text-slate-900 truncate max-w-[220px] mb-1"
+                            className="text-sm font-semibold text-ink-900 truncate max-w-[220px] mb-1"
                             title={episode.title}
                           >
                             {episode.title}
                           </h3>
-                          <div className="flex flex-col gap-0.5 text-xs text-slate-500">
+                          <div className="flex flex-col gap-0.5 text-xs text-ink-500">
                             <span>发布: {episode.publishDate}</span>
                             <span className="opacity-70">
                               时长: {episode.duration}
@@ -169,7 +169,7 @@ export default function EpisodeTable({
 
                     {/* Stats */}
                     <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-4 text-slate-500 text-xs">
+                      <div className="flex items-center justify-center gap-4 text-ink-500 text-xs">
                         <div
                           className="flex flex-col items-center gap-1 group/stat"
                           title="播放数"
@@ -188,7 +188,7 @@ export default function EpisodeTable({
                         >
                           <HeartIcon
                             size={14}
-                            className="group-hover/stat:text-rose-500 transition-colors"
+                            className="group-hover/stat:text-error-500 transition-colors"
                           />
                           <span className="font-medium">
                             {formatNumber(episode.stats.likes)}
@@ -200,7 +200,7 @@ export default function EpisodeTable({
                         >
                           <BookmarkIcon
                             size={14}
-                            className="group-hover/stat:text-amber-500 transition-colors"
+                            className="group-hover/stat:text-accent-500 transition-colors"
                           />
                           <span className="font-medium">
                             {formatNumber(episode.stats.favorites)}
@@ -212,7 +212,7 @@ export default function EpisodeTable({
                         >
                           <ShareIcon
                             size={14}
-                            className="group-hover/stat:text-indigo-500 transition-colors"
+                            className="group-hover/stat:text-primary-500 transition-colors"
                           />
                           <span className="font-medium">
                             {formatNumber(episode.stats.shares)}
@@ -224,7 +224,7 @@ export default function EpisodeTable({
                         >
                           <MessageSquareIcon
                             size={14}
-                            className="group-hover/stat:text-sky-500 transition-colors"
+                            className="group-hover/stat:text-info-500 transition-colors"
                           />
                           <span className="font-medium">
                             {formatNumber(episode.stats.comments)}
@@ -238,7 +238,7 @@ export default function EpisodeTable({
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/episodes/${episode.id}/edit`}
-                          className="p-2 text-slate-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors"
+                          className="p-2 text-ink-400 hover:text-primary hover:bg-primary-50 rounded-full transition-colors"
                           title="编辑"
                         >
                           <EditIcon size={18} />
@@ -255,24 +255,22 @@ export default function EpisodeTable({
 
         {/* Pagination */}
         {total > 0 && (
-          <div className="p-4 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-sm text-slate-500">
+          <div className="p-4 sm:px-6 sm:py-4 bg-ink-50 border-t border-ink-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-sm text-ink-500">
               显示{" "}
-              <span className="font-medium text-slate-900">
-                {startIndex + 1}
-              </span>{" "}
+              <span className="font-medium text-ink-900">{startIndex + 1}</span>{" "}
               到{" "}
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-ink-900">
                 {Math.min(startIndex + limit, total)}
               </span>{" "}
-              条，共 <span className="font-medium text-slate-900">{total}</span>{" "}
+              条，共 <span className="font-medium text-ink-900">{total}</span>{" "}
               条
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 rounded-md border border-slate-300 bg-white text-slate-600 text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 py-1 rounded-md border border-ink-300 bg-white text-ink-600 text-sm hover:bg-ink-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 <ChevronLeftIcon size={16} />
               </button>
@@ -301,7 +299,7 @@ export default function EpisodeTable({
                       className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
                         currentPage === page
                           ? "bg-primary text-white border border-primary shadow-sm"
-                          : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-50"
+                          : "bg-white text-ink-600 border border-ink-300 hover:bg-ink-50"
                       }`}
                     >
                       {page}
@@ -314,7 +312,7 @@ export default function EpisodeTable({
                   handlePageChange(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 rounded-md border border-slate-300 bg-white text-slate-600 text-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 py-1 rounded-md border border-ink-300 bg-white text-ink-600 text-sm hover:bg-ink-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 <ChevronRightIcon size={16} />
               </button>

@@ -121,7 +121,7 @@ export default function NotificationBell() {
       {/* 铃铛按钮 */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 relative"
+        className="w-10 h-10 flex items-center justify-center hover:bg-ink-100 dark:hover:bg-ink-800 rounded-full transition-colors text-ink-400 relative"
         aria-label="通知"
       >
         <span
@@ -133,27 +133,23 @@ export default function NotificationBell() {
           notifications
         </span>
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+          <span className="absolute top-2 right-2 flex h-2 w-2 items-center justify-center rounded-full bg-error-500 ring-2 ring-white dark:ring-ink-900"></span>
         )}
       </button>
 
       {/* 下拉面板 */}
       {open && (
-        <div
-          className="fixed inset-x-4 top-[90px] mx-auto w-auto max-w-sm z-[100] rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none"
-          style={{ fontFamily: "'Inter', sans-serif" }}
-        >
+        <div className="fixed inset-x-4 top-[90px] mx-auto w-auto max-w-sm z-[100] rounded-[1.5rem] shadow-2xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 overflow-hidden sm:absolute sm:inset-auto sm:top-full sm:-right-4 sm:w-80 sm:mt-2 sm:max-w-none">
           {/* 面板头部 */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 dark:border-slate-800">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-ink-50 dark:border-ink-800">
             <Link
               href="/notifications"
               onClick={() => setOpen(false)}
-              className="font-bold text-sm text-slate-800 dark:text-slate-100 hover:text-indigo-600 transition-colors flex items-center"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              className="font-bold text-sm text-ink-800 dark:text-ink-100 hover:text-primary-600 transition-colors flex items-center"
             >
               通知
               {unreadCount > 0 && (
-                <span className="ml-2 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px]">
+                <span className="ml-2 px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full text-[10px]">
                   {unreadCount} 条未读
                 </span>
               )}
@@ -162,7 +158,7 @@ export default function NotificationBell() {
               <button
                 onClick={markAllAsRead}
                 disabled={loading}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                className="text-xs font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50"
               >
                 全部已读
               </button>
@@ -217,28 +213,28 @@ function NotificationItem({
 
   const content = (
     <div
-      className={`flex items-start gap-4 px-6 py-4 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-        n.isRead ? "opacity-60" : "bg-indigo-50/30 dark:bg-indigo-900/10"
+      className={`flex items-start gap-4 px-6 py-4 transition-colors cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-800/50 ${
+        n.isRead ? "opacity-60" : "bg-primary-50/30 dark:bg-primary-900/10"
       }`}
       onClick={handleClick}
     >
       {/* 未读圆点 */}
       <div className="mt-2 flex-shrink-0">
         {!n.isRead && (
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary-600 shadow-[0_0_8px_rgba(31,122,92,0.5)]" />
         )}
       </div>
 
       {/* 内容 */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-700 dark:text-slate-200 leading-snug line-clamp-2 font-medium">
+        <p className="text-sm text-ink-700 dark:text-ink-200 leading-snug line-clamp-2 font-medium">
           {n.notificationText}
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded-md uppercase tracking-wider">
+          <span className="px-2 py-0.5 bg-ink-100 dark:bg-ink-800 text-[10px] font-bold text-ink-500 rounded-md uppercase tracking-wider">
             {TYPE_LABEL[n.type] ?? n.type}
           </span>
-          <span className="text-[10px] font-medium text-slate-400">
+          <span className="text-[10px] font-medium text-ink-400">
             {timeAgo}
           </span>
         </div>

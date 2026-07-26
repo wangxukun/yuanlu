@@ -3,7 +3,7 @@ import PodcastIcon from "@/components/icons/PodcastIcon";
 
 export default function PodcastAuthPrompt() {
   return (
-    <div className="min-h-screen bg-gradient-to-r from-primary to-secondary flex flex-col items-center justify-center xl:justify-start p-6 xl:p-12 transition-all">
+    <div className="min-h-screen bg-primary flex flex-col items-center justify-center xl:justify-start p-6 xl:p-12 transition-all">
       <div className="text-center space-y-8 xl:space-y-6 justify-center w-full max-w-sm xl:max-w-none">
         {/* 标题 */}
         <h1 className="text-3xl xl:text-4xl font-bold text-base-100">

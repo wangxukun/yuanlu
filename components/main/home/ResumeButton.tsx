@@ -95,7 +95,7 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
 
   if (!latestHistory) {
     return (
-      <button className="bg-white text-indigo-600 px-6 py-2.5 rounded-full font-semibold hover:bg-indigo-50 transition-colors inline-flex items-center shadow-md border-none opacity-50 cursor-not-allowed">
+      <button className="bg-ink-100 dark:bg-ink-800 text-ink-400 px-5 py-2 text-sm rounded-full font-semibold inline-flex items-center border-none opacity-60 cursor-not-allowed">
         <PlayCircleIcon className="w-5 h-5 mr-2" />
         暂无进度
       </button>
@@ -112,7 +112,7 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
     return (
       <button
         onClick={handleResume}
-        className="bg-white text-indigo-600 px-6 py-2.5 rounded-full font-semibold hover:bg-indigo-50 transition-colors inline-flex items-center border-none cursor-pointer"
+        className="bg-primary-600 text-white px-5 py-2 text-sm rounded-full font-semibold hover:bg-primary-700 transition-colors inline-flex items-center border-none cursor-pointer shadow-sm"
       >
         <ArrowPathIcon className="w-5 h-5 mr-2" />
 
@@ -124,7 +124,7 @@ const ResumeButton: React.FC<ResumeButtonProps> = ({ latestHistory }) => {
   return (
     <button
       onClick={handleResume}
-      className="bg-white text-indigo-600 px-6 py-2.5 rounded-full font-semibold hover:bg-indigo-50 transition-colors inline-flex items-center border-none cursor-pointer"
+      className="bg-primary-600 text-white px-5 py-2 text-sm rounded-full font-semibold hover:bg-primary-700 transition-colors inline-flex items-center border-none cursor-pointer shadow-sm"
     >
       <PlayCircleIcon className="w-5 h-5 mr-2" />
       <span className="text-sm sm:text-base">继续</span>

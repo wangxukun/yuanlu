@@ -29,18 +29,15 @@ export default async function SearchPage({
   const query = q || "";
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-24">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-24">
       <div className="px-6 lg:px-8 py-10 max-w-7xl mx-auto">
         {/* Page heading */}
         <div className="mb-10">
-          <h1
-            className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
+          <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-100 mb-2">
             {query ? (
               <>
                 搜索 &ldquo;
-                <span className="text-indigo-600 dark:text-indigo-400">
+                <span className="text-primary-600 dark:text-primary-400">
                   {query}
                 </span>
                 &rdquo;
@@ -49,7 +46,7 @@ export default async function SearchPage({
               "搜索播客"
             )}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p className="text-ink-500 dark:text-ink-400 text-sm">
             {query
               ? "根据标题、标签、描述为你找到以下播客"
               : "在上方搜索栏输入关键词，按标题、标签和描述查找播客"}
@@ -62,9 +59,9 @@ export default async function SearchPage({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-square rounded-[1rem] bg-slate-200 dark:bg-slate-800 mb-4" />
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-full w-3/4 mb-2" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded-full w-1/2" />
+                  <div className="aspect-square rounded-[1rem] bg-ink-200 dark:bg-ink-800 mb-4" />
+                  <div className="h-4 bg-ink-200 dark:bg-ink-800 rounded-full w-3/4 mb-2" />
+                  <div className="h-3 bg-ink-200 dark:bg-ink-800 rounded-full w-1/2" />
                 </div>
               ))}
             </div>

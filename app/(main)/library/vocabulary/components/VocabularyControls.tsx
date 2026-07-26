@@ -10,7 +10,7 @@ export function VocabularyControls({
     hookOptions;
 
   return (
-    <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-lg transition-colors sticky top-0 z-10 xl:static">
+    <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-ink-900 p-3 rounded-lg transition-colors sticky top-0 z-10 xl:static">
       <div className="relative w-full xl:w-96">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
@@ -19,7 +19,7 @@ export function VocabularyControls({
         <input
           type="text"
           placeholder="搜索单词或释义..."
-          className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 text-sm text-base-content placeholder-base-content/40 transition-colors"
+          className="w-full pl-10 pr-4 py-2 bg-ink-50 dark:bg-ink-950 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 text-sm text-base-content placeholder-base-content/40 transition-colors"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -42,8 +42,8 @@ export function VocabularyControls({
               }
               className={`flex-1 xl:flex-none px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                 sortMethod === opt.id
-                  ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm"
-                  : "text-base-content/60 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  ? "bg-primary-600 dark:bg-primary-500 text-white shadow-sm"
+                  : "text-base-content/60 hover:bg-ink-50 dark:hover:bg-ink-800"
               }`}
             >
               {opt.label}

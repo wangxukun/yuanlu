@@ -75,8 +75,8 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+      <div className="flex items-center justify-between border-b border-ink-200 dark:border-ink-800 pb-4">
+        <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
           节目介绍
         </h2>
         <button
@@ -84,8 +84,8 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
           disabled={isTranslatingDesc}
           className={`p-2 rounded-xl transition-all ${
             translatedDesc
-              ? "bg-[#5830E0]/10 text-[#5830E0]"
-              : "text-slate-400 hover:text-[#5830E0] hover:bg-[#5830E0]/5"
+              ? "bg-[#1F7A5C]/10 text-[#1F7A5C]"
+              : "text-ink-400 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5"
           }`}
           title="翻译"
         >
@@ -96,10 +96,10 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
           )}
         </button>
       </div>
-      <article className="text-lg text-slate-600 dark:text-slate-300 space-y-6 leading-relaxed font-serif relative">
+      <article className="text-lg text-ink-600 dark:text-ink-300 space-y-6 leading-relaxed font-serif relative">
         <div
           ref={contentRef}
-          className={`[&>p]:mb-6 [&>p]:leading-relaxed [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:py-2 [&>blockquote]:italic [&>blockquote]:bg-slate-50 [&>blockquote]:dark:bg-slate-900/50 [&>blockquote]:rounded-r-xl [&>blockquote]:my-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6 transition-all duration-300 ${
+          className={`[&>p]:mb-6 [&>p]:leading-relaxed [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:py-2 [&>blockquote]:italic [&>blockquote]:bg-ink-50 [&>blockquote]:dark:bg-ink-900/50 [&>blockquote]:rounded-r-xl [&>blockquote]:my-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6 transition-all duration-300 ${
             !isExpanded ? "line-clamp-3 md:line-clamp-none overflow-hidden" : ""
           }`}
           dangerouslySetInnerHTML={{
@@ -109,10 +109,10 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
 
         {/* Mobile "Show All" Toggle */}
         {!isExpanded && isTruncated && (
-          <div className="md:hidden absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#f9f9ff] dark:from-slate-950 to-transparent flex items-end justify-center pb-0">
+          <div className="md:hidden absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#f9f9ff] dark:from-ink-950 to-transparent flex items-end justify-center pb-0">
             <button
               onClick={() => setIsExpanded(true)}
-              className="text-[#5830E0] font-bold text-sm flex items-center gap-1 bg-[#f9f9ff] dark:bg-slate-950 px-4 py-1 rounded-full shadow-sm border border-slate-100 dark:border-slate-800"
+              className="text-[#1F7A5C] font-bold text-sm flex items-center gap-1 bg-ink-50 dark:bg-ink-950 px-4 py-1 rounded-full shadow-sm border border-ink-100 dark:border-ink-800"
             >
               显示全部
               <ChevronDown className="w-4 h-4" />
@@ -123,7 +123,7 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
         {isExpanded && (
           <button
             onClick={() => setIsExpanded(false)}
-            className="md:hidden text-[#5830E0] font-bold text-sm flex items-center gap-1 self-center mt-2"
+            className="md:hidden text-[#1F7A5C] font-bold text-sm flex items-center gap-1 self-center mt-2"
           >
             收起内容
             <ChevronUp className="w-4 h-4" />

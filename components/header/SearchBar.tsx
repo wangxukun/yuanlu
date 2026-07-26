@@ -137,7 +137,7 @@ export default function SearchBar() {
       regex.test(part) ? (
         <mark
           key={i}
-          className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-sm px-0.5"
+          className="bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 rounded-sm px-0.5"
         >
           {part}
         </mark>
@@ -153,7 +153,7 @@ export default function SearchBar() {
       <input
         ref={inputRef}
         id="global-search-input"
-        className="w-full h-12 bg-slate-100 dark:bg-slate-800 border-none rounded-full px-6 pl-12 text-sm focus:ring-2 focus:ring-indigo-500/20 transition-shadow outline-none text-slate-700 dark:text-slate-200"
+        className="w-full h-12 bg-ink-100 dark:bg-ink-800 border-none rounded-full px-6 pl-12 text-sm focus:ring-2 focus:ring-primary-500/20 transition-shadow outline-none text-ink-700 dark:text-ink-200"
         placeholder={"搜索\u201c日常生活\u201d或\u201c新闻\u201d……"}
         type="text"
         value={query}
@@ -163,22 +163,21 @@ export default function SearchBar() {
           if (results.length > 0) setIsOpen(true);
         }}
         autoComplete="off"
-        style={{ fontFamily: "'Inter', sans-serif" }}
       />
-      <span className="material-symbols-outlined absolute left-4 top-3 text-slate-400 pointer-events-none">
+      <span className="material-symbols-outlined absolute left-4 top-3 text-ink-400 pointer-events-none">
         search
       </span>
 
       {/* Loading indicator */}
       {isLoading && (
         <div className="absolute right-4 top-3.5">
-          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 dark:shadow-black/30 border border-slate-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-ink-800 rounded-2xl shadow-2xl shadow-ink-900/10 dark:shadow-black/30 border border-ink-200 dark:border-ink-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <ul className="py-2" role="listbox">
             {results.map((podcast, index) => (
               <li
@@ -187,14 +186,14 @@ export default function SearchBar() {
                 aria-selected={activeIndex === index}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                   activeIndex === index
-                    ? "bg-indigo-50 dark:bg-indigo-900/20"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                    ? "bg-primary-50 dark:bg-primary-900/20"
+                    : "hover:bg-ink-50 dark:hover:bg-ink-700/50"
                 }`}
                 onClick={() => navigateToPodcast(podcast.podcastid)}
                 onMouseEnter={() => setActiveIndex(index)}
               >
                 {/* Cover thumbnail */}
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-slate-200 dark:bg-slate-700 relative">
+                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-ink-200 dark:bg-ink-700 relative">
                   <Image
                     src={podcast.coverUrl}
                     alt={podcast.title}
@@ -205,25 +204,25 @@ export default function SearchBar() {
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                  <p className="text-sm font-semibold text-ink-800 dark:text-ink-100 truncate">
                     {highlightMatch(podcast.title, query)}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
                     {podcast.tags.slice(0, 2).map((tag) => (
                       <span
                         key={tag.id}
-                        className="text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-full font-medium"
+                        className="text-[10px] text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded-full font-medium"
                       >
                         {tag.name}
                       </span>
                     ))}
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-ink-400">
                       {podcast.episodeCount} 集
                     </span>
                   </div>
                 </div>
                 {/* Arrow icon */}
-                <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg flex-shrink-0">
+                <span className="material-symbols-outlined text-ink-300 dark:text-ink-600 text-lg flex-shrink-0">
                   chevron_right
                 </span>
               </li>
@@ -234,10 +233,10 @@ export default function SearchBar() {
           <button
             onClick={() => navigateToSearch(query)}
             onMouseEnter={() => setActiveIndex(results.length)}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border-t border-slate-100 dark:border-slate-700 ${
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border-t border-ink-100 dark:border-ink-700 ${
               activeIndex === results.length
-                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                : "text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                : "text-primary-600 dark:text-primary-400 hover:bg-ink-50 dark:hover:bg-ink-700/50"
             }`}
           >
             <span className="material-symbols-outlined text-lg">search</span>

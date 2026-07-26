@@ -102,7 +102,7 @@ export default function LoginHomeBtn() {
             {user.role === "ADMIN" ? (
               <span className="text-primary font-bold">管理员</span>
             ) : user.role === "PREMIUM" ? (
-              <span className="text-orange-500 font-bold bg-orange-500/10 px-1.5 py-0.5 rounded-md leading-none">
+              <span className="text-accent-500 font-bold bg-accent-500/10 px-1.5 py-0.5 rounded-md leading-none">
                 高级会员
               </span>
             ) : (

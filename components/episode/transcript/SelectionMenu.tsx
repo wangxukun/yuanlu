@@ -36,8 +36,8 @@ export function SelectionMenu({
         "md:animate-in md:zoom-in-95 md:fade-in md:slide-in-from-bottom-0",
       )}
     >
-      <div className="bg-slate-900/90 backdrop-blur-md text-white rounded-full md:rounded-xl shadow-2xl px-4 py-3 md:py-2 flex items-center gap-3 text-sm border border-slate-700 w-full md:w-auto max-w-sm mx-auto">
-        <span className="flex-1 md:flex-none max-w-[150px] md:max-w-[180px] truncate font-serif italic border-r border-slate-600 mr-1 select-none text-slate-300">
+      <div className="bg-ink-900/90 backdrop-blur-md text-white rounded-full md:rounded-xl shadow-2xl px-4 py-3 md:py-2 flex items-center gap-3 text-sm border border-ink-700 w-full md:w-auto max-w-sm mx-auto">
+        <span className="flex-1 md:flex-none max-w-[150px] md:max-w-[180px] truncate font-serif italic border-r border-ink-600 mr-1 select-none text-ink-300">
           {selectionMenu.text}
         </span>
 
@@ -69,7 +69,7 @@ export function SelectionMenu({
         </button>
       </div>
 
-      <div className="hidden md:block absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-[40%] rotate-45 w-3 h-3 bg-slate-900/90 border-r border-b border-slate-700"></div>
+      <div className="hidden md:block absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-[40%] rotate-45 w-3 h-3 bg-ink-900/90 border-r border-b border-ink-700"></div>
     </div>
   );
 }

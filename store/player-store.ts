@@ -44,6 +44,9 @@ interface PlayerState {
   toggleShuffle: () => void;
   isPlaylistOpen: boolean;
   setIsPlaylistOpen: (isOpen: boolean) => void;
+  // 沉浸式逐字稿（FullContentTranscript）开关，全局可控
+  isLyricsOpen: boolean;
+  setIsLyricsOpen: (isOpen: boolean) => void;
   playNext: () => void;
   playPrevious: () => void;
 
@@ -105,6 +108,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
   setIsPlaylistOpen: (isOpen) => set({ isPlaylistOpen: isOpen }),
+  isLyricsOpen: false,
+  setIsLyricsOpen: (isOpen) => set({ isLyricsOpen: isOpen }),
 
   playNext: () => {
     const { playlist, currentEpisode, isShuffle, loopMode } = get();
@@ -245,6 +250,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       currentAudioUrl: "",
       currentTime: 0,
       isPlaylistOpen: false,
+      isLyricsOpen: false,
     });
   },
 }));

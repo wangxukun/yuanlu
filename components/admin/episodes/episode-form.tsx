@@ -198,7 +198,7 @@ export default function EpisodeForm() {
       <form action={action} className="space-y-2">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">音频文件</span>
           </div>
           <UploadAudio onUploadComplete={handleUploadAudioComplete} />
@@ -210,7 +210,7 @@ export default function EpisodeForm() {
         {/* 封面图片 */}
         <div className="flex flex-row">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">封面</span>
           </div>
           <UploadCover
@@ -223,7 +223,7 @@ export default function EpisodeForm() {
         </div>
         <div className="flex flex-row">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">标题</span>
           </div>
           <input
@@ -238,7 +238,7 @@ export default function EpisodeForm() {
         </div>
         <div className="flex flex-row">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">标签</span>
           </div>
           <TagSelector
@@ -253,7 +253,7 @@ export default function EpisodeForm() {
         </div>
         <div className="flex flex-row">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">简介</span>
           </div>
           <textarea
@@ -272,7 +272,7 @@ export default function EpisodeForm() {
         {/* Difficulty Select */}
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">难度等级</span>
           </div>
           <select
@@ -290,7 +290,7 @@ export default function EpisodeForm() {
 
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">发布状态</span>
           </div>
           <div className="rounded-md px-[14px] py-3">
@@ -303,11 +303,11 @@ export default function EpisodeForm() {
                   checked={publishStatus === "published"}
                   value="published"
                   onChange={(e) => setPublishStatus(e.target.value)}
-                  className="radio cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                  className="radio cursor-pointer border-ink-300 bg-ink-100 text-ink-600 focus:ring-2"
                 />
                 <label
                   htmlFor="published"
-                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white"
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-primary-500 px-3 py-1.5 text-xs font-medium text-white"
                 >
                   已发布 <CheckIcon className="h-4 w-4" />
                 </label>
@@ -320,11 +320,11 @@ export default function EpisodeForm() {
                   checked={publishStatus === "reviewing"}
                   value="reviewing"
                   onChange={(e) => setPublishStatus(e.target.value)}
-                  className="radio text-white-600 cursor-pointer border-gray-300 bg-gray-100 focus:ring-2"
+                  className="radio text-white-600 cursor-pointer border-ink-300 bg-ink-100 focus:ring-2"
                 />
                 <label
                   htmlFor="reviewing"
-                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600"
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 rounded-full bg-ink-100 px-3 py-1.5 text-xs font-medium text-ink-600"
                 >
                   审核中 <ClockIcon className="h-4 w-4" />
                 </label>
@@ -334,7 +334,7 @@ export default function EpisodeForm() {
         </div>
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">发布日期</span>
           </div>
           <input
@@ -350,7 +350,7 @@ export default function EpisodeForm() {
 
         <div className="flex flex-row">
           <div className="flex items-center justify-center mr-4 gap-2">
-            <span className="text-red-500">*</span>
+            <span className="text-error-500">*</span>
             <span className="font-semibold">加入合集</span>
           </div>
           <PodcastSelecter
@@ -463,13 +463,13 @@ export default function EpisodeForm() {
         {/* 显示错误信息 */}
         {state?.message &&
           state.message !== "redirect:/admin/episodes/create-success" && (
-            <p className="text-red-500">{state.message}</p>
+            <p className="text-error-500">{state.message}</p>
           )}
         {state?.errors &&
           Object.values(state.errors).map(
             (error, index) =>
               error && (
-                <p key={index} className="text-red-500">
+                <p key={index} className="text-error-500">
                   {error}
                 </p>
               ),

@@ -120,9 +120,9 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-900 pb-20 font-sans transition-colors duration-300">
       {/* Header */}
-      <div className="bg-indigo-900 text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="bg-primary-900 text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Mic size={300} />
         </div>
@@ -130,7 +130,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
         <div className="max-w-4xl mx-auto relative z-10">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-indigo-200 hover:text-white transition-colors mb-6"
+            className="flex items-center text-primary-200 hover:text-white transition-colors mb-6"
           >
             <ArrowLeft size={20} className="mr-2" />
             返回剧集
@@ -139,7 +139,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">口语练习</h1>
-              <p className="text-indigo-200 text-lg max-w-2xl">
+              <p className="text-primary-200 text-lg max-w-2xl">
                 跟读模式：{" "}
                 <span className="text-white font-medium">{episode.title}</span>
               </p>
@@ -148,7 +148,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
             {/* Session Stats */}
             <div className="flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[120px]">
-                <div className="flex items-center gap-2 text-indigo-200 text-xs uppercase font-bold tracking-wider mb-1">
+                <div className="flex items-center gap-2 text-primary-200 text-xs uppercase font-bold tracking-wider mb-1">
                   <Trophy size={14} /> 平均分
                 </div>
                 <div className="text-2xl font-bold">
@@ -156,7 +156,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[120px]">
-                <div className="flex items-center gap-2 text-indigo-200 text-xs uppercase font-bold tracking-wider mb-1">
+                <div className="flex items-center gap-2 text-primary-200 text-xs uppercase font-bold tracking-wider mb-1">
                   <Activity size={14} /> 进度
                 </div>
                 <div className="text-2xl font-bold">
@@ -171,10 +171,10 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
         {/* Info Banner */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-100 dark:border-slate-700 p-4 mb-8 flex items-start gap-3">
-          <Info className="text-indigo-600 shrink-0 mt-0.5" size={20} />
-          <div className="text-sm text-slate-600">
-            <p className="font-bold text-slate-800 mb-1">如何使用跟读模式：</p>
+        <div className="bg-white dark:bg-ink-800 rounded-xl shadow-sm border border-primary-100 dark:border-ink-700 p-4 mb-8 flex items-start gap-3">
+          <Info className="text-primary-600 shrink-0 mt-0.5" size={20} />
+          <div className="text-sm text-ink-600">
+            <p className="font-bold text-ink-800 mb-1">如何使用跟读模式：</p>
             <ul className="list-disc ml-4 space-y-1">
               <li>首先点击扬声器图标聆听参考音频。</li>
               <li>点击麦克风按钮，立即重复句子。</li>
@@ -190,13 +190,13 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               <div key={sub.id} className="relative">
                 {/* Connector Line */}
                 {index !== subtitles.length - 1 && (
-                  <div className="absolute left-8 top-full h-6 w-0.5 bg-slate-200 dark:bg-slate-700 z-0 hidden md:block"></div>
+                  <div className="absolute left-8 top-full h-6 w-0.5 bg-ink-200 dark:bg-ink-700 z-0 hidden md:block"></div>
                 )}
 
                 <div className="flex gap-4">
                   {/* Number Indicator (Desktop) */}
                   <div className="hidden md:flex flex-col items-center shrink-0 w-16 pt-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-sm border-2 border-white dark:border-slate-800 shadow-sm z-10">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center text-sm border-2 border-white dark:border-ink-800 shadow-sm z-10">
                       {index + 1}
                     </div>
                   </div>
@@ -217,7 +217,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               </div>
             ))
           ) : (
-            <div className="text-center py-12 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="text-center py-12 text-ink-500 bg-white dark:bg-ink-800 rounded-xl border border-ink-200 dark:border-ink-700">
               本集没有字幕。练习模式需要字幕。
             </div>
           )}
@@ -225,16 +225,16 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
         {/* Completion State */}
         {isTrialMode ? (
-          <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-indigo-100 dark:border-indigo-900/50">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          <div className="mt-12 text-center py-12 bg-white dark:bg-ink-800 rounded-3xl border border-primary-100 dark:border-primary-900/50">
+            <h2 className="text-2xl font-bold text-ink-900 dark:text-white mb-2">
               体验已结束
             </h2>
-            <p className="text-slate-500 mb-6">
+            <p className="text-ink-500 mb-6">
               升级为 PRO 会员，解锁本集全部练习卡片及更多独家内容。
             </p>
             <button
               onClick={() => useUIStore.getState().openPremiumModal()}
-              className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+              className="bg-primary-600 text-white px-8 py-3 rounded-full font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200"
             >
               解锁全部
             </button>
@@ -242,19 +242,19 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
         ) : (
           stats.progress >= 100 &&
           subtitles.length > 0 && (
-            <div className="mt-12 text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-emerald-200 dark:border-emerald-900/50 animate-in fade-in slide-in-from-bottom-4">
-              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 size={40} className="text-emerald-600" />
+            <div className="mt-12 text-center py-12 bg-white dark:bg-ink-800 rounded-3xl border border-dashed border-primary-200 dark:border-primary-900/50 animate-in fade-in slide-in-from-bottom-4">
+              <div className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 size={40} className="text-primary-600" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              <h2 className="text-2xl font-bold text-ink-900 mb-2">
                 会话已完成！
               </h2>
-              <p className="text-slate-500 mb-6">
+              <p className="text-ink-500 mb-6">
                 你已经练习了这段视频里的每一句话。做得好！
               </p>
               <button
                 onClick={() => router.back()}
-                className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                className="bg-primary-600 text-white px-8 py-3 rounded-full font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200"
               >
                 返回剧集
               </button>

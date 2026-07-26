@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import ProBadge from "@/components/ui/ProBadge";
+import DifficultyBadge from "@/components/ui/DifficultyBadge";
 import Image from "next/image";
 import Link from "next/link";
 import { PlayIcon, LockClosedIcon } from "@heroicons/react/24/solid";
@@ -33,7 +35,7 @@ export default function RecommendedPodcasts({
         </div>
         <Link
           href="/home/recommendations"
-          className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+          className="text-primary-600 dark:text-primary-400 text-sm font-semibold hover:underline"
         >
           查看更多
         </Link>
@@ -42,11 +44,6 @@ export default function RecommendedPodcasts({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 xl:gap-5">
         {episodes.map((episode) => {
           const diffLevel = episode.difficulty || level || "General";
-          let diffColor = "text-gray-700";
-          if (diffLevel.includes("A")) diffColor = "text-emerald-600";
-          else if (diffLevel.includes("B1")) diffColor = "text-blue-600";
-          else if (diffLevel.includes("B2")) diffColor = "text-purple-600";
-          else if (diffLevel.includes("C")) diffColor = "text-rose-600";
 
           const isLocked =
             episode.isExclusive &&
@@ -58,7 +55,7 @@ export default function RecommendedPodcasts({
             <div
               key={episode.id}
               onClick={() => onPlay(episode.id)}
-              className="bg-white dark:bg-slate-900 rounded-lg transition-all duration-300 group overflow-hidden cursor-pointer"
+              className="bg-white dark:bg-ink-900 rounded-lg transition-all duration-300 group overflow-hidden cursor-pointer"
             >
               {/* Cover image */}
               <figure className="relative aspect-[16/9] overflow-hidden">
@@ -72,11 +69,7 @@ export default function RecommendedPodcasts({
                 />
                 {/* PRO and Play count badges (top left) */}
                 <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
-                  {episode.isExclusive && (
-                    <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded font-extrabold text-[10px] tracking-widest flex items-center">
-                      👑 PRO
-                    </div>
-                  )}
+                  {episode.isExclusive && <ProBadge size="sm" />}
                   {episode.playCount !== undefined && (
                     <div className="bg-[rgba(20,20,30,0.8)] text-white backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-medium flex items-center tracking-wide">
                       <Headphones className="w-3 h-3 mr-1 opacity-80" />
@@ -86,16 +79,12 @@ export default function RecommendedPodcasts({
                 </div>
                 {/* Difficulty badge (top right) */}
                 <div className="absolute top-2 right-2 z-10">
-                  <div
-                    className={`bg-white/95 px-2 py-0.5 rounded font-extrabold text-sm tracking-wide ${diffColor}`}
-                  >
-                    {diffLevel}
-                  </div>
+                  <DifficultyBadge level={diffLevel} />
                 </div>
                 {/* Category badge (bottom left) */}
                 {episode.category && (
                   <div className="absolute bottom-2 left-2 z-10">
-                    <div className="bg-rose-100/95 text-rose-700 px-2 py-0.5 rounded font-bold text-xs flex items-center">
+                    <div className="bg-error-100/95 text-error-700 px-2 py-0.5 rounded font-bold text-xs flex items-center">
                       <PlayIcon className="w-3 h-3 mr-1" />
                       {episode.category}
                     </div>

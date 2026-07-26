@@ -26,7 +26,7 @@ export default function ContinueListening({
         <h2 className="text-xl font-bold text-base-content">继续收听</h2>
         <Link
           href="/library/history"
-          className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+          className="text-primary-600 dark:text-primary-400 text-sm font-semibold hover:underline"
         >
           查看历史
         </Link>
@@ -59,7 +59,7 @@ export default function ContinueListening({
               <div className="flex items-center space-x-2">
                 <div className="flex-1 h-1 bg-base-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 rounded-full"
+                    className="h-full bg-primary-500 rounded-full"
                     style={{ width: `${item.progress}%` }}
                   ></div>
                 </div>

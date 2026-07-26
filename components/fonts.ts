@@ -1,24 +1,17 @@
-import { Inter, Lusitana } from "next/font/google";
+import { Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
 
-// 1. 主要 UI 字体 (无衬线) - 用于界面、按钮、中文
-export const inter = Inter({
+// 1. UI 字体 (无衬线) - 界面、按钮、数字；中文落系统字体栈
+export const jakarta = Plus_Jakarta_Sans({
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-inter", // 定义 CSS 变量名
+  variable: "--font-jakarta",
   display: "swap",
 });
 
-// 2. 阅读/标题字体 (衬线) - 用于英文逐字稿、大标题
-export const lusitana = Lusitana({
-  weight: ["400", "700"],
+// 2. 阅读字体 (衬线) - 英文逐字稿、精读内容（可变字重，含斜体）
+export const sourceSerif = Source_Serif_4({
+  style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-lusitana",
+  variable: "--font-serif",
   display: "swap",
 });
-
-// 可选：如果你想引入 Google 的中文字体（注意文件较大，通常建议用系统字体回退方案，这里仅作演示）
-// export const notoserifSC = Noto_Serif_SC({
-//   weight: ["400", "700"],
-//   subsets: ["latin"],
-//   preload: false, // 中文字体通常不预加载
-//   variable: "--font-noto-serif",
-// });

@@ -218,7 +218,7 @@ export default function EditProfileModal({
           {isCropping && uploadImageSrc ? (
             // --- 裁剪视图 ---
             <div className="flex flex-col h-full">
-              <div className="relative w-full h-64 bg-gray-900 rounded-lg overflow-hidden mb-4">
+              <div className="relative w-full h-64 bg-ink-900 rounded-lg overflow-hidden mb-4">
                 <Cropper
                   image={uploadImageSrc}
                   crop={crop}

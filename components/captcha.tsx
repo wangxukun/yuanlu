@@ -89,15 +89,15 @@ export default function Captcha({
           onBlur={handleBlur}
           required
           placeholder="输入验证码"
-          className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-300"
+          className="peer block w-full rounded-md border border-ink-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-ink-300"
         />
       </div>
       {/* 显示成功或错误图标 */}
       {success && (
-        <CheckCircleIcon className="w-6 h-6 text-green-500" /> // 成功图标
+        <CheckCircleIcon className="w-6 h-6 text-primary-500" /> // 成功图标
       )}
       {error && (
-        <XCircleIcon className="w-6 h-6 text-red-500" /> // 错误图标
+        <XCircleIcon className="w-6 h-6 text-error-500" /> // 错误图标
       )}
       {/* 验证码图片在右边 */}
       <div className="flex items-center">
@@ -109,7 +109,7 @@ export default function Captcha({
             className="cursor-pointer max-w-[80px] max-h-[80px]"
           />
         ) : (
-          <div className="max-w-[80px] max-h-[80px] bg-gray-200 flex items-center justify-center">
+          <div className="max-w-[80px] max-h-[80px] bg-ink-200 flex items-center justify-center">
             加载中...
           </div>
         )}

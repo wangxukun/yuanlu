@@ -31,7 +31,7 @@ export default function PremiumModal() {
         </button>
 
         {/* Glowing Icon Block */}
-        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20">
+        <div className="w-16 h-16 bg-primary-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary-500/20">
           <Crown size={28} className="animate-pulse" />
         </div>
 

@@ -139,7 +139,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
     <div className="p-4">
       {fileName && fileInfo ? (
         <div className="flex gap-x-4 bg-base-100 p-4">
-          <MusicalNoteIcon className="w-12 h-12 text-cyan-500 flex-none" />
+          <MusicalNoteIcon className="w-12 h-12 text-info-500 flex-none" />
           <div className="flex-1">
             <div className="flex justify-between">
               <p className="text-sm">文件名: {fileName}</p>
@@ -157,28 +157,28 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
                   上传中...
                 </div>
               ) : uploadFileResponse?.status !== 200 ? (
-                <div className="flex text-red-500">
+                <div className="flex text-error-500">
                   <span>上传失败: {uploadFileResponse?.message}</span>
                 </div>
               ) : (
                 <div className="flex">
-                  <CheckCircleIcon className="w-4 h-4 text-green-500"></CheckCircleIcon>
+                  <CheckCircleIcon className="w-4 h-4 text-primary-500"></CheckCircleIcon>
                   <span>上传完成</span>
                 </div>
               )}
             </div>
 
-            <div className="w-full bg-gray-500 rounded-full h-1 mb-2">
+            <div className="w-full bg-ink-500 rounded-full h-1 mb-2">
               {isUploading && (
-                <div className="bg-blue-500 h-1 rounded-full transition-all duration-300"></div>
+                <div className="bg-info-500 h-1 rounded-full transition-all duration-300"></div>
               )}
               {!isUploading && uploadFileResponse?.status === 200 && (
-                <div className="bg-green-500 h-1 rounded-full transition-all duration-300"></div>
+                <div className="bg-primary-500 h-1 rounded-full transition-all duration-300"></div>
               )}
             </div>
 
             {isUploading && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-ink-600 mt-1">
                 文件大小:{bytesToMB(fileInfo.size).toFixed(2)} MB
               </p>
             )}
@@ -221,7 +221,7 @@ export default function UploadAudio({ onUploadComplete }: UploadAudioProps) {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-500">暂无文件上传</p>
+          <p className="text-ink-500">暂无文件上传</p>
         </div>
       )}
     </div>

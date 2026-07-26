@@ -73,34 +73,34 @@ export default async function Page(props: PageProps) {
               label: "本周播放",
               value: "45.2k",
               change: "+5.4%",
-              color: "text-emerald-600",
+              color: "text-primary-600",
             },
             {
               label: "新增订阅",
               value: "892",
               change: "+2.1%",
-              color: "text-amber-600",
+              color: "text-accent-600",
             },
             {
               label: "平均完播率",
               value: "68%",
               change: "-0.5%",
-              color: "text-rose-600",
+              color: "text-error-600",
             },
           ].map((stat, idx) => (
             <div
               key={idx}
-              className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col"
+              className="bg-white p-4 rounded-xl shadow-sm border border-ink-100 flex flex-col"
             >
-              <span className="text-xs text-slate-500 font-medium mb-1">
+              <span className="text-xs text-ink-500 font-medium mb-1">
                 {stat.label}
               </span>
               <div className="flex items-end justify-between">
-                <span className="text-2xl font-bold text-slate-900">
+                <span className="text-2xl font-bold text-ink-900">
                   {stat.value}
                 </span>
                 <span
-                  className={`text-xs font-medium bg-slate-50 px-2 py-1 rounded-md ${stat.color}`}
+                  className={`text-xs font-medium bg-ink-50 px-2 py-1 rounded-md ${stat.color}`}
                 >
                   {stat.change}
                 </span>
@@ -113,13 +113,13 @@ export default async function Page(props: PageProps) {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
           {/* 左侧：快捷状态筛选 */}
           <div className="flex gap-2 w-full sm:w-auto">
-            <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
+            <button className="px-4 py-2 bg-white border border-ink-200 rounded-lg text-sm font-medium text-ink-700 hover:bg-ink-50 shadow-sm transition-all">
               全部
             </button>
-            <button className="px-4 py-2 bg-transparent border border-transparent rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            <button className="px-4 py-2 bg-transparent border border-transparent rounded-lg text-sm font-medium text-ink-500 hover:text-ink-700 hover:bg-ink-100 transition-all">
               已发布
             </button>
-            <button className="px-4 py-2 bg-transparent border border-transparent rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            <button className="px-4 py-2 bg-transparent border border-transparent rounded-lg text-sm font-medium text-ink-500 hover:text-ink-700 hover:bg-ink-100 transition-all">
               审核中
             </button>
           </div>
@@ -129,7 +129,7 @@ export default async function Page(props: PageProps) {
             {/* [关键修复]: 使用 Suspense 包裹 Search 组件 */}
             <Suspense
               fallback={
-                <div className="w-64 h-10 bg-gray-100 rounded animate-pulse" />
+                <div className="w-64 h-10 bg-ink-100 rounded animate-pulse" />
               }
             >
               <SearchBar />
@@ -137,7 +137,7 @@ export default async function Page(props: PageProps) {
 
             <Link
               href="/admin/episodes/contribute"
-              className="shrink-0 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all flex items-center gap-2"
+              className="shrink-0 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-md shadow-primary-200 transition-all flex items-center gap-2"
             >
               <MicIcon size={16} />
               投稿
@@ -147,14 +147,14 @@ export default async function Page(props: PageProps) {
 
         {/* 筛选状态提示：如果在筛选特定播客 */}
         {podcastId && (
-          <div className="text-sm text-gray-500 mb-2 flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded-lg w-fit">
+          <div className="text-sm text-ink-500 mb-2 flex items-center gap-2 bg-primary-50 px-3 py-2 rounded-lg w-fit">
             <span>
               正在筛选播客ID:{" "}
               <span className="font-mono font-bold">{podcastId}</span>
             </span>
             <Link
               href="/admin/episodes"
-              className="text-xs bg-white border px-2 py-0.5 rounded hover:bg-gray-100 text-gray-700 transition-colors"
+              className="text-xs bg-white border px-2 py-0.5 rounded hover:bg-ink-100 text-ink-700 transition-colors"
             >
               清除筛选
             </Link>

@@ -19,10 +19,7 @@ export default function AcmeLogo() {
         height={40}
         className="h-10 w-10 object-contain rounded-xl"
       />
-      <p
-        className="text-2xl font-bold tracking-tight text-indigo-700"
-        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-      >
+      <p className="text-2xl font-bold tracking-tight text-primary-700">
         远路播客
       </p>
     </div>

@@ -20,7 +20,7 @@ export default async function HistoryPage() {
   );
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-20 transition-colors duration-300">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
       <ListeningHistoryPage history={history} />
     </div>
   );

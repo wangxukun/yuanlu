@@ -57,36 +57,33 @@ export default async function EpisodePage({
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9ff] dark:bg-slate-950 transition-colors duration-300 font-['Lexend',sans-serif]">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-950 transition-colors duration-300">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-10 pt-8 md:pt-12 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
-          {/* --- Left Column: Main Content (8/12) --- */}
-          <div className="lg:col-span-8 flex flex-col gap-12 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12">
+          {/* --- Left Column: Main Content (tablet: 5/12, desktop: 8/12) --- */}
+          <div className="md:col-span-5 lg:col-span-8 flex flex-col gap-12 min-w-0">
             {/* Hero Section: EpisodeSummarize handles Player + Title + Meta */}
             <EpisodeSummarize episode={episode} />
-
-            {/* Immersive Mode Card */}
-            {/* <ImmersiveCard episode={episode} subtitles={subtitles} /> */}
 
             {/* Show Notes */}
             <ShowNotes episode={episode} />
 
             {/* Discussion Module */}
             <section className="rounded-2xl flex flex-col gap-8">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+              <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
                 互动讨论
               </h2>
               <EpisodeComments episodeId={episode.episodeid} />
             </section>
           </div>
 
-          {/* --- Right Column: Sidebar (4/12) --- */}
-          <aside className="lg:col-span-4">
+          {/* --- Right Column: Sidebar (tablet: 7/12, desktop: 4/12) --- */}
+          <aside className="md:col-span-7 lg:col-span-4">
             <div className="lg:sticky lg:top-24 self-start">
               <RelatedEpisodes
                 podcast={podcast}

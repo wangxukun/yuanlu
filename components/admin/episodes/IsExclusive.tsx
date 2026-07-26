@@ -6,13 +6,15 @@ export default function IsExclusive({ isExclusive }: { isExclusive: boolean }) {
     <span
       className={clsx(
         "inline-flex items-center rounded-full px-2 py-1 text-xs",
-        isExclusive ? "bg-red-100 text-red-500" : "bg-green-500 text-white",
+        isExclusive
+          ? "bg-error-100 text-error-500"
+          : "bg-primary-500 text-white",
       )}
     >
       {isExclusive ? (
         <>
           付费订阅
-          <ClockIcon className="ml-1 w-4 text-gray-500" />
+          <ClockIcon className="ml-1 w-4 text-ink-500" />
         </>
       ) : (
         <>

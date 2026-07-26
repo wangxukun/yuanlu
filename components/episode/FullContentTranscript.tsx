@@ -73,8 +73,8 @@ const SubtitleRow = React.memo(function SubtitleRow({
       className={cn(
         "group relative flex items-start gap-1 md:gap-6 px-2 py-2 md:p-6 md:rounded-2xl transition-all duration-300",
         isActive
-          ? "bg-slate-50 dark:bg-slate-900/50 border-l-0 border-l-4 border-indigo-600 shadow-sm"
-          : "hover:bg-slate-50 dark:hover:bg-slate-900/30 border-l-0 border-l-4 border-transparent cursor-pointer",
+          ? "bg-primary-50 dark:bg-primary-900/20 border-l-0 border-l-[3px] border-primary-500 shadow-sm"
+          : "hover:bg-ink-50 dark:hover:bg-ink-900/30 border-l-0 border-l-[3px] border-transparent cursor-pointer",
       )}
       id={`fct-sub-${sub.id}`}
       onClick={() => {
@@ -85,10 +85,10 @@ const SubtitleRow = React.memo(function SubtitleRow({
         {(visibilityMode === "both" || visibilityMode === "en") && (
           <p
             className={cn(
-              "font-serif text-lg sm:text-xl leading-snug sm:leading-relaxed tracking-wide",
+              "font-serif text-lg sm:text-xl leading-[1.85] sm:leading-[1.9] tracking-wide",
               isActive
-                ? "text-indigo-900 dark:text-indigo-100 font-medium"
-                : "text-slate-700 dark:text-slate-200",
+                ? "text-primary-900 dark:text-primary-100 font-medium"
+                : "text-ink-700 dark:text-ink-200",
             )}
           >
             {sub.textEn
@@ -113,7 +113,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                       onWordClick(cleanWord, sub.textEn, sub.textZh);
                     }}
                     className={cn(
-                      "cursor-pointer rounded inline transition-colors select-text hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
+                      "cursor-pointer rounded inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
                     )}
                   >
                     {part}
@@ -125,10 +125,10 @@ const SubtitleRow = React.memo(function SubtitleRow({
         {(visibilityMode === "both" || visibilityMode === "zh") && (
           <p
             className={cn(
-              "font-sans text-sm sm:text-base leading-normal sm:leading-relaxed",
+              "font-sans text-sm leading-[1.7]",
               isActive
-                ? "text-slate-600 dark:text-slate-300"
-                : "text-slate-400 dark:text-slate-500",
+                ? "text-ink-600 dark:text-ink-300"
+                : "text-ink-400 dark:text-ink-500",
             )}
           >
             {sub.textZh.trim()}
@@ -149,9 +149,9 @@ const SubtitleRow = React.memo(function SubtitleRow({
               "p-1.5 rounded-full transition-all duration-300",
               isActive
                 ? isLooping
-                  ? "text-indigo-600 dark:text-indigo-400 scale-125"
-                  : "text-indigo-300 dark:text-indigo-700 hover:text-indigo-500 dark:hover:text-indigo-400"
-                : "opacity-0 group-hover:opacity-100 text-slate-300 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
+                  ? "text-primary-600 dark:text-primary-400 scale-125"
+                  : "text-primary-300 dark:text-primary-700 hover:text-primary-500 dark:hover:text-primary-400"
+                : "opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
             )}
             title="单句循环"
           >
@@ -175,7 +175,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
               }}
               className={cn(
                 "p-1.5 rounded-full transition-all duration-300",
-                "opacity-0 group-hover:opacity-100 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
+                "opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
               )}
               title="校对字幕"
             >
@@ -432,20 +432,20 @@ export default function FullContentTranscript({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-0 z-[200] bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl flex flex-col overflow-hidden"
+          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col overflow-hidden"
         >
           {/* ── Header Section ── */}
-          <header className="w-full bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-colors duration-300">
+          <header className="w-full bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 sticky top-0 z-10 transition-colors duration-300">
             <div className="max-w-[900px] mx-auto px-4 md:px-8 py-3 flex items-center justify-center relative min-h-[64px]">
               {/* ── Subtitle Visibility Controls (Left) ── */}
-              <div className="absolute left-2 md:left-8 flex items-center bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm p-0.5 md:p-1 rounded-2xl gap-0.5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-all duration-300">
+              <div className="absolute left-2 md:left-8 flex items-center bg-ink-100/80 dark:bg-ink-800/80 backdrop-blur-sm p-0.5 md:p-1 rounded-2xl gap-0.5 border border-ink-200/50 dark:border-ink-700/50 shadow-sm transition-all duration-300">
                 <button
                   onClick={() => setVisibilityMode("both")}
                   className={cn(
                     "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
                     visibilityMode === "both"
-                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
-                      : "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:bg-white/50 dark:hover:bg-slate-700/50",
+                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
+                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
                   )}
                   title="显示中英双语"
                 >
@@ -459,8 +459,8 @@ export default function FullContentTranscript({
                   className={cn(
                     "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
                     visibilityMode === "en"
-                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
-                      : "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:bg-white/50 dark:hover:bg-slate-700/50",
+                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
+                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
                   )}
                   title="仅显示英文"
                 >
@@ -472,8 +472,8 @@ export default function FullContentTranscript({
                   className={cn(
                     "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
                     visibilityMode === "zh"
-                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-[0_2px_8px_rgba(79,70,229,0.15)] scale-105"
-                      : "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:bg-white/50 dark:hover:bg-slate-700/50",
+                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
+                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
                   )}
                   title="仅显示中文"
                 >
@@ -487,7 +487,7 @@ export default function FullContentTranscript({
               {/* Close Anchor (Center) */}
               <button
                 onClick={onClose}
-                className="text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors active:scale-95 duration-200 flex items-center justify-center"
+                className="text-ink-400 dark:text-ink-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors active:scale-95 duration-200 flex items-center justify-center"
               >
                 <span className="material-symbols-outlined text-4xl">
                   expand_more
@@ -502,8 +502,8 @@ export default function FullContentTranscript({
                   className={cn(
                     "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
                     autoScroll
-                      ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800"
-                      : "text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800",
+                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800"
+                      : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
                   )}
                   title={autoScroll ? "已开启自动滚动" : "已关闭自动滚动"}
                 >
@@ -522,7 +522,7 @@ export default function FullContentTranscript({
 
                 <ThemeSwitcher
                   className={cn(
-                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border border-transparent text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border border-transparent text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800",
                   )}
                 >
                   {/* <span className="hidden sm:inline">深浅模式</span> */}
@@ -533,8 +533,8 @@ export default function FullContentTranscript({
                     className={cn(
                       "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
                       isProofreadingMode
-                        ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                        : "text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800",
+                        ? "bg-accent-50 dark:bg-accent-900/30 text-accent-600 dark:text-accent-400 border-accent-200 dark:border-accent-800"
+                        : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
                     )}
                     title={isProofreadingMode ? "退出校对模式" : "进入校对模式"}
                   >
@@ -549,12 +549,12 @@ export default function FullContentTranscript({
           {/* ── Main Content Canvas ── */}
           <main
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-slate-950/50"
+            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50"
           >
             <div className="max-w-[900px] mx-auto px-0 sm:px-4 md:px-8 py-4 md:py-8 space-y-1 md:space-y-4">
               {/* Disclaimer */}
               <div className="flex justify-center mb-2 md:mb-4">
-                <div className="px-3 py-1 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-[10px] md:text-xs font-medium text-slate-400 dark:text-slate-500 border border-slate-200/30 dark:border-slate-700/30 backdrop-blur-sm">
+                <div className="px-3 py-1 rounded-full bg-ink-100/50 dark:bg-ink-800/50 text-[10px] md:text-xs font-medium text-ink-400 dark:text-ink-500 border border-ink-200/30 dark:border-ink-700/30 backdrop-blur-sm">
                   注：AI翻译 仅供参考
                 </div>
               </div>
@@ -613,7 +613,7 @@ export default function FullContentTranscript({
           </main>
 
           {/* Background Decoration */}
-          <div className="fixed inset-0 -z-10 flex items-center justify-center opacity-[0.03] dark:opacity-[0.05] pointer-events-none text-slate-900 dark:text-slate-700">
+          <div className="fixed inset-0 -z-10 flex items-center justify-center opacity-[0.03] dark:opacity-[0.05] pointer-events-none text-ink-900 dark:text-ink-700">
             <span className="material-symbols-outlined text-[400px]">
               menu_book
             </span>

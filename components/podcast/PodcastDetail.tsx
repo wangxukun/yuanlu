@@ -175,7 +175,7 @@ export default function PodcastDetail({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans pb-24 relative w-full overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-900 font-sans pb-24 relative w-full overflow-x-hidden transition-colors duration-300">
       {/* 沉浸式背景模糊 */}
       <div className="absolute top-0 left-0 w-full h-[500px] overflow-hidden -z-10 pointer-events-none">
         <Image
@@ -184,7 +184,7 @@ export default function PodcastDetail({
           fill
           className="object-cover opacity-20 blur-[80px] saturate-150 scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/80 to-slate-50 dark:via-slate-900/80 dark:to-slate-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-ink-50/80 to-ink-50 dark:via-ink-900/80 dark:to-ink-900"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-12 relative z-10">

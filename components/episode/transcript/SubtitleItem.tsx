@@ -29,9 +29,9 @@ export const SubtitleItem = memo(function SubtitleItem({
       id={`subtitle-${sub.id}`} // 关键：ID 用于反向查找数据
       data-active={isActive}
       className={clsx(
-        "group relative rounded-xl p-2 pl-0 pr-0 sm:p-4 transition-all duration-200 sm:border-l-4",
+        "group relative rounded-xl p-2 pl-0 pr-0 sm:p-4 transition-all duration-200 sm:border-l-[3px]",
         isActive
-          ? "bg-orange-50 bg-opacity-80 border-orange-400 shadow-sm"
+          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-500 shadow-sm"
           : "bg-transparent border-transparent hover:bg-base-200 hover:bg-opacity-30",
       )}
     >
@@ -42,7 +42,7 @@ export const SubtitleItem = memo(function SubtitleItem({
             e.stopPropagation();
             onProofread(sub);
           }}
-          className="absolute bottom-2 sm:top-2 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 btn btn-xs btn-ghost text-violet-400 hover:text-violet-600 hover:bg-violet-50 gap-1"
+          className="absolute bottom-2 sm:top-2 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 btn btn-xs btn-ghost text-info-400 hover:text-info-600 hover:bg-info-50 gap-1"
           aria-label="校对字幕"
           title="校对字幕"
         >
@@ -57,7 +57,7 @@ export const SubtitleItem = memo(function SubtitleItem({
           className={clsx(
             "mt-1.5 flex-shrink-0 transition-all duration-200 transform",
             isActive
-              ? "text-orange-500 scale-110 opacity-100"
+              ? "text-primary-600 scale-110 opacity-100"
               : "text-base-content text-opacity-20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
           )}
           aria-label="Play segment"
@@ -74,8 +74,10 @@ export const SubtitleItem = memo(function SubtitleItem({
         <div className="flex-1 min-w-0">
           <p
             className={clsx(
-              "font-serif text-base sm:text-lg leading-6 sm:leading-7 tracking-wide transition-colors",
-              isActive ? "text-slate-900 font-medium" : "text-slate-700",
+              "font-serif text-lg leading-[1.85] tracking-wide transition-colors",
+              isActive
+                ? "text-primary-900 dark:text-primary-100 font-medium"
+                : "text-ink-700 dark:text-ink-200",
             )}
           >
             {sub.textEn
@@ -101,7 +103,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                       e.stopPropagation();
                       onWordClick(part, sub.textEn, sub.textZh);
                     }}
-                    className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-orange-200 hover:text-orange-700"
+                    className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
                   >
                     {part}
                   </span>
@@ -119,8 +121,10 @@ export const SubtitleItem = memo(function SubtitleItem({
           >
             <p
               className={clsx(
-                "font-sans text-xs sm:text-sm leading-5 tracking-wider",
-                isActive ? "text-slate-600 font-medium" : "text-slate-400",
+                "font-sans text-sm leading-[1.7]",
+                isActive
+                  ? "text-ink-600 dark:text-ink-300 font-medium"
+                  : "text-ink-400",
               )}
             >
               {sub.textZh.trim()}

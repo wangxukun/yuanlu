@@ -122,7 +122,7 @@ export default function UploadCover({
             }
           }}
         >
-          <div className="w-48 h-48 rounded-lg overflow-hidden border border-gray-300 relative">
+          <div className="w-48 h-48 rounded-lg overflow-hidden border border-ink-300 relative">
             {previewUrl ? (
               <img
                 src={previewUrl}
@@ -130,8 +130,8 @@ export default function UploadCover({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <PhotoIcon className="w-12 h-12 text-gray-400" />
+              <div className="w-full h-full bg-ink-200 flex items-center justify-center">
+                <PhotoIcon className="w-12 h-12 text-ink-400" />
               </div>
             )}
 
@@ -146,7 +146,7 @@ export default function UploadCover({
             {uploadCoverResponse && (
               <div className="absolute inset-0 flex flex-col justify-between">
                 <div></div> {/* 用于顶部对齐的空元素 */}
-                <div className="flex flex-row justify-around bg-gray-800">
+                <div className="flex flex-row justify-around bg-ink-800">
                   <button
                     className="btn btn-xs btn-link text-neutral-content no-underline"
                     onClick={(e) => {
@@ -172,7 +172,7 @@ export default function UploadCover({
         </div>
 
         {isUploading && (
-          <div className="mt-2 text-sm text-gray-600">上传中...</div>
+          <div className="mt-2 text-sm text-ink-600">上传中...</div>
         )}
       </div>
 

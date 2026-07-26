@@ -50,14 +50,14 @@ export function EpisodeDeleteForm({ id }: { id: string }) {
       {/* 删除按钮 */}
       {/*<button*/}
       {/*    onClick={openModal}*/}
-      {/*    className="flex items-center rounded-md border border-red-500 bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"*/}
+      {/*    className="flex items-center rounded-md border border-error-500 bg-error-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-error-600 focus:outline-hidden focus:ring-2 focus:ring-error-500 focus:ring-offset-2"*/}
       {/*>*/}
       {/*  <span className="sr-only">delete</span>*/}
       {/*  <TrashIcon className="h-5 w-5"/>*/}
       {/*</button>*/}
       <button
         onClick={openModal}
-        className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+        className="flex w-full items-center px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 hover:text-error-700 transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -85,16 +85,16 @@ export function EpisodeDeleteForm({ id }: { id: string }) {
             className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()} // 阻止点击模态框内容时关闭
           >
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">
+            <h3 className="mb-4 text-lg font-semibold text-ink-800">
               确认删除
             </h3>
-            <p className="mb-6 text-sm text-gray-600">
+            <p className="mb-6 text-sm text-ink-600">
               确定要删除该集音频吗？此操作不可撤销！
             </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={closeModal}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rounded-md border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-100 focus:outline-hidden focus:ring-2 focus:ring-info-500 focus:ring-offset-2"
               >
                 取消
               </button>
@@ -102,7 +102,7 @@ export function EpisodeDeleteForm({ id }: { id: string }) {
                 <input type="hidden" name="id" value={id} />
                 <button
                   type="submit"
-                  className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="rounded-md bg-error-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-error-600 focus:outline-hidden focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
                 >
                   确认删除
                 </button>

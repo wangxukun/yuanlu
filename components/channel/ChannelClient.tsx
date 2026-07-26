@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ProBadge from "@/components/ui/ProBadge";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -110,9 +111,7 @@ function EpisodeRow({
         />
         {episode.isExclusive && (
           <div className="absolute top-2 left-2 z-10 flex gap-1.5 items-center">
-            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm font-extrabold text-[10px] tracking-widest flex items-center">
-              👑 PRO
-            </div>
+            <ProBadge size="sm" />
           </div>
         )}
         {/* Play overlay on hover */}
@@ -197,9 +196,9 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-950 pb-24">
       {/* ========== Hero Banner ========== */}
-      <div className="bg-neutral bg-gradient-to-br from-primary to-secondary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="bg-primary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Decorative background pattern */}
         <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
           <Radio size={400} className="fill-current" />
@@ -231,12 +230,7 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
         {/* -------- Top Shows -------- */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2
-              className="text-2xl font-bold text-base-content"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              热门节目
-            </h2>
+            <h2 className="text-2xl font-bold text-base-content">热门节目</h2>
             <Link
               href={`/channel/${encodeURIComponent(data.platformName)}/trending`}
               className="text-primary text-sm font-semibold hover:underline"
@@ -255,12 +249,7 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
         {data.topEpisodes.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-5">
-              <h2
-                className="text-2xl font-bold text-base-content"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                热门单集
-              </h2>
+              <h2 className="text-2xl font-bold text-base-content">热门单集</h2>
             </div>
             <div className="bg-base-100/80 backdrop-blur-xl rounded-[2rem] p-0 sm:p-0 lg:p-0">
               <div className="space-y-3">

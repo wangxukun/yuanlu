@@ -36,10 +36,10 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
 }) => {
   return (
     <div
-      className="group bg-white dark:bg-slate-900 rounded-lg overflow-hidden transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="group bg-white dark:bg-ink-900 rounded-lg overflow-hidden transition-all duration-300 cursor-pointer flex flex-col h-full"
       onClick={onClick}
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="relative aspect-[16/9] overflow-hidden bg-ink-100 dark:bg-ink-800">
         <Image
           src={
             path.coverUrl ||
@@ -64,7 +64,7 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
           {path.isOfficial ? (
-            <span className="flex items-center gap-1 px-2 py-1 bg-indigo-600 dark:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-md">
+            <span className="flex items-center gap-1 px-2 py-1 bg-primary-600 dark:bg-primary-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-md">
               <BadgeCheck size={12} /> Official
             </span>
           ) : (
@@ -80,19 +80,19 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
       <div className="p-5 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
           <h3
-            // [Refactor] text-gray-900 -> text-base-content, hover:text-primary
+            // [Refactor] text-ink-900 -> text-base-content, hover:text-primary
             className="text-lg font-bold text-base-content leading-tight group-hover:text-primary transition-colors line-clamp-1"
             title={path.pathName}
           >
             {path.pathName}
           </h3>
-          {/* [Refactor] text-gray-300 -> text-base-content/30 */}
+          {/* [Refactor] text-ink-300 -> text-base-content/30 */}
           <button className="text-base-content/30 hover:text-base-content/60 transition-colors">
             <MoreVertical size={16} />
           </button>
         </div>
 
-        {/* [Refactor] text-gray-500 -> text-base-content/60 */}
+        {/* [Refactor] text-ink-500 -> text-base-content/60 */}
         <p className="text-sm text-base-content/60 line-clamp-2 mb-4 flex-1">
           {path.description || "No description provided."}
         </p>
@@ -100,15 +100,15 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
         {/* Progress Bar (User paths only) */}
         {!path.isOfficial && path.progress !== undefined && (
           <div className="mb-4">
-            {/* [Refactor] text-gray-400 -> text-base-content/40 */}
+            {/* [Refactor] text-ink-400 -> text-base-content/40 */}
             <div className="flex justify-between text-xs font-medium text-base-content/40 mb-1">
               <span>进度</span>
               <span>{path.progress}%</span>
             </div>
-            {/* [Refactor] bg-gray-100 -> bg-base-200 */}
+            {/* [Refactor] bg-ink-100 -> bg-base-200 */}
             <div className="h-1.5 w-full bg-base-200 rounded-full overflow-hidden">
               <div
-                // [Refactor] bg-indigo-500 -> bg-primary
+                // [Refactor] bg-primary-500 -> bg-primary
                 className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${path.progress}%` }}
               ></div>

@@ -313,7 +313,7 @@ export default function VisitorLogsClient({
                         {log.path}
                       </code>
                     </td>
-                    <td className="px-6 py-4 text-xs font-medium text-slate-600">
+                    <td className="px-6 py-4 text-xs font-medium text-ink-600">
                       {log.location || "未知"}
                     </td>
                     <td className="px-6 py-4">

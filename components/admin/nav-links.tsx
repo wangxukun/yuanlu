@@ -138,7 +138,7 @@ export default function NavLinks() {
             <p className="block">{link.name}</p>
             {/* Red badge for review center */}
             {"hasBadge" in link && link.hasBadge && pendingCount > 0 && (
-              <span className="ml-auto badge badge-sm bg-red-500 text-white border-red-500 font-bold">
+              <span className="ml-auto badge badge-sm bg-error-500 text-white border-error-500 font-bold">
                 {pendingCount > 99 ? "99+" : pendingCount}
               </span>
             )}

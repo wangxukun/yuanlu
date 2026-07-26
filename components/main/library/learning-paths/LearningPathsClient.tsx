@@ -62,17 +62,14 @@ export default function LearningPathsClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1
-            className="text-3xl font-extrabold text-base-content tracking-tight flex items-center"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
+          <h1 className="text-3xl font-extrabold text-base-content tracking-tight flex items-center">
             <Map
-              className="mr-3 text-indigo-600 dark:text-indigo-400"
+              className="mr-3 text-primary-600 dark:text-primary-400"
               size={32}
             />
             学习路径
           </h1>
-          {/* [Refactor] text-slate-500 -> text-base-content/60 */}
+          {/* [Refactor] text-ink-500 -> text-base-content/60 */}
           <p className="text-base-content/60 mt-2 font-medium">
             精心策划的课程和您专属的个人学习播放列表
           </p>
@@ -87,15 +84,15 @@ export default function LearningPathsClient({
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center bg-white dark:bg-slate-900 p-2 rounded-lg">
-        <div className="flex p-1 bg-slate-50 dark:bg-slate-950 rounded-lg w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row gap-4 items-center bg-white dark:bg-ink-900 p-2 rounded-lg">
+        <div className="flex p-1 bg-ink-50 dark:bg-ink-950 rounded-lg w-full sm:w-auto">
           <button
             onClick={() => setActiveTab("my-paths")}
             className={clsx(
               "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all",
               activeTab === "my-paths"
-                ? "bg-base-100 text-primary shadow-sm" // [Refactor] bg-white -> bg-base-100, text-indigo-600 -> text-primary
-                : "text-base-content/60 hover:text-base-content", // [Refactor] text-gray-500 -> text-base-content/60
+                ? "bg-base-100 text-primary shadow-sm" // [Refactor] bg-white -> bg-base-100, text-primary-600 -> text-primary
+                : "text-base-content/60 hover:text-base-content", // [Refactor] text-ink-500 -> text-base-content/60
             )}
           >
             我的集合
@@ -114,7 +111,7 @@ export default function LearningPathsClient({
         </div>
 
         <div className="relative flex-1 w-full">
-          {/* [Refactor] text-gray-400 -> text-base-content/40 */}
+          {/* [Refactor] text-ink-400 -> text-base-content/40 */}
           <Search
             size={18}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
@@ -122,7 +119,7 @@ export default function LearningPathsClient({
           <input
             type="text"
             placeholder="搜索路径..."
-            // [Refactor] focus:bg-gray-50 -> focus:bg-base-200
+            // [Refactor] focus:bg-ink-50 -> focus:bg-base-200
             className="input input-ghost w-full pl-10 bg-transparent focus:bg-base-200 rounded-lg focus:ring-0 text-sm placeholder:text-base-content/40 text-base-content"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -152,9 +149,9 @@ export default function LearningPathsClient({
         {activeTab === "my-paths" && searchQuery === "" && (
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-lg flex flex-col items-center justify-center p-8 text-base-content/40 bg-white dark:bg-slate-900 hover:text-primary transition-all h-full min-h-[300px] group"
+            className="rounded-lg flex flex-col items-center justify-center p-8 text-base-content/40 bg-white dark:bg-ink-900 hover:text-primary transition-all h-full min-h-[300px] group"
           >
-            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-950 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-ink-50 dark:bg-ink-950 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Plus size={24} />
             </div>
             <span className="font-bold">创建新的播放列表</span>
@@ -165,22 +162,22 @@ export default function LearningPathsClient({
       {/* CREATE MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-lg overflow-hidden p-6 animate-in zoom-in-95 duration-200">
-            {/* [Refactor] text-gray-900 -> text-base-content */}
+          <div className="bg-white dark:bg-ink-900 w-full max-w-md rounded-lg overflow-hidden p-6 animate-in zoom-in-95 duration-200">
+            {/* [Refactor] text-ink-900 -> text-base-content */}
             <h2 className="text-xl font-bold text-base-content mb-6">
               创建新的学习路径
             </h2>
 
             <form onSubmit={handleCreatePath} className="space-y-4">
               <div>
-                {/* [Refactor] text-gray-500 -> text-base-content/60 */}
+                {/* [Refactor] text-ink-500 -> text-base-content/60 */}
                 <label className="block text-xs font-bold text-base-content/60 uppercase mb-1">
                   路径名称
                 </label>
                 <input
                   required
                   type="text"
-                  // [Refactor] bg-gray-50 -> bg-base-200, focus:bg-white -> focus:bg-base-100
+                  // [Refactor] bg-ink-50 -> bg-base-200, focus:bg-white -> focus:bg-base-100
                   className="input input-bordered w-full rounded-lg bg-base-200 focus:bg-base-100 transition-colors text-base-content"
                   placeholder="例如：词汇学习"
                   value={newPathName}
@@ -202,7 +199,7 @@ export default function LearningPathsClient({
               </div>
 
               <div
-                // [Refactor] bg-gray-50 -> bg-base-200/50, border-gray-100 -> border-base-300, hover:bg-gray-100 -> hover:bg-base-200
+                // [Refactor] bg-ink-50 -> bg-base-200/50, border-ink-100 -> border-base-300, hover:bg-ink-100 -> hover:bg-base-200
                 className="flex items-center gap-3 p-4 bg-base-200/50 rounded-lg cursor-pointer hover:bg-base-200 transition-colors"
                 onClick={() => setIsNewPathPublic(!isNewPathPublic)}
               >
@@ -210,8 +207,8 @@ export default function LearningPathsClient({
                   className={clsx(
                     "w-6 h-6 rounded-md border flex items-center justify-center transition-colors shrink-0",
                     isNewPathPublic
-                      ? "bg-primary border-primary" // [Refactor] bg-indigo-600 -> bg-primary
-                      : "bg-base-100 border-base-content/20", // [Refactor] bg-white -> bg-base-100, border-gray-300 -> border-base-content/20
+                      ? "bg-primary border-primary" // [Refactor] bg-primary-600 -> bg-primary
+                      : "bg-base-100 border-base-content/20", // [Refactor] bg-white -> bg-base-100, border-ink-300 -> border-base-content/20
                   )}
                 >
                   {isNewPathPublic && (

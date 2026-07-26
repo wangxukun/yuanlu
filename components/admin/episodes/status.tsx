@@ -7,16 +7,16 @@ export default function EpisodeStatus({ status }: { status: string }) {
       className={clsx(
         "inline-flex items-center rounded-full px-2 py-1 text-xs",
         status === "pending"
-          ? "bg-slate-100 text-slate-500"
+          ? "bg-ink-100 text-ink-500"
           : status === "paid"
-            ? "bg-green-500 text-white"
+            ? "bg-primary-500 text-white"
             : "",
       )}
     >
       {status === "pending" ? (
         <>
           待发布
-          <ClockIcon className="ml-1 w-4 text-gray-500" />
+          <ClockIcon className="ml-1 w-4 text-ink-500" />
         </>
       ) : null}
       {status === "paid" ? (

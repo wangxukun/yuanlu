@@ -93,7 +93,7 @@ export function CommentItem({
         {/* Comment Bubble */}
         <div
           className={clsx(
-            "p-3 md:p-4 rounded-2xl rounded-tl-none text-slate-700 dark:text-slate-200 leading-relaxed",
+            "p-3 md:p-4 rounded-2xl rounded-tl-none text-ink-700 dark:text-ink-200 leading-relaxed",
             isReply ? "text-xs md:text-sm" : "text-sm md:text-base",
           )}
         >
@@ -113,7 +113,7 @@ export function CommentItem({
               "flex items-center gap-1.5 text-xs font-bold transition-colors group/btn",
               comment.isLiked
                 ? "text-primary"
-                : "text-slate-400 hover:text-primary",
+                : "text-ink-400 hover:text-primary",
             )}
           >
             {comment.isLiked ? (

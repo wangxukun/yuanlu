@@ -8,8 +8,121 @@
   --header-height-desktop: 80px;
   --sidebar-width: 288px;
   --player-bar-height: 64px;
-  /* 新增底部导航栏高度 */
+  /* 移动端底部导航栏 */
   --bottom-nav-height: 64px;
+  /* Mini 播放器高度 */
+  --mini-player-height: 60px;
+  /* 移动端总底部占位 = 导航 + mini播放器 + safe area */
+  --mobile-bottom-total: calc(
+    var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)
+  );
+  --mobile-bottom-with-player: calc(
+    var(--bottom-nav-height) + var(--mini-player-height) +
+      env(safe-area-inset-bottom, 0px)
+  );
+
+  /* === 远路设计系统 · 色板（与 tailwind.config.mjs 保持一致，供内联样式/SVG/图表使用） === */
+  --ink-50: #faf8f3;
+  --ink-100: #f1ede4;
+  --ink-200: #e3ddcf;
+  --ink-300: #cfc7b4;
+  --ink-400: #a79e8a;
+  --ink-500: #857c68;
+  --ink-600: #655d4c;
+  --ink-700: #4a4436;
+  --ink-800: #322d23;
+  --ink-900: #221f18;
+  --ink-950: #151310;
+  --primary-50: #edf7f2;
+  --primary-100: #d5ede1;
+  --primary-200: #aedcc8;
+  --primary-300: #7dc5a8;
+  --primary-400: #4da989;
+  --primary-500: #2e8f6f;
+  --primary-600: #1f7a5c;
+  --primary-700: #1a6349;
+  --primary-800: #164e3b;
+  --primary-900: #0f3628;
+  --primary-950: #0a241b;
+  --accent-50: #fdf4e7;
+  --accent-100: #fae5c6;
+  --accent-200: #f4d09a;
+  --accent-300: #ecb35e;
+  --accent-400: #e59d2e;
+  --accent-500: #d98a17;
+  --accent-600: #b96f0f;
+  --accent-700: #96580d;
+  --accent-800: #74440f;
+  --accent-900: #4e2e0b;
+  --accent-950: #2e1d07;
+  --info-500: #4a7fa5;
+  --error-500: #d2503f;
+
+  /* === 圆角阶梯（新组件唯一合法值；旧类的重映射在组件级改造中进行） === */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* === 阴影阶梯 === */
+  --e1: 0 1px 2px rgb(27 24 18 / 0.04), 0 4px 12px rgb(27 24 18 / 0.05);
+  --e2: 0 8px 24px rgb(27 24 18 / 0.08);
+  --e3: 0 16px 48px rgb(27 24 18 / 0.16);
+
+  /* === z-index 分层 === */
+  --z-nav: 40;
+  --z-miniplayer: 50;
+  --z-sheet: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+}
+
+/* === DaisyUI 5 语义色覆盖（JS 配置不支持内联主题对象，改为变量覆写，与远路色板对齐） ===
+   选择器 html[data-theme="x"] 特异度 (0,1,1) 高于 daisy 默认主题的 (0,1,0)，确保覆盖生效 */
+:root,
+html[data-theme="light"] {
+  --color-primary: #1f7a5c;
+  --color-primary-content: #ffffff;
+  --color-secondary: #d98a17;
+  --color-secondary-content: #1b1812;
+  --color-accent: #ecb35e;
+  --color-accent-content: #1b1812;
+  --color-neutral: #322d23;
+  --color-neutral-content: #ede9e0;
+  --color-base-100: #ffffff;
+  --color-base-200: #faf8f3;
+  --color-base-300: #f1ede4;
+  --color-base-content: #1b1812;
+  --color-info: #4a7fa5;
+  --color-info-content: #ffffff;
+  --color-success: #2e8f6f;
+  --color-success-content: #ffffff;
+  --color-warning: #d98a17;
+  --color-warning-content: #1b1812;
+  --color-error: #d2503f;
+  --color-error-content: #ffffff;
+}
+html[data-theme="dark"] {
+  --color-primary: #4da989;
+  --color-primary-content: #0a241b;
+  --color-secondary: #ecb35e;
+  --color-secondary-content: #1b1812;
+  --color-accent: #e59d2e;
+  --color-accent-content: #1b1812;
+  --color-neutral: #221f18;
+  --color-neutral-content: #ede9e0;
+  --color-base-100: #1f1c17;
+  --color-base-200: #151310;
+  --color-base-300: #322e26;
+  --color-base-content: #ede9e0;
+  --color-info: #6393b6;
+  --color-info-content: #12202b;
+  --color-success: #4da989;
+  --color-success-content: #0a241b;
+  --color-warning: #ecb35e;
+  --color-warning-content: #1b1812;
+  --color-error: #db6b5c;
+  --color-error-content: #2a0e09;
 }
 
 .material-symbols-outlined {
@@ -60,9 +173,9 @@
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(226, 232, 240, 0.6) 25%,
-    rgba(241, 245, 249, 0.9) 37%,
-    rgba(226, 232, 240, 0.6) 63%
+    rgba(241, 237, 228, 0.6) 25%,
+    rgba(250, 248, 243, 0.9) 37%,
+    rgba(241, 237, 228, 0.6) 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
@@ -72,9 +185,9 @@
 .dark .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(30, 41, 59, 0.6) 25%,
-    rgba(51, 65, 85, 0.8) 37%,
-    rgba(30, 41, 59, 0.6) 63%
+    rgba(34, 31, 24, 0.6) 25%,
+    rgba(50, 46, 38, 0.8) 37%,
+    rgba(34, 31, 24, 0.6) 63%
   );
   background-size: 200% 100%;
 }

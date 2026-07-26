@@ -101,10 +101,10 @@ export function ProofreadModal({
         isOpen && "modal-open",
       )}
     >
-      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 dark:bg-slate-900 sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-slate-800">
+      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 dark:bg-ink-900 sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-ink-800">
         {/* Header */}
-        <div className="shrink-0 bg-gradient-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-900/20 dark:to-purple-900/20 px-6 py-4 flex justify-between items-center border-b border-purple-100 dark:border-violet-800/30">
-          <h3 className="text-lg font-bold flex items-center gap-2 text-violet-700 dark:text-violet-400">
+        <div className="shrink-0 bg-gradient-to-r from-info-500/10 to-accent-500/10 dark:from-info-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-info-800/30">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-info-700 dark:text-info-400">
             <PencilSquareIcon className="w-5 h-5" /> 校对字幕
           </h3>
           <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
@@ -116,11 +116,11 @@ export function ProofreadModal({
         <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           {/* English */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-base-content/50 dark:text-slate-400 uppercase tracking-wider">
+            <label className="text-xs font-bold text-base-content/50 dark:text-ink-400 uppercase tracking-wider">
               English
             </label>
             <textarea
-              className="textarea textarea-bordered w-full h-28 bg-base-200/30 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-200 text-base leading-relaxed focus:bg-white focus:dark:bg-slate-800 transition-colors resize-none font-serif"
+              className="textarea textarea-bordered w-full h-28 bg-base-200/30 dark:bg-ink-800/50 dark:border-ink-700 dark:text-ink-200 text-base leading-relaxed focus:bg-white focus:dark:bg-ink-800 transition-colors resize-none font-serif"
               value={editTextEn}
               onChange={(e) => setEditTextEn(e.target.value)}
               placeholder="English subtitle..."
@@ -129,11 +129,11 @@ export function ProofreadModal({
 
           {/* Chinese */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-base-content/50 dark:text-slate-400 uppercase tracking-wider">
+            <label className="text-xs font-bold text-base-content/50 dark:text-ink-400 uppercase tracking-wider">
               中文翻译
             </label>
             <textarea
-              className="textarea textarea-bordered w-full h-24 bg-base-200/30 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-200 text-base leading-relaxed focus:bg-white focus:dark:bg-slate-800 transition-colors resize-none"
+              className="textarea textarea-bordered w-full h-24 bg-base-200/30 dark:bg-ink-800/50 dark:border-ink-700 dark:text-ink-200 text-base leading-relaxed focus:bg-white focus:dark:bg-ink-800 transition-colors resize-none"
               value={editTextZh}
               onChange={(e) => setEditTextZh(e.target.value)}
               placeholder="中文翻译..."
@@ -141,21 +141,21 @@ export function ProofreadModal({
           </div>
 
           {/* Original preview */}
-          <div className="bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/50 max-h-40 overflow-y-auto">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+          <div className="bg-ink-50 dark:bg-ink-950/40 p-4 rounded-xl border border-ink-100 dark:border-ink-800/50 max-h-40 overflow-y-auto">
+            <p className="text-[10px] font-bold text-ink-400 dark:text-ink-500 uppercase tracking-wider mb-2">
               原始内容参考
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 font-serif italic leading-relaxed">
+            <p className="text-sm text-ink-600 dark:text-ink-400 font-serif italic leading-relaxed">
               &ldquo;{subtitle.textEn.trim()}&rdquo;
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 leading-relaxed">
+            <p className="text-xs text-ink-400 dark:text-ink-500 mt-1.5 leading-relaxed">
               {subtitle.textZh.trim()}
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 p-4 bg-base-200/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-slate-800">
+        <div className="shrink-0 p-4 bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800">
           <button className="btn btn-ghost rounded-xl" onClick={onClose}>
             取消
           </button>
@@ -163,7 +163,7 @@ export function ProofreadModal({
             className={clsx(
               "btn rounded-xl px-8",
               isAdmin
-                ? "bg-violet-600 hover:bg-violet-700 text-white border-violet-600"
+                ? "bg-info-600 hover:bg-info-700 text-white border-info-600"
                 : "btn-primary",
             )}
             onClick={handleSubmit}

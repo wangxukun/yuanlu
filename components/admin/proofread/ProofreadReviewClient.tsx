@@ -51,7 +51,7 @@ function DiffHighlight({
             return (
               <span
                 key={i}
-                className="bg-red-100 text-red-700 line-through rounded px-0.5 font-medium"
+                className="bg-error-100 text-error-700 line-through rounded px-0.5 font-medium"
               >
                 {part.value}
               </span>
@@ -69,7 +69,7 @@ function DiffHighlight({
             return (
               <span
                 key={i}
-                className="bg-emerald-100 text-emerald-700 rounded px-0.5 font-medium"
+                className="bg-primary-100 text-primary-700 rounded px-0.5 font-medium"
               >
                 {part.value}
               </span>
@@ -177,7 +177,7 @@ export default function ProofreadReviewClient() {
                 href={`/episode/${item.episodeid}#subtitle-${item.subtitleIndex}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-violet-600 hover:text-violet-800 font-medium text-sm transition-colors hover:underline"
+                className="inline-flex items-center gap-1.5 text-info-600 hover:text-info-800 font-medium text-sm transition-colors hover:underline"
               >
                 <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
                 {item.episodeTitle}
@@ -188,7 +188,7 @@ export default function ProofreadReviewClient() {
               <button
                 onClick={() => handleReview(item.id, "reject")}
                 disabled={actionLoading === item.id}
-                className="btn btn-sm btn-ghost text-red-500 hover:bg-red-50 hover:text-red-600 gap-1"
+                className="btn btn-sm btn-ghost text-error-500 hover:bg-error-50 hover:text-error-600 gap-1"
               >
                 <XMarkIcon className="w-4 h-4" />
                 拒绝
@@ -196,7 +196,7 @@ export default function ProofreadReviewClient() {
               <button
                 onClick={() => handleReview(item.id, "approve")}
                 disabled={actionLoading === item.id}
-                className="btn btn-sm bg-violet-600 hover:bg-violet-700 text-white border-violet-600 gap-1"
+                className="btn btn-sm bg-info-600 hover:bg-info-700 text-white border-info-600 gap-1"
               >
                 {actionLoading === item.id ? (
                   <span className="loading loading-spinner loading-xs"></span>
@@ -212,18 +212,18 @@ export default function ProofreadReviewClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-base-200">
             {/* Original */}
             <div className="p-6">
-              <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-3">
+              <p className="text-xs font-bold text-error-400 uppercase tracking-wider mb-3">
                 原始内容
               </p>
-              <div className="bg-slate-50 rounded-xl p-4 space-y-3 border border-slate-100">
-                <p className="text-base leading-relaxed text-slate-700 font-serif">
+              <div className="bg-ink-50 rounded-xl p-4 space-y-3 border border-ink-100">
+                <p className="text-base leading-relaxed text-ink-700 font-serif">
                   <DiffHighlight
                     original={item.originalTextEn}
                     modified={item.modifiedTextEn}
                     type="original"
                   />
                 </p>
-                <p className="text-sm leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-ink-500">
                   <DiffHighlight
                     original={item.originalTextZh}
                     modified={item.modifiedTextZh}
@@ -235,18 +235,18 @@ export default function ProofreadReviewClient() {
 
             {/* Modified */}
             <div className="p-6">
-              <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-wider mb-3">
                 用户修改
               </p>
-              <div className="bg-emerald-50/30 rounded-xl p-4 space-y-3 border border-emerald-100">
-                <p className="text-base leading-relaxed text-slate-700 font-serif">
+              <div className="bg-primary-50/30 rounded-xl p-4 space-y-3 border border-primary-100">
+                <p className="text-base leading-relaxed text-ink-700 font-serif">
                   <DiffHighlight
                     original={item.originalTextEn}
                     modified={item.modifiedTextEn}
                     type="modified"
                   />
                 </p>
-                <p className="text-sm leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-ink-500">
                   <DiffHighlight
                     original={item.originalTextZh}
                     modified={item.modifiedTextZh}
