@@ -109,6 +109,11 @@
 - **查词助手弹窗对齐 (`VocabularyModal.tsx`)**：
   - 结构样式对齐 `ProofreadModal`：应用 `max-h-[80vh]`、滚动体、`bg-ink-50` 上下文参考框及 `bg-primary-600` 定制风格按钮，修复底部 safe-area 对齐导致按键贴边的 Padding 问题。
 
+### ✅ Step 16：移动端全屏播放器沉浸式体验重构
+
+- **去除巨型封面 (`MobilePlayerSheet.tsx`)**：移除了移动端播放器默认在顶部占据近半屏高度的正方形大封面图，彻底重构为横向紧凑布局 (Compact Header)。封面缩小为 48x48 并与标题同行显示，对齐 Spotify/Apple Music 展开歌词后的顶部常驻栏体验。
+- **释放精听字幕空间**：将进度条、播放/暂停、倍速、循环等控制按钮的间距深度压缩。重构后，播放器头部仅占用 25%~30% 屏幕高度，释放出高达 70% 的垂直空间专门用于 `InteractiveTranscript`（精读与听写区域），大幅提升了移动端沉浸式学习体验。
+
 ### ✅ Step 13：卡片、弹窗与小组件样式统一规范化
 
 - **弹窗与抽屉层 (Modals & Sheets)**：重构 `ReviewModal`, `TranscriptPreviewModal`, `PremiumModal`, `MobilePlayerSheet`, `VocabularyModal`, `ProofreadModal`, `DeleteCommentModal` 等，统一采用 `rounded-xl`、`shadow-e3` 与 `bg-base-100`，彻底替代内联硬编码样式。
