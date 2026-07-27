@@ -18,6 +18,7 @@ import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dt
 
 interface HomeClientProps {
   user?: User;
+  userBio?: string;
   latestHistory: ResumeData | null;
   userStats: UserHomeStatsDto | null;
   weeklyActivity: WeeklyActivityItemDto[];
@@ -28,6 +29,7 @@ interface HomeClientProps {
 }
 export default function HomeClient({
   user,
+  userBio,
   latestHistory,
   userStats,
   weeklyActivity,
@@ -106,7 +108,9 @@ export default function HomeClient({
             >
               {greeting}，{displayName}。
             </h1>
-            <p className="mt-1 text-sm text-ink-400">今天也向前走吧。</p>
+            <p className="mt-1 text-sm text-ink-400">
+              {userBio || "路虽远行则将至，事虽难做则可成。"}
+            </p>
           </div>
           {stats.streakDays > 0 && (
             <span className="shrink-0 inline-flex items-center gap-1 bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 rounded-full px-3 py-1.5 text-sm font-semibold">

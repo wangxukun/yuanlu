@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import clsx from "clsx";
 import Image from "next/image";
 import { toast } from "sonner";
 import Cropper from "react-easy-crop";
@@ -181,35 +182,54 @@ export default function EditProfileModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-base-100 rounded-xl shadow-e3 border border-base-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+    <dialog
+      className={clsx(
+        "modal modal-bottom sm:modal-middle",
+        isOpen && "modal-open",
+      )}
+    >
+      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[90vh] bg-base-100 sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-base-200 shrink-0">
-          <h3 className="font-bold text-lg">
-            {isCropping ? "调整头像" : "设置"}
+        <div className="shrink-0 bg-gradient-to-r from-primary-500/10 to-accent-500/10 dark:from-primary-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-primary-800/30">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-primary-700 dark:text-primary-400">
+            <UserCircleIcon className="w-5 h-5" />{" "}
+            {isCropping ? "调整头像" : "编辑资料"}
           </h3>
-          <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
+          <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tabs - 仅在非裁剪模式显示 */}
         {!isCropping && (
-          <div role="tablist" className="tabs tabs-bordered w-full">
-            <a
-              role="tab"
-              className={`tab h-12 ${activeTab === "profile" ? "tab-active font-semibold" : ""}`}
-              onClick={() => setActiveTab("profile")}
+          <div className="px-6 pt-5 shrink-0 bg-base-100">
+            <div
+              role="tablist"
+              className="tabs tabs-boxed bg-base-200/50 dark:bg-ink-900/50 p-1 rounded-xl w-full grid grid-cols-2 gap-1"
             >
-              <UserCircleIcon className="w-4 h-4 mr-2" /> 个人资料
-            </a>
-            <a
-              role="tab"
-              className={`tab h-12 ${activeTab === "goals" ? "tab-active font-semibold" : ""}`}
-              onClick={() => setActiveTab("goals")}
-            >
-              <AdjustmentsHorizontalIcon className="w-4 h-4 mr-2" /> 学习目标
-            </a>
+              <a
+                role="tab"
+                className={`tab h-10 rounded-lg transition-colors ${
+                  activeTab === "profile"
+                    ? "bg-white dark:bg-ink-800 shadow-sm text-primary-600 dark:text-primary-400 font-bold"
+                    : "text-base-content/60 hover:text-base-content"
+                }`}
+                onClick={() => setActiveTab("profile")}
+              >
+                <UserCircleIcon className="w-4 h-4 mr-2" /> 个人资料
+              </a>
+              <a
+                role="tab"
+                className={`tab h-10 rounded-lg transition-colors ${
+                  activeTab === "goals"
+                    ? "bg-white dark:bg-ink-800 shadow-sm text-primary-600 dark:text-primary-400 font-bold"
+                    : "text-base-content/60 hover:text-base-content"
+                }`}
+                onClick={() => setActiveTab("goals")}
+              >
+                <AdjustmentsHorizontalIcon className="w-4 h-4 mr-2" /> 学习目标
+              </a>
+            </div>
           </div>
         )}
 
@@ -245,18 +265,24 @@ export default function EditProfileModal({
                 />
                 <MagnifyingGlassPlusIcon className="w-5 h-5 text-base-content/50" />
               </div>
-              <div className="flex gap-3 justify-end">
-                <button onClick={handleCropCancel} className="btn btn-ghost">
+              <div className="shrink-0 p-4 bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800 mt-auto">
+                <button
+                  onClick={handleCropCancel}
+                  className="btn btn-ghost rounded-xl"
+                >
                   取消
                 </button>
-                <button onClick={handleCropConfirm} className="btn btn-primary">
+                <button
+                  onClick={handleCropConfirm}
+                  className="btn btn-primary rounded-xl px-8"
+                >
                   <CheckIcon className="w-4 h-4 mr-1" /> 确认使用
                 </button>
               </div>
             </div>
           ) : (
             // --- 表单视图 ---
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-col h-full">
               {/* Tab 1: Profile */}
               <div className={activeTab === "profile" ? "block" : "hidden"}>
                 <div className="flex justify-center mb-6">
@@ -293,10 +319,10 @@ export default function EditProfileModal({
                   </div>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">昵称</span>
-                  </label>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                    昵称
+                  </span>
                   <input
                     type="text"
                     value={nickname}
@@ -306,32 +332,32 @@ export default function EditProfileModal({
                   />
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">英语水平</span>
-                  </label>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                    英语水平
+                  </span>
                   <select
                     className="select select-bordered w-full focus:select-primary"
                     name="learnLevel"
                     value={learnLevel}
                     onChange={(e) => setLearnLevel(e.target.value)}
                   >
-                    <option value="General">General (未分级)</option>
-                    <option value="Beginner">Beginner (初级)</option>
-                    <option value="Intermediate">Intermediate (中级)</option>
-                    <option value="Advanced">Advanced (高级)</option>
+                    <option value="General">未分级</option>
+                    <option value="Beginner">初级</option>
+                    <option value="Intermediate">中级</option>
+                    <option value="Advanced">高级</option>
                   </select>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">个人简介</span>
-                  </label>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                    个性签名
+                  </span>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="textarea textarea-bordered h-24 focus:textarea-primary"
-                    placeholder="介绍一下自己..."
+                    className="textarea textarea-bordered h-24 focus:textarea-primary w-full"
+                    placeholder="展示我的独特态度"
                   ></textarea>
                 </div>
               </div>
@@ -345,115 +371,117 @@ export default function EditProfileModal({
                   <span>设定合理的每日目标有助于保持连胜纪录！</span>
                 </div>
 
-                {/* 1. 学习等级 */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">当前英语水平</span>
-                  </label>
-                  <select
-                    className="select select-bordered w-full focus:select-primary"
-                    value={learnLevel}
-                    onChange={(e) => setLearnLevel(e.target.value)}
-                  >
-                    <option value="初级">Beginner (初级)</option>
-                    <option value="中级">Intermediate (中级)</option>
-                    <option value="高级">Advanced (高级)</option>
-                  </select>
-                </div>
-
                 {/* 2. 每日学习时长 */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
                       每日学习时长目标
                     </span>
-                    <span className="badge badge-primary badge-lg">
+                    <span className="inline-flex items-center gap-1 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 px-3 py-1 rounded-full text-xs font-bold border border-primary-200 dark:border-primary-800">
                       {dailyGoal} 分钟
                     </span>
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="120"
-                    step="5"
-                    value={dailyGoal}
-                    onChange={(e) => setDailyGoal(Number(e.target.value))}
-                    className="range range-primary range-sm"
-                  />
-                  <div className="w-full flex justify-between text-xs px-2 mt-2 text-base-content/50">
-                    <span>10m</span>
-                    <span>60m</span>
-                    <span>120m</span>
+                  </div>
+                  <div className="w-full">
+                    <input
+                      type="range"
+                      min="10"
+                      max="120"
+                      step="5"
+                      value={dailyGoal}
+                      onChange={(e) => setDailyGoal(Number(e.target.value))}
+                      className="range range-primary range-sm w-full"
+                    />
+                    <div className="relative w-full h-5 text-xs mt-2 text-base-content/50">
+                      <span className="absolute left-0">10m</span>
+                      <span className="absolute left-1/2 -translate-x-1/2">
+                        60m
+                      </span>
+                      <span className="absolute right-0 text-right">120m</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 3. 每周收听目标 */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">每周收听目标</span>
-                    <span className="badge badge-secondary badge-lg">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                      每周收听目标
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 px-3 py-1 rounded-full text-xs font-bold border border-primary-200 dark:border-primary-800">
                       {listeningGoal} 小时
                     </span>
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    step="0.5"
-                    value={listeningGoal}
-                    onChange={(e) => setListeningGoal(Number(e.target.value))}
-                    className="range range-secondary range-sm"
-                  />
-                  <div className="w-full flex justify-between text-xs px-2 mt-2 text-base-content/50">
-                    <span>1h</span>
-                    <span>10h</span>
-                    <span>20h</span>
+                  </div>
+                  <div className="w-full">
+                    <input
+                      type="range"
+                      min="1"
+                      max="20"
+                      step="0.5"
+                      value={listeningGoal}
+                      onChange={(e) => setListeningGoal(Number(e.target.value))}
+                      className="range range-primary range-sm w-full"
+                    />
+                    <div className="relative w-full h-5 text-xs mt-2 text-base-content/50">
+                      <span className="absolute left-0">1h</span>
+                      <span className="absolute left-1/2 -translate-x-1/2">
+                        10h
+                      </span>
+                      <span className="absolute right-0 text-right">20h</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 4. 每周单词目标 */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">每周单词目标</span>
-                    <span className="badge badge-accent badge-lg">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                      每周单词目标
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 px-3 py-1 rounded-full text-xs font-bold border border-primary-200 dark:border-primary-800">
                       {wordsGoal} 个
                     </span>
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="200"
-                    step="5"
-                    value={wordsGoal}
-                    onChange={(e) => setWordsGoal(Number(e.target.value))}
-                    className="range range-accent range-sm"
-                  />
-                  <div className="w-full flex justify-between text-xs px-2 mt-2 text-base-content/50">
-                    <span>10</span>
-                    <span>100</span>
-                    <span>200</span>
+                  </div>
+                  <div className="w-full">
+                    <input
+                      type="range"
+                      min="10"
+                      max="200"
+                      step="5"
+                      value={wordsGoal}
+                      onChange={(e) => setWordsGoal(Number(e.target.value))}
+                      className="range range-primary range-sm w-full"
+                    />
+                    <div className="relative w-full h-5 text-xs mt-2 text-base-content/50">
+                      <span className="absolute left-0">10</span>
+                      <span className="absolute left-1/2 -translate-x-1/2">
+                        100
+                      </span>
+                      <span className="absolute right-0 text-right">200</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="modal-action">
+              <div className="shrink-0 p-4 bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800 mt-6">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn btn-ghost"
+                  className="btn btn-ghost rounded-xl"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary rounded-xl px-8"
                   disabled={saving}
                 >
                   {saving ? (
                     <span className="loading loading-spinner"></span>
                   ) : (
-                    "保存所有更改"
+                    <>
+                      <CheckIcon className="w-5 h-5 mr-1" /> 保存所有更改
+                    </>
                   )}
                 </button>
               </div>
@@ -461,6 +489,9 @@ export default function EditProfileModal({
           )}
         </div>
       </div>
-    </div>
+      <form method="dialog" className="modal-backdrop">
+        <button onClick={onClose}>close</button>
+      </form>
+    </dialog>
   );
 }

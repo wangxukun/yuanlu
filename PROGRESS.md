@@ -98,6 +98,17 @@
 - **按钮视觉风格统一** (`ActionButtons.tsx` & `LearningPathsClient.tsx`)：剥离 DaisyUI `.btn` 自带的修饰阴影与微缩放，统一采用 `PodcastHero` 的纯粹原生 Tailwind 色块风格（`bg-[#1F7A5C] hover:bg-[#1A6349]` 等）。
 - **频道页 Banner 与暗色模式修复** (`ChannelClient.tsx`)：显式指定浅色模式深绿底色 `bg-[#1F7A5C]` 解决原 `bg-primary` 失效导致对比度缺失问题，增加 `antialiased` 修复深色背景上的文字边缘发虚，并添加 `dark:bg-ink-950` 实现暗色模式下的沉浸式纯黑底板。
 
+### ✅ Step 15：个人中心与弹窗统一精修
+
+- **个人简介与首页融合**：`HomeClient.tsx` 与个人中心全线优先渲染用户 `profile.bio`，空状态下优雅回退至“路虽远行则将至，事虽难做则可成。”；个人中心加入时间规范化为“YYYY年M月D日”中文字符格式。
+- **编辑资料弹窗重构 (`EditProfileModal.tsx`)**：
+  - 风格完全对齐 `ProofreadModal`：采用原生 `<dialog>`、DaisyUI `modal-box` 结构、`rounded-xl` / `shadow-e3` / `bg-base-100`、顶部品牌渐变 Header。
+  - Tabs 标签页升级：重构为 `tabs-boxed` 药丸切页风格，选中态高亮浮起。
+  - 清理重复表单：移除“学习目标”中重复且数值不规范的“英语水平”选择框，仅在“个人资料”保留一处。
+  - 学习目标与输入框布局重构：统一进度条为 `range-primary` 与精致 Tag 角标；解决刻度下标 (`10m/60m/120m`) 对齐问题；重构 Flex 布局，确保桌面端、平板端与移动端下的标题、进度条及输入框均单独一行全宽优雅排版。
+- **查词助手弹窗对齐 (`VocabularyModal.tsx`)**：
+  - 结构样式对齐 `ProofreadModal`：应用 `max-h-[80vh]`、滚动体、`bg-ink-50` 上下文参考框及 `bg-primary-600` 定制风格按钮，修复底部 safe-area 对齐导致按键贴边的 Padding 问题。
+
 ### ✅ Step 13：卡片、弹窗与小组件样式统一规范化
 
 - **弹窗与抽屉层 (Modals & Sheets)**：重构 `ReviewModal`, `TranscriptPreviewModal`, `PremiumModal`, `MobilePlayerSheet`, `VocabularyModal`, `ProofreadModal`, `DeleteCommentModal` 等，统一采用 `rounded-xl`、`shadow-e3` 与 `bg-base-100`，彻底替代内联硬编码样式。

@@ -54,7 +54,7 @@ export default function PersonalCenterPage() {
           nickname: data.nickname || session?.user?.name || "User",
           avatarUrl: data.avatarUrl || session?.user?.image || "",
           avatarFileName: data.avatarFileName || "",
-          bio: data.bio || "用户尚未填写个人简介",
+          bio: data.bio || "路虽远行则将至，事虽难做则可成。",
           learnLevel: data.learnLevel || "中级",
           joinDate: formatDate(data.User.createAt.toString()),
           dailyStudyGoalMins: data.dailyStudyGoalMins || 20,
@@ -125,7 +125,7 @@ export default function PersonalCenterPage() {
       />
 
       {/* 头部身份区 */}
-      <div className="bg-white dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 shadow-sm relative z-nav pt-8">
+      <div className="bg-white dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 shadow-sm pt-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 pb-8">
             {/* 头像与信息 */}

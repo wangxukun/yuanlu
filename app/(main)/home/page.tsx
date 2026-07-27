@@ -8,6 +8,7 @@ import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import { episodeService } from "@/core/episode/episode.service";
 import { WeeklyActivityItemDto } from "@/core/stats/dto";
+import prisma from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "我的主页 | 远路播客",
@@ -29,6 +30,7 @@ export default async function HomePage() {
     items: [] as RecommendedEpisodeDto[],
   };
   let recentPublishedEpisodes: RecommendedEpisodeDto[] = [];
+  let userBio: string | undefined = undefined;
 
   if (user?.userid) {
     const statsPromise = statsService
@@ -58,12 +60,27 @@ export default async function HomePage() {
         return { weeklyActivity: [] };
       });
 
+    // 获取用户资料
+    const profilePromise = prisma.user_profile
+      .findUnique({
+        where: { userid: user.userid },
+        select: { bio: true },
+      })
+      .catch((e) => {
+        console.error("Fetch profile failed", e);
+        return null;
+      });
+
     console.log("STATS_PROMISE: ", statsPromise);
 
     userStats = await statsPromise;
     const history = await historyPromise;
     recommendedData = await recommendedPromise;
     weeklyActivity = (await weeklyActivityPromise).weeklyActivity;
+    const profile = await profilePromise;
+    if (profile?.bio) {
+      userBio = profile.bio;
+    }
 
     if (history && history.length > 0) {
       // 1. 第一条给 Welcome Section 的 ResumeButton
@@ -97,6 +114,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       user={user}
+      userBio={userBio}
       latestHistory={latestHistory}
       userStats={userStats}
       weeklyActivity={weeklyActivity}

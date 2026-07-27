@@ -48,9 +48,10 @@ export function VocabularyModal({
         isModalOpen && "modal-open",
       )}
     >
-      <div className="modal-box mb-[100px] md:mb-0 bg-base-100 sm:max-w-lg rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200 flex flex-col">
-        <div className="bg-primary/5 dark:bg-primary/10 px-6 py-4 flex justify-between items-center border-b border-primary/10 dark:border-primary/20 shrink-0">
-          <h3 className="text-lg font-bold flex items-center gap-2 text-primary dark:text-primary-400">
+      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200">
+        {/* Header */}
+        <div className="shrink-0 bg-gradient-to-r from-primary-500/10 to-accent-500/10 dark:from-primary-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-primary-800/30">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-primary-700 dark:text-primary-400">
             <BookOpenIcon className="w-5 h-5" /> 查词助手
           </h3>
           <button
@@ -61,7 +62,8 @@ export function VocabularyModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Body */}
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-3">
               <h2 className="text-3xl font-serif font-black text-ink-800 dark:text-ink-100 break-all">
@@ -80,7 +82,7 @@ export function VocabularyModal({
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-base-content/40 dark:text-ink-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-base-content/50 dark:text-ink-400 uppercase tracking-wider">
                 定义
               </label>
               {isLoadingDefinition && (
@@ -108,17 +110,21 @@ export function VocabularyModal({
             </div>
           </div>
 
-          <div className="bg-accent-50 dark:bg-accent-950/20 p-4 rounded-xl border border-accent-100 dark:border-accent-900/30">
-            <p className="text-sm text-ink-700 dark:text-ink-300 font-serif italic mb-2">
-              “{selectedContext}”
+          <div className="bg-ink-50 dark:bg-ink-950/40 p-4 rounded-xl border border-ink-100 dark:border-ink-800/50 max-h-40 overflow-y-auto">
+            <p className="text-[10px] font-bold text-ink-400 dark:text-ink-500 uppercase tracking-wider mb-2">
+              上下文参考
             </p>
-            <p className="text-xs text-ink-500 dark:text-ink-400">
+            <p className="text-sm text-ink-600 dark:text-ink-400 font-serif italic leading-relaxed mb-1.5">
+              &ldquo;{selectedContext}&rdquo;
+            </p>
+            <p className="text-xs text-ink-400 dark:text-ink-500 leading-relaxed">
               {selectedTranslation}
             </p>
           </div>
         </div>
 
-        <div className="p-4 pb-safe bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800">
+        {/* Footer */}
+        <div className="shrink-0 p-4 bg-base-200/50 dark:bg-ink-950/50 flex justify-end gap-3 border-t border-base-200 dark:border-ink-800">
           <button
             className="btn btn-ghost rounded-xl"
             onClick={() => setIsModalOpen(false)}
@@ -126,7 +132,7 @@ export function VocabularyModal({
             取消
           </button>
           <button
-            className="btn btn-primary rounded-xl px-8"
+            className="btn rounded-xl px-8 bg-primary-600 hover:bg-primary-700 text-white border-primary-600"
             onClick={onSave}
             disabled={isSaving}
           >
