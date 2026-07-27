@@ -25,7 +25,7 @@ export function TranscriptPreviewModal({
         onClick={() => setIsTranscriptPreviewOpen(false)}
       ></div>
 
-      <div className="relative bg-base-100 rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full border border-base-250/60 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
+      <div className="relative bg-base-100 rounded-xl p-6 sm:p-10 max-w-lg w-full border border-base-200 shadow-e3 animate-in zoom-in-95 duration-300 flex flex-col">
         {/* Close Button */}
         <button
           onClick={() => setIsTranscriptPreviewOpen(false)}

@@ -142,17 +142,17 @@ export default function EpisodeCard({
 
   return (
     <div
-      className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-2xl transition-all duration-300 cursor-pointer relative ${
+      className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-xl shadow-e1 border transition-all duration-300 cursor-pointer relative ${
         isMenuOpen ? "z-20" : "z-0"
       } ${
         isCurrentPlaying || isCurrentPaused
           ? "bg-primary/5 border-primary/30"
-          : "bg-base-100 border-transparent hover:border-base-200 hover:bg-base-50"
+          : "bg-base-100 border-base-200 hover:bg-base-200"
       }`}
       onClick={() => onRowClick(episode as Episode)}
     >
       {/* 封面 & 播放按钮 - 强制使用 aspect-video (16:9) 保持比例一致 */}
-      <div className="relative w-full sm:w-40 lg:w-64 aspect-video shrink-0 rounded-xl overflow-hidden bg-base-200 border border-base-200/50">
+      <div className="relative w-full sm:w-40 lg:w-64 aspect-video shrink-0 rounded-lg overflow-hidden bg-base-200 border border-base-200">
         <Image
           src={displayCover}
           alt={episode.title}

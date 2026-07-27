@@ -31,7 +31,7 @@ export const SubtitleItem = memo(function SubtitleItem({
       className={clsx(
         "group relative rounded-xl p-2 pl-0 pr-0 sm:p-4 transition-all duration-200 sm:border-l-[3px]",
         isActive
-          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-500 shadow-sm"
+          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-500 shadow-e1"
           : "bg-transparent border-transparent hover:bg-base-200 hover:bg-opacity-30",
       )}
     >

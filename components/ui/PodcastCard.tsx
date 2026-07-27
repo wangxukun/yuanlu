@@ -31,7 +31,7 @@ export default function PodcastCard({
         {badge && <div className="absolute top-2 left-2 z-10">{badge}</div>}
 
         {/* Cover Image */}
-        <div className="aspect-square rounded-xl overflow-hidden mb-3 relative bg-ink-100 dark:bg-ink-800 shadow-sm border border-ink-100 dark:border-ink-800">
+        <div className="aspect-square rounded-lg overflow-hidden mb-3 relative bg-base-200 shadow-e1 border border-base-200">
           <Image
             src={coverUrl}
             alt={title}

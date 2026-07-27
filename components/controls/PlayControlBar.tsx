@@ -118,12 +118,12 @@ export default function PlayControlBar() {
       <div
         className={`fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] ${
           isLyricsOpen
-            ? "bottom-0 left-0 w-full max-w-none bg-white dark:bg-ink-900 px-4 py-4 md:px-8 border-t border-ink-200 dark:border-ink-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-none transform-none"
-            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-white/95 dark:bg-ink-900/95 md:bg-white/80 md:dark:bg-ink-900/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] md:shadow-[var(--e3)] md:dark:shadow-[var(--e3)] border-t md:border border-ink-100 dark:border-ink-800 pb-safe"
+            ? "bottom-0 left-0 w-full max-w-none bg-base-100 px-4 py-4 md:px-8 border-t border-base-200 shadow-e3 rounded-none transform-none"
+            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-base-100/95 md:bg-base-100/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-e3 border-t md:border border-base-200 pb-safe"
         }`}
       >
         {/* Mobile Progress Bar - Positioned at the very top of the bar */}
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-ink-100 dark:bg-ink-800 md:hidden overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-base-200 md:hidden overflow-hidden">
           <div
             className="h-full bg-primary-600 transition-all duration-150"
             style={{ width: `${progressPercent}%` }}
@@ -146,7 +146,7 @@ export default function PlayControlBar() {
             className="flex items-center gap-2 md:gap-4 w-auto md:w-1/4 md:min-w-[120px] cursor-pointer group"
             onClick={handleInfoClick}
           >
-            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-ink-200 dark:border-ink-800 relative">
+            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-base-200 relative">
               <img
                 alt="当前播放"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
@@ -274,7 +274,7 @@ export default function PlayControlBar() {
               <span className="text-[10px] text-ink-400 font-medium w-8 text-right">
                 {formatTime(currentTime)}
               </span>
-              <div className="flex-1 h-1 bg-ink-100 dark:bg-ink-800 rounded-full relative group/progress">
+              <div className="flex-1 h-1 bg-base-200 rounded-full relative group/progress">
                 <div
                   className="absolute left-0 top-0 h-full bg-primary-600 rounded-full transition-all duration-150"
                   style={{ width: `${progressPercent}%` }}
@@ -331,7 +331,7 @@ export default function PlayControlBar() {
               <span className="material-symbols-outlined text-ink-400 text-lg">
                 volume_up
               </span>
-              <div className="w-20 h-1 bg-ink-200 dark:bg-ink-700 rounded-full relative flex items-center">
+              <div className="w-20 h-1 bg-base-300 rounded-full relative flex items-center">
                 <div
                   className="absolute left-0 top-0 h-full bg-primary-600 rounded-full pointer-events-none"
                   style={{ width: `${volume * 100}%` }}
@@ -361,8 +361,8 @@ export default function PlayControlBar() {
 
         {/* Playlist Dropdown */}
         {isPlaylistOpen && playlist.length > 0 && (
-          <div className="absolute bottom-full right-4 md:right-0 mb-6 w-[calc(100vw-2rem)] md:w-80 max-h-[60vh] md:max-h-[400px] overflow-hidden flex flex-col bg-white dark:bg-ink-900 rounded-2xl shadow-2xl border border-ink-100 dark:border-ink-800 z-50">
-            <div className="p-4 border-b border-ink-100 dark:border-ink-800 flex justify-between items-center bg-ink-50 dark:bg-ink-800/50">
+          <div className="absolute bottom-full right-4 md:right-0 mb-6 w-[calc(100vw-2rem)] md:w-80 max-h-[60vh] md:max-h-[400px] overflow-hidden flex flex-col bg-base-100 rounded-2xl shadow-e3 border border-base-200 z-50">
+            <div className="p-4 border-b border-base-200 flex justify-between items-center bg-base-200/50">
               <h3 className="font-bold text-sm text-ink-800 dark:text-ink-200">
                 当前播放列表
               </h3>
@@ -379,7 +379,7 @@ export default function PlayControlBar() {
                   }`}
                   onClick={() => playEpisode(ep)}
                 >
-                  <div className="w-8 h-8 rounded shrink-0 overflow-hidden relative border border-ink-100 dark:border-ink-800">
+                  <div className="w-8 h-8 rounded shrink-0 overflow-hidden relative border border-base-200">
                     <img
                       src={ep.coverUrl}
                       alt=""

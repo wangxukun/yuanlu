@@ -124,7 +124,7 @@ export default function MobilePlayerSheet({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-0 z-[200] flex flex-col overflow-hidden bg-white dark:bg-ink-950"
+          className="fixed inset-0 z-[200] flex flex-col overflow-hidden bg-base-100"
         >
           {/* ── Pull handle ── */}
           <div className="flex justify-center pt-3 pb-1 shrink-0">
@@ -158,7 +158,7 @@ export default function MobilePlayerSheet({
           {/* ── Cover & Info ── */}
           <div className="px-8 pt-2 pb-4 shrink-0">
             {/* Large cover */}
-            <div className="relative aspect-square max-w-[280px] mx-auto rounded-2xl overflow-hidden shadow-2xl border border-ink-100 dark:border-ink-800">
+            <div className="relative aspect-square max-w-[280px] mx-auto rounded-xl overflow-hidden shadow-e3 border border-base-200">
               <img
                 src={currentEpisode.coverUrl}
                 alt={currentEpisode.title}
@@ -274,7 +274,7 @@ export default function MobilePlayerSheet({
           </div>
 
           {/* ── Transcript Section ── */}
-          <div className="flex-1 overflow-y-auto border-t border-ink-100 dark:border-ink-800">
+          <div className="flex-1 overflow-y-auto border-t border-base-200">
             <div className="px-2 pt-3 pb-8">
               {isLoadingSubtitles ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">

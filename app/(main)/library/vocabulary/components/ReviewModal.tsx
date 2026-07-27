@@ -41,7 +41,7 @@ export function ReviewModal({
         onClick={() => setIsReviewOpen(false)}
       />
       {/* Modal Content */}
-      <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-ink-900 sm:rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-base-100 sm:rounded-xl shadow-e3 border border-base-200 overflow-hidden">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-ink-50 dark:bg-ink-950 shrink-0 mt-safe xl:mt-0">
           <div className="flex items-center space-x-2">

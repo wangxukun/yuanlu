@@ -20,7 +20,7 @@ export default function PremiumModal() {
       ></div>
 
       {/* Modal Card */}
-      <div className="relative bg-base-100 rounded-[2.5rem] p-8 sm:p-10 max-w-sm w-full border border-black/5 dark:border-white/10 shadow-2xl shadow-black/10 animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
+      <div className="relative bg-base-100 rounded-xl p-8 sm:p-10 max-w-sm w-full border border-base-200 shadow-e3 animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
         {/* Close Button X */}
         <button
           onClick={closePremiumModal}

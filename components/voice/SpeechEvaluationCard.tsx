@@ -86,9 +86,9 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   );
 
   return (
-    <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-100 dark:border-ink-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
+    <div className="bg-base-100 rounded-xl border border-base-200 shadow-e1 overflow-hidden transition-all">
       {/* 1. Target Text Section */}
-      <div className="p-6 border-b border-ink-50 dark:border-ink-700 relative">
+      <div className="p-6 border-b border-base-200 relative">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-2">
             <h3 className="text-lg font-medium text-ink-900 dark:text-ink-100 leading-relaxed font-serif">
@@ -171,14 +171,14 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       </div>
 
       {/* 2. Recording & Result Section */}
-      <div className="bg-ink-50/50 dark:bg-ink-900/30 min-h-[140px] flex flex-col justify-center">
+      <div className="bg-base-200/50 min-h-[140px] flex flex-col justify-center">
         {/* 状态: IDLE (有结果 或 无结果) */}
         {!isRecording && !isProcessing && (
           <div className="p-6">
             {result ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                 {/* A. 单词级反馈 */}
-                <div className="bg-white dark:bg-ink-800 p-4 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
+                <div className="bg-base-100 p-4 rounded-lg border border-base-200 shadow-e1">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold uppercase text-ink-400 dark:text-ink-500 flex items-center gap-1">
                       <Mic size={12} /> 识别结果
@@ -229,7 +229,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 {/* B. 详细仪表盘 */}
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 items-center">
                   {/* 综合评分 (大图标) */}
-                  <div className="col-span-4 sm:col-span-1 flex flex-row sm:flex-col items-center justify-between sm:justify-center bg-white dark:bg-ink-800 p-3 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
+                  <div className="col-span-4 sm:col-span-1 flex flex-row sm:flex-col items-center justify-between sm:justify-center bg-base-100 p-3 rounded-lg border border-base-200 shadow-e1">
                     <span className="text-xs font-bold uppercase text-ink-400 dark:text-ink-500 mb-0 sm:mb-1">
                       综合评分
                     </span>
@@ -244,7 +244,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </div>
 
                   {/* 详细指标 */}
-                  <div className="col-span-4 grid grid-cols-4 gap-2 bg-white dark:bg-ink-800 p-3 rounded-xl border border-ink-200 dark:border-ink-700 shadow-sm">
+                  <div className="col-span-4 grid grid-cols-4 gap-2 bg-base-100 p-3 rounded-lg border border-base-200 shadow-e1">
                     <MetricItem label="发音" value={result.accuracyScore} />
                     <div className="w-px bg-ink-100 dark:bg-ink-700 h-8 self-center"></div>
                     <MetricItem label="流利度" value={result.fluencyScore} />

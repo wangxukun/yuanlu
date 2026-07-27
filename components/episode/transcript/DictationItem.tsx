@@ -90,7 +90,7 @@ export const DictationItem = memo(function DictationItem({
       className={clsx(
         "group relative rounded-xl p-2 pl-0 pr-0 sm:p-4 transition-all duration-200 sm:border-l-[3px]",
         isActive
-          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-500 shadow-md transform scale-[1.02] z-10"
+          ? "bg-primary-50 dark:bg-primary-900/20 border-primary-500 shadow-e2 transform scale-[1.02] z-10"
           : "bg-transparent border-transparent opacity-50",
       )}
       onClick={() => {

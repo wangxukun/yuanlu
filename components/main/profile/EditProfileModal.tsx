@@ -182,7 +182,7 @@ export default function EditProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="bg-base-100 rounded-xl shadow-e3 border border-base-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-base-200 shrink-0">
           <h3 className="font-bold text-lg">

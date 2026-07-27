@@ -64,7 +64,7 @@ export default function List({ title, items }: ListProps) {
             key={index}
             role="button"
             onClick={() => handleItemClick(item.podcastid)}
-            className="group relative bg-base-100 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer border border-base-200"
+            className="group relative bg-base-100 rounded-lg p-4 shadow-e1 hover:shadow-e2 transition-all cursor-pointer border border-base-200"
           >
             {/* 图片容器 */}
             <div className="relative h-48 w-48 mb-4 rounded-md overflow-hidden">

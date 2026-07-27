@@ -29,7 +29,7 @@ export default function AchievementsCard() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-ink-900 p-6 rounded-2xl border border-ink-100 dark:border-ink-800 min-h-[180px] animate-pulse">
+      <div className="bg-base-100 p-6 rounded-xl border border-base-200 shadow-e1 min-h-[180px] animate-pulse">
         <div className="h-6 bg-ink-100 dark:bg-ink-800 w-24 rounded mb-6"></div>
         <div className="grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map((i) => (
@@ -57,7 +57,7 @@ export default function AchievementsCard() {
   const displayList = sortedAchievements.slice(0, displayCount);
 
   return (
-    <div className="bg-white dark:bg-ink-900 p-6 rounded-2xl border border-ink-100 dark:border-ink-800">
+    <div className="bg-base-100 p-6 rounded-xl border border-base-200 shadow-e1">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-ink-900 dark:text-ink-50">
           远路里程碑 ({achievements.filter((a) => a.unlocked).length})

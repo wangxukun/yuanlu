@@ -48,7 +48,7 @@ export function VocabularyModal({
         isModalOpen && "modal-open",
       )}
     >
-      <div className="modal-box mb-[100px] md:mb-0 bg-base-100 dark:bg-ink-900 sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-ink-800 flex flex-col">
+      <div className="modal-box mb-[100px] md:mb-0 bg-base-100 sm:max-w-lg rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200 flex flex-col">
         <div className="bg-primary/5 dark:bg-primary/10 px-6 py-4 flex justify-between items-center border-b border-primary/10 dark:border-primary/20 shrink-0">
           <h3 className="text-lg font-bold flex items-center gap-2 text-primary dark:text-primary-400">
             <BookOpenIcon className="w-5 h-5" /> 查词助手

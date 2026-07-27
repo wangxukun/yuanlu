@@ -101,7 +101,7 @@ export function ProofreadModal({
         isOpen && "modal-open",
       )}
     >
-      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 dark:bg-ink-900 sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-0 overflow-hidden border border-base-200 dark:border-ink-800">
+      <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200">
         {/* Header */}
         <div className="shrink-0 bg-gradient-to-r from-info-500/10 to-accent-500/10 dark:from-info-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-info-800/30">
           <h3 className="text-lg font-bold flex items-center gap-2 text-info-700 dark:text-info-400">

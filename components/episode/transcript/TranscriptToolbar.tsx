@@ -27,7 +27,7 @@ export function TranscriptToolbar({
   setTranscriptMode,
 }: TranscriptToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-ink-200 dark:border-ink-800 sticky top-0 bg-white dark:bg-ink-950 bg-opacity-95 dark:bg-opacity-95 backdrop-blur z-20 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200 sticky top-0 bg-base-100/95 backdrop-blur z-20 py-2">
       <div className="flex items-center gap-2">
         {isPlayingThisEpisode ? (
           <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">
@@ -41,13 +41,13 @@ export function TranscriptToolbar({
       </div>
 
       {/* Mode Switch (Read vs Dictate) */}
-      <div className="flex bg-ink-50 dark:bg-ink-900 rounded-lg p-1">
+      <div className="flex bg-base-200 rounded-lg p-1">
         <button
           onClick={() => setTranscriptMode("read")}
           className={clsx(
             "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
             transcriptMode === "read"
-              ? "bg-white dark:bg-ink-800 text-primary-600 dark:text-primary-400 shadow-sm"
+              ? "bg-base-100 text-primary-600 dark:text-primary-400 shadow-e1"
               : "text-ink-500 hover:text-ink-700 dark:hover:text-ink-300",
           )}
         >
@@ -58,7 +58,7 @@ export function TranscriptToolbar({
           className={clsx(
             "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
             transcriptMode === "dictate"
-              ? "bg-white dark:bg-ink-800 text-primary-600 dark:text-primary-400 shadow-sm"
+              ? "bg-base-100 text-primary-600 dark:text-primary-400 shadow-e1"
               : "text-ink-500 hover:text-ink-700 dark:hover:text-ink-300",
           )}
         >

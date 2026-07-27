@@ -98,6 +98,12 @@
 - **按钮视觉风格统一** (`ActionButtons.tsx` & `LearningPathsClient.tsx`)：剥离 DaisyUI `.btn` 自带的修饰阴影与微缩放，统一采用 `PodcastHero` 的纯粹原生 Tailwind 色块风格（`bg-[#1F7A5C] hover:bg-[#1A6349]` 等）。
 - **频道页 Banner 与暗色模式修复** (`ChannelClient.tsx`)：显式指定浅色模式深绿底色 `bg-[#1F7A5C]` 解决原 `bg-primary` 失效导致对比度缺失问题，增加 `antialiased` 修复深色背景上的文字边缘发虚，并添加 `dark:bg-ink-950` 实现暗色模式下的沉浸式纯黑底板。
 
+### ✅ Step 13：卡片、弹窗与小组件样式统一规范化
+
+- **弹窗与抽屉层 (Modals & Sheets)**：重构 `ReviewModal`, `TranscriptPreviewModal`, `PremiumModal`, `MobilePlayerSheet`, `VocabularyModal`, `ProofreadModal`, `DeleteCommentModal` 等，统一采用 `rounded-xl`、`shadow-e3` 与 `bg-base-100`，彻底替代内联硬编码样式。
+- **核心卡片层 (Core Cards)**：重构 `PodcastCard`, `EpisodeCard`, `SpeechEvaluationCard`, `ImmersiveCard`, `AchievementsCard` 等卡片，统一阴影层级为 `shadow-e1`（Hover 浮起 `shadow-e2`），采用 DaisyUI 语义色 `bg-base-100`/`bg-base-200`，消除暗黑模式下样式不匹配与碎片化现象。
+- **列表与微组件层 (Lists & Micro-components)**：重构 `List`, `SubtitleItem`, `DictationItem`, `CommentItem`, `TranscriptToolbar`, `PlayControlBar` 等组件，规范边框为 `border-base-200` 并收敛阴影与背景色。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
@@ -109,7 +115,7 @@
 
 ### 设计系统遗留
 
-- [ ] **阴影统一**：卡片 e0（1px 边框）→ hover e2 的模式未全站推广
+- [x] **阴影统一**：卡片 e1/e2 与弹窗 e3 规范已在全站核心卡片、弹窗与列表小组件推广完成
 - [ ] z-index magic number（190/195/200/210）替换为 `--z-*` 变量 (部分完成)
 - [ ] `--header-height-mobile: 80px` 与实际 `h-14`(56px) 不一致
 - [ ] `bg-base-*` / `bg-ink-*` 混用清理（两套底色写法已同值，但类名未统一）

@@ -42,7 +42,7 @@ export function CommentItem({
     <div
       id={`comment-${comment.commentid}`}
       className={clsx(
-        "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 border-b border-base-300 last:border-0 p-4 transition-all",
+        "flex gap-3 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 border-b border-base-200 last:border-0 p-4 transition-all",
         isReply ? "mt-4" : "mt-6",
       )}
     >
