@@ -1,14 +1,20 @@
 // components/player/MobilePlayerBar.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { usePlayerStore } from "@/store/player-store";
 import MobilePlayerSheet from "./MobilePlayerSheet";
 
 export default function MobilePlayerBar() {
-  const { currentEpisode, isPlaying, currentTime, duration, togglePlay } =
-    usePlayerStore();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const {
+    currentEpisode,
+    isPlaying,
+    currentTime,
+    duration,
+    togglePlay,
+    isMobileSheetOpen,
+    setIsMobileSheetOpen,
+  } = usePlayerStore();
 
   if (!currentEpisode) return null;
 
@@ -37,7 +43,7 @@ export default function MobilePlayerBar() {
 
         <div
           className="bg-white/95 dark:bg-ink-900/95 backdrop-blur-2xl border-t border-ink-100 dark:border-ink-800"
-          onClick={() => setIsSheetOpen(true)}
+          onClick={() => setIsMobileSheetOpen(true)}
         >
           <div className="flex items-center gap-3 px-4 h-[var(--mini-player-height)]">
             {/* Cover thumbnail */}
@@ -100,8 +106,8 @@ export default function MobilePlayerBar() {
 
       {/* Full-screen Player Sheet */}
       <MobilePlayerSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
+        isOpen={isMobileSheetOpen}
+        onClose={() => setIsMobileSheetOpen(false)}
       />
     </>
   );

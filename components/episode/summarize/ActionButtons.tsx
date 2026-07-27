@@ -31,12 +31,17 @@ export function ActionButtons({
   } = hookOptions;
 
   const setIsLyricsOpen = usePlayerStore((s) => s.setIsLyricsOpen);
+  const setIsMobileSheetOpen = usePlayerStore((s) => s.setIsMobileSheetOpen);
 
   // 开始精听：开始播放并打开沉浸式逐字稿
   const handleImmersivePlay = (e: React.MouseEvent) => {
     handlePlay(e);
     if (!isPlayingThis && !isLocked) {
-      setIsLyricsOpen(true);
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setIsMobileSheetOpen(true);
+      } else {
+        setIsLyricsOpen(true);
+      }
     }
   };
 

@@ -47,6 +47,9 @@ interface PlayerState {
   // 沉浸式逐字稿（FullContentTranscript）开关，全局可控
   isLyricsOpen: boolean;
   setIsLyricsOpen: (isOpen: boolean) => void;
+  // 移动端播放器全屏面板开关
+  isMobileSheetOpen: boolean;
+  setIsMobileSheetOpen: (isOpen: boolean) => void;
   playNext: () => void;
   playPrevious: () => void;
 
@@ -73,6 +76,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   loopMode: "none",
   isShuffle: false,
   isPlaylistOpen: false,
+  isLyricsOpen: false,
+  isMobileSheetOpen: false,
 
   setAudioRef: (ref: HTMLAudioElement) => set({ audioRef: ref }),
   setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
@@ -108,8 +113,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
   setIsPlaylistOpen: (isOpen) => set({ isPlaylistOpen: isOpen }),
-  isLyricsOpen: false,
   setIsLyricsOpen: (isOpen) => set({ isLyricsOpen: isOpen }),
+  setIsMobileSheetOpen: (isOpen: boolean) => set({ isMobileSheetOpen: isOpen }),
 
   playNext: () => {
     const { playlist, currentEpisode, isShuffle, loopMode } = get();
