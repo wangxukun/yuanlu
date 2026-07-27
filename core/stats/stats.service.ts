@@ -1,13 +1,15 @@
 import prisma from "@/lib/prisma";
+import { subWeeks } from "date-fns";
 import {
-  startOfWeek,
-  endOfWeek,
-  subWeeks,
-  startOfDay,
-  addDays,
-  subDays,
-  isSameDay,
-} from "date-fns";
+  chinaToday,
+  chinaDayOf,
+  chinaStartOfWeek,
+  chinaEndOfWeek,
+  addUTCDays,
+  subUTCDays,
+  isSameUTCDay,
+  dateToUTCKey,
+} from "@/core/utils/china-date";
 import {
   UpdateUserActivityDto,
   UserHomeStatsDto,
@@ -28,7 +30,7 @@ export const statsService = {
     // 因为 user_daily_activity 表的 listeningSeconds 是 Int 类型。
     // 即使前端传来浮点数，这里也会安全地处理，避免 Prisma 报错。
     const safeSeconds = Math.round(seconds);
-    const today = startOfDay(new Date()); // 获取今天00:00:00.000
+    const today = chinaToday(); // 中国时区今天 UTC 午夜，与 @db.Date 一致
 
     // 1. 更新用户最后活跃时间 (User 表)
     // 使用 Promise.allSettled 或独立的 try-catch 确保即使这步失败（极少见），也不影响下面的统计数据
@@ -222,12 +224,12 @@ export const statsService = {
   ): Promise<WeeklyActivityDto> {
     const now = new Date();
     const targetWeek = weekOffset > 0 ? subWeeks(now, weekOffset) : now;
-    const weekStart = startOfWeek(targetWeek, { weekStartsOn: 1 }); // 周一开始
+    const weekStart = chinaStartOfWeek(targetWeek); // 中国时区的周一 UTC 午夜
 
     const DAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
     // 查询该周的所有活动记录
-    const weekEnd = addDays(weekStart, 6);
+    const weekEnd = addUTCDays(weekStart, 6);
     const activities = await prisma.user_daily_activity.findMany({
       where: {
         userid: userId,
@@ -242,17 +244,17 @@ export const statsService = {
       },
     });
 
-    // 构建日期到秒数的映射
+    // 构建日期到秒数的映射（用 UTC key 保证匹配）
     const dateMap = new Map<string, number>();
     for (const activity of activities) {
-      const key = startOfDay(activity.date).toISOString();
+      const key = dateToUTCKey(activity.date);
       dateMap.set(key, activity.listeningSeconds);
     }
 
     // 生成完整的7天数据（没有记录的天数为0）
     const weeklyActivity = DAY_LABELS.map((label, index) => {
-      const dayDate = addDays(weekStart, index);
-      const key = startOfDay(dayDate).toISOString();
+      const dayDate = addUTCDays(weekStart, index);
+      const key = dateToUTCKey(dayDate);
       const seconds = dateMap.get(key) || 0;
       return {
         day: label,
@@ -279,19 +281,23 @@ export const statsService = {
     if (activities.length === 0) return 0;
 
     let streak = 0;
-    const today = new Date();
-    const yesterday = subDays(today, 1);
+    const today = chinaToday();
+    const yesterday = subUTCDays(today, 1);
     const latestDate = activities[0].date;
 
-    if (!isSameDay(latestDate, today) && !isSameDay(latestDate, yesterday)) {
+    if (
+      !isSameUTCDay(latestDate, today) &&
+      !isSameUTCDay(latestDate, yesterday)
+    ) {
       return 0;
     }
 
-    let currentDate = latestDate;
+    let currentDate = chinaDayOf(latestDate);
     for (const activity of activities) {
-      if (isSameDay(activity.date, currentDate)) {
+      const activityDay = chinaDayOf(activity.date);
+      if (isSameUTCDay(activityDay, currentDate)) {
         streak++;
-        currentDate = subDays(currentDate, 1);
+        currentDate = subUTCDays(currentDate, 1);
       } else {
         break;
       }
@@ -303,8 +309,8 @@ export const statsService = {
     userId: string,
     dateInWeek: Date,
   ): Promise<number> {
-    const start = startOfWeek(dateInWeek, { weekStartsOn: 1 });
-    const end = endOfWeek(dateInWeek, { weekStartsOn: 1 });
+    const start = chinaStartOfWeek(dateInWeek);
+    const end = chinaEndOfWeek(dateInWeek);
 
     const result = await prisma.user_daily_activity.aggregate({
       where: {
@@ -321,7 +327,7 @@ export const statsService = {
   },
 
   async getTodayActivity(userId: string) {
-    const today = startOfDay(new Date());
+    const today = chinaToday();
     return prisma.user_daily_activity.findUnique({
       where: {
         userid_date: { userid: userId, date: today },
@@ -330,7 +336,7 @@ export const statsService = {
   },
 
   async getWeeklyWordsCount(userId: string, dateInWeek: Date): Promise<number> {
-    const start = startOfWeek(dateInWeek, { weekStartsOn: 1 });
+    const start = chinaStartOfWeek(dateInWeek);
     return prisma.vocabulary.count({
       where: {
         userid: userId,

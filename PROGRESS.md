@@ -104,6 +104,13 @@
 - **核心卡片层 (Core Cards)**：重构 `PodcastCard`, `EpisodeCard`, `SpeechEvaluationCard`, `ImmersiveCard`, `AchievementsCard` 等卡片，统一阴影层级为 `shadow-e1`（Hover 浮起 `shadow-e2`），采用 DaisyUI 语义色 `bg-base-100`/`bg-base-200`，消除暗黑模式下样式不匹配与碎片化现象。
 - **列表与微组件层 (Lists & Micro-components)**：重构 `List`, `SubtitleItem`, `DictationItem`, `CommentItem`, `TranscriptToolbar`, `PlayControlBar` 等组件，规范边框为 `border-base-200` 并收敛阴影与背景色。
 
+### ✅ Step 14：数据库时区问题与日期统计修复
+
+- **时区问题根因修复** (`core/utils/china-date.ts` & `core/stats/stats.service.ts`)：解决 `date-fns` 的 `startOfDay` 在 UTC+8 环境下将本地时间转换为 UTC 传给 Prisma 时，被 PostgreSQL `@db.Date` 截断导致存储日期比实际中国日期早一天（CST 7/27 -> 存储 7/26）的问题。
+- **中国时区工具库封装** (`core/utils/china-date.ts`)：新增 `chinaToday`, `chinaStartOfWeek`, `chinaEndOfWeek`, `addUTCDays`, `subUTCDays`, `isSameUTCDay`, `dateToUTCKey` 等工具方法，统一返回以 China Standard Time (UTC+8) 为准的 UTC 午夜 Date / Key 对象。
+- **统计服务彻底重构** (`stats.service.ts`)：将活动打卡 `updateDailyActivity`、首页及报告页图表 `getWeeklyActivityChart`、连续天数 `calculateStreak` 等核心逻辑全部迁移至 `china-date` 工具集，消除了读取与写入端不匹配及连续打卡计算断层的 Bug。
+- **历史数据全量迁移与合并** (`scripts/fix-activity-dates.js`)：编写并成功执行一次性全量修正脚本，根据记录的真实创建时间 `createAt (Timestamptz)` 自动重计算并更正 `user_daily_activity` 表的 `date` 字段，对已有同天记录自动合并秒数与学习词汇量，修复了全库 1100+ 条历史偏差记录。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
