@@ -9,10 +9,20 @@ export function useTranscriptScroll(
   currentTime: number,
   autoScroll: boolean,
   idPrefix: string = "subtitle",
+  options?: {
+    transcriptMode?: "read" | "dictate";
+    loopingIndex?: number | null;
+    lastJumpTimeRef?: React.MutableRefObject<number>;
+  },
 ) {
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const rafRef = useRef<number | null>(null);
   const activeIndexRef = useRef<number>(-1);
+
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // 1. Sync Highlight Logic
   useEffect(() => {
@@ -29,6 +39,27 @@ export function useTranscriptScroll(
 
     const loop = () => {
       const t = audioRef.currentTime;
+
+      // Enforce loop boundary if configured
+      let loopTarget = optionsRef.current?.loopingIndex ?? null;
+      if (optionsRef.current?.transcriptMode === "dictate") {
+        loopTarget = activeIndexRef.current;
+      }
+
+      if (loopTarget !== null && loopTarget >= 0) {
+        const sub = processedSubtitles[loopTarget];
+        if (sub && optionsRef.current?.lastJumpTimeRef) {
+          if (
+            Date.now() - optionsRef.current.lastJumpTimeRef.current > 500 &&
+            t >= sub.end
+          ) {
+            audioRef.currentTime = sub.start;
+            rafRef.current = requestAnimationFrame(loop);
+            return;
+          }
+        }
+      }
+
       let foundIndex = -1;
 
       const currentSub = processedSubtitles[lastFoundIndex];

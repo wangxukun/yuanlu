@@ -54,6 +54,7 @@ export default function InteractiveTranscript({
   const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
     "read",
   );
+  const lastJumpTimeRef = useRef<number>(0);
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +102,11 @@ export default function InteractiveTranscript({
     processedSubtitles,
     currentTime,
     autoScroll,
+    "subtitle",
+    {
+      transcriptMode,
+      lastJumpTimeRef,
+    },
   );
 
   const { selectionMenu, setSelectionMenu } = useTranscriptSelection(
@@ -116,35 +122,10 @@ export default function InteractiveTranscript({
     } else {
       setPlaybackRate(1.0);
     }
-  }, [transcriptMode]);
-
-  // 2. Single Sentence Loop
-  React.useEffect(() => {
-    if (
-      transcriptMode === "dictate" &&
-      isPlayingThisEpisode &&
-      isPlaying &&
-      audioRef
-    ) {
-      const activeSub = processedSubtitles[activeIndex];
-      // If we overshoot the end of the current sentence, loop back to start
-      if (activeSub && currentTime >= activeSub.end) {
-        audioRef.currentTime = activeSub.start;
-        setCurrentTime(activeSub.start);
-      }
-    }
-  }, [
-    transcriptMode,
-    isPlayingThisEpisode,
-    isPlaying,
-    audioRef,
-    currentTime,
-    activeIndex,
-    processedSubtitles,
-    setCurrentTime,
-  ]);
+  }, [transcriptMode, setPlaybackRate]);
 
   const handleDictationSuccess = useCallback(() => {
+    lastJumpTimeRef.current = Date.now();
     // Jump to next subtitle or pause
     const nextSub = processedSubtitles[activeIndex + 1];
     if (nextSub && audioRef) {
@@ -158,6 +139,7 @@ export default function InteractiveTranscript({
   // --- 交互逻辑 ---
   const handleJump = useCallback(
     (startTime: number) => {
+      lastJumpTimeRef.current = Date.now();
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
       if (!checkExclusivePlay(episode, session)) return;
 

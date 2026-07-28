@@ -216,6 +216,7 @@ export default function FullContentTranscript({
 
   // ── States ──
   const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
+  const lastJumpTimeRef = useRef<number>(0);
 
   const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>("both");
   const [isProofreadingMode, setIsProofreadingMode] = useState(false);
@@ -266,6 +267,11 @@ export default function FullContentTranscript({
     currentTime,
     autoScroll,
     "fct-sub",
+    {
+      transcriptMode,
+      loopingIndex,
+      lastJumpTimeRef,
+    },
   );
 
   const { selectionMenu, setSelectionMenu } = useTranscriptSelection(
@@ -273,20 +279,6 @@ export default function FullContentTranscript({
     processed,
     "fct-sub-",
   );
-
-  // ── Single-sentence loop (Read mode explicit loop) ──
-  useEffect(() => {
-    if (loopingIndex === null || !isPlayingThis || !audioRef) return;
-    const sub = processed[loopingIndex];
-    if (!sub) return;
-    const check = () => {
-      if (audioRef.currentTime >= sub.end) {
-        audioRef.currentTime = sub.start;
-      }
-    };
-    const iv = setInterval(check, 100);
-    return () => clearInterval(iv);
-  }, [loopingIndex, isPlayingThis, audioRef, processed]);
 
   // ── Dictation Mode Logic ──
   useEffect(() => {
@@ -297,31 +289,8 @@ export default function FullContentTranscript({
     }
   }, [transcriptMode, setPlaybackRate]);
 
-  useEffect(() => {
-    if (
-      transcriptMode === "dictate" &&
-      isPlayingThis &&
-      isPlaying &&
-      audioRef
-    ) {
-      const activeSub = processed[activeIndex];
-      if (activeSub && currentTime >= activeSub.end) {
-        audioRef.currentTime = activeSub.start;
-        setCurrentTime(activeSub.start);
-      }
-    }
-  }, [
-    transcriptMode,
-    isPlayingThis,
-    isPlaying,
-    audioRef,
-    currentTime,
-    activeIndex,
-    processed,
-    setCurrentTime,
-  ]);
-
   const handleDictationSuccess = useCallback(() => {
+    lastJumpTimeRef.current = Date.now();
     const nextSub = processed[activeIndex + 1];
     if (nextSub && audioRef) {
       audioRef.currentTime = nextSub.start;
@@ -334,6 +303,7 @@ export default function FullContentTranscript({
   // ── Handlers ──
   const handleJump = useCallback(
     (t: number) => {
+      lastJumpTimeRef.current = Date.now();
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
       if (!checkExclusivePlay(episode, session)) return;
 

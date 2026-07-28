@@ -76,7 +76,7 @@
 ### ✅ Step 9：听写模式（核心新功能）
 
 - `DictationItem.tsx`：隐藏 Input 捕获键盘与手机软键盘输入，实时逐词比对引擎（正确 `text-primary-600` / 错误 `text-error line-through` / 待填 `border-dashed` 虚线下划线），同句 3 次拼写错误触发提示
-- `InteractiveTranscript.tsx` 与 `FullContentTranscript.tsx` 双端集成：内联与全屏沉浸逐字稿均支持「📖 精读 / ✍️ 听写」模式切换，听写模式下自动切至 0.8x 慢速播放、当前句子单句死循环播放以及拼写完成后自动跳至下一句
+- `InteractiveTranscript.tsx` 与 `FullContentTranscript.tsx` 多端集成：桌面端/平板端（`FullContentTranscript`）与移动端（`InteractiveTranscript`）均支持「📖 精读 / ✍️ 听写」模式切换；听写模式下自动切至 0.8x 慢速播放，底层通过 `useTranscriptScroll` 在 60fps 动画帧侦听层原生实现单句死循环锁定与拼写正确后的自动下一句跳动（解决了计时器竞态与 React 闭包导致移动端死循环失效的问题）。
 
 ### ✅ Step 10：学习报告页旅程化
 
