@@ -34,7 +34,7 @@ export function ReviewModal({
   if (!isReviewOpen || reviewQueue.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
@@ -43,17 +43,17 @@ export function ReviewModal({
       {/* Modal Content */}
       <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-base-100 sm:rounded-xl shadow-e3 border border-base-200 overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center bg-ink-50 dark:bg-ink-950 shrink-0 mt-safe xl:mt-0">
-          <div className="flex items-center space-x-2">
-            <BrainCircuit className="text-primary" size={20} />
-            <span className="font-bold text-base-content/90">复习中</span>
-            <span className="bg-ink-200 dark:bg-ink-800 text-base-content/80 text-xs px-2 py-0.5 rounded-full">
+        <div className="shrink-0 bg-gradient-to-r from-primary-500/10 to-accent-500/10 dark:from-primary-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-primary-800/30 mt-safe xl:mt-0">
+          <div className="flex items-center space-x-2 text-lg font-bold text-primary-700 dark:text-primary-400">
+            <BrainCircuit className="w-5 h-5" />
+            <span>复习中</span>
+            <span className="bg-primary-500/20 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400 text-xs px-2 py-0.5 rounded-full ml-1">
               {currentReviewIndex + 1} / {reviewQueue.length}
             </span>
           </div>
           <button
             onClick={() => setIsReviewOpen(false)}
-            className="p-2 hover:bg-ink-200 dark:hover:bg-ink-800 rounded-full text-base-content/40 transition-colors"
+            className="btn btn-sm btn-circle btn-ghost"
           >
             <X size={20} />
           </button>
@@ -180,11 +180,11 @@ export function ReviewModal({
           </div>
 
           {/* 控制栏 Footer */}
-          <div className="p-4 xl:p-6 border-t border-base-200 bg-ink-50 dark:bg-ink-950 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
+          <div className="p-4 xl:p-6 border-t border-base-200 dark:border-ink-800 bg-base-200/50 dark:bg-ink-950/50 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:pb-6">
             {!isCardFlipped ? (
               <button
                 onClick={() => setIsCardFlipped(true)}
-                className="w-full py-4 bg-primary text-primary-content rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-focus transition-all active:scale-[0.98]"
+                className="w-full h-12 btn rounded-xl font-bold shadow-lg shadow-primary/20 bg-primary-600 hover:bg-primary-700 text-white border-primary-600 transition-all active:scale-[0.98]"
               >
                 显示答案
               </button>

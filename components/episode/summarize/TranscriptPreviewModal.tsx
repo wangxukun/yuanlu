@@ -19,7 +19,7 @@ export function TranscriptPreviewModal({
   if (!isTranscriptPreviewOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-350">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-350">
       <div
         className="absolute inset-0 bg-base-300/80 backdrop-blur-md cursor-pointer"
         onClick={() => setIsTranscriptPreviewOpen(false)}
