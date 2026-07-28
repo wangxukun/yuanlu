@@ -232,10 +232,10 @@ export default function ForgotPasswordForm() {
             <button
               type="button"
               onClick={handleSendCode}
-              className={`btn join-item w-[110px] h-12 font-normal text-white transition-all ${
+              className={`btn border-none join-item w-[110px] h-12 font-normal text-white transition-all ${
                 countdown > 0
                   ? "btn-disabled bg-base-300 text-base-content/30"
-                  : "btn-primary shadow-lg shadow-primary/20"
+                  : "bg-primary-600 hover:bg-primary-700"
               }`}
               disabled={countdown > 0}
             >
@@ -331,7 +331,7 @@ export default function ForgotPasswordForm() {
 
           <button
             type="submit"
-            className="btn btn-primary col-span-2 rounded-xl h-11 min-h-0 text-base font-semibold shadow-primary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-white"
+            className="w-full col-span-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               loading ||
               !isPasswordValid ||

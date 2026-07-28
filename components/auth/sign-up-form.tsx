@@ -163,8 +163,8 @@ export default function SignUpForm() {
       {/* 用户信息展示区 */}
       <div className="flex flex-col items-center justify-center mb-6">
         <div className="avatar placeholder mb-2">
-          <div className="bg-base-200 text-secondary rounded-full w-16 h-16 ring ring-secondary ring-offset-base-100 ring-offset-2 grid place-items-center">
-            <UserIcon className="mt-4 block w-8 h-8" />
+          <div className="bg-base-200 text-primary rounded-full w-16 h-16 ring ring-primary ring-offset-base-100 ring-offset-2 grid place-items-center">
+            <UserIcon className="mt-4 block w-8 h-8 text-primary" />
           </div>
         </div>
         <div className="text-center">
@@ -180,13 +180,13 @@ export default function SignUpForm() {
         {/* 密码输入 - 包含动态反馈 */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-secondary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
               suppressHydrationWarning
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary transition-all rounded-xl h-12 
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 
                 ${password && !isPasswordValid ? "input-warning" : ""} 
                 ${isPasswordValid ? "input-success" : ""}`}
               placeholder="设置登录密码"
@@ -214,7 +214,7 @@ export default function SignUpForm() {
               <input
                 suppressHydrationWarning
                 type="text"
-                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-secondary focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
+                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
                 placeholder="6位验证码"
                 value={verificationCode}
                 onChange={(e) => {
@@ -223,7 +223,6 @@ export default function SignUpForm() {
                   );
                   if (verificationCodeError) setVerificationCodeError("");
                 }}
-                // 优化：虽然未点击发送前可以输入，但通常用户习惯是先点发送
               />
             </div>
 
@@ -231,8 +230,8 @@ export default function SignUpForm() {
             <button
               type="button"
               onClick={handleSendCode}
-              className={`btn join-item w-[110px] h-12 font-normal text-white transition-all
-                ${!isPasswordValid ? "btn-disabled bg-base-300 text-base-content/30" : "btn-secondary"}`}
+              className={`btn border-none join-item w-[110px] h-12 font-normal text-white transition-all
+                ${!isPasswordValid ? "btn-disabled bg-base-300 text-base-content/30" : "bg-primary-600 hover:bg-primary-700"}`}
               disabled={!isPasswordValid || countdown > 0}
             >
               {countdown > 0 ? `${countdown}s` : "获取验证码"}
@@ -266,7 +265,7 @@ export default function SignUpForm() {
             <input
               suppressHydrationWarning
               type="checkbox"
-              className="checkbox checkbox-sm checkbox-secondary rounded-md"
+              className="checkbox checkbox-sm rounded-md border-base-content/50 checked:bg-primary-400 checked:border-primary-400 transition-colors"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
             />
@@ -275,7 +274,7 @@ export default function SignUpForm() {
               <a
                 href="/auth/user-agreement"
                 target="_blank"
-                className="link link-secondary mx-1"
+                className="text-primary-600 dark:text-primary-400 font-medium hover:underline mx-1 transition-colors"
               >
                 用户协议
               </a>
@@ -283,7 +282,7 @@ export default function SignUpForm() {
               <a
                 href="/auth/privacy-policy"
                 target="_blank"
-                className="link link-secondary mx-1"
+                className="text-primary-600 dark:text-primary-400 font-medium hover:underline mx-1 transition-colors"
               >
                 隐私政策
               </a>
@@ -299,12 +298,13 @@ export default function SignUpForm() {
             type="button"
           >
             <ArrowUturnLeftIcon className="w-4 h-4" />
+            返回
           </button>
 
           {/* 3. 注册按钮控制：所有条件必须满足 */}
           <button
             type="submit"
-            className="btn btn-secondary col-span-2 rounded-xl h-11 min-h-0 text-base font-semibold shadow-secondary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-white disabled:bg-base-300 disabled:text-base-content/30 disabled:shadow-none"
+            className="w-full col-span-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               loading || !isPasswordValid || !verificationCode || !agreed
             }

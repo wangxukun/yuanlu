@@ -44,7 +44,7 @@ export default function LoginHomeBtn() {
   if (!session) {
     return (
       <button
-        className="btn btn-primary btn-sm gap-2 shadow-sm shadow-primary/20"
+        className="btn btn-sm bg-primary-600 hover:bg-primary-700 border-none text-white gap-2 shadow-sm shadow-primary/20 transition-all"
         onClick={() => {
           const modal = document.getElementById(
             "email_check_modal_box",

@@ -52,7 +52,7 @@ export default function PremiumModal() {
               closePremiumModal();
               router.push("/auth/subscribe");
             }}
-            className="w-full btn btn-primary h-12 rounded-2xl text-sm font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full btn bg-primary-600 hover:bg-primary-700 border-none text-white h-12 rounded-2xl text-sm font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             去看看赞助方案
           </button>

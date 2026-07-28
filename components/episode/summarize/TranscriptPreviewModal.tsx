@@ -189,7 +189,7 @@ export function TranscriptPreviewModal({
                 setIsTranscriptPreviewOpen(false);
                 router.push("/auth/subscribe");
               }}
-              className="flex-1 btn btn-primary h-11 min-h-[44px] rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex-1 btn bg-primary-600 hover:bg-primary-700 border-none text-white h-11 min-h-[44px] rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               去看看赞助方案
             </button>

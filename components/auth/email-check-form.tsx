@@ -161,7 +161,7 @@ const EmailCheckForm = () => {
         <div className="flex flex-col gap-3">
           <button
             type="submit"
-            className="btn btn-primary w-full rounded-xl h-12 text-base font-semibold shadow-primary/20 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (
