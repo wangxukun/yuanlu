@@ -40,8 +40,8 @@ export default function MinePage() {
   const displayName = user?.nickname || user?.email?.split("@")[0] || "User";
   const hasAvatar =
     user?.avatarUrl &&
-    user.avatarUrl !== "default_avatar_url" &&
-    user.avatarUrl.startsWith("http");
+    user?.avatarUrl !== "default_avatar_url" &&
+    user?.avatarUrl.startsWith("http");
 
   return (
     <div className="min-h-[calc(100vh-var(--mobile-bottom-total))] bg-base-200 text-base-content pb-24 px-4 pt-6">
@@ -73,7 +73,7 @@ export default function MinePage() {
             <div className="w-16 h-16 relative rounded-full overflow-hidden border border-base-300 bg-base-200 flex-shrink-0">
               {hasAvatar ? (
                 <Image
-                  src={user.avatarUrl!}
+                  src={user?.avatarUrl || ""}
                   alt={displayName}
                   fill
                   className="object-cover"
@@ -88,11 +88,11 @@ export default function MinePage() {
             <div className="flex-1 overflow-hidden">
               <h2 className="text-xl font-bold truncate">{displayName}</h2>
               <div className="flex items-center gap-2 mt-1">
-                {user.role === "ADMIN" ? (
+                {user?.role === "ADMIN" ? (
                   <span className="text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md">
                     管理员
                   </span>
-                ) : user.role === "PREMIUM" ? (
+                ) : user?.role === "PREMIUM" ? (
                   <span className="text-xs text-accent-500 font-bold bg-accent-500/10 px-2 py-0.5 rounded-md">
                     高级会员
                   </span>
@@ -103,7 +103,7 @@ export default function MinePage() {
                 )}
               </div>
               <p className="text-xs text-base-content/50 mt-1 truncate">
-                {user.email}
+                {user?.email}
               </p>
             </div>
           </div>
