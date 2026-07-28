@@ -8,7 +8,7 @@ const tabs = [
   { name: "首页", href: "/home", icon: "home" },
   { name: "发现", href: "/discover", icon: "explore" },
   { name: "生词本", href: "/library/vocabulary", icon: "translate" },
-  { name: "我的", href: "/auth/personal-center", icon: "person" },
+  { name: "我的", href: "/auth/mine", icon: "person" },
 ];
 
 export default function MobileBottomNav() {

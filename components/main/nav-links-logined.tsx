@@ -7,10 +7,25 @@ import clsx from "clsx";
 import { useSession } from "next-auth/react";
 
 const links = [
-  { name: "学习路径", href: "/library/learning-paths", iconName: "school" },
+  {
+    name: "学习路径",
+    href: "/library/learning-paths",
+    iconName: "school",
+    mobileHide: true,
+  },
   { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
-  { name: "收听历史", href: "/library/history", iconName: "history" },
-  { name: "我的收藏", href: "/library/favorites", iconName: "favorite" },
+  {
+    name: "收听历史",
+    href: "/library/history",
+    iconName: "history",
+    mobileHide: true,
+  },
+  {
+    name: "我的收藏",
+    href: "/library/favorites",
+    iconName: "favorite",
+    mobileHide: true,
+  },
 ];
 
 export default function NavLinksLogined() {
@@ -39,7 +54,8 @@ export default function NavLinksLogined() {
             href={link.href}
             onClick={closeDrawer}
             className={clsx(
-              "flex items-center gap-4 px-4 py-3 text-sm transition-all duration-200 scale-95 active:scale-90 transition-transform",
+              link.mobileHide ? "hidden md:flex" : "flex",
+              "items-center gap-4 px-4 py-3 text-sm transition-all duration-200 scale-95 active:scale-90 transition-transform",
               {
                 "font-bold text-primary-700 border-r-4 border-primary-600 bg-primary-50/50":
                   pathname === link.href,
