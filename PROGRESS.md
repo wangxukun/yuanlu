@@ -146,10 +146,20 @@
 - **学习路径对比度与品牌色修复**：修复了 `LearningPathDetailClient.tsx` 页面头部大区域的颜色冲突。弃用了不可靠的 DaisyUI `bg-primary` 和 `text-neutral-content`，统一转为原生的 `bg-primary-600` 搭配 `text-white`，解决了特定主题下深绿背景上文字发暗无法看清的问题。官方课程角标与播放按钮也一并对齐到纯净的 `bg-primary-600`。
 - **收藏页图标风格统一**：将 `FavoritesPage.tsx` 中的书签图标进行了实心填充风格 (`fill-current` / `style`) 处理，与全站核心大图标（如学习路径的 Map 页面背景图标）的重量感保持一致，并修正了品牌绿色值，避免了主题漂移。
 
+### ✅ Step 20：移动端 Chrome 底部导航栏跳动根治
+
+- **问题**：移动端 Chrome 向上滑动时，`fixed bottom-0` 的底部导航栏 (`MobileBottomNav.tsx`) 会随地址栏动画先上移、手势结束后才跳回底部；Edge 与 iOS 均正常。
+- **根因（浏览器行为变化，非代码回归）**：Chrome 135+ 在 Android 上启用 edge-to-edge（2025-04 起按设备分批推送），滚动时底部系统区域 (chin) 收起/展开，`env(safe-area-inset-bottom)` 变为**滚动过程中实时变化的动态值**。盒子尺寸依赖动态 env() 的 fixed 元素无法被 Chrome 合成器锚定，只能等主线程在动画结束后重排，表现为"先上移再跳回"。
+- **排除的方案**：① App Shell 内层滚动（能根治但会导致地址栏永不自动隐藏，放弃）；② `pb-safe` 放回 fixed 元素自身触发 Chrome opt-out 启发式（实测未生效）；③ `visualViewport` JS 逐帧锚定（该 API 的 resize 事件只在地址栏动画**结束后**触发一次，原理上无法逐帧跟踪，放弃）。
+- **最终方案（纯 CSS，保留地址栏自动隐藏）**：`globals.css` 新增 `--safe-bottom-max: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px))`——用 Chrome 专为该问题提供的**恒定最大安全区**取代动态 inset，底栏盒子尺寸恒定 + `bottom:0` 即可被合成器逐帧锚定，任何滑动速度下纹丝不动；不支持的浏览器（Edge/iOS/旧 Chrome，其 inset 本为静态）自动回退为当前 inset。已应用于 `MobileBottomNav`（padding 与玻璃背景收归 fixed 元素自身）、`MobilePlayerBar`、`--mobile-bottom-total`、`--mobile-bottom-with-player` 及激活指示点。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
 解法：`globals.css` 中用 `html[data-theme="light/dark"]`（特异度 0,1,1 > daisy 的 0,1,0）覆写 `--color-primary` 等全套变量。
+
+**Chrome 135+ Android 的 `env(safe-area-inset-bottom)` 是滚动时动态变化的值**（edge-to-edge 底部 chin 收起/展开）。移动端底部 fixed 元素（底栏、Mini 播放器等）的 padding/bottom 一旦依赖它，就无法被合成器锚定，滚动时必现"先上移再跳回"的跳动；JS 监听 `visualViewport` 也无解（事件只在动画结束后触发一次）。
+解法：底部固定元素的间距一律用 `globals.css` 的 `--safe-bottom-max`（恒定 `safe-area-max-inset-bottom` + 回退），且 padding 与背景必须放在 fixed 元素自身。此问题只能在真机 Chrome（手势导航模式）复现，桌面 DevTools 模拟无效。详见 Step 20。
 
 ---
 

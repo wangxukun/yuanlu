@@ -27,8 +27,8 @@ export default function MobilePlayerBar() {
         id="mobile-mini-player"
         className="fixed z-[195] md:hidden"
         style={{
-          bottom:
-            "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))",
+          // 使用恒定的 --safe-bottom-max，避免 Chrome 动态 inset 导致跳动（同底部导航栏）
+          bottom: "calc(var(--bottom-nav-height) + var(--safe-bottom-max))",
           left: 0,
           right: 0,
         }}

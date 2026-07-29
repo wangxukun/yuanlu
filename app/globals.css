@@ -12,13 +12,24 @@
   --bottom-nav-height: 64px;
   /* Mini 播放器高度 */
   --mini-player-height: 60px;
+  /* 稳定的底部安全间距。
+     Chrome 135+ Android edge-to-edge 下 env(safe-area-inset-bottom) 是动态值
+     （滚动时底部 chin 收起/展开会实时变化），依赖它的 fixed 元素无法被合成器
+     锚定，只能等主线程在动画结束后重排——表现为底栏先随滚动上移再跳回。
+     safe-area-max-inset-bottom 是恒定最大值（不随滚动变化），用它做间距后
+     底栏盒子尺寸恒定、bottom:0 可被合成器逐帧锚定，任何滑动速度下都不跳动。
+     不支持的浏览器（Edge/iOS/旧 Chrome，其 inset 本来就是静态的）回退为当前 inset。 */
+  --safe-bottom-max: env(
+    safe-area-max-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
   /* 移动端总底部占位 = 导航 + mini播放器 + safe area */
   --mobile-bottom-total: calc(
-    var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)
+    var(--bottom-nav-height) + var(--safe-bottom-max)
   );
   --mobile-bottom-with-player: calc(
     var(--bottom-nav-height) + var(--mini-player-height) +
-      env(safe-area-inset-bottom, 0px)
+      var(--safe-bottom-max)
   );
 
   /* === 远路设计系统 · 色板（与 tailwind.config.mjs 保持一致，供内联样式/SVG/图表使用） === */
