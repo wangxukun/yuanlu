@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useTransition } from "react";
 import {
-  Heart,
   Search,
   Clock,
   Layers,
@@ -12,6 +11,7 @@ import {
   Trash2,
   PlayCircle,
 } from "lucide-react";
+import { BookmarkSquareIcon } from "@heroicons/react/24/outline";
 import { FavoriteSeries, FavoriteEpisode } from "@/core/favorites/dto";
 import {
   removePodcastFavoriteAction,
@@ -109,7 +109,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-6 mb-6 xl:mb-8 border-b border-base-200 pb-6 xl:pb-8 transition-colors">
         <div>
           <h1 className="text-2xl xl:text-3xl font-extrabold text-base-content flex items-center">
-            <Heart className="mr-3 text-error fill-error" size={28} />
+            <BookmarkSquareIcon className="w-8 h-8 mr-3 text-primary" />
             我的收藏
           </h1>
           <p className="text-base-content/60 mt-2 text-sm xl:text-base">
@@ -193,7 +193,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       className="p-2 bg-base-100/90 backdrop-blur rounded-full text-error hover:bg-base-100 shadow-sm transition-colors"
                       title="取消收藏"
                     >
-                      <Heart size={16} fill="currentColor" />
+                      <BookmarkSquareIcon className="w-4 h-4 text-error" />
                     </button>
                   </div>
                 </div>
@@ -244,7 +244,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                           : series.plays}
                       </span>
                       <span className="flex items-center">
-                        <Heart size={12} className="mr-1" />
+                        <BookmarkSquareIcon className="w-3 h-3 mr-1 inline" />
                         {series.followers}
                       </span>
                     </div>
@@ -261,7 +261,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       {(series.plays / 1000).toFixed(0)} 播放
                     </div>
                     <div className="flex items-center">
-                      <Heart size={12} className="mr-1" />
+                      <BookmarkSquareIcon className="w-3 h-3 mr-1 inline" />
                       {series.followers} 收藏
                     </div>
                   </div>
@@ -272,7 +272,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   onClick={(e) => handleRemove(e, "podcast", series.id)}
                   className="xl:hidden p-2 text-error bg-error/10 rounded-full transition-colors self-center shrink-0 mr-1"
                 >
-                  <Heart size={18} fill="currentColor" />
+                  <BookmarkSquareIcon className="w-[18px] h-[18px] text-error" />
                 </button>
               </div>
             ))}
@@ -414,13 +414,13 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
 const EmptyState = ({ type }: { type: "podcasts" | "episodes" }) => (
   <div className="py-20 text-center bg-base-100 rounded-[32px] border-2 border-dashed border-base-200 transition-colors w-full max-w-full overflow-hidden">
     <div className="mx-auto w-24 h-24 bg-base-200 rounded-full flex items-center justify-center mb-6">
-      <Heart className="text-base-content/20" size={48} />
+      <BookmarkSquareIcon className="w-12 h-12 text-base-content/20" />
     </div>
     <h3 className="text-xl xl:text-2xl font-bold text-base-content mb-2 px-4">
       还没有收藏任何{type === "podcasts" ? "播客" : "单集"}
     </h3>
     <p className="text-base-content/60 max-w-sm mx-auto mb-8 text-sm xl:text-base px-4">
-      开始探索并点击心形图标，将你喜欢的
+      开始探索并点击收藏图标，将你喜欢的
       {type === "podcasts" ? "播客系列" : "精彩单集"}保存到这里以便稍后学习。
     </p>
     <a

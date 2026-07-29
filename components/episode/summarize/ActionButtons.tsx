@@ -2,13 +2,14 @@ import {
   Play,
   Pause,
   Lock,
-  Bookmark,
   Share2,
   Mic,
   Download,
   FileDown,
   Loader2,
 } from "lucide-react";
+import { BookmarkSquareIcon as BookmarkSquareOutlineIcon } from "@heroicons/react/24/outline";
+import { BookmarkSquareIcon as BookmarkSquareSolidIcon } from "@heroicons/react/24/solid";
 import { UseEpisodeSummarizeReturn } from "./useEpisodeSummarize";
 import { usePlayerStore } from "@/store/player-store";
 
@@ -116,9 +117,11 @@ export function ActionButtons({
               : "text-ink-500 hover:text-[#1F7A5C] hover:bg-[#1F7A5C]/5 md:hover:bg-transparent"
           }`}
         >
-          <Bookmark
-            className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`}
-          />
+          {isFavorited ? (
+            <BookmarkSquareSolidIcon className="w-5 h-5" />
+          ) : (
+            <BookmarkSquareOutlineIcon className="w-5 h-5" />
+          )}
           <span className="hidden md:inline">收藏</span>
         </button>
 

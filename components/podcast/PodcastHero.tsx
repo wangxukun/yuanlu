@@ -1,7 +1,9 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Play, Bookmark, Share2, Tv, Headphones } from "lucide-react";
+import { Play, Share2, Tv, Headphones } from "lucide-react";
+import { BookmarkSquareIcon as BookmarkSquareOutlineIcon } from "@heroicons/react/24/outline";
+import { BookmarkSquareIcon as BookmarkSquareSolidIcon } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
 
 interface PodcastHeroProps {
@@ -109,9 +111,11 @@ export default function PodcastHero({
             } ${isLoadingFavorite ? "opacity-50 cursor-not-allowed" : ""}`}
             title="收藏"
           >
-            <Bookmark
-              className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`}
-            />
+            {isFavorited ? (
+              <BookmarkSquareSolidIcon className="w-5 h-5" />
+            ) : (
+              <BookmarkSquareOutlineIcon className="w-5 h-5" />
+            )}
             <span className="hidden sm:inline">收藏</span>
           </button>
 
