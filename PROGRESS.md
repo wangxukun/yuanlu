@@ -140,6 +140,12 @@
 - **移动端未读消息强提醒**：为移动端底部导航栏的“我的”图标（`MobileBottomNav.tsx`）和个人中心页的“消息通知”菜单栏（`auth/mine/page.tsx`）加入了未读消息的强红点提示，保证了多端状态一致与提醒无死角。修复了 Tailwind 色彩体系在嵌套条件下的 `bg-error` 与 `ring` 等渲染截断问题。
 - **收藏图标语意统一**：为了避免收藏与点赞混淆，将散落在 `PodcastHero.tsx`, `ActionButtons.tsx`, `FavoritesPage.tsx` 以及 `nav-links-logined.tsx` 中的 Heart 或原版 Bookmark 图标，全线统一为更具书签和沉浸学习语境的 `BookmarkSquareIcon`（Outline/Solid），实现了 UI 语义规范的大统一。
 
+### ✅ Step 19：UI 细节精修与主题色统一
+
+- **个人中心缺省昵称体验优化**：优化了个人中心 (`personal-center/page.tsx`) 的展示逻辑，当用户未设置昵称或昵称为默认 "User" 时，自动截取用户邮箱 (`email`) 前缀进行兜底展示，提升了用户初始状态的个性化体验。
+- **学习路径对比度与品牌色修复**：修复了 `LearningPathDetailClient.tsx` 页面头部大区域的颜色冲突。弃用了不可靠的 DaisyUI `bg-primary` 和 `text-neutral-content`，统一转为原生的 `bg-primary-600` 搭配 `text-white`，解决了特定主题下深绿背景上文字发暗无法看清的问题。官方课程角标与播放按钮也一并对齐到纯净的 `bg-primary-600`。
+- **收藏页图标风格统一**：将 `FavoritesPage.tsx` 中的书签图标进行了实心填充风格 (`fill-current` / `style`) 处理，与全站核心大图标（如学习路径的 Map 页面背景图标）的重量感保持一致，并修正了品牌绿色值，避免了主题漂移。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。

@@ -109,7 +109,10 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-6 mb-6 xl:mb-8 border-b border-base-200 pb-6 xl:pb-8 transition-colors">
         <div>
           <h1 className="text-2xl xl:text-3xl font-extrabold text-base-content flex items-center">
-            <BookmarkSquareIcon className="w-8 h-8 mr-3 text-primary" />
+            <BookmarkSquareIcon
+              className="w-8 h-8 mr-3"
+              style={{ color: "#1A6349" }}
+            />
             我的收藏
           </h1>
           <p className="text-base-content/60 mt-2 text-sm xl:text-base">

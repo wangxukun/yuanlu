@@ -152,7 +152,9 @@ export default function PersonalCenterPage() {
               <div className="flex-1 min-w-0 space-y-2 sm:space-y-3 text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-ink-900 dark:text-ink-100 truncate">
-                    {profile.nickname || "User"}
+                    {profile.nickname && profile.nickname !== "User"
+                      ? profile.nickname
+                      : session?.user?.email?.split("@")[0] || "User"}
                   </h1>
                   <div className="inline-flex items-center gap-1 bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-bold border border-accent-200 dark:border-accent-800 self-start sm:self-auto w-fit">
                     <span className="material-symbols-outlined text-[14px]">

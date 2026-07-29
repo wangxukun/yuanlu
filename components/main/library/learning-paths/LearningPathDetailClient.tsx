@@ -11,7 +11,6 @@ import {
   ListPlus,
   Trash2,
   Map,
-  ArrowLeft,
   X,
   Search,
   Plus,
@@ -270,20 +269,13 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950 pb-20 font-sans w-full overflow-x-hidden transition-colors duration-300">
       {/* Detail Header */}
-      {/* [Refactor] bg-ink-900 -> bg-neutral text-neutral-content: 保持深色头部风格，但在主题系统中更语义化 */}
-      <div className="bg-primary text-neutral-content pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* [Refactor] bg-ink-900 -> bg-neutral text-white: 保持深色头部风格，但在主题系统中更语义化 */}
+      <div className="bg-primary-600 text-white pt-20 pb-10 md:pt-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10 pointer-events-none">
           <Map size={400} className="fill-current" />
         </div>
 
         <div className="max-w-4xl mx-auto relative z-10">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-neutral-content/60 hover:text-neutral-content transition-colors mb-6 md:mb-8 group"
-          >
-            <ArrowLeft size={16} className="mr-2" /> 返回学习路径
-          </button>
-
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left">
             {/* Cover Image */}
             <div className="w-40 aspect-video md:w-64 md:aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 shrink-0 mx-auto md:mx-0 bg-base-300">
@@ -301,12 +293,12 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
             <div className="flex-1 w-full min-w-0">
               <div className="flex items-center justify-center md:justify-start gap-3 mb-2 flex-wrap">
                 {selectedPath.isOfficial && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary text-primary-content">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary-600 text-white">
                     Official Course
                   </span>
                 )}
                 {/* [Refactor] bg-white/10: 保持透明度背景，适应 neutral 背景 */}
-                <span className="flex items-center gap-1 text-xs font-medium text-neutral-content/80 bg-white/10 px-2 py-0.5 rounded">
+                <span className="flex items-center gap-1 text-xs font-medium text-white/80 bg-white/10 px-2 py-0.5 rounded">
                   {selectedPath.isPublic ? (
                     <Globe size={10} />
                   ) : (
@@ -318,13 +310,13 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
               <h1 className="text-2xl md:text-4xl font-extrabold mb-3 leading-tight break-words">
                 {selectedPath.pathName}
               </h1>
-              <p className="text-base md:text-lg text-neutral-content/80 leading-relaxed max-w-2xl mx-auto md:mx-0 break-words">
+              <p className="text-base md:text-lg text-white/80 leading-relaxed max-w-2xl mx-auto md:mx-0 break-words">
                 {selectedPath.description}
               </p>
-              <div className="flex items-center justify-center md:justify-start gap-4 mt-6 text-sm text-neutral-content/60">
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-6 text-sm text-white/60">
                 <span>
                   创建者{" "}
-                  <strong className="text-neutral-content">
+                  <strong className="text-white">
                     {selectedPath.creatorName}
                   </strong>
                 </span>
@@ -346,7 +338,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
               onClick={handlePlayAll}
               disabled={selectedPath.items.length === 0}
               // [Refactor] shadow-primary-200 -> shadow-primary/20: 阴影颜色适配
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-lg font-bold hover:brightness-110 transition-all shadow-md shadow-primary/20 text-sm md:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-bold transition-all shadow-md shadow-primary-600/20 text-sm md:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlayCircle size={20} /> 播放全部
             </button>
