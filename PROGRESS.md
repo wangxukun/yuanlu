@@ -132,7 +132,13 @@
 - **移动端 "我的" 聚合页 (`/auth/mine`)**：隐藏移动端 `Header` 释放屏幕空间，重定向底部导航的"我的"至全新 `/auth/mine` 页面。采用卡片式设计聚合了用户状态、主题切换、系统消息、退出登录，以及从左侧导航精简迁移出来的学习路线（学习路径/收听历史/我的收藏）。桌面端/平板端原导航保持原貌不变。
 - **授权及订阅按钮品牌色对齐**：移除了全站所有身份表单及订阅对话框依赖于 DaisyUI 的 `btn-primary`（会导致在部分模式下退化为默认蓝色），统一采用原生 Tailwind 类 `bg-primary-600 hover:bg-primary-700` 以达成百分百品牌绿。
 - **注册复选框跨模式对比度修复**：移除了注册协议复选框的预设色彩，通过 `border-base-content/50` 以及 `checked:bg-primary-400` 让暗/亮模式下的复选框不仅与主题绿协调，还能保证足够的可见度。
-- **生词复习与文稿预览弹窗层级及风格重构**：将生词复习弹窗 (`ReviewModal.tsx`) 的 Header 与 Footer 视觉完全对齐至查词助手组件（包括渐变头、透明描边、同源的关闭与操作按钮）；并针对移动端设备，将复习弹窗与文稿预览弹窗 (`TranscriptPreviewModal.tsx`) 的 `z-index` 全局提升至 `200`，彻底解决被移动端底导栏 (`z-190`) 遮挡底部操作区的问题。
+- **生词复习与文稿预览弹窗层级及风格重构**：将生词复习弹窗 (`ReviewModal.tsx`) 的 Header 与 Footer 视觉完全全对齐至查词助手组件（包括渐变头、透明描边、同源的关闭与操作按钮）；并针对移动端设备，将复习弹窗与文稿预览弹窗 (`TranscriptPreviewModal.tsx`) 的 `z-index` 全局提升至 `200`，彻底解决被移动端底导栏 (`z-190`) 遮挡底部操作区的问题。
+
+### ✅ Step 18：移动端通知提醒与图标语义统一
+
+- **全局状态管理重构** (`store/notification-store.ts`)：新建 Zustand Store 将消息通知的抓取逻辑与未读数状态提取为全局级状态。消除了 `NotificationBell.tsx` 独立拉取状态可能导致的移动端休眠或重复请求，并为移动端的 `MobileBottomNav` 实现了安全可靠的兜底轮询（防止移动端隐藏 Header 时导致请求不触发）。
+- **移动端未读消息强提醒**：为移动端底部导航栏的“我的”图标（`MobileBottomNav.tsx`）和个人中心页的“消息通知”菜单栏（`auth/mine/page.tsx`）加入了未读消息的强红点提示，保证了多端状态一致与提醒无死角。修复了 Tailwind 色彩体系在嵌套条件下的 `bg-error` 与 `ring` 等渲染截断问题。
+- **收藏图标语意统一**：为了避免收藏与点赞混淆，将散落在 `PodcastHero.tsx`, `ActionButtons.tsx`, `FavoritesPage.tsx` 以及 `nav-links-logined.tsx` 中的 Heart 或原版 Bookmark 图标，全线统一为更具书签和沉浸学习语境的 `BookmarkSquareIcon`（Outline/Solid），实现了 UI 语义规范的大统一。
 
 ### ⚠️ 踩过的坑（重要）
 

@@ -17,10 +17,12 @@ import {
   BellIcon,
 } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
+import { useNotificationStore } from "@/store/notification-store";
 
 export default function MinePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   // 避免在客户端渲染前闪烁
   const [mounted, setMounted] = useState(false);
@@ -184,8 +186,18 @@ export default function MinePage() {
             href="/notifications"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <BellIcon className="w-6 h-6 text-base-content/60 mr-4" />
+            <div className="relative mr-4 w-6 h-6">
+              <BellIcon className="w-6 h-6 text-base-content/60" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-error-500 ring-2 ring-base-100 z-10"></span>
+              )}
+            </div>
             <span className="flex-1 font-semibold">消息通知</span>
+            {unreadCount > 0 && (
+              <span className="mr-3 px-2 py-0.5 bg-error/10 text-error rounded-full text-xs font-bold">
+                {unreadCount} 条新通知
+              </span>
+            )}
             <ChevronRightIcon className="w-5 h-5 text-base-content/30" />
           </Link>
         )}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { useNotificationStore } from "@/store/notification-store";
 
 interface Notification {
   notificationid: number;
@@ -13,11 +14,6 @@ interface Notification {
   isRead: boolean;
   type: string;
   targetUrl: string | null;
-}
-
-interface NotificationListResponse {
-  unreadCount: number;
-  notifications: Notification[];
 }
 
 /** 通知类型对应的中文标签 */
@@ -32,35 +28,20 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function NotificationBell() {
-  const [data, setData] = useState<NotificationListResponse | null>(null);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const notifications = useNotificationStore((s) => s.notifications);
+  const initPolling = useNotificationStore((s) => s.initPolling);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /** 拉取通知列表 */
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notification/list");
-      if (!res.ok) return;
-      const json: NotificationListResponse = await res.json();
-      setData(json);
-    } catch {
-      // 静默失败，不影响主界面
-    }
-  }, []);
-
-  // 初始加载 + 轮询（每 60 秒刷新一次）及全局事件监听
+  // 初始加载 + 轮询及全局事件监听
   useEffect(() => {
-    fetchNotifications();
-    const timer = setInterval(fetchNotifications, 60_000);
-
-    window.addEventListener("notifications_updated", fetchNotifications);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("notifications_updated", fetchNotifications);
-    };
-  }, [fetchNotifications]);
+    initPolling();
+  }, [initPolling]);
 
   // 点击外部关闭下拉
   useEffect(() => {
@@ -76,45 +57,11 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /** 标记单条已读 */
-  const markAsRead = async (id: number) => {
-    await fetch("/api/notification/read", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notificationId: id }),
-    });
-    setData((prev) => {
-      if (!prev) return prev;
-      const updated = prev.notifications.map((n) =>
-        n.notificationid === id ? { ...n, isRead: true } : n,
-      );
-      const unreadCount = updated.filter((n) => !n.isRead).length;
-      return { unreadCount, notifications: updated };
-    });
-    window.dispatchEvent(new Event("notifications_updated"));
-  };
-
-  /** 全部标记已读 */
-  const markAllAsRead = async () => {
+  const handleMarkAllAsRead = async () => {
     setLoading(true);
-    await fetch("/api/notification/read", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ all: true }),
-    });
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        unreadCount: 0,
-        notifications: prev.notifications.map((n) => ({ ...n, isRead: true })),
-      };
-    });
+    await markAllAsRead();
     setLoading(false);
-    window.dispatchEvent(new Event("notifications_updated"));
   };
-
-  const unreadCount = data?.unreadCount ?? 0;
-  const notifications = data?.notifications ?? [];
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -156,7 +103,7 @@ export default function NotificationBell() {
             </Link>
             {unreadCount > 0 && (
               <button
-                onClick={markAllAsRead}
+                onClick={handleMarkAllAsRead}
                 disabled={loading}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50"
               >
