@@ -2,19 +2,12 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Mic,
-  Trophy,
-  Activity,
-  CheckCircle2,
-  Info,
-} from "lucide-react";
+import { ArrowLeft, Settings, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
 import { Episode } from "@/core/episode/episode.entity";
-import { Subtitle, SpeechPracticeRecord } from "@/lib/types"; // 引入 Server Action
+import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 import { useUIStore } from "@/store/ui-store";
 
 interface VoiceEvaluationClientProps {
@@ -32,34 +25,26 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 }) => {
   const router = useRouter();
 
-  // Local state to store new attempts in this session
   const [sessionRecords, setSessionRecords] =
     useState<SpeechPracticeRecord[]>(previousRecords);
-  // 状态：当前正在播放音频的字幕 ID
   const [playingSubtitleId, setPlayingSubtitleId] = useState<number | null>(
     null,
   );
 
-  const stats = useMemo(() => {
-    // 简单的统计逻辑，可以根据需求优化去重逻辑
-    const attempts = sessionRecords.length;
-    const avgScore =
-      attempts > 0
-        ? sessionRecords.reduce(
-            (acc, curr) => acc + (curr.accuracyScore || 0),
-            0,
-          ) / attempts
-        : 0;
+  // 用于 Theater Mode：记录当前正在练习的卡片
+  const [activeCardId, setActiveCardId] = useState<number | null>(
+    subtitles.length > 0 ? subtitles[0].id : null,
+  );
 
-    // Count unique sentences practiced (based on start time)
+  const stats = useMemo(() => {
+    const attempts = sessionRecords.length;
     const uniqueIds = new Set(sessionRecords.map((r) => r.targetStartTime))
       .size;
     const progress = Math.min(
       100,
       (uniqueIds / Math.max(subtitles.length, 1)) * 100,
     );
-
-    return { attempts, avgScore, progress, uniqueIds };
+    return { attempts, progress, uniqueIds };
   }, [sessionRecords, subtitles]);
 
   const handleEvaluation = async (
@@ -70,9 +55,8 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
     const targetSub = subtitles.find((s) => s.id === subtitleId);
     if (!targetSub) return;
 
-    // 1. Optimistic Update (立即更新 UI)
     const newRecord: SpeechPracticeRecord = {
-      recognitionid: Date.now(), // 临时 ID
+      recognitionid: Date.now(),
       userid: "current",
       episodeid: episode.episodeid,
       speechText: recordedText,
@@ -84,7 +68,21 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
     setSessionRecords((prev) => [...prev, newRecord]);
 
-    // 2. Call Server Action (后台保存)
+    // 如果分数不错，1.5秒后自动跳到下一句 (Theater Mode)
+    if (score >= 80) {
+      const currentIndex = subtitles.findIndex((s) => s.id === subtitleId);
+      if (currentIndex !== -1 && currentIndex < subtitles.length - 1) {
+        setTimeout(() => {
+          const nextId = subtitles[currentIndex + 1].id;
+          setActiveCardId(nextId);
+          // 可选平滑滚动
+          document
+            .getElementById(`card-${nextId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 1500);
+      }
+    }
+
     const result = await saveSpeechResult(
       episode.episodeid,
       targetSub.textEn,
@@ -95,23 +93,18 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
     if (result.error) {
       toast.error("Failed to save progress");
-      // 可选：回滚状态
-    } else {
-      toast.success("Result saved!");
     }
   };
 
-  // 用于获取特定字幕的*最新*结果的辅助函数。
   const getLatestResult = (subtitleId: number) => {
     const targetSub = subtitles.find((s) => s.id === subtitleId);
     if (!targetSub) return undefined;
 
-    // Find records matching this start time
     return [...sessionRecords]
       .filter(
         (r) =>
           Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
-      ) // 允许 0.5s 误差
+      )
       .sort(
         (a, b) =>
           new Date(b.recognitionDate || 0).getTime() -
@@ -120,104 +113,75 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-ink-50 dark:bg-ink-900 pb-20 font-sans transition-colors duration-300">
-      {/* Header */}
-      <div className="bg-primary-900 text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-          <Mic size={300} />
-        </div>
-
-        <div className="max-w-4xl mx-auto relative z-10">
+    <div className="min-h-screen bg-base-200/40 pb-20 font-sans transition-colors duration-300">
+      {/* Header - Duolingo Style Progress */}
+      <div className="bg-base-100 border-b border-base-200 sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-primary-200 hover:text-white transition-colors mb-6"
+            className="btn btn-ghost btn-circle text-base-content/70 hover:bg-base-200"
           >
-            <ArrowLeft size={20} className="mr-2" />
-            返回剧集
+            <ArrowLeft size={20} />
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">口语练习</h1>
-              <p className="text-primary-200 text-lg max-w-2xl">
-                跟读模式：{" "}
-                <span className="text-white font-medium">{episode.title}</span>
-              </p>
+          <div className="flex-1 flex items-center gap-4 max-w-xl mx-auto">
+            <div className="text-sm font-bold text-base-content/50 whitespace-nowrap hidden sm:block">
+              口语练习
             </div>
-
-            {/* Session Stats */}
-            <div className="flex gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[120px]">
-                <div className="flex items-center gap-2 text-primary-200 text-xs uppercase font-bold tracking-wider mb-1">
-                  <Trophy size={14} /> 平均分
-                </div>
-                <div className="text-2xl font-bold">
-                  {Math.round(stats.avgScore)}
-                </div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[120px]">
-                <div className="flex items-center gap-2 text-primary-200 text-xs uppercase font-bold tracking-wider mb-1">
-                  <Activity size={14} /> 进度
-                </div>
-                <div className="text-2xl font-bold">
-                  {Math.round(stats.progress)}%
-                </div>
-              </div>
+            <div className="flex-1 relative h-3.5 bg-base-200 rounded-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 bottom-0 bg-primary transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${stats.progress}%` }}
+              />
+            </div>
+            <div className="text-sm font-bold text-base-content/70 whitespace-nowrap">
+              {stats.uniqueIds} / {subtitles.length}
             </div>
           </div>
+
+          <button className="btn btn-ghost btn-circle text-base-content/70 hover:bg-base-200">
+            <Settings size={20} />
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
-        {/* Info Banner */}
-        <div className="bg-white dark:bg-ink-800 rounded-xl shadow-sm border border-primary-100 dark:border-ink-700 p-4 mb-8 flex items-start gap-3">
-          <Info className="text-primary-600 shrink-0 mt-0.5" size={20} />
-          <div className="text-sm text-ink-600">
-            <p className="font-bold text-ink-800 mb-1">如何使用跟读模式：</p>
-            <ul className="list-disc ml-4 space-y-1">
-              <li>首先点击扬声器图标聆听参考音频。</li>
-              <li>点击麦克风按钮，立即重复句子。</li>
-              <li>查看您的准确率得分和发音反馈。目标是达到80分以上！</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Practice Cards */}
-        <div className="space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-20">
+        {/* Practice Cards (Theater Mode) */}
+        <div className="space-y-6 md:space-y-10">
           {subtitles.length > 0 ? (
             subtitles.map((sub, index) => (
-              <div key={sub.id} className="relative">
-                {/* Connector Line */}
-                {index !== subtitles.length - 1 && (
-                  <div className="absolute left-8 top-full h-6 w-0.5 bg-ink-200 dark:bg-ink-700 z-0 hidden md:block"></div>
-                )}
-
-                <div className="flex gap-4">
-                  {/* Number Indicator (Desktop) */}
-                  <div className="hidden md:flex flex-col items-center shrink-0 w-16 pt-2">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center text-sm border-2 border-white dark:border-ink-800 shadow-sm z-10">
-                      {index + 1}
-                    </div>
-                  </div>
-
-                  {/* Card */}
-                  <div className="flex-1 min-w-0">
+              <div key={sub.id} id={`card-${sub.id}`} className="scroll-mt-24">
+                <div className="flex flex-col items-center">
+                  <div className="w-full">
                     <SpeechEvaluationCard
                       subtitle={sub}
                       audioUrl={episode.audioUrl}
                       previousResult={getLatestResult(sub.id)}
                       onEvaluate={handleEvaluation}
-                      // [新增] 传入当前播放状态和控制函数
                       currentPlayingId={playingSubtitleId}
                       onPlayStart={(id) => setPlayingSubtitleId(id)}
+                      isActive={activeCardId === sub.id}
+                      onActivate={() => {
+                        setActiveCardId(sub.id);
+                        document
+                          .getElementById(`card-${sub.id}`)
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                      }}
                     />
                   </div>
+                  {/* Connector indicator for active state */}
+                  {index !== subtitles.length - 1 && (
+                    <div className="h-6 w-1 bg-base-300 rounded-full my-2"></div>
+                  )}
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-12 text-ink-500 bg-white dark:bg-ink-800 rounded-xl border border-ink-200 dark:border-ink-700">
+            <div className="text-center py-12 text-base-content/50 bg-base-100 rounded-2xl border border-base-200 shadow-sm">
               本集没有字幕。练习模式需要字幕。
             </div>
           )}
@@ -225,16 +189,16 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
         {/* Completion State */}
         {isTrialMode ? (
-          <div className="mt-12 text-center py-12 bg-white dark:bg-ink-800 rounded-3xl border border-primary-100 dark:border-primary-900/50">
-            <h2 className="text-2xl font-bold text-ink-900 dark:text-white mb-2">
+          <div className="mt-16 text-center py-12 bg-base-100 rounded-3xl border border-primary/20 shadow-xl shadow-primary/5">
+            <h2 className="text-2xl font-bold text-base-content mb-3">
               体验已结束
             </h2>
-            <p className="text-ink-500 mb-6">
-              升级为 PRO 会员，解锁本集全部练习卡片及更多独家内容。
+            <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
+              升级为 PRO 会员，解锁本集全部练习卡片及更多独家高级内容。
             </p>
             <button
               onClick={() => useUIStore.getState().openPremiumModal()}
-              className="bg-primary-600 text-white px-8 py-3 rounded-full font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200"
+              className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30"
             >
               解锁全部
             </button>
@@ -242,19 +206,19 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
         ) : (
           stats.progress >= 100 &&
           subtitles.length > 0 && (
-            <div className="mt-12 text-center py-12 bg-white dark:bg-ink-800 rounded-3xl border border-dashed border-primary-200 dark:border-primary-900/50 animate-in fade-in slide-in-from-bottom-4">
-              <div className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 size={40} className="text-primary-600" />
+            <div className="mt-16 text-center py-12 bg-base-100 rounded-3xl border border-dashed border-base-300 animate-in fade-in slide-in-from-bottom-4 shadow-xl">
+              <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 size={40} className="text-success" />
               </div>
-              <h2 className="text-2xl font-bold text-ink-900 mb-2">
+              <h2 className="text-2xl font-bold text-base-content mb-3">
                 会话已完成！
               </h2>
-              <p className="text-ink-500 mb-6">
-                你已经练习了这段视频里的每一句话。做得好！
+              <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
+                你已经练习了这段视频里的每一句话。干得漂亮，继续保持！
               </p>
               <button
                 onClick={() => router.back()}
-                className="bg-primary-600 text-white px-8 py-3 rounded-full font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200"
+                className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30"
               >
                 返回剧集
               </button>
