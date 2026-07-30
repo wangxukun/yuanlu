@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   BrainCircuit,
   X,
@@ -33,6 +34,11 @@ export function ReviewModal({
   } = hookOptions;
 
   const [inputValue, setInputValue] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setInputValue("");
@@ -54,9 +60,9 @@ export function ReviewModal({
     }
   };
 
-  if (!isReviewOpen || reviewQueue.length === 0) return null;
+  if (!isReviewOpen || reviewQueue.length === 0 || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div
@@ -64,7 +70,7 @@ export function ReviewModal({
         onClick={() => setIsReviewOpen(false)}
       />
       {/* Modal Content */}
-      <div className="relative z-10 flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-base-100 sm:rounded-xl shadow-e3 border border-base-200 overflow-hidden">
+      <div className="absolute inset-0 sm:relative z-10 flex flex-col sm:w-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-base-100 sm:rounded-xl shadow-none sm:shadow-e3 border-0 sm:border border-base-200 overflow-hidden">
         {/* Modal Header */}
         <div className="shrink-0 bg-gradient-to-r from-primary-500/10 to-accent-500/10 dark:from-primary-900/20 dark:to-accent-900/20 px-6 py-4 flex justify-between items-center border-b border-accent-100 dark:border-primary-800/30 mt-safe xl:mt-0">
           <div className="flex items-center space-x-2 text-lg font-bold text-primary-700 dark:text-primary-400">
@@ -85,132 +91,139 @@ export function ReviewModal({
         {/* Flashcard Body */}
         <div className="flex-1 flex flex-col relative overflow-y-auto">
           {/* 正反面切换区域 */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center transition-colors min-h-[300px]">
-            {!isCardFlipped ? (
-              // 正面: 展示例句（挖空）+ 中文翻译
-              <div className="space-y-8 animate-in fade-in duration-300 max-w-lg mx-auto">
-                <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
-                  补全句子
-                </div>
-                <div className="text-xl md:text-3xl leading-relaxed font-serif text-base-content flex flex-col">
-                  {renderContext(
-                    reviewQueue[currentReviewIndex].contextSentence,
-                    reviewQueue[currentReviewIndex].word,
-                    true,
-                    (word, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => {
-                          if (el) {
-                            setTimeout(() => el.focus(), 50); // slight delay to ensure modal transition is complete
+          <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-12 text-center transition-colors min-h-max">
+            <div className="my-auto w-full max-w-lg mx-auto py-8">
+              {!isCardFlipped ? (
+                // 正面: 展示例句（挖空）+ 中文翻译
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
+                    补全句子
+                  </div>
+                  <div className="text-xl md:text-3xl leading-relaxed font-serif text-base-content flex flex-col">
+                    {renderContext(
+                      reviewQueue[currentReviewIndex].contextSentence,
+                      reviewQueue[currentReviewIndex].word,
+                      true,
+                      (word, i) => (
+                        <input
+                          key={i}
+                          ref={(el) => {
+                            if (el) {
+                              setTimeout(() => el.focus(), 50); // slight delay to ensure modal transition is complete
+                            }
+                          }}
+                          value={inputValue}
+                          onChange={handleInputChange}
+                          className="inline-block border-b-2 border-primary mx-1 align-bottom bg-transparent text-center focus:outline-none text-primary"
+                          style={{
+                            width: `${Math.max(word.length * 12, 60)}px`,
+                          }}
+                        />
+                      ),
+                    )}
+                    {reviewQueue[currentReviewIndex].contextSentence && (
+                      <div className="mt-4 flex justify-center">
+                        <button
+                          onClick={(e) =>
+                            playContextAudio(
+                              e,
+                              reviewQueue[currentReviewIndex].contextSentence,
+                            )
                           }
-                        }}
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        className="inline-block border-b-2 border-primary mx-1 align-bottom bg-transparent text-center focus:outline-none text-primary"
-                        style={{ width: `${Math.max(word.length * 12, 60)}px` }}
-                      />
-                    ),
-                  )}
-                  {reviewQueue[currentReviewIndex].contextSentence && (
-                    <div className="mt-4 flex justify-center">
-                      <button
-                        onClick={(e) =>
-                          playContextAudio(
-                            e,
-                            reviewQueue[currentReviewIndex].contextSentence,
-                          )
-                        }
-                        className={`p-2 rounded-full transition-all ${
-                          playingText ===
-                          reviewQueue[currentReviewIndex].contextSentence
-                            ? "text-primary bg-primary/20 animate-pulse"
-                            : "text-base-content/40 hover:text-primary bg-ink-100 dark:bg-ink-800"
-                        }`}
-                        title="朗读例句"
-                      >
-                        <Volume2 size={20} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {reviewQueue[currentReviewIndex].translation && (
-                  <div className="text-sm text-base-content/50">
-                    {reviewQueue[currentReviewIndex].translation}
-                  </div>
-                )}
-              </div>
-            ) : (
-              // 背面: 完整信息
-              <div className="space-y-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 xl:pb-0 relative">
-                {/* 查看词典按钮 */}
-                {reviewQueue[currentReviewIndex].webUrl && (
-                  <div className="flex justify-start">
-                    <a
-                      href={reviewQueue[currentReviewIndex].webUrl!}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
-                    >
-                      <ExternalLink size={14} />
-                      查看词典
-                    </a>
-                  </div>
-                )}
-                <div>
-                  <h2 className="text-3xl xl:text-4xl font-bold text-primary mb-2 break-words">
-                    {reviewQueue[currentReviewIndex].word}
-                  </h2>
-                  <div className="flex items-center justify-center space-x-2 text-base-content/60">
-                    <span>{reviewQueue[currentReviewIndex].definition}</span>
-                    {reviewQueue[currentReviewIndex].speakUrl && (
-                      <button
-                        onClick={(e) =>
-                          playAudio(e, reviewQueue[currentReviewIndex].speakUrl)
-                        }
-                        className="p-1 hover:text-primary bg-ink-100 dark:bg-ink-800 rounded-full"
-                      >
-                        <Volume2 size={16} />
-                      </button>
+                          className={`p-2 rounded-full transition-all ${
+                            playingText ===
+                            reviewQueue[currentReviewIndex].contextSentence
+                              ? "text-primary bg-primary/20 animate-pulse"
+                              : "text-base-content/40 hover:text-primary bg-ink-100 dark:bg-ink-800"
+                          }`}
+                          title="朗读例句"
+                        >
+                          <Volume2 size={20} />
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
-
-                <div className="bg-primary-50 dark:bg-primary-950/30 p-6 rounded-lg flex flex-col">
-                  {renderContext(
-                    reviewQueue[currentReviewIndex].contextSentence,
-                    reviewQueue[currentReviewIndex].word,
-                    false,
-                  )}
-                  {reviewQueue[currentReviewIndex].contextSentence && (
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        onClick={(e) =>
-                          playContextAudio(
-                            e,
-                            reviewQueue[currentReviewIndex].contextSentence,
-                          )
-                        }
-                        className={`p-1.5 rounded-full transition-all ${
-                          playingText ===
-                          reviewQueue[currentReviewIndex].contextSentence
-                            ? "text-primary-600 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/50 animate-pulse"
-                            : "text-primary-400 hover:text-primary-600 dark:text-primary-500 dark:hover:text-primary-300 bg-white/50 dark:bg-ink-900/50"
-                        }`}
-                        title="朗读例句"
-                      >
-                        <Volume2 size={16} />
-                      </button>
+                  {reviewQueue[currentReviewIndex].translation && (
+                    <div className="text-sm text-base-content/50">
+                      {reviewQueue[currentReviewIndex].translation}
                     </div>
                   )}
                 </div>
+              ) : (
+                // 背面: 完整信息
+                <div className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-300 relative">
+                  {/* 查看词典按钮 */}
+                  {reviewQueue[currentReviewIndex].webUrl && (
+                    <div className="flex justify-start">
+                      <a
+                        href={reviewQueue[currentReviewIndex].webUrl!}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                        查看词典
+                      </a>
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-3xl xl:text-4xl font-bold text-primary mb-2 break-words">
+                      {reviewQueue[currentReviewIndex].word}
+                    </h2>
+                    <div className="flex items-center justify-center space-x-2 text-base-content/60">
+                      <span>{reviewQueue[currentReviewIndex].definition}</span>
+                      {reviewQueue[currentReviewIndex].speakUrl && (
+                        <button
+                          onClick={(e) =>
+                            playAudio(
+                              e,
+                              reviewQueue[currentReviewIndex].speakUrl,
+                            )
+                          }
+                          className="p-1 hover:text-primary bg-ink-100 dark:bg-ink-800 rounded-full"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="text-sm text-base-content/40">
-                  {reviewQueue[currentReviewIndex].translation}
+                  <div className="bg-primary-50 dark:bg-primary-950/30 p-6 rounded-lg flex flex-col">
+                    {renderContext(
+                      reviewQueue[currentReviewIndex].contextSentence,
+                      reviewQueue[currentReviewIndex].word,
+                      false,
+                    )}
+                    {reviewQueue[currentReviewIndex].contextSentence && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={(e) =>
+                            playContextAudio(
+                              e,
+                              reviewQueue[currentReviewIndex].contextSentence,
+                            )
+                          }
+                          className={`p-1.5 rounded-full transition-all ${
+                            playingText ===
+                            reviewQueue[currentReviewIndex].contextSentence
+                              ? "text-primary-600 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/50 animate-pulse"
+                              : "text-primary-400 hover:text-primary-600 dark:text-primary-500 dark:hover:text-primary-300 bg-white/50 dark:bg-ink-900/50"
+                          }`}
+                          title="朗读例句"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-base-content/40">
+                    {reviewQueue[currentReviewIndex].translation}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* 控制栏 Footer */}
@@ -284,6 +297,7 @@ export function ReviewModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

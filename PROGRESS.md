@@ -153,6 +153,13 @@
 - **排除的方案**：① App Shell 内层滚动（能根治但会导致地址栏永不自动隐藏，放弃）；② `pb-safe` 放回 fixed 元素自身触发 Chrome opt-out 启发式（实测未生效）；③ `visualViewport` JS 逐帧锚定（该 API 的 resize 事件只在地址栏动画**结束后**触发一次，原理上无法逐帧跟踪，放弃）。
 - **最终方案（纯 CSS，保留地址栏自动隐藏）**：`globals.css` 新增 `--safe-bottom-max: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px))`——用 Chrome 专为该问题提供的**恒定最大安全区**取代动态 inset，底栏盒子尺寸恒定 + `bottom:0` 即可被合成器逐帧锚定，任何滑动速度下纹丝不动；不支持的浏览器（Edge/iOS/旧 Chrome，其 inset 本为静态）自动回退为当前 inset。已应用于 `MobileBottomNav`（padding 与玻璃背景收归 fixed 元素自身）、`MobilePlayerBar`、`--mobile-bottom-total`、`--mobile-bottom-with-player` 及激活指示点。
 
+### ✅ Step 21：移动端复习卡片沉浸式体验重构与细节修复
+
+- **生词复习弹窗全屏防穿透重构** (`ReviewModal.tsx`)：彻底解决 React 中由于父级组件 `transform` 或 `contain` 属性产生的包含块 (Containing Block) 导致 `fixed` 定位失效问题。通过 `createPortal` 逃逸到 `document.body` 根节点，并在移动端弃用弹窗模式启用 `absolute inset-0`，确保 100% 贴合物理屏幕四边（覆盖地址栏与安全区空白），实现真正无死角的沉浸式全屏。
+- **超长文案滑动防削顶适配**：修复由 Flexbox 强制垂直居中引发的长文案溢出被削顶 (Clipping) 的 Web 通病。重构为 `min-h-max` (max-content) 结合 `my-auto` 伸缩，确保短句完美垂直居中，超长难句与冗长翻译则自然向下延展并通过父级安全滚动，永不截断。
+- **单词拼写智能校验自动跳转**：在填空区启用主动 `autoFocus` 聚焦，实时侦听输入。当例句挖空单词或单句循环完整拼写正确时，自动无缝触发翻转至卡片背面，同时取消背景区域的易误触翻面事件，使复习心流更专注。
+- **主页最近播放进度条修复** (`RecentHistory.tsx`)：修正了 `bg-primary` 色板配置变更导致宽度色块变透明的历史遗留问题，标准对齐全站原生绿 `bg-primary-500`。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
