@@ -101,7 +101,7 @@ export default function RecentHistory() {
                   {/* Progress Bar */}
                   <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-primary rounded-full"
+                      className="h-full bg-primary-500 rounded-full"
                       style={{ width: `${item.progress}%` }}
                     ></div>
                   </div>

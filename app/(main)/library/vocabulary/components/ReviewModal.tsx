@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   BrainCircuit,
   X,
@@ -31,6 +32,28 @@ export function ReviewModal({
     handleSRS,
   } = hookOptions;
 
+  const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    setInputValue("");
+  }, [currentReviewIndex]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    const targetWord =
+      reviewQueue[currentReviewIndex]?.word?.toLowerCase() || "";
+    const targetSentence =
+      reviewQueue[currentReviewIndex]?.contextSentence?.toLowerCase() || "";
+    if (
+      val.toLowerCase().trim() === targetWord ||
+      (targetSentence &&
+        val.toLowerCase().trim() === targetSentence.trim().toLowerCase())
+    ) {
+      setIsCardFlipped(true);
+    }
+  };
+
   if (!isReviewOpen || reviewQueue.length === 0) return null;
 
   return (
@@ -62,10 +85,7 @@ export function ReviewModal({
         {/* Flashcard Body */}
         <div className="flex-1 flex flex-col relative overflow-y-auto">
           {/* 正反面切换区域 */}
-          <div
-            className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center cursor-pointer hover:bg-ink-100/30 dark:hover:bg-ink-800/20 transition-colors min-h-[300px]"
-            onClick={() => !isCardFlipped && setIsCardFlipped(true)}
-          >
+          <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center transition-colors min-h-[300px]">
             {!isCardFlipped ? (
               // 正面: 展示例句（挖空）+ 中文翻译
               <div className="space-y-8 animate-in fade-in duration-300 max-w-lg mx-auto">
@@ -77,6 +97,20 @@ export function ReviewModal({
                     reviewQueue[currentReviewIndex].contextSentence,
                     reviewQueue[currentReviewIndex].word,
                     true,
+                    (word, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => {
+                          if (el) {
+                            setTimeout(() => el.focus(), 50); // slight delay to ensure modal transition is complete
+                          }
+                        }}
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        className="inline-block border-b-2 border-primary mx-1 align-bottom bg-transparent text-center focus:outline-none text-primary"
+                        style={{ width: `${Math.max(word.length * 12, 60)}px` }}
+                      />
+                    ),
                   )}
                   {reviewQueue[currentReviewIndex].contextSentence && (
                     <div className="mt-4 flex justify-center">
