@@ -54,6 +54,7 @@ export default function InteractiveTranscript({
   const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
     "read",
   );
+  const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
   const lastJumpTimeRef = useRef<number>(0);
 
   // Refs
@@ -105,6 +106,7 @@ export default function InteractiveTranscript({
     "subtitle",
     {
       transcriptMode,
+      loopingIndex,
       lastJumpTimeRef,
     },
   );
@@ -311,6 +313,10 @@ export default function InteractiveTranscript({
               isActive={isActive}
               isPlaying={isPlaying}
               showTranslation={showTranslation}
+              isLooping={loopingIndex === index}
+              onToggleLoop={() =>
+                setLoopingIndex((prev) => (prev === index ? null : index))
+              }
               onJump={handleJump}
               onWordClick={handleWordClick}
               onProofread={handleProofread}
