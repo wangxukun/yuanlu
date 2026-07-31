@@ -174,66 +174,68 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       </div>
 
       {/* 2. 中央：录音交互核心区 */}
-      <div className="bg-base-200/50 border-y border-base-200 p-8 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
-        {!isRecording && !isProcessing && (
-          <div className="flex flex-col items-center gap-3 animate-in zoom-in duration-300">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStartRecording();
-              }}
-              className="w-20 h-20 rounded-full bg-primary-600 text-white flex items-center justify-center shadow-2xl shadow-primary-600/40 hover:scale-105 hover:bg-primary-700 transition-all duration-300"
-            >
-              <Mic size={32} />
-            </button>
-            <span className="text-sm font-bold text-base-content/50 uppercase tracking-widest">
-              点击录音
-            </span>
-          </div>
-        )}
-
-        {isRecording && (
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="relative">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75 animate-ping"></span>
+      {(!result || isRecording || isProcessing) && (
+        <div className="bg-base-200/50 border-y border-base-200 p-8 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
+          {!isRecording && !isProcessing && (
+            <div className="flex flex-col items-center gap-3 animate-in zoom-in duration-300">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  stopRecording();
+                  handleStartRecording();
                 }}
-                className="relative w-16 h-16 rounded-full bg-error-500 text-white flex items-center justify-center shadow-xl hover:bg-error-600 transition-colors"
+                className="w-20 h-20 rounded-full bg-primary-600 text-white flex items-center justify-center shadow-2xl shadow-primary-600/40 hover:scale-105 hover:bg-primary-700 transition-all duration-300"
               >
-                <Square size={24} fill="currentColor" />
+                <Mic size={32} />
               </button>
+              <span className="text-sm font-bold text-base-content/50 uppercase tracking-widest">
+                点击录音
+              </span>
             </div>
-            <p className="text-sm font-medium text-error-500 animate-pulse">
-              正在录音... 点击停止
-            </p>
-            {/* Fake Visualizer */}
-            <div className="flex items-center gap-1 h-6">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-1.5 bg-error-400 rounded-full animate-bounce"
-                  style={{
-                    height: `${Math.random() * 20 + 4}px`,
-                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
-                  }}
-                ></div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
-        {isProcessing && (
-          <div className="flex flex-col items-center justify-center py-8 space-y-3">
-            <Cpu className="text-primary-600 animate-spin" size={32} />
-            <p className="text-sm font-bold text-primary-600">
-              正在分析发音...
-            </p>
-          </div>
-        )}
-      </div>
+          {isRecording && (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <div className="relative">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75 animate-ping"></span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    stopRecording();
+                  }}
+                  className="relative w-16 h-16 rounded-full bg-error-500 text-white flex items-center justify-center shadow-xl hover:bg-error-600 transition-colors"
+                >
+                  <Square size={24} fill="currentColor" />
+                </button>
+              </div>
+              <p className="text-sm font-medium text-error-500 animate-pulse">
+                正在录音... 点击停止
+              </p>
+              {/* Fake Visualizer */}
+              <div className="flex items-center gap-1 h-6">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 bg-error-400 rounded-full animate-bounce"
+                    style={{
+                      height: `${Math.random() * 20 + 4}px`,
+                      animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isProcessing && (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <Cpu className="text-primary-600 animate-spin" size={32} />
+              <p className="text-sm font-bold text-primary-600">
+                正在分析发音...
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. 下方：评测结果与反馈区 */}
       {!isRecording && !isProcessing && result && (
