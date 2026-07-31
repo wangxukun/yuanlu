@@ -72,16 +72,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
   const getWordColorClass = (score: number) => {
     if (score >= 85)
-      return "bg-success/10 text-success border-success/30 font-bold";
+      return "bg-transparent text-ink-600 border-ink-200 font-medium";
     if (score >= 60)
-      return "bg-warning/10 text-warning-content border-warning/30 font-semibold";
-    return "bg-error/10 text-error border-error/30 underline decoration-error decoration-wavy underline-offset-4 font-semibold";
+      return "bg-accent-50 text-accent-700 border-accent-300 font-semibold";
+    return "bg-error-50 text-error-600 border-error-300 underline decoration-error-500 decoration-wavy underline-offset-4 font-semibold";
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-success";
-    if (score >= 60) return "text-warning";
-    return "text-error";
+    if (score >= 85) return "text-primary-600";
+    if (score >= 60) return "text-accent-600";
+    return "text-error-600";
   };
 
   return (
@@ -104,10 +104,14 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               speakWithTTS();
             }}
             disabled={isTTSLoading}
-            className={`btn btn-sm rounded-full ${isSpeaking ? "btn-primary" : "btn-outline btn-primary"}`}
+            className={`btn btn-sm rounded-full border bg-transparent transition-colors ${
+              isSpeaking
+                ? "border-primary-400 text-primary-600 bg-primary-50 shadow-inner"
+                : "border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-300"
+            }`}
           >
             {isTTSLoading ? (
-              <span className="loading loading-spinner loading-xs"></span>
+              <span className="loading loading-spinner loading-xs text-primary-600"></span>
             ) : (
               <BotMessageSquare size={16} />
             )}
@@ -119,18 +123,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               e.stopPropagation();
               playReferenceAudio();
             }}
-            className="btn btn-sm btn-outline btn-primary rounded-full relative overflow-hidden group"
+            className="btn btn-sm rounded-full border border-primary-200 text-primary-600 bg-transparent hover:bg-primary-50 hover:border-primary-300 relative overflow-hidden group transition-colors"
           >
             {refAudioProgress > 0 && (
               <div
-                className="absolute left-0 top-0 bottom-0 bg-primary/20 transition-all duration-75"
+                className="absolute left-0 top-0 bottom-0 bg-primary-100 transition-all duration-75"
                 style={{ width: `${refAudioProgress}%` }}
               />
             )}
             <Volume2 size={16} className="relative z-10" />
-            <span className="relative z-10 group-hover:text-primary-content">
-              原声播放
-            </span>
+            <span className="relative z-10">原声播放</span>
           </button>
         </div>
 
@@ -180,7 +182,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 e.stopPropagation();
                 handleStartRecording();
               }}
-              className="btn btn-circle btn-primary btn-lg w-20 h-20 shadow-2xl shadow-primary/40 hover:scale-105 hover:shadow-primary/50 transition-all duration-300"
+              className="w-20 h-20 rounded-full bg-primary-600 text-white flex items-center justify-center shadow-2xl shadow-primary-600/40 hover:scale-105 hover:bg-primary-700 transition-all duration-300"
             >
               <Mic size={32} />
             </button>
@@ -191,57 +193,44 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         )}
 
         {isRecording && (
-          <div className="flex flex-col items-center w-full max-w-md animate-in fade-in duration-300">
-            <div className="flex items-center justify-center gap-1.5 h-16 mb-6 w-full">
-              {[...Array(24)].map((_, i) => {
-                // 利用绝对随机性，不使用服务端渲染，直接用内联样式控制高度跳跃
-                // 使用 animation-delay 结合 Tailwind 的 bounce
-                const dur = 0.4 + (i % 5) * 0.1;
-                const del = (i % 7) * 0.1;
-                return (
-                  <div
-                    key={i}
-                    className="w-1.5 bg-primary rounded-full animate-bounce"
-                    style={{
-                      height: "100%",
-                      animationDuration: `${dur}s`,
-                      animationDelay: `${del}s`,
-                    }}
-                  />
-                );
-              })}
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="relative">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75 animate-ping"></span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stopRecording();
+                }}
+                className="relative w-16 h-16 rounded-full bg-error-500 text-white flex items-center justify-center shadow-xl hover:bg-error-600 transition-colors"
+              >
+                <Square size={24} fill="currentColor" />
+              </button>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                stopRecording();
-              }}
-              className="btn btn-circle btn-error w-16 h-16 shadow-xl shadow-error/30 hover:scale-105 transition-transform"
-            >
-              <Square size={24} fill="currentColor" />
-            </button>
-            <span className="mt-4 text-xs font-bold text-error animate-pulse">
-              正在录音...
-            </span>
+            <p className="text-sm font-medium text-error-500 animate-pulse">
+              正在录音... 点击停止
+            </p>
+            {/* Fake Visualizer */}
+            <div className="flex items-center gap-1 h-6">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-1.5 bg-error-400 rounded-full animate-bounce"
+                  style={{
+                    height: `${Math.random() * 20 + 4}px`,
+                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                  }}
+                ></div>
+              ))}
+            </div>
           </div>
         )}
 
         {isProcessing && (
-          <div className="flex flex-col items-center gap-4 animate-in fade-in">
-            <div className="relative flex items-center justify-center w-20 h-20">
-              <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-              <div
-                className="absolute inset-2 rounded-full border-4 border-secondary/20 border-b-secondary animate-spin"
-                style={{
-                  animationDirection: "reverse",
-                  animationDuration: "1.5s",
-                }}
-              ></div>
-              <Cpu size={24} className="text-primary animate-pulse" />
-            </div>
-            <span className="text-sm font-bold text-primary tracking-widest">
-              AI 深度分析中...
-            </span>
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Cpu className="text-primary-600 animate-spin" size={32} />
+            <p className="text-sm font-bold text-primary-600">
+              正在分析发音...
+            </p>
           </div>
         )}
       </div>
@@ -307,10 +296,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         e.stopPropagation();
                         toggleUserAudio();
                       }}
-                      className={`btn btn-sm rounded-full ${
+                      className={`btn btn-sm rounded-full border-none ${
                         isUserAudioPlaying
-                          ? "btn-primary"
-                          : "btn-ghost bg-base-200"
+                          ? "bg-primary-600 text-white hover:bg-primary-700"
+                          : "bg-ink-100 text-ink-700 hover:bg-ink-200"
                       }`}
                     >
                       {isUserAudioPlaying ? (
@@ -406,17 +395,20 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   {
                     label: "准确度",
                     value: result.accuracyScore || 0,
-                    color: "progress-primary",
+                    color:
+                      "[&::-webkit-progress-value]:bg-primary-600 [&::-moz-progress-bar]:bg-primary-600",
                   },
                   {
                     label: "流利度",
                     value: result.fluencyScore || 0,
-                    color: "progress-info",
+                    color:
+                      "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
                   },
                   {
                     label: "完整度",
                     value: result.integrityScore || 0,
-                    color: "progress-secondary",
+                    color:
+                      "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
                   },
                 ].map((metric, idx) => (
                   <div key={idx} className="flex items-center gap-4">
@@ -445,7 +437,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 e.stopPropagation();
                 handleStartRecording();
               }}
-              className="btn btn-outline hover:btn-primary"
+              className="btn bg-transparent border border-ink-200 text-ink-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors rounded-xl"
             >
               <RotateCcw size={18} />
               再试一次
