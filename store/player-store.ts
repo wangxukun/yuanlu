@@ -42,11 +42,16 @@ interface PlayerState {
   toggleLoopMode: () => void;
   isShuffle: boolean;
   toggleShuffle: () => void;
+  // 单一播放模式按钮循环切换:不循环 → 列表循环 → 单曲循环 → 随机 → 不循环
+  cyclePlayMode: () => void;
   isPlaylistOpen: boolean;
   setIsPlaylistOpen: (isOpen: boolean) => void;
   // 沉浸式逐字稿（FullContentTranscript）开关，全局可控
   isLyricsOpen: boolean;
   setIsLyricsOpen: (isOpen: boolean) => void;
+  // 字幕模式：read=精读 dictate=听写（FullContentTranscript 与 PlayControlBar 共享）
+  transcriptMode: "read" | "dictate";
+  setTranscriptMode: (mode: "read" | "dictate") => void;
   // 移动端播放器全屏面板开关
   isMobileSheetOpen: boolean;
   setIsMobileSheetOpen: (isOpen: boolean) => void;
@@ -78,6 +83,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isPlaylistOpen: false,
   isLyricsOpen: false,
   isMobileSheetOpen: false,
+  transcriptMode: "read",
 
   setAudioRef: (ref: HTMLAudioElement) => set({ audioRef: ref }),
   setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
@@ -112,8 +118,21 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
   },
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
+  cyclePlayMode: () => {
+    const { isShuffle, loopMode } = get();
+    if (isShuffle) {
+      set({ isShuffle: false, loopMode: "none" });
+    } else if (loopMode === "none") {
+      set({ loopMode: "all" });
+    } else if (loopMode === "all") {
+      set({ loopMode: "one" });
+    } else {
+      set({ isShuffle: true });
+    }
+  },
   setIsPlaylistOpen: (isOpen) => set({ isPlaylistOpen: isOpen }),
   setIsLyricsOpen: (isOpen) => set({ isLyricsOpen: isOpen }),
+  setTranscriptMode: (mode) => set({ transcriptMode: mode }),
   setIsMobileSheetOpen: (isOpen: boolean) => set({ isMobileSheetOpen: isOpen }),
 
   playNext: () => {
@@ -256,6 +275,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       currentTime: 0,
       isPlaylistOpen: false,
       isLyricsOpen: false,
+      transcriptMode: "read",
     });
   },
 }));

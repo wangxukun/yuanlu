@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { usePlayerStore } from "@/store/player-store";
 import { useRouter } from "next/navigation";
 import FullContentTranscript from "@/components/episode/FullContentTranscript";
 import { MergedSubtitleItem } from "@/lib/types";
+import { parseTimeStr } from "@/lib/tools";
 import { useSession } from "next-auth/react";
 
 export default function PlayControlBar() {
@@ -27,13 +28,13 @@ export default function PlayControlBar() {
     audioRef,
     setPlaybackRate,
     setVolume,
-    toggleShuffle,
-    toggleLoopMode,
+    cyclePlayMode,
     removeFromPlaylist,
     playEpisode,
     closePlayer,
     isLyricsOpen,
     setIsLyricsOpen,
+    transcriptMode,
   } = usePlayerStore();
 
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
@@ -71,6 +72,34 @@ export default function PlayControlBar() {
       fetchSubtitles();
     }
   }, [isLyricsOpen, currentEpisode?.episodeid, status]);
+
+  // ── 句级跳转(字幕打开时):解析字幕起止时间并跟踪当前句 ──
+  const parsedSubs = useMemo(
+    () =>
+      Array.isArray(subtitles)
+        ? subtitles.map((s) => ({ start: parseTimeStr(s.startTime) }))
+        : [],
+    [subtitles],
+  );
+
+  const activeSubIndex = useMemo(() => {
+    if (!isLyricsOpen || parsedSubs.length === 0) return -1;
+    let idx = -1;
+    for (let i = 0; i < parsedSubs.length; i++) {
+      if (parsedSubs[i].start <= currentTime) idx = i;
+      else break;
+    }
+    return idx;
+  }, [isLyricsOpen, parsedSubs, currentTime]);
+
+  const jumpSentence = (delta: number) => {
+    if (transcriptMode === "dictate" || parsedSubs.length === 0) return;
+    const base = activeSubIndex >= 0 ? activeSubIndex : delta > 0 ? -1 : 0;
+    const target = parsedSubs[base + delta];
+    if (!target || !audioRef) return;
+    audioRef.currentTime = target.start;
+    setCurrentTime(target.start);
+  };
 
   if (!currentEpisode) return null;
 
@@ -115,13 +144,7 @@ export default function PlayControlBar() {
 
   return (
     <>
-      <div
-        className={`fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] ${
-          isLyricsOpen
-            ? "bottom-0 left-0 w-full max-w-none bg-base-100 px-4 py-4 md:px-8 border-t border-base-200 shadow-e3 rounded-none transform-none"
-            : "bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-base-100/95 md:bg-base-100/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-e3 border-t md:border border-base-200 pb-safe"
-        }`}
-      >
+      <div className="fixed transition-all duration-300 flex items-center gap-4 lg:gap-6 z-[210] bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-base-100/95 md:bg-base-100/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-e3 border-t md:border border-base-200 pb-safe">
         {/* Mobile Progress Bar - Positioned at the very top of the bar */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-base-200 md:hidden overflow-hidden">
           <div
@@ -138,9 +161,7 @@ export default function PlayControlBar() {
           />
         </div>
 
-        <div
-          className={`w-full flex items-center justify-between gap-2 md:gap-6 ${isLyricsOpen ? "max-w-[1200px] mx-auto" : ""}`}
-        >
+        <div className="w-full flex items-center justify-between gap-2 md:gap-6">
           {/* Left: Thumbnail & Info */}
           <div
             className="flex items-center gap-2 md:gap-4 w-auto md:w-1/4 md:min-w-[120px] cursor-pointer group"
@@ -185,15 +206,7 @@ export default function PlayControlBar() {
 
           {/* Center: Controls & Progress */}
           <div className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-4 md:gap-8">
-              <button
-                onClick={toggleShuffle}
-                className={`transition-colors hidden sm:block ${isShuffle ? "text-primary-600 dark:text-primary-400" : "text-ink-400 hover:text-primary-600"}`}
-                title={isShuffle ? "随机播放中" : "顺序播放"}
-              >
-                <span className="material-symbols-outlined">shuffle</span>
-              </button>
-
+            <div className="flex items-center gap-1.5 sm:gap-4 md:gap-5">
               {/* Mobile Speed Button */}
               <button
                 onClick={cyclePlaybackRate}
@@ -210,6 +223,20 @@ export default function PlayControlBar() {
               >
                 <span className="material-symbols-outlined">skip_previous</span>
               </button>
+
+              {/* 句级跳转(字幕打开时显示) */}
+              {isLyricsOpen && parsedSubs.length > 0 && (
+                <button
+                  onClick={() => jumpSentence(-1)}
+                  disabled={transcriptMode === "dictate" || activeSubIndex <= 0}
+                  className="text-ink-700 dark:text-ink-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-30 disabled:hover:text-ink-700 dark:disabled:hover:text-ink-300 hidden md:block"
+                  title="上一句 ←"
+                >
+                  <span className="material-symbols-outlined">
+                    chevron_left
+                  </span>
+                </button>
+              )}
 
               <button
                 onClick={togglePlay}
@@ -232,6 +259,24 @@ export default function PlayControlBar() {
                 )}
               </button>
 
+              {/* 句级跳转(字幕打开时显示) */}
+              {isLyricsOpen && parsedSubs.length > 0 && (
+                <button
+                  onClick={() => jumpSentence(1)}
+                  disabled={
+                    transcriptMode === "dictate" ||
+                    activeSubIndex < 0 ||
+                    activeSubIndex >= parsedSubs.length - 1
+                  }
+                  className="text-ink-700 dark:text-ink-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-30 disabled:hover:text-ink-700 dark:disabled:hover:text-ink-300 hidden md:block"
+                  title="下一句 →"
+                >
+                  <span className="material-symbols-outlined">
+                    chevron_right
+                  </span>
+                </button>
+              )}
+
               <button
                 onClick={playNext}
                 className="text-ink-700 dark:text-ink-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -252,19 +297,34 @@ export default function PlayControlBar() {
                 </span>
               </button>
 
+              {/* 播放模式:不循环 → 列表循环 → 单曲循环 → 随机(同一位置按状态显示图标) */}
               <button
-                onClick={toggleLoopMode}
-                className={`transition-colors hidden sm:block ${loopMode !== "none" ? "text-primary-600 dark:text-primary-400" : "text-ink-400 hover:text-primary-600"}`}
+                onClick={cyclePlayMode}
+                className={`transition-colors hidden sm:block ${isShuffle || loopMode !== "none" ? "text-primary-600 dark:text-primary-400" : "text-ink-400 hover:text-primary-600"}`}
                 title={
-                  loopMode === "none"
-                    ? "不循环"
-                    : loopMode === "all"
-                      ? "列表循环"
-                      : "单曲循环"
+                  isShuffle
+                    ? "随机播放"
+                    : loopMode === "none"
+                      ? "不循环"
+                      : loopMode === "all"
+                        ? "列表循环"
+                        : "单曲循环"
                 }
               >
-                <span className="material-symbols-outlined">
-                  {loopMode === "one" ? "repeat_one" : "repeat"}
+                <span
+                  className="material-symbols-outlined"
+                  style={{
+                    fontVariationSettings:
+                      isShuffle || loopMode !== "none"
+                        ? "'FILL' 1"
+                        : "'FILL' 0",
+                  }}
+                >
+                  {isShuffle
+                    ? "shuffle"
+                    : loopMode === "one"
+                      ? "repeat_one"
+                      : "repeat"}
                 </span>
               </button>
             </div>
@@ -298,6 +358,8 @@ export default function PlayControlBar() {
 
           {/* Right: Actions & Volume */}
           <div className="flex items-center justify-end gap-2 md:gap-4 w-auto md:w-1/4 md:min-w-[80px]">
+            {/* 与中央控制组的分隔线 */}
+            <span className="hidden md:block w-px h-5 bg-base-300 shrink-0 md:mr-2" />
             {/* Playback speed control */}
             <button
               onClick={cyclePlaybackRate}
@@ -308,13 +370,19 @@ export default function PlayControlBar() {
             </button>
 
             <button
-              onClick={handleOpenLyrics}
+              onClick={
+                isLyricsOpen ? () => setIsLyricsOpen(false) : handleOpenLyrics
+              }
               disabled={isLoadingLyrics}
               className={`text-ink-400 hover:text-primary-600 transition-colors hidden md:block ${isLoadingLyrics ? "animate-pulse" : ""}`}
-              title="全屏沉浸模式"
+              title={isLyricsOpen ? "收起字幕" : "全屏沉浸模式"}
             >
               <span className="material-symbols-outlined">
-                {isLoadingLyrics ? "hourglass_top" : "fullscreen"}
+                {isLoadingLyrics
+                  ? "hourglass_top"
+                  : isLyricsOpen
+                    ? "close_fullscreen"
+                    : "fullscreen"}
               </span>
             </button>
 

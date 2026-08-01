@@ -1,6 +1,6 @@
 # 远路播客 UI 重设计 · 进度记录
 
-> 分支：`feat/redesign` ｜ 最近提交：`b437fb1`
+> 分支：`feat/transcript` ｜ 最近提交：工作区未提交（桌面端字幕阅读页重设计）
 > 设计概念：**「纸上远行」**——暖纸底色（书的温度）+ 远青（路的延伸）+ 曙光橙（每一步的奖励），用"旅程/里程"隐喻承载学习数据，替代原 AI 默认的 indigo→purple 渐变风。
 
 ---
@@ -160,6 +160,22 @@
 - **单词拼写智能校验自动跳转**：在填空区启用主动 `autoFocus` 聚焦，实时侦听输入。当例句挖空单词或单句循环完整拼写正确时，自动无缝触发翻转至卡片背面，同时取消背景区域的易误触翻面事件，使复习心流更专注。
 - **主页最近播放进度条修复** (`RecentHistory.tsx`)：修正了 `bg-primary` 色板配置变更导致宽度色块变透明的历史遗留问题，标准对齐全站原生绿 `bg-primary-500`。
 
+### ✅ Step 22：桌面端字幕阅读页（精听全屏）完整重设计
+
+> 诊断驱动的重构：关闭按钮语义错误（居中大箭头像"向下滚动"）、无进度上下文、阅读密度过低（1080p 仅 4–6 句）、激活句圆角卡片"贴片"跳动、宽屏两侧空白浪费、底栏药丸↔通栏形态跳变、缺句级导航与快捷键、生词零状态可视化。参考 LingQ / Langster / Apple Podcasts Transcript 重设计为**三栏沉浸阅读 + 常驻浮动药丸**。范围仅桌面端（md+），移动端 `MobilePlayerSheet` 未动。
+
+- **顶栏三段式 slim bar**（`FullContentTranscript.tsx` h-14）：左侧 = 收起（expand_more + "返回"）+ 分隔线 + 封面/剧集标题（点击回详情页）；中间（lg+ 绝对居中）= 实时进度 `第 X/N 句 · m:ss/m:ss`（tabular-nums）；右侧 = 双语/英文/中文紧凑分段控件 → 听写模式强调按钮（primary 描边 pill，激活实心）→ 设置下拉 → 关闭 X。
+- **设置下拉收编低频项**：自动滚动 Toggle、字号三档 A-/A+（`localStorage["fct-font-size-level"]` 持久化，英 text-base/lg/xl 三档）、深浅色 ThemeSwitcher、字幕校对（登录可见）、快捷键图例、"AI 翻译仅供参考"（原滚动区胶囊已移除）。
+- **SubtitleRow 重设计**：结构改为 `[时间轨 w-9 m:ss] [文本 flex-1] [hover 操作槽]`；激活态改为**通栏浅色带** `bg-primary-50/80` + 左侧 2px `primary-500` 指示条（无圆角卡片、无布局跳动），英文 `font-semibold text-primary-950`；密度提升一倍（`py-2.5` + leading-1.7，一屏 8–10 句）；hover 浮现「播放此句 / 单句循环」，校对模式替换为铅笔。
+- **生词状态可视化**：文中已存生词以 `bg-accent-100/80 text-accent-800` 标记（tooltip"已在生词本中"），保存生词成功后本地即时追加高亮，打通查词→标记→复习闭环。
+- **右侧学习面板**（新建 `transcript/LearningPanel.tsx`，xl+ 显示、sticky）：Tab「本集生词」（词条+首行释义+发音+时间戳句跳，点击词条复用查词弹窗）/「本集信息」（封面标题+查看详情）；含未登录引导、空态、加载态。
+- **生词数据**：新建 `app/api/vocabulary/list/route.ts`（GET，auth + `episodeid` 查询，复用 vocabulary 表 `[userid, episodeid]` 索引）。
+- **键盘快捷键**（新建 `transcript/useTranscriptKeyboard.ts`）：Space 播放暂停、←/→ 句跳、R 当前句循环、Esc 收起；input/textarea/contenteditable 聚焦或查词/校对弹窗打开时自动忽略，Space/arrows preventDefault。
+- **PlayControlBar 药丸常驻**：删除字幕打开时的通栏退化分支（形态不再跳变）；字幕打开时主按钮两侧出现 ‹ › 句级跳转（从 store `currentTime` + 已拉取字幕求 activeIndex，听写模式禁用）；fullscreen 按钮在字幕打开时变为"收起字幕"（`close_fullscreen`）。
+- **播放模式按钮统一**：原分散两处的 shuffle（左）与 loopMode（右）合并为**同一位置的单按钮**，点击循环 不循环 `repeat` 灰 → 列表循环 `repeat` 主色 → 单曲循环 `repeat_one` → 随机 `shuffle`；store 新增 `cyclePlayMode()` 联动 `isShuffle`/`loopMode`，移动端原有 toggle 保留不受影响。
+- **中央/右侧分组分隔**：中央控制行 `md:gap-8`→`md:gap-5`（原 8 按钮 ×2rem ≈424px 溢出 flex-1 中央区导致循环按钮"渗"入右侧组，单纯加 margin 被均分无效），右侧组开头加 `w-px h-5 bg-base-300` 竖分隔线，形成明确分组边界。
+- **store**：`player-store.ts` 新增 `transcriptMode: "read"|"dictate"` 共享状态（FullContentTranscript 与 PlayControlBar 跨组件感知听写模式，`closePlayer` 时复位）。
+
 ### ⚠️ 踩过的坑（重要）
 
 **DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
@@ -191,8 +207,10 @@
 
 ## 四、下一步计划（建议顺序）
 
-1. 深入清理设计系统遗留问题（如 `bg-base` 类名、固定高度变量不一致）
-2. 其他模块的响应式或移动端专项适配
+1. **平板端字幕阅读页适配**（Step 22 的延续：桌面端已完成，平板端沿用同一套设计语言——顶栏紧凑化、学习面板收为抽屉/隐藏、药丸控件防溢出）
+2. **移动端字幕交互对齐**（`MobilePlayerSheet`/`InteractiveTranscript`：时间轨、生词高亮、句级操作条等能力视屏幕空间取舍同步）
+3. 深入清理设计系统遗留问题（如 `bg-base` 类名、固定高度变量不一致）
+4. 其他模块的响应式或移动端专项适配
 
 ## 五、工作方式备忘
 

@@ -10,6 +10,7 @@ import React, {
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { usePlayerStore } from "@/store/player-store";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { parseTimeStr } from "@/lib/tools";
@@ -19,12 +20,13 @@ import { ProofreadModal } from "./transcript/ProofreadModal";
 import { VocabularyModal } from "./transcript/VocabularyModal";
 import { SelectionMenu } from "./transcript/SelectionMenu";
 import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
+import { useTranscriptKeyboard } from "./transcript/useTranscriptKeyboard";
+import LearningPanel, { EpisodeVocabItem } from "./transcript/LearningPanel";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { DictationItem } from "./transcript/DictationItem";
 
-// We will use standard string template literals or clsx if needed. Let's just use string templates for simplicity, or provide a simple cn equivalent.
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
@@ -40,6 +42,24 @@ interface FullContentTranscriptProps {
   episode: Episode;
 }
 
+// ─── Font Size Levels ────────────────────────────────────────────────────────
+const FONT_SIZE_LEVELS = [
+  {
+    en: "text-[15px] sm:text-base leading-[1.65]",
+    zh: "text-xs leading-[1.6]",
+  },
+  { en: "text-base sm:text-lg leading-[1.7]", zh: "text-[13px] leading-[1.6]" },
+  { en: "text-lg sm:text-xl leading-[1.8]", zh: "text-sm leading-[1.65]" },
+] as const;
+
+const FONT_SIZE_STORAGE_KEY = "fct-font-size-level";
+
+function formatSec(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 // ─── Subtitle Row ────────────────────────────────────────────────────────────
 interface SubtitleRowProps {
   sub: ProcessedSubtitle;
@@ -48,6 +68,8 @@ interface SubtitleRowProps {
   isLoggedIn: boolean;
   visibilityMode: VisibilityMode;
   isProofreadingMode: boolean;
+  fontSizeLevel: number;
+  vocabWords: Set<string>;
   onJump: (t: number) => void;
   onWordClick: (word: string, contextEn: string, contextZh: string) => void;
   onToggleLoop: () => void;
@@ -61,34 +83,59 @@ const SubtitleRow = React.memo(function SubtitleRow({
   isLoggedIn,
   visibilityMode,
   isProofreadingMode,
+  fontSizeLevel,
+  vocabWords,
   onJump,
   onWordClick,
   onToggleLoop,
   onProofread,
 }: SubtitleRowProps) {
-  // Active or Normal State
+  const fontSize = FONT_SIZE_LEVELS[fontSizeLevel] ?? FONT_SIZE_LEVELS[1];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn(
-        "group relative flex items-start gap-1 md:gap-6 px-2 py-2 md:p-6 md:rounded-2xl transition-all duration-300",
+        "group relative flex items-start gap-2 md:gap-3 rounded-lg px-2.5 md:px-3 py-2.5 transition-colors duration-200 cursor-pointer",
         isActive
-          ? "bg-primary-50 dark:bg-primary-900/20 border-l-0 border-l-[3px] border-primary-500 shadow-sm"
-          : "hover:bg-ink-50 dark:hover:bg-ink-900/30 border-l-0 border-l-[3px] border-transparent cursor-pointer",
+          ? "bg-primary-50/80 dark:bg-primary-900/20"
+          : "hover:bg-ink-50 dark:hover:bg-ink-900/40",
       )}
       id={`fct-sub-${sub.id}`}
       onClick={() => {
         if (!isActive) onJump(sub.start);
       }}
     >
-      <div className="flex-1 space-y-1 md:space-y-3">
+      {/* Active indicator bar */}
+      <span
+        className={cn(
+          "absolute left-0 top-1/2 -translate-y-1/2 h-3/5 w-[3px] rounded-full bg-primary-500 transition-opacity duration-200",
+          isActive ? "opacity-100" : "opacity-0",
+        )}
+      />
+
+      {/* ── Time Rail ── */}
+      <span
+        className={cn(
+          "w-9 shrink-0 pt-[5px] text-[11px] tabular-nums font-medium select-none transition-colors",
+          isActive
+            ? "text-primary-600 dark:text-primary-400 font-bold"
+            : "text-ink-300 dark:text-ink-600 group-hover:text-primary-500 dark:group-hover:text-primary-400",
+        )}
+      >
+        {formatSec(sub.start)}
+      </span>
+
+      {/* ── Text ── */}
+      <div className="flex-1 min-w-0 space-y-1">
         {(visibilityMode === "both" || visibilityMode === "en") && (
           <p
             className={cn(
-              "font-serif text-lg sm:text-xl leading-[1.85] sm:leading-[1.9] tracking-wide",
+              "font-serif tracking-wide",
+              fontSize.en,
               isActive
-                ? "text-primary-900 dark:text-primary-100 font-medium"
+                ? "text-primary-950 dark:text-primary-50 font-semibold"
                 : "text-ink-700 dark:text-ink-200",
             )}
           >
@@ -104,6 +151,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                   );
                 }
                 const cleanWord = part.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
+                const isSaved = vocabWords.has(cleanWord.toLowerCase());
                 return (
                   <span
                     key={i}
@@ -114,8 +162,11 @@ const SubtitleRow = React.memo(function SubtitleRow({
                       onWordClick(cleanWord, sub.textEn, sub.textZh);
                     }}
                     className={cn(
-                      "cursor-pointer rounded inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
+                      "cursor-pointer rounded-[3px] inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
+                      isSaved &&
+                        "bg-accent-100/80 dark:bg-accent-900/50 text-accent-800 dark:text-accent-300",
                     )}
+                    title={isSaved ? "已在生词本中" : undefined}
                   >
                     {part}
                   </span>
@@ -126,7 +177,8 @@ const SubtitleRow = React.memo(function SubtitleRow({
         {(visibilityMode === "both" || visibilityMode === "zh") && (
           <p
             className={cn(
-              "font-sans text-sm leading-[1.7]",
+              "font-sans",
+              fontSize.zh,
               isActive
                 ? "text-ink-600 dark:text-ink-300"
                 : "text-ink-400 dark:text-ink-500",
@@ -137,34 +189,49 @@ const SubtitleRow = React.memo(function SubtitleRow({
         )}
       </div>
 
-      {/* ── Control Column ── */}
-      <div className="flex flex-col items-center gap-2 relative min-w-[32px] md:min-w-[40px]">
+      {/* ── Sentence Actions ── */}
+      <div className="flex items-center gap-0.5 shrink-0 pt-0.5">
         {!isProofreadingMode ? (
-          /* Loop Toggle */
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleLoop();
-            }}
-            className={cn(
-              "p-1.5 rounded-full transition-all duration-300",
-              isActive
-                ? isLooping
-                  ? "text-primary-600 dark:text-primary-400 scale-125"
-                  : "text-primary-300 dark:text-primary-700 hover:text-primary-500 dark:hover:text-primary-400"
-                : "opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
-            )}
-            title="单句循环"
-          >
-            <span
-              className="material-symbols-outlined text-xl"
-              style={{
-                fontVariationSettings: isLooping ? "'FILL' 1" : "'FILL' 0",
+          <>
+            {/* Play this sentence */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onJump(sub.start);
               }}
+              className="p-1.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+              title="播放此句"
             >
-              {isLooping ? "repeat_one" : "repeat"}
-            </span>
-          </button>
+              <span className="material-symbols-outlined text-lg">
+                play_arrow
+              </span>
+            </button>
+            {/* Loop Toggle */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLoop();
+              }}
+              className={cn(
+                "p-1.5 rounded-full transition-all duration-200",
+                isActive
+                  ? isLooping
+                    ? "text-primary-600 dark:text-primary-400"
+                    : "text-primary-300 dark:text-primary-700 hover:text-primary-500 dark:hover:text-primary-400"
+                  : "opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
+              )}
+              title="单句循环 (R)"
+            >
+              <span
+                className="material-symbols-outlined text-lg"
+                style={{
+                  fontVariationSettings: isLooping ? "'FILL' 1" : "'FILL' 0",
+                }}
+              >
+                {isLooping ? "repeat_one" : "repeat"}
+              </span>
+            </button>
+          </>
         ) : (
           /* Proofread Button */
           isLoggedIn &&
@@ -174,13 +241,10 @@ const SubtitleRow = React.memo(function SubtitleRow({
                 e.stopPropagation();
                 onProofread(sub);
               }}
-              className={cn(
-                "p-1.5 rounded-full transition-all duration-300",
-                "opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
-              )}
+              className="p-1.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
               title="校对字幕"
             >
-              <PencilSquareIcon className="w-5 h-5" />
+              <PencilSquareIcon className="w-4 h-4" />
             </button>
           )
         )}
@@ -188,6 +252,56 @@ const SubtitleRow = React.memo(function SubtitleRow({
     </motion.div>
   );
 });
+
+// ─── Settings Toggle Row ─────────────────────────────────────────────────────
+function SettingsRow({
+  icon,
+  label,
+  children,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  children?: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-center justify-between gap-3 px-3 py-2 rounded-xl",
+        onClick &&
+          "cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-800/60 transition-colors",
+      )}
+    >
+      <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
+        <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
+          {icon}
+        </span>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        "relative w-8 h-[18px] rounded-full transition-colors",
+        checked ? "bg-primary-500" : "bg-ink-200 dark:bg-ink-700",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-all",
+          checked ? "left-[16px]" : "left-[2px]",
+        )}
+      />
+    </span>
+  );
+}
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function FullContentTranscript({
@@ -197,22 +311,28 @@ export default function FullContentTranscript({
   episode,
 }: FullContentTranscriptProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const {
     currentTime,
+    duration,
     setCurrentTime,
     audioRef,
     pause,
     play,
+    togglePlay,
     isPlaying,
     currentEpisode,
     setCurrentEpisode,
     setCurrentAudioUrl,
     setPlaybackRate,
+    transcriptMode,
+    setTranscriptMode,
   } = usePlayerStore();
 
   const isPlayingThis = currentEpisode?.episodeid === episode.episodeid;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   // ── States ──
   const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
@@ -221,9 +341,16 @@ export default function FullContentTranscript({
   const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>("both");
   const [isProofreadingMode, setIsProofreadingMode] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
-    "read",
-  );
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [fontSizeLevel, setFontSizeLevel] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const saved = Number(window.localStorage.getItem(FONT_SIZE_STORAGE_KEY));
+    return saved >= 0 && saved <= 2 ? saved : 1;
+  });
+
+  // Episode vocabulary (for highlight + learning panel)
+  const [vocabList, setVocabList] = useState<EpisodeVocabItem[]>([]);
+  const [isVocabLoading, setIsVocabLoading] = useState(false);
 
   // Proofread Modal State
   const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
@@ -280,6 +407,56 @@ export default function FullContentTranscript({
     "fct-sub-",
   );
 
+  // ── Saved words set for highlight ──
+  const vocabWords = useMemo(
+    () => new Set(vocabList.map((v) => v.word.toLowerCase())),
+    [vocabList],
+  );
+
+  // ── Fetch episode vocabulary ──
+  useEffect(() => {
+    if (!isOpen || !isLoggedIn) {
+      setVocabList([]);
+      return;
+    }
+    let cancelled = false;
+    setIsVocabLoading(true);
+    fetch(`/api/vocabulary/list?episodeid=${episode.episodeid}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.success && Array.isArray(d.data)) {
+          setVocabList(d.data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsVocabLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isLoggedIn, episode.episodeid]);
+
+  // ── Persist font size ──
+  useEffect(() => {
+    window.localStorage.setItem(FONT_SIZE_STORAGE_KEY, String(fontSizeLevel));
+  }, [fontSizeLevel]);
+
+  // ── Settings dropdown click-outside ──
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target as Node)
+      ) {
+        setIsSettingsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSettingsOpen]);
+
   // ── Dictation Mode Logic ──
   useEffect(() => {
     if (transcriptMode === "dictate") {
@@ -324,8 +501,54 @@ export default function FullContentTranscript({
       setCurrentEpisode,
       setCurrentAudioUrl,
       episode,
+      session,
       setSelectionMenu,
     ],
+  );
+
+  const jumpBySentence = useCallback(
+    (delta: number) => {
+      if (transcriptMode === "dictate" || processed.length === 0) return;
+      const base = activeIndex >= 0 ? activeIndex : 0;
+      const target = processed[base + delta];
+      if (target) handleJump(target.start);
+    },
+    [transcriptMode, processed, activeIndex, handleJump],
+  );
+
+  const keyboardHandlers = useMemo(
+    () => ({
+      onTogglePlay: () => {
+        if (isPlayingThis) {
+          togglePlay();
+        } else {
+          handleJump(processed[activeIndex]?.start ?? 0);
+        }
+      },
+      onPrevSentence: () => jumpBySentence(-1),
+      onNextSentence: () => jumpBySentence(1),
+      onToggleLoopCurrent: () => {
+        if (activeIndex >= 0) {
+          setLoopingIndex((prev) =>
+            prev === activeIndex ? null : activeIndex,
+          );
+        }
+      },
+      onClose,
+    }),
+    [
+      isPlayingThis,
+      togglePlay,
+      handleJump,
+      processed,
+      activeIndex,
+      jumpBySentence,
+      onClose,
+    ],
+  );
+  useTranscriptKeyboard(
+    isOpen && !isModalOpen && !isProofreadOpen,
+    keyboardHandlers,
   );
 
   const handleWordClick = useCallback(
@@ -362,15 +585,7 @@ export default function FullContentTranscript({
         setIsLoadingDefinition(false);
       }
     },
-    [
-      isPlayingThis,
-      isPlaying,
-      pause,
-      activeIndex,
-      handleJump,
-      processed,
-      setSelectionMenu,
-    ],
+    [isPlayingThis, isPlaying, pause, setSelectionMenu],
   );
 
   const handleSaveVocabulary = async () => {
@@ -402,6 +617,24 @@ export default function FullContentTranscript({
       if (res.ok) {
         toast.success("已加入生词本");
         setIsModalOpen(false);
+        const data = await res.json().catch(() => null);
+        if (data?.data) {
+          setVocabList((prev) => [...prev, data.data]);
+        } else {
+          // 兜底:至少把单词加入高亮集合
+          setVocabList((prev) => [
+            ...prev,
+            {
+              vocabularyid: Date.now(),
+              word: selectedWord,
+              definition,
+              translation: selectedTranslation,
+              contextSentence: selectedContext,
+              timestamp: isPlayingThis && audioRef ? audioRef.currentTime : 0,
+              speakUrl: wordDetails.speakUrl ?? null,
+            },
+          ]);
+        }
       } else {
         const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.message || "保存失败");
@@ -420,7 +653,10 @@ export default function FullContentTranscript({
     }
   };
 
-  // Handlers
+  const handleViewDetail = useCallback(() => {
+    onClose();
+    router.push(`/episode/${episode.episodeid}`);
+  }, [onClose, router, episode.episodeid]);
 
   // Swipe down to close
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -452,69 +688,105 @@ export default function FullContentTranscript({
           onDragEnd={handleDragEnd}
           className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col overflow-hidden"
         >
-          {/* ── Header Section ── */}
-          <header className="w-full bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 sticky top-0 z-10 transition-colors duration-300">
-            <div className="max-w-[900px] mx-auto px-4 md:px-8 py-3 flex items-center justify-center relative min-h-[64px]">
-              {/* ── Subtitle Visibility Controls (Left) ── */}
-              <div className="absolute left-2 md:left-8 flex items-center bg-ink-100/80 dark:bg-ink-800/80 backdrop-blur-sm p-0.5 md:p-1 rounded-2xl gap-0.5 border border-ink-200/50 dark:border-ink-700/50 shadow-sm transition-all duration-300">
+          {/* ── Header: 三段式 slim bar ── */}
+          <header className="w-full shrink-0 bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 z-10 transition-colors duration-300">
+            <div className="relative flex items-center justify-between gap-3 h-14 px-3 md:px-6">
+              {/* ── Left: 收起 + 剧集信息 ── */}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <button
-                  onClick={() => setVisibilityMode("both")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
-                    visibilityMode === "both"
-                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
-                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
-                  )}
-                  title="显示中英双语"
+                  onClick={onClose}
+                  className="flex items-center gap-0.5 shrink-0 px-2 py-1.5 -ml-1 rounded-xl text-ink-500 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                  title="收起 (Esc)"
                 >
-                  <span className="material-symbols-outlined text-sm">
-                    translate
+                  <span className="material-symbols-outlined text-xl">
+                    expand_more
                   </span>
-                  <span className="hidden md:inline">双语</span>
-                </button>
-                <button
-                  onClick={() => setVisibilityMode("en")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
-                    visibilityMode === "en"
-                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
-                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
-                  )}
-                  title="仅显示英文"
-                >
-                  <span className="material-symbols-outlined text-sm">abc</span>
-                  <span className="hidden md:inline">英文</span>
-                </button>
-                <button
-                  onClick={() => setVisibilityMode("zh")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300",
-                    visibilityMode === "zh"
-                      ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-[0_2px_8px_rgba(31,122,92,0.15)] scale-105"
-                      : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-white/50 dark:hover:bg-ink-700/50",
-                  )}
-                  title="仅显示中文"
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    text_fields
+                  <span className="text-xs font-bold hidden md:inline">
+                    返回
                   </span>
-                  <span className="hidden md:inline">中文</span>
                 </button>
+                <span className="hidden md:block w-px h-5 bg-ink-200 dark:bg-ink-700 shrink-0" />
+                <div
+                  className="hidden md:flex items-center gap-2.5 min-w-0 cursor-pointer group"
+                  onClick={handleViewDetail}
+                  title="查看剧集详情"
+                >
+                  <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-ink-200 dark:border-ink-700">
+                    <img
+                      src={episode.coverUrl}
+                      alt={episode.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-[13px] font-bold text-ink-900 dark:text-ink-100 truncate leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors max-w-[280px] lg:max-w-[360px]">
+                      {episode.title}
+                    </h2>
+                    <p className="text-[11px] text-ink-400 dark:text-ink-500 truncate leading-tight">
+                      {episode.podcast?.title || "未知节目"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              {/* Close Anchor (Center) */}
-              <button
-                onClick={onClose}
-                className="text-ink-400 dark:text-ink-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors active:scale-95 duration-200 flex items-center justify-center"
-              >
-                <span className="material-symbols-outlined text-4xl">
-                  expand_more
+              {/* ── Center: 进度上下文 ── */}
+              <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-2 text-xs text-ink-400 dark:text-ink-500 select-none pointer-events-none">
+                <span className="tabular-nums font-medium">
+                  第 {activeIndex >= 0 ? activeIndex + 1 : "–"}/
+                  {processed.length} 句
                 </span>
-              </button>
+                <span className="w-px h-3 bg-ink-200 dark:bg-ink-700" />
+                <span className="tabular-nums font-medium">
+                  {formatSec(currentTime)} / {formatSec(duration)}
+                </span>
+              </div>
 
-              {/* ── Function Groups (Right) ── */}
-              <div className="absolute right-2 md:right-8 flex items-center gap-2 md:gap-4">
-                {/* ── Dictation Mode Toggle ── */}
+              {/* ── Right: 显示模式 / 听写 / 设置 / 关闭 ── */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Visibility segmented control */}
+                <div className="flex items-center bg-ink-100/80 dark:bg-ink-800/80 backdrop-blur-sm p-0.5 rounded-xl gap-0.5 border border-ink-200/50 dark:border-ink-700/50">
+                  {(
+                    [
+                      {
+                        mode: "both",
+                        icon: "translate",
+                        label: "双语",
+                        tip: "显示中英双语",
+                      },
+                      {
+                        mode: "en",
+                        icon: "abc",
+                        label: "英文",
+                        tip: "仅显示英文",
+                      },
+                      {
+                        mode: "zh",
+                        icon: "text_fields",
+                        label: "中文",
+                        tip: "仅显示中文",
+                      },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.mode}
+                      onClick={() => setVisibilityMode(item.mode)}
+                      className={cn(
+                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all duration-200",
+                        visibilityMode === item.mode
+                          ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-sm"
+                          : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300",
+                      )}
+                      title={item.tip}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {item.icon}
+                      </span>
+                      <span className="hidden md:inline">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dictation mode (emphasized mode entry) */}
                 <button
                   onClick={() =>
                     setTranscriptMode(
@@ -522,10 +794,10 @@ export default function FullContentTranscript({
                     )
                   }
                   className={cn(
-                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200",
                     transcriptMode === "dictate"
-                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800"
-                      : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
+                      ? "bg-primary-600 border-primary-600 text-white shadow-sm"
+                      : "border-primary-300 dark:border-primary-700 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
                   )}
                   title={
                     transcriptMode === "dictate"
@@ -543,52 +815,123 @@ export default function FullContentTranscript({
                   </span>
                 </button>
 
-                {/* ── Auto Scroll Toggle ── */}
-                <button
-                  onClick={() => setAutoScroll(!autoScroll)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
-                    autoScroll
-                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800"
-                      : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
-                  )}
-                  title={autoScroll ? "已开启自动滚动" : "已关闭自动滚动"}
-                >
-                  <span
-                    className="material-symbols-outlined text-sm"
-                    style={{
-                      fontVariationSettings: autoScroll
-                        ? "'FILL' 1"
-                        : "'FILL' 0",
-                    }}
-                  >
-                    {autoScroll ? "sync" : "sync_disabled"}
-                  </span>
-                  <span className="hidden sm:inline">自动滚动</span>
-                </button>
-
-                <ThemeSwitcher
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border border-transparent text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800",
-                  )}
-                >
-                  {/* <span className="hidden sm:inline">深浅模式</span> */}
-                </ThemeSwitcher>
-                {isLoggedIn && (
+                {/* Settings dropdown */}
+                <div className="relative" ref={settingsRef}>
                   <button
-                    onClick={() => setIsProofreadingMode(!isProofreadingMode)}
+                    onClick={() => setIsSettingsOpen((v) => !v)}
                     className={cn(
-                      "flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border",
-                      isProofreadingMode
-                        ? "bg-accent-50 dark:bg-accent-900/30 text-accent-600 dark:text-accent-400 border-accent-200 dark:border-accent-800"
-                        : "text-ink-400 border-transparent hover:bg-ink-100 dark:hover:bg-ink-800",
+                      "flex items-center justify-center w-8 h-8 rounded-xl transition-colors",
+                      isSettingsOpen
+                        ? "bg-ink-100 dark:bg-ink-800 text-primary-600 dark:text-primary-400"
+                        : "text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800",
                     )}
-                    title={isProofreadingMode ? "退出校对模式" : "进入校对模式"}
+                    title="设置"
                   >
-                    <PencilSquareIcon className="w-5 h-5" />
-                    <span className="hidden sm:inline">字幕校对</span>
+                    <span className="material-symbols-outlined text-xl">
+                      settings
+                    </span>
                   </button>
-                )}
+
+                  {isSettingsOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 shadow-e3 p-1.5 z-50">
+                      <SettingsRow
+                        icon={autoScroll ? "sync" : "sync_disabled"}
+                        label="自动滚动"
+                        onClick={() => setAutoScroll(!autoScroll)}
+                      >
+                        <Toggle checked={autoScroll} />
+                      </SettingsRow>
+
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
+                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
+                            format_size
+                          </span>
+                          字幕字号
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() =>
+                              setFontSizeLevel((v) => Math.max(0, v - 1))
+                            }
+                            disabled={fontSizeLevel === 0}
+                            className="w-7 h-7 rounded-lg text-xs font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
+                            title="减小字号"
+                          >
+                            A-
+                          </button>
+                          <span className="w-4 text-center text-xs tabular-nums text-ink-400">
+                            {fontSizeLevel + 1}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setFontSizeLevel((v) => Math.min(2, v + 1))
+                            }
+                            disabled={fontSizeLevel === 2}
+                            className="w-7 h-7 rounded-lg text-sm font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
+                            title="增大字号"
+                          >
+                            A+
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
+                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
+                            contrast
+                          </span>
+                          深浅色
+                        </div>
+                        <ThemeSwitcher className="flex items-center justify-center w-8 h-8 rounded-xl text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors" />
+                      </div>
+
+                      {isLoggedIn && (
+                        <>
+                          <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
+                          <SettingsRow
+                            icon="edit"
+                            label="字幕校对"
+                            onClick={() => {
+                              setIsProofreadingMode(!isProofreadingMode);
+                              setIsSettingsOpen(false);
+                            }}
+                          >
+                            <span
+                              className={cn(
+                                "text-[11px] font-bold",
+                                isProofreadingMode
+                                  ? "text-accent-600 dark:text-accent-400"
+                                  : "text-ink-300 dark:text-ink-600",
+                              )}
+                            >
+                              {isProofreadingMode ? "开启中" : "关闭"}
+                            </span>
+                          </SettingsRow>
+                        </>
+                      )}
+
+                      <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
+                      <p className="px-3 py-1.5 text-[11px] leading-relaxed text-ink-400 dark:text-ink-500">
+                        Space 播放 · ←/→ 句跳 · R 单句循环 · Esc 收起
+                      </p>
+                      <p className="px-3 pb-1.5 text-[11px] text-ink-300 dark:text-ink-600">
+                        注:AI 翻译仅供参考
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={onClose}
+                  className="flex items-center justify-center w-8 h-8 rounded-xl text-ink-400 hover:text-error-500 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                  title="关闭 (Esc)"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    close
+                  </span>
+                </button>
               </div>
             </div>
           </header>
@@ -598,84 +941,99 @@ export default function FullContentTranscript({
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50"
           >
-            <div className="max-w-[900px] mx-auto px-0 sm:px-4 md:px-8 py-4 md:py-8 space-y-1 md:space-y-4">
-              {/* Disclaimer */}
-              <div className="flex justify-center mb-2 md:mb-4">
-                <div className="px-3 py-1 rounded-full bg-ink-100/50 dark:bg-ink-800/50 text-[10px] md:text-xs font-medium text-ink-400 dark:text-ink-500 border border-ink-200/30 dark:border-ink-700/30 backdrop-blur-sm">
-                  注：AI翻译 仅供参考
-                </div>
-              </div>
-              <AnimatePresence>
-                {processed.map((sub, index) => {
-                  const isActive = index === activeIndex;
-                  if (transcriptMode === "dictate" && isActive) {
-                    return (
-                      <DictationItem
-                        key={sub.id || index}
-                        sub={sub}
-                        isActive={isActive}
-                        isPlaying={isPlaying}
-                        showTranslation={
-                          visibilityMode === "zh" || visibilityMode === "both"
-                        }
-                        onJump={handleJump}
-                        onSuccess={handleDictationSuccess}
-                      />
-                    );
-                  }
-                  return (
-                    <SubtitleRow
-                      key={sub.id || index}
-                      sub={sub}
-                      isActive={isActive}
-                      isLooping={loopingIndex === index}
-                      isLoggedIn={isLoggedIn}
-                      visibilityMode={visibilityMode}
-                      isProofreadingMode={isProofreadingMode}
-                      onJump={handleJump}
-                      onWordClick={(word, en, zh) =>
-                        handleWordClick(word, en, zh)
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-6 grid grid-cols-12 gap-8">
+              {/* Transcript column */}
+              <div className="col-span-12 xl:col-span-8">
+                <div className="max-w-[760px] mx-auto space-y-0.5">
+                  <AnimatePresence>
+                    {processed.map((sub, index) => {
+                      const isActive = index === activeIndex;
+                      if (transcriptMode === "dictate" && isActive) {
+                        return (
+                          <DictationItem
+                            key={sub.id || index}
+                            sub={sub}
+                            isActive={isActive}
+                            isPlaying={isPlaying}
+                            showTranslation={
+                              visibilityMode === "zh" ||
+                              visibilityMode === "both"
+                            }
+                            onJump={handleJump}
+                            onSuccess={handleDictationSuccess}
+                          />
+                        );
                       }
-                      onToggleLoop={() =>
-                        setLoopingIndex((prev) =>
-                          prev === index ? null : index,
-                        )
-                      }
-                      onProofread={(sub) => {
-                        if (!session?.user) {
-                          toast("请先登录", {
-                            description: "登录后即可参与字幕校对共建！",
-                          });
-                          const loginModal = document.getElementById(
+                      return (
+                        <SubtitleRow
+                          key={sub.id || index}
+                          sub={sub}
+                          isActive={isActive}
+                          isLooping={loopingIndex === index}
+                          isLoggedIn={isLoggedIn}
+                          visibilityMode={visibilityMode}
+                          isProofreadingMode={isProofreadingMode}
+                          fontSizeLevel={fontSizeLevel}
+                          vocabWords={vocabWords}
+                          onJump={handleJump}
+                          onWordClick={(word, en, zh) =>
+                            handleWordClick(word, en, zh)
+                          }
+                          onToggleLoop={() =>
+                            setLoopingIndex((prev) =>
+                              prev === index ? null : index,
+                            )
+                          }
+                          onProofread={(sub) => {
+                            if (!session?.user) {
+                              toast("请先登录", {
+                                description: "登录后即可参与字幕校对共建！",
+                              });
+                              const loginModal = document.getElementById(
+                                "email_check_modal_box",
+                              ) as HTMLDialogElement | null;
+                              if (loginModal) loginModal.showModal();
+                              return;
+                            }
+                            setProofreadSub(sub);
+                            setIsProofreadOpen(true);
+                          }}
+                        />
+                      );
+                    })}
+                  </AnimatePresence>
+                  {!isLoggedIn && (
+                    <div className="flex justify-center mt-12 mb-8 relative z-10">
+                      <button
+                        onClick={() => {
+                          const modal = document.getElementById(
                             "email_check_modal_box",
                           ) as HTMLDialogElement | null;
-                          if (loginModal) loginModal.showModal();
-                          return;
-                        }
-                        setProofreadSub(sub);
-                        setIsProofreadOpen(true);
-                      }}
-                    />
-                  );
-                })}
-              </AnimatePresence>
-              {!isLoggedIn && (
-                <div className="flex justify-center mt-12 mb-8 relative z-10">
-                  <button
-                    onClick={() => {
-                      const modal = document.getElementById(
-                        "email_check_modal_box",
-                      ) as HTMLDialogElement | null;
-                      if (modal) modal.showModal();
-                    }}
-                    className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
-                  >
-                    登录后解锁全部字幕
-                  </button>
+                          if (modal) modal.showModal();
+                        }}
+                        className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+                      >
+                        登录后解锁全部字幕
+                      </button>
+                    </div>
+                  )}
+                  <div className="h-40" />
+                  {/* Bottom spacer for PlayControlBar */}
                 </div>
-              )}
-              <div className="h-48"></div>{" "}
-              {/* Bottom spacer for PlayControlBar */}
+              </div>
+
+              {/* Learning panel column */}
+              <aside className="hidden xl:block xl:col-span-4">
+                <LearningPanel
+                  episode={episode}
+                  vocabulary={vocabList}
+                  isLoading={isVocabLoading}
+                  isLoggedIn={isLoggedIn}
+                  onWordClick={handleWordClick}
+                  onJump={handleJump}
+                  onViewDetail={handleViewDetail}
+                />
+              </aside>
             </div>
           </main>
 
