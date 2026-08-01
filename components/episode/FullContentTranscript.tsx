@@ -26,6 +26,7 @@ import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { DictationItem } from "./transcript/DictationItem";
+import type { DictEntryDTO } from "@/core/dictionary/dto";
 
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
@@ -366,14 +367,8 @@ export default function FullContentTranscript({
   const [selectedTranslation, setSelectedTranslation] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [definition, setDefinition] = useState("");
+  const [dictData, setDictData] = useState<DictEntryDTO | null>(null);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
-  const [wordDetails, setWordDetails] = useState<{
-    speakUrl?: string;
-    dictUrl?: string;
-    webUrl?: string;
-    mobileUrl?: string;
-  }>({});
 
   // ── Processed subtitles ──
   const processed: ProcessedSubtitle[] = useMemo(() => {
@@ -563,21 +558,19 @@ export default function FullContentTranscript({
       setSelectedWord(cleanWord);
       setSelectedContext(contextEn);
       setSelectedTranslation(contextZh);
-      setDefinition("");
-      setWordDetails({});
+      setDictData(null);
       setIsModalOpen(true);
       setIsLoadingDefinition(true);
 
       try {
-        const res = await fetch("/api/dictionary/youdao", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ word: cleanWord }),
-        });
+        const res = await fetch(
+          `/api/dict/${encodeURIComponent(cleanWord.toLowerCase())}`,
+        );
         if (res.ok) {
-          const data = await res.json();
-          setDefinition(data.definition);
-          setWordDetails(data);
+          const json = await res.json();
+          if (json.success && json.data) {
+            setDictData(json.data as DictEntryDTO);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -596,6 +589,12 @@ export default function FullContentTranscript({
       return;
     }
 
+    // Derive definition from dictData
+    const definition =
+      dictData?.definitions
+        ?.map((d) => `[${d.pos}] ${d.meaning_cn}`)
+        .join("; ") || "";
+
     setIsSaving(true);
     try {
       const res = await fetch("/api/vocabulary/add", {
@@ -603,15 +602,15 @@ export default function FullContentTranscript({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           word: selectedWord,
-          definition: definition,
+          definition,
           contextSentence: selectedContext,
           translation: selectedTranslation,
           episodeid: episode.episodeid,
           timestamp: isPlayingThis && audioRef ? audioRef.currentTime : 0,
-          speakUrl: wordDetails.speakUrl,
-          dictUrl: wordDetails.dictUrl,
-          webUrl: wordDetails.webUrl,
-          mobileUrl: wordDetails.mobileUrl,
+          speakUrl: dictData?.audio_urls?.us || "",
+          dictUrl: "",
+          webUrl: "",
+          mobileUrl: "",
         }),
       });
       if (res.ok) {
@@ -631,7 +630,7 @@ export default function FullContentTranscript({
               translation: selectedTranslation,
               contextSentence: selectedContext,
               timestamp: isPlayingThis && audioRef ? audioRef.currentTime : 0,
-              speakUrl: wordDetails.speakUrl ?? null,
+              speakUrl: dictData?.audio_urls?.us ?? null,
             },
           ]);
         }
@@ -644,12 +643,6 @@ export default function FullContentTranscript({
       toast.error("网络错误");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const playWordAudio = () => {
-    if (wordDetails.speakUrl) {
-      new Audio(wordDetails.speakUrl).play().catch(console.error);
     }
   };
 
@@ -1059,13 +1052,11 @@ export default function FullContentTranscript({
             selectedWord={selectedWord}
             selectedContext={selectedContext}
             selectedTranslation={selectedTranslation}
-            definition={definition}
-            setDefinition={setDefinition}
+            dictData={dictData}
             isLoadingDefinition={isLoadingDefinition}
-            wordDetails={wordDetails}
             isSaving={isSaving}
+            episodeTitle={episode.title}
             onSave={handleSaveVocabulary}
-            onPlayAudio={playWordAudio}
           />
 
           <ProofreadModal
