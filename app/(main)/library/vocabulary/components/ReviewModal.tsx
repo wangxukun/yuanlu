@@ -211,7 +211,7 @@ export function ReviewModal({
           setIsCardFlipped(true);
         }
       } else {
-        if (["1", "2", "3", "4"].includes(e.key) && !isSubmitting && !inInput) {
+        if (["1", "2", "3", "4"].includes(e.key) && !isSubmitting) {
           const map: Record<string, ReviewQuality> = {
             "1": ReviewQuality.FORGOT,
             "2": ReviewQuality.HARD,
@@ -232,6 +232,13 @@ export function ReviewModal({
     setIsReviewOpen,
     setIsCardFlipped,
   ]);
+
+  // Dismiss mobile keyboard when card flips
+  useEffect(() => {
+    if (isCardFlipped && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [isCardFlipped]);
 
   // ==================== Computed ====================
 
