@@ -11,7 +11,12 @@ interface SubtitleItemProps {
   isPlaying: boolean;
   showTranslation: boolean;
   onJump: (time: number) => void;
-  onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onWordClick: (
+    word: string,
+    contextEn: string,
+    contextZh: string,
+    timestamp: number,
+  ) => void;
   onProofread?: (sub: ProcessedSubtitle) => void;
   isLooping?: boolean;
   onToggleLoop?: () => void;
@@ -132,7 +137,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                         return;
                       }
                       e.stopPropagation();
-                      onWordClick(part, sub.textEn, sub.textZh);
+                      onWordClick(part, sub.textEn, sub.textZh, sub.start);
                     }}
                     className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
                   >

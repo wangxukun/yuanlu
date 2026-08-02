@@ -7,6 +7,43 @@ import { VocabularyControls } from "./components/VocabularyControls";
 import { VocabularyList } from "./components/VocabularyList";
 import { ReviewModal } from "./components/ReviewModal";
 
+export interface DictData {
+  word: string;
+  phonetics?: { us?: string; uk?: string };
+  audio_urls?: { us?: string; uk?: string };
+  inflections?: {
+    plural?: string | null;
+    past_tense?: string | null;
+    present_participle?: string | null;
+    third_person_singular?: string | null;
+    adjective_form?: string | null;
+  };
+  definitions?: Array<{
+    pos: string;
+    meaning_cn: string;
+    meaning_en: string;
+    cefr_level?: string;
+  }>;
+  etymology?: {
+    prefix?: string | null;
+    root?: string | null;
+    suffix?: string | null;
+    breakdown?: string | null;
+    mnemonic?: string | null;
+  };
+  phrases_and_collocations?: Array<{
+    phrase: string;
+    meaning_cn: string;
+  }>;
+  synonyms?: string[];
+  antonyms?: string[];
+  examples?: Array<{
+    en: string;
+    cn: string;
+    context?: string;
+  }>;
+}
+
 export interface VocabularyItem {
   vocabularyid: number;
   word: string;
@@ -20,6 +57,8 @@ export interface VocabularyItem {
   webUrl: string | null;
   timestamp: number | null;
   episodeTitle?: string;
+  status?: "LEARNING" | "MASTERED";
+  dictData?: DictData | null;
 }
 
 interface VocabularyNotebookProps {

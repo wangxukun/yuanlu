@@ -18,6 +18,7 @@ interface VocabularyModalProps {
   dictData: DictEntryDTO | null;
   isLoadingDefinition: boolean;
   isSaving: boolean;
+  isSaved?: boolean;
   episodeTitle?: string;
   onSave: () => void;
   onComplete?: () => void;
@@ -32,6 +33,7 @@ export function VocabularyModal({
   dictData,
   isLoadingDefinition,
   isSaving,
+  isSaved = false,
   episodeTitle,
   onSave,
   onComplete,
@@ -60,12 +62,17 @@ export function VocabularyModal({
             <div className="flex items-center gap-1 shrink-0 ml-2">
               <button
                 onClick={onSave}
-                disabled={isSaving}
-                className="btn btn-sm btn-ghost btn-square"
-                title="保存生词"
+                disabled={isSaving || isSaved}
+                className={clsx(
+                  "btn btn-sm btn-ghost btn-square",
+                  isSaved && "text-primary cursor-default hover:bg-transparent",
+                )}
+                title={isSaved ? "已在生词本中" : "保存生词"}
               >
                 {isSaving ? (
                   <span className="loading loading-spinner loading-xs" />
+                ) : isSaved ? (
+                  <BookmarkIcon className="w-5 h-5 fill-current" />
                 ) : (
                   <BookmarkIcon className="w-5 h-5" />
                 )}
@@ -97,7 +104,7 @@ export function VocabularyModal({
                 {dictData.audio_urls?.uk && (
                   <button
                     onClick={() => playAudio(dictData.audio_urls.uk)}
-                    className="btn btn-xs btn-circle btn-primary btn-outline"
+                    className="btn btn-xs btn-circle btn-ghost"
                     title="播放发音 (UK)"
                   >
                     <SpeakerWaveIcon className="w-3.5 h-3.5" />
@@ -169,13 +176,13 @@ export function VocabularyModal({
                 onClick={() =>
                   toast("即将推出", {
                     description:
-                      "DeepSeek AI 语境用法深度剖析功能正在开发中，敬请期待！",
+                      "AI 语境用法深度剖析功能正在开发中，敬请期待！",
                   })
                 }
                 className="btn w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white border-primary-600 gap-2"
               >
                 <SparklesIcon className="w-5 h-5" />
-                生成 DeepSeek AI 语境用法深度剖析
+                生成 AI 语境用法深度剖析
               </button>
             </>
           ) : (

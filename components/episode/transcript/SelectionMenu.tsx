@@ -7,7 +7,12 @@ interface SelectionMenuProps {
   menuRef: RefObject<HTMLDivElement | null>;
   selectionMenu: SelectionMenuState;
   onClose: () => void;
-  onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onWordClick: (
+    word: string,
+    contextEn: string,
+    contextZh: string,
+    timestamp: number,
+  ) => void;
 }
 
 export function SelectionMenu({
@@ -50,6 +55,7 @@ export function SelectionMenu({
               selectionMenu.text,
               selectionMenu.contextEn,
               selectionMenu.contextZh,
+              selectionMenu.timestamp,
             );
             window.getSelection()?.removeAllRanges();
             onClose();
@@ -59,6 +65,7 @@ export function SelectionMenu({
               selectionMenu.text,
               selectionMenu.contextEn,
               selectionMenu.contextZh,
+              selectionMenu.timestamp,
             );
             window.getSelection()?.removeAllRanges();
             onClose();

@@ -44,7 +44,7 @@ const SYSTEM_PROMPT = `You are an authoritative, accurate, and comprehensive Eng
     {
       "pos": "string (part of speech, e.g., 'n.', 'v.', 'adj.')",
       "meaning_cn": "string (Short Chinese translation)",
-      "meaning_en": "string (Detailed explanation in Chinese, please provide the detailed explanation in Chinese here despite the key name)"
+      "meaning_en": "string (Detailed explanation in Chinese, please provide the detailed explanation in Chinese here despite the key name)",
       "cefr_level": "string (e.g., 'B2', 'C1', or null)"
     }
   ],
@@ -136,12 +136,15 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
     );
   }
 
-  // Strip markdown code fences if present (defensive)
-  const jsonStr = content
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+  // 提取 JSON 对象，防止 LLM 包裹多余文本或 Markdown 标记
+  const startIndex = content.indexOf("{");
+  const endIndex = content.lastIndexOf("}");
 
+  if (startIndex === -1 || endIndex === -1) {
+    throw new Error("No valid JSON object found in LLM response");
+  }
+
+  const jsonStr = content.substring(startIndex, endIndex + 1);
   const parsed: DictEntryDTO = JSON.parse(jsonStr);
   return parsed;
 }

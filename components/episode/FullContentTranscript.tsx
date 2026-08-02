@@ -160,7 +160,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                       e.stopPropagation();
                       const sel = window.getSelection();
                       if (sel && !sel.isCollapsed) return;
-                      onWordClick(cleanWord, sub.textEn, sub.textZh);
+                      onWordClick(cleanWord, sub.textEn, sub.textZh, sub.start);
                     }}
                     className={cn(
                       "cursor-pointer rounded-[3px] inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
@@ -365,6 +365,7 @@ export default function FullContentTranscript({
   const [selectedWord, setSelectedWord] = useState<string>("");
   const [selectedContext, setSelectedContext] = useState<string>("");
   const [selectedTranslation, setSelectedTranslation] = useState<string>("");
+  const [selectedTimestamp, setSelectedTimestamp] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dictData, setDictData] = useState<DictEntryDTO | null>(null);
@@ -547,7 +548,12 @@ export default function FullContentTranscript({
   );
 
   const handleWordClick = useCallback(
-    async (word: string, contextEn: string, contextZh: string) => {
+    async (
+      word: string,
+      contextEn: string,
+      contextZh: string,
+      timestamp: number,
+    ) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
       if (isPlayingThis && isPlaying && pause) pause();
@@ -558,6 +564,7 @@ export default function FullContentTranscript({
       setSelectedWord(cleanWord);
       setSelectedContext(contextEn);
       setSelectedTranslation(contextZh);
+      setSelectedTimestamp(timestamp);
       setDictData(null);
       setIsModalOpen(true);
       setIsLoadingDefinition(true);
@@ -606,7 +613,7 @@ export default function FullContentTranscript({
           contextSentence: selectedContext,
           translation: selectedTranslation,
           episodeid: episode.episodeid,
-          timestamp: isPlayingThis && audioRef ? audioRef.currentTime : 0,
+          timestamp: selectedTimestamp,
           speakUrl: dictData?.audio_urls?.us || "",
           dictUrl: "",
           webUrl: "",
@@ -614,26 +621,17 @@ export default function FullContentTranscript({
         }),
       });
       if (res.ok) {
-        toast.success("已加入生词本");
-        setIsModalOpen(false);
-        const data = await res.json().catch(() => null);
+        const data = await res.json();
+        toast.success(data.message || "已加入生词本");
         if (data?.data) {
-          setVocabList((prev) => [...prev, data.data]);
-        } else {
-          // 兜底:至少把单词加入高亮集合
-          setVocabList((prev) => [
-            ...prev,
-            {
-              vocabularyid: Date.now(),
-              word: selectedWord,
-              definition,
-              translation: selectedTranslation,
-              contextSentence: selectedContext,
-              timestamp: isPlayingThis && audioRef ? audioRef.currentTime : 0,
-              speakUrl: dictData?.audio_urls?.us ?? null,
-            },
-          ]);
+          setVocabList((prev) => {
+            const exists = prev.some(
+              (v) => v.vocabularyid === data.data.vocabularyid,
+            );
+            return exists ? prev : [...prev, data.data];
+          });
         }
+        setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.message || "保存失败");
@@ -969,8 +967,8 @@ export default function FullContentTranscript({
                           fontSizeLevel={fontSizeLevel}
                           vocabWords={vocabWords}
                           onJump={handleJump}
-                          onWordClick={(word, en, zh) =>
-                            handleWordClick(word, en, zh)
+                          onWordClick={(word, en, zh, timestamp) =>
+                            handleWordClick(word, en, zh, timestamp)
                           }
                           onToggleLoop={() =>
                             setLoopingIndex((prev) =>
@@ -1055,6 +1053,7 @@ export default function FullContentTranscript({
             dictData={dictData}
             isLoadingDefinition={isLoadingDefinition}
             isSaving={isSaving}
+            isSaved={vocabWords.has(selectedWord.toLowerCase())}
             episodeTitle={episode.title}
             onSave={handleSaveVocabulary}
           />

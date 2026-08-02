@@ -22,6 +22,17 @@ export const vocabularyService = {
       },
     });
 
+    const words = list.map((v) => v.word);
+
+    // 从 Dictionary 表获取所有相关的字典数据
+    const dictionaries = await prisma.dictionary.findMany({
+      where: {
+        word: { in: words },
+      },
+    });
+
+    const dictMap = new Map(dictionaries.map((d) => [d.word, d.data]));
+
     // 格式化数据以适应前端组件
     return list.map((item) => ({
       ...item,
@@ -29,6 +40,8 @@ export const vocabularyService = {
       addedDate: item.addedDate ? item.addedDate.toISOString() : null,
       nextReviewAt: item.nextReviewAt ? item.nextReviewAt.toISOString() : null,
       episodeTitle: item.episode?.title || "未知剧集",
+      // 将 Dictionary 表中的数据合并给 dictData 供前端富渲染
+      dictData: dictMap.get(item.word) || item.dictData || null,
     }));
   },
 
@@ -76,6 +89,37 @@ export const vocabularyService = {
       daysAdded: Math.round(
         (nextReviewAt.getTime() - new Date().getTime()) / (1000 * 3600 * 24),
       ),
+    };
+  },
+
+  /**
+   * 更新单词状态 (例如：LEARNING -> MASTERED)
+   */
+  async updateStatus(
+    userId: string,
+    vocabularyId: number,
+    status: "LEARNING" | "MASTERED",
+  ) {
+    const vocab = await prisma.vocabulary.findUnique({
+      where: { vocabularyid: vocabularyId },
+    });
+
+    if (!vocab) {
+      throw new Error("单词不存在");
+    }
+
+    if (vocab.userid !== userId) {
+      throw new Error("无权操作此单词");
+    }
+
+    const updatedVocab = await prisma.vocabulary.update({
+      where: { vocabularyid: vocabularyId },
+      data: { status },
+    });
+
+    return {
+      vocabularyid: updatedVocab.vocabularyid,
+      status: updatedVocab.status,
     };
   },
 };

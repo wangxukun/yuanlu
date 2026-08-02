@@ -66,6 +66,7 @@ export default function InteractiveTranscript({
   const [selectedWord, setSelectedWord] = useState<string>("");
   const [selectedContext, setSelectedContext] = useState<string>("");
   const [selectedTranslation, setSelectedTranslation] = useState<string>("");
+  const [selectedTimestamp, setSelectedTimestamp] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dictData, setDictData] = useState<DictEntryDTO | null>(null);
@@ -162,7 +163,12 @@ export default function InteractiveTranscript({
   );
 
   const handleWordClick = useCallback(
-    async (word: string, contextEn: string, contextZh: string) => {
+    async (
+      word: string,
+      contextEn: string,
+      contextZh: string,
+      timestamp: number,
+    ) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
       if (isPlayingThisEpisode && isPlaying && pause) pause();
@@ -173,6 +179,7 @@ export default function InteractiveTranscript({
       setSelectedWord(cleanWord);
       setSelectedContext(contextEn);
       setSelectedTranslation(contextZh);
+      setSelectedTimestamp(timestamp);
       setDictData(null);
       setIsModalOpen(true);
       setIsLoadingDefinition(true);
@@ -237,8 +244,7 @@ export default function InteractiveTranscript({
           contextSentence: selectedContext,
           translation: selectedTranslation,
           episodeid: episode.episodeid,
-          timestamp:
-            isPlayingThisEpisode && audioRef ? audioRef.currentTime : 0,
+          timestamp: selectedTimestamp,
           speakUrl: dictData?.audio_urls?.us || "",
           dictUrl: "",
           webUrl: "",

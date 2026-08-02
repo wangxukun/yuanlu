@@ -18,4 +18,5 @@ export interface SelectionMenuState {
   text: string;
   contextEn: string;
   contextZh: string;
+  timestamp: number;
 }

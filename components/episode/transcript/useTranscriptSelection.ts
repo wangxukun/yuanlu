@@ -13,6 +13,7 @@ export function useTranscriptSelection(
     text: "",
     contextEn: "",
     contextZh: "",
+    timestamp: 0,
   });
 
   const selectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -75,6 +76,7 @@ export function useTranscriptSelection(
               text: text,
               contextEn: subData.textEn,
               contextZh: subData.textZh,
+              timestamp: subData.start,
             });
           }
         }

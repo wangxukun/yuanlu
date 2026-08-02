@@ -1,6 +1,9 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { submitReviewAction } from "@/lib/actions/vocabulary-actions";
+import {
+  submitReviewAction,
+  updateVocabularyStatusAction,
+} from "@/lib/actions/vocabulary-actions";
 import { VocabularyItem } from "../VocabularyNotebook";
 
 export const isDue = (dateStr?: string | null) => {
@@ -22,6 +25,9 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   const [sortMethod, setSortMethod] = useState<"review" | "added" | "alpha">(
     "review",
   );
+  const [filterStatus, setFilterStatus] = useState<"LEARNING" | "MASTERED">(
+    "LEARNING",
+  );
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -35,8 +41,10 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   const stats = useMemo(
     () => ({
       total: vocabulary.length,
-      due: vocabulary.filter((v) => isDue(v.nextReviewAt)).length,
-      mastered: vocabulary.filter((v) => v.proficiency >= 5).length,
+      due: vocabulary.filter(
+        (v) => isDue(v.nextReviewAt) && v.status !== "MASTERED",
+      ).length,
+      mastered: vocabulary.filter((v) => v.status === "MASTERED").length,
     }),
     [vocabulary],
   );
@@ -44,8 +52,9 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   const filteredList = useMemo(() => {
     const list = vocabulary.filter(
       (v) =>
-        v.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.translation?.includes(searchQuery),
+        (v.status || "LEARNING") === filterStatus &&
+        (v.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          v.translation?.includes(searchQuery)),
     );
 
     switch (sortMethod) {
@@ -68,7 +77,7 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
         break;
     }
     return list;
-  }, [vocabulary, searchQuery, sortMethod]);
+  }, [vocabulary, searchQuery, sortMethod, filterStatus]);
 
   const stopAllAudio = useCallback(() => {
     if (audioRef.current) {
@@ -196,12 +205,53 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
     [currentReviewIndex, isSubmitting, reviewQueue],
   );
 
+  const toggleStatus = useCallback(
+    async (id: number, currentStatus?: "LEARNING" | "MASTERED") => {
+      const newStatus = currentStatus === "MASTERED" ? "LEARNING" : "MASTERED";
+      const res = await updateVocabularyStatusAction(id, newStatus);
+      if (res.success) {
+        setVocabulary((prev) =>
+          prev.map((v) =>
+            v.vocabularyid === id ? { ...v, status: newStatus } : v,
+          ),
+        );
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
+    },
+    [],
+  );
+
+  const deleteVocabulary = useCallback(async (id: number) => {
+    try {
+      const res = await fetch("/api/vocabulary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vocabularyid: id }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setVocabulary((prev) => prev.filter((v) => v.vocabularyid !== id));
+        toast.success("已从生词本中彻底删除");
+      } else {
+        toast.error(data.message || "删除失败");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("网络错误，删除失败");
+    }
+  }, []);
+
   return {
     vocabulary,
     searchQuery,
     setSearchQuery,
     sortMethod,
     setSortMethod,
+    filterStatus,
+    setFilterStatus,
     expandedId,
     setExpandedId,
     isReviewOpen,
@@ -218,6 +268,8 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
     playContextAudio,
     startReview,
     handleSRS,
+    toggleStatus,
+    deleteVocabulary,
   };
 }
 

@@ -53,18 +53,37 @@ export async function POST(request: Request) {
 
       if (todayCount >= 20) {
         return NextResponse.json(
-          { 
-            success: false, 
-            message: "普通用户每天最多保存 20 个生词。升级高级会员解锁无限制生词本！" 
+          {
+            success: false,
+            message:
+              "普通用户每天最多保存 20 个生词。升级高级会员解锁无限制生词本！",
           },
           { status: 403 },
         );
       }
     }
 
-    // 4. 写入数据库
-    // 策略：允许同一个词在不同语境下多次保存。
-    // 如果你希望由“一个词只有一条记录”，可以使用 upsert，但精听通常建议保留不同例句。
+    // 4. 检查是否已经存在同一剧集、同一句子的同一个单词
+    const exactTimestamp = Math.floor(timestamp || 0);
+    const existingVocab = await prisma.vocabulary.findFirst({
+      where: {
+        userid: userId,
+        episodeid: episodeid,
+        word: word,
+        timestamp: exactTimestamp,
+      },
+    });
+
+    if (existingVocab) {
+      return NextResponse.json({
+        success: true,
+        message: "该单词在该句中已保存在生词本",
+        data: existingVocab,
+      });
+    }
+
+    // 5. 写入数据库
+    // 策略：允许同一个词在不同语境下多次保存。但如果是同一句话的同一个词，则在上面拦截。
     const newVocab = await prisma.vocabulary.create({
       data: {
         userid: userId,
@@ -73,7 +92,7 @@ export async function POST(request: Request) {
         contextSentence: contextSentence || "",
         translation: translation || "",
         episodeid: episodeid,
-        timestamp: Math.floor(timestamp || 0),
+        timestamp: exactTimestamp,
         speakUrl: speakUrl || "",
         dictUrl: dictUrl || "",
         webUrl: webUrl || "",

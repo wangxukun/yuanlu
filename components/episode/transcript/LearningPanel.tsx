@@ -18,7 +18,12 @@ interface LearningPanelProps {
   vocabulary: EpisodeVocabItem[];
   isLoading: boolean;
   isLoggedIn: boolean;
-  onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onWordClick: (
+    word: string,
+    contextEn: string,
+    contextZh: string,
+    timestamp: number,
+  ) => void;
   onJump: (t: number) => void;
   onViewDetail: () => void;
 }
@@ -131,6 +136,7 @@ export default function LearningPanel({
                         item.word,
                         item.contextSentence || "",
                         item.translation || "",
+                        item.timestamp || 0,
                       )
                     }
                   >

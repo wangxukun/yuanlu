@@ -394,6 +394,8 @@ model vocabulary {
   episodeid       String?
   nextReviewAt    DateTime? @default(now()) @db.Timestamptz(6)
   proficiency     Int       @default(0)
+  status          String    @default("LEARNING") @db.VarChar(50)
+  dictData        Json?
   timestamp       Int?
   translation     String?
   dictUrl         String?   @db.VarChar(500)

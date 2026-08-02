@@ -51,3 +51,38 @@ export async function submitReviewAction(
     };
   }
 }
+
+/**
+ * Server Action: 更新单词状态 (例如标记为已掌握)
+ */
+export async function updateVocabularyStatusAction(
+  vocabularyId: number,
+  status: "LEARNING" | "MASTERED",
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.userid) {
+      return { success: false, message: "未登录" };
+    }
+
+    const result = await vocabularyService.updateStatus(
+      session.user.userid,
+      vocabularyId,
+      status,
+    );
+
+    revalidatePath("/library/vocabulary");
+
+    return {
+      success: true,
+      message: status === "MASTERED" ? "已标记为掌握" : "已放回生词本",
+      data: result,
+    };
+  } catch (error) {
+    console.error("updateVocabularyStatusAction error:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "更新状态失败",
+    };
+  }
+}
