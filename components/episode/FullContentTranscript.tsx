@@ -315,7 +315,15 @@ export default function FullContentTranscript({
 }: FullContentTranscriptProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  function formatTime(time: number) {
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+
   const {
+    currentEpisode,
+    isPlaying,
     currentTime,
     duration,
     setCurrentTime,
@@ -323,16 +331,18 @@ export default function FullContentTranscript({
     pause,
     play,
     togglePlay,
-    isPlaying,
-    currentEpisode,
-    setCurrentEpisode,
-    setCurrentAudioUrl,
+    playNext,
+    playPrevious,
     playbackRate,
     setPlaybackRate,
+    loopMode,
+    toggleLoopMode,
     transcriptMode,
     setTranscriptMode,
     isPlaylistOpen,
     setIsPlaylistOpen,
+    setCurrentEpisode,
+    setCurrentAudioUrl,
   } = usePlayerStore();
 
   const isPlayingThis = currentEpisode?.episodeid === episode.episodeid;
@@ -341,6 +351,32 @@ export default function FullContentTranscript({
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // ── States ──
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragTime, setDragTime] = useState(0);
+
+  const displayTime = isDragging ? dragTime : currentTime;
+  const progressPercent = duration > 0 ? (displayTime / duration) * 100 : 0;
+
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsDragging(true);
+    setDragTime(Number(e.target.value));
+  };
+
+  const handleSeekEnd = () => {
+    if (audioRef) {
+      audioRef.currentTime = dragTime;
+      setCurrentTime(dragTime);
+    }
+    setIsDragging(false);
+  };
+
+  const cyclePlaybackRate = () => {
+    const rates = [1, 1.25, 1.5, 2, 0.75];
+    const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+    setPlaybackRate(next);
+  };
+
   const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
   const lastJumpTimeRef = useRef<number>(0);
 
@@ -683,7 +719,7 @@ export default function FullContentTranscript({
           <div
             className="hidden md:flex flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0
                           w-full md:w-[35%] md:max-w-[400px] xl:max-w-[480px] h-full border-r
-                          md:portrait:w-full md:portrait:max-w-none md:portrait:h-[30%] md:portrait:border-r-0 md:portrait:border-b"
+                          md:portrait:hidden"
           >
             {/* Top Bar for Master Panel (Close button, Info) */}
             <div className="flex items-center justify-between px-4 md:px-6 h-14 shrink-0">
@@ -873,7 +909,7 @@ export default function FullContentTranscript({
           {/* ── Main Content Canvas ── */}
           <main
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50 relative"
+            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50 relative md:portrait:pb-24"
           >
             {/* Toolbar (Mode Switcher & Settings) - Floats at the top of detail panel */}
             <div className="hidden md:flex sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 px-4 py-2 items-center justify-between shadow-sm">
@@ -1108,6 +1144,180 @@ export default function FullContentTranscript({
               menu_book
             </span>
           </div>
+
+          {/* ── Portrait Mini Player (Tablet Portrait Only) ── */}
+          <div
+            className="absolute bottom-4 left-4 right-4 h-[56px] bg-base-100/95 dark:bg-ink-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-base-200 dark:border-ink-800 flex items-center px-4 z-40 cursor-pointer overflow-hidden pb-safe-offset hidden md:portrait:flex"
+            onClick={() => setIsPlayerExpanded(true)}
+          >
+            {/* Mini Progress Bar */}
+            <div className="absolute top-0 left-0 h-0.5 bg-ink-100 dark:bg-ink-800 w-full">
+              <div
+                className="h-full bg-primary-500 transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
+            {/* Info */}
+            <div className="flex flex-col flex-1 min-w-0 mr-3">
+              <div className="text-sm font-bold text-ink-900 dark:text-ink-50 truncate leading-tight">
+                {episode.title}
+              </div>
+              <div className="text-[11px] text-ink-400 dark:text-ink-500 font-mono font-medium mt-0.5">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlay();
+                }}
+                className="w-10 h-10 flex items-center justify-center bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full transition-transform active:scale-95"
+              >
+                <span
+                  className="material-symbols-outlined text-xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {isPlaying ? "pause" : "play_arrow"}
+                </span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playNext();
+                }}
+                className="w-10 h-10 flex items-center justify-center text-ink-500 dark:text-ink-400 transition-transform active:scale-95"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  skip_next
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Expanded Bottom Sheet Player (Tablet Portrait Only) ── */}
+          <AnimatePresence>
+            {isPlayerExpanded && (
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y > 100) setIsPlayerExpanded(false);
+                }}
+                className="absolute inset-x-0 bottom-0 top-[50%] bg-base-100 dark:bg-ink-950 z-50 rounded-t-3xl shadow-[0_-10px_40px_rgb(0,0,0,0.1)] flex flex-col border-t border-base-200 dark:border-ink-800 md:hidden md:portrait:flex"
+              >
+                <div className="flex justify-center pt-3 pb-1 shrink-0">
+                  <div className="w-12 h-1.5 rounded-full bg-ink-200 dark:bg-ink-700" />
+                </div>
+
+                <div className="flex-1 flex flex-col px-6 pt-4 pb-12 overflow-y-auto">
+                  <div
+                    className="w-full max-w-[320px] mx-auto aspect-[16/9] rounded-2xl shadow-xl mb-8 overflow-hidden border border-ink-100 dark:border-ink-800 shrink-0 cursor-pointer transition-transform active:scale-95 hover:shadow-2xl"
+                    onClick={() => {
+                      onClose();
+                      router.push(`/episode/${episode.episodeid}`);
+                    }}
+                  >
+                    <img
+                      src={episode.coverUrl}
+                      className="w-full h-full object-cover"
+                      alt="Cover"
+                    />
+                  </div>
+
+                  <div className="text-center mb-8 shrink-0">
+                    <h2 className="text-xl font-bold text-ink-900 dark:text-ink-50 mb-1.5 line-clamp-2 leading-snug">
+                      {episode.title}
+                    </h2>
+                    <p className="text-sm font-medium text-primary-600 dark:text-primary-400 truncate">
+                      {episode.podcast?.title}
+                    </p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="flex flex-col gap-3 mb-8 shrink-0">
+                    <div className="relative h-1.5 bg-ink-100 dark:bg-ink-800 rounded-full group">
+                      <div
+                        className="absolute left-0 top-0 h-full bg-primary-600 rounded-full"
+                        style={{ width: `${progressPercent}%` }}
+                      >
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-600 rounded-full shadow-sm" />
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max={duration || 100}
+                        value={displayTime}
+                        onChange={handleSeekChange}
+                        onMouseUp={handleSeekEnd}
+                        onTouchEnd={handleSeekEnd}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] font-medium text-ink-400 font-mono">
+                      <span>{formatTime(displayTime)}</span>
+                      <span>-{formatTime(duration - displayTime)}</span>
+                    </div>
+                  </div>
+
+                  {/* Big Controls */}
+                  <div className="flex items-center justify-between mb-8 shrink-0">
+                    <button
+                      onClick={cyclePlaybackRate}
+                      className="w-12 h-12 rounded-full bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 font-bold text-sm"
+                    >
+                      {playbackRate}x
+                    </button>
+                    <div className="flex items-center gap-6">
+                      <button
+                        onClick={playPrevious}
+                        className="text-ink-700 dark:text-ink-300 active:scale-90 transition-transform"
+                      >
+                        <span className="material-symbols-outlined text-4xl">
+                          skip_previous
+                        </span>
+                      </button>
+                      <button
+                        onClick={togglePlay}
+                        className="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-primary-600/30 active:scale-90 transition-transform"
+                      >
+                        <span
+                          className="material-symbols-outlined text-4xl"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          {isPlaying ? "pause" : "play_arrow"}
+                        </span>
+                      </button>
+                      <button
+                        onClick={playNext}
+                        className="text-ink-700 dark:text-ink-300 active:scale-90 transition-transform"
+                      >
+                        <span className="material-symbols-outlined text-4xl">
+                          skip_next
+                        </span>
+                      </button>
+                    </div>
+                    <button
+                      onClick={toggleLoopMode}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${loopMode !== "none" ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400" : "bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300"}`}
+                    >
+                      <span className="material-symbols-outlined text-xl">
+                        {loopMode === "one" ? "repeat_one" : "repeat"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <SelectionMenu
             menuRef={menuRef}
