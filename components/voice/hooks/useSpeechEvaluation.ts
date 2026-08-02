@@ -357,11 +357,12 @@ export function useSpeechEvaluation({
     }
   };
 
-  const playReferenceAudio = () => {
+  const playReferenceAudio = (playbackRate: number = 1.0) => {
     stopAllAudio();
     onPlayStart(subtitle.id);
 
     const audio = new Audio(audioUrl);
+    audio.playbackRate = playbackRate;
     audioInstanceRef.current = audio;
 
     const startTime = subtitle.startSeconds;

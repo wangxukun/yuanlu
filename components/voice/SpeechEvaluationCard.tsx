@@ -6,6 +6,7 @@ import {
   Square,
   RotateCcw,
   Volume2,
+  Volume1,
   Cpu,
   Play,
   Pause,
@@ -134,6 +135,17 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             <Volume2 size={16} className="relative z-10" />
             <span className="relative z-10">原声播放</span>
           </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              playReferenceAudio(0.75);
+            }}
+            className="btn btn-sm rounded-full border border-primary-200 text-primary-600 bg-transparent hover:bg-primary-50 hover:border-primary-300 relative overflow-hidden group transition-colors"
+          >
+            <Volume1 size={16} className="relative z-10" />
+            <span className="relative z-10">慢速播放</span>
+          </button>
         </div>
 
         <div className="space-y-4">
@@ -152,15 +164,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   >
                     {word}
                   </span>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-max">
-                    <div className="bg-neutral text-neutral-content text-xs px-3 py-1.5 rounded-lg shadow-lg flex flex-col items-center">
-                      <span className="font-mono text-[10px] text-neutral-content/70">
-                        IPA
-                      </span>
-                      <span>{cleanWord}</span>
-                    </div>
-                    <div className="w-2 h-2 bg-neutral rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
-                  </div>
                 </span>
               );
             })}
