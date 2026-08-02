@@ -24,11 +24,31 @@ import type { DictEntryDTO } from "@/core/dictionary/dto";
 interface InteractiveTranscriptProps {
   subtitles: MergedSubtitleItem[];
   episode: Episode;
+  hideToolbar?: boolean;
+  transcriptMode?: "read" | "dictate";
+  onTranscriptModeChange?: (mode: "read" | "dictate") => void;
+  showTranslation?: boolean;
+  onShowTranslationChange?: (show: boolean) => void;
+  autoScroll?: boolean;
+  onAutoScrollChange?: (scroll: boolean) => void;
+  loopingIndex?: number | null;
+  onLoopingIndexChange?: (index: number | null) => void;
+  headerContent?: React.ReactNode;
 }
 
 export default function InteractiveTranscript({
   subtitles,
   episode,
+  hideToolbar,
+  transcriptMode: controlledTranscriptMode,
+  onTranscriptModeChange,
+  showTranslation: controlledShowTranslation,
+  onShowTranslationChange,
+  autoScroll: controlledAutoScroll,
+  onAutoScrollChange,
+  loopingIndex: controlledLoopingIndex,
+  onLoopingIndexChange,
+  headerContent,
 }: InteractiveTranscriptProps) {
   // 1. Auth State
   const { data: session } = useSession();
@@ -49,13 +69,32 @@ export default function InteractiveTranscript({
 
   const isPlayingThisEpisode = currentEpisode?.episodeid === episode.episodeid;
 
-  // 3. Local State
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [transcriptMode, setTranscriptMode] = useState<"read" | "dictate">(
-    "read",
-  );
-  const [loopingIndex, setLoopingIndex] = useState<number | null>(null);
+  // 3. Local State (with controlled prop fallbacks)
+  const [internalShowTranslation, setInternalShowTranslation] = useState(false);
+  const [internalAutoScroll, setInternalAutoScroll] = useState(true);
+  const [internalTranscriptMode, setInternalTranscriptMode] = useState<
+    "read" | "dictate"
+  >("read");
+  const [internalLoopingIndex, setInternalLoopingIndex] = useState<
+    number | null
+  >(null);
+
+  const showTranslation = controlledShowTranslation ?? internalShowTranslation;
+  const setShowTranslation =
+    onShowTranslationChange ?? setInternalShowTranslation;
+
+  const autoScroll = controlledAutoScroll ?? internalAutoScroll;
+  const setAutoScroll = onAutoScrollChange ?? setInternalAutoScroll;
+
+  const transcriptMode = controlledTranscriptMode ?? internalTranscriptMode;
+  const setTranscriptMode = onTranscriptModeChange ?? setInternalTranscriptMode;
+
+  const loopingIndex =
+    controlledLoopingIndex !== undefined
+      ? controlledLoopingIndex
+      : internalLoopingIndex;
+  const setLoopingIndex = onLoopingIndexChange ?? setInternalLoopingIndex;
+
   const lastJumpTimeRef = useRef<number>(0);
 
   // Refs
@@ -267,16 +306,19 @@ export default function InteractiveTranscript({
   };
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto">
-      <TranscriptToolbar
-        isPlayingThisEpisode={isPlayingThisEpisode}
-        autoScroll={autoScroll}
-        setAutoScroll={setAutoScroll}
-        showTranslation={showTranslation}
-        setShowTranslation={setShowTranslation}
-        transcriptMode={transcriptMode}
-        setTranscriptMode={setTranscriptMode}
-      />
+    <div className="relative w-full max-w-5xl mx-auto flex flex-col h-full">
+      {headerContent}
+      {!hideToolbar && (
+        <TranscriptToolbar
+          isPlayingThisEpisode={isPlayingThisEpisode}
+          autoScroll={autoScroll}
+          setAutoScroll={setAutoScroll}
+          showTranslation={showTranslation}
+          setShowTranslation={setShowTranslation}
+          transcriptMode={transcriptMode}
+          setTranscriptMode={setTranscriptMode}
+        />
+      )}
 
       {!session?.user && (
         <div className="mb-6 -mt-2 text-center animate-fade-in-down">
@@ -288,7 +330,7 @@ export default function InteractiveTranscript({
       )}
 
       {/* --- 字幕内容区 --- */}
-      <div className="space-y-1 pb-20" ref={containerRef}>
+      <div className="space-y-1 pb-32" ref={containerRef}>
         {processedSubtitles.map((sub, index) => {
           const isActive = index === activeIndex;
           if (transcriptMode === "dictate" && isActive) {
@@ -313,7 +355,7 @@ export default function InteractiveTranscript({
               showTranslation={showTranslation}
               isLooping={loopingIndex === index}
               onToggleLoop={() =>
-                setLoopingIndex((prev) => (prev === index ? null : index))
+                setLoopingIndex(loopingIndex === index ? null : index)
               }
               onJump={handleJump}
               onWordClick={handleWordClick}

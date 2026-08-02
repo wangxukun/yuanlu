@@ -43,14 +43,19 @@ interface FullContentTranscriptProps {
   episode: Episode;
 }
 
-// ─── Font Size Levels ────────────────────────────────────────────────────────
 const FONT_SIZE_LEVELS = [
   {
-    en: "text-[15px] sm:text-base leading-[1.65]",
-    zh: "text-xs leading-[1.6]",
+    en: "text-[16px] sm:text-[18px] leading-[1.6]",
+    zh: "text-[13px] sm:text-[14px] leading-[1.6]",
   },
-  { en: "text-base sm:text-lg leading-[1.7]", zh: "text-[13px] leading-[1.6]" },
-  { en: "text-lg sm:text-xl leading-[1.8]", zh: "text-sm leading-[1.65]" },
+  {
+    en: "text-[18px] sm:text-[20px] leading-[1.6]",
+    zh: "text-[14px] sm:text-[15px] leading-[1.6]",
+  },
+  {
+    en: "text-[20px] sm:text-[22px] leading-[1.6]",
+    zh: "text-[15px] sm:text-[16px] leading-[1.6]",
+  },
 ] as const;
 
 const FONT_SIZE_STORAGE_KEY = "fct-font-size-level";
@@ -103,28 +108,20 @@ const SubtitleRow = React.memo(function SubtitleRow({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn(
-        "group relative flex items-start gap-2 md:gap-3 rounded-lg px-2.5 md:px-3 py-2.5 transition-colors duration-200 cursor-pointer",
+        "group relative flex items-start gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-3 transition-colors duration-200 cursor-pointer border-l-[3px]",
         isActive
-          ? "bg-primary-50/80 dark:bg-primary-900/20"
-          : "hover:bg-ink-50 dark:hover:bg-ink-900/40",
+          ? "border-primary-500 bg-primary-500/[0.03] dark:bg-primary-500/[0.05]"
+          : "border-transparent hover:bg-ink-50 dark:hover:bg-ink-900/40",
       )}
       id={`fct-sub-${sub.id}`}
       onClick={() => {
         if (!isActive) onJump(sub.start);
       }}
     >
-      {/* Active indicator bar */}
-      <span
-        className={cn(
-          "absolute left-0 top-1/2 -translate-y-1/2 h-3/5 w-[3px] rounded-full bg-primary-500 transition-opacity duration-200",
-          isActive ? "opacity-100" : "opacity-0",
-        )}
-      />
-
       {/* ── Time Rail ── */}
       <span
         className={cn(
-          "w-9 shrink-0 pt-[5px] text-[11px] tabular-nums font-medium select-none transition-colors",
+          "w-9 shrink-0 pt-[3px] text-[12px] tabular-nums font-medium select-none transition-colors",
           isActive
             ? "text-primary-600 dark:text-primary-400 font-bold"
             : "text-ink-300 dark:text-ink-600 group-hover:text-primary-500 dark:group-hover:text-primary-400",
@@ -134,15 +131,15 @@ const SubtitleRow = React.memo(function SubtitleRow({
       </span>
 
       {/* ── Text ── */}
-      <div className="flex-1 min-w-0 space-y-1">
+      <div className="flex-1 min-w-0 space-y-2">
         {(visibilityMode === "both" || visibilityMode === "en") && (
           <p
             className={cn(
               "font-serif tracking-wide",
               fontSize.en,
               isActive
-                ? "text-primary-950 dark:text-primary-50 font-semibold"
-                : "text-ink-700 dark:text-ink-200",
+                ? "text-ink-900 dark:text-ink-50 font-semibold"
+                : "text-ink-800 dark:text-ink-200",
             )}
           >
             {sub.textEn
@@ -330,6 +327,7 @@ export default function FullContentTranscript({
     currentEpisode,
     setCurrentEpisode,
     setCurrentAudioUrl,
+    playbackRate,
     setPlaybackRate,
     transcriptMode,
     setTranscriptMode,
@@ -682,10 +680,10 @@ export default function FullContentTranscript({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col overflow-hidden"
+          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row md:portrait:flex-col xl:!flex-col overflow-hidden"
         >
-          {/* ── Header: 三段式 slim bar ── */}
-          <header className="w-full shrink-0 bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 z-10 transition-colors duration-300">
+          {/* ── Desktop Header ── */}
+          <header className="hidden xl:block w-full shrink-0 bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 z-10 transition-colors duration-300">
             <div className="relative flex items-center justify-between gap-3 h-14 px-3 md:px-6">
               {/* ── Left: 收起 + 剧集信息 ── */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -932,15 +930,231 @@ export default function FullContentTranscript({
             </div>
           </header>
 
+          {/* ── Tablet Master Panel (md ~ lg) ── */}
+          <div
+            className="hidden md:flex xl:hidden flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0
+                          w-full md:w-[35%] md:max-w-[400px] h-full border-r
+                          md:portrait:w-full md:portrait:max-w-none md:portrait:h-[30%] md:portrait:border-r-0 md:portrait:border-b"
+          >
+            {/* Top Bar for Master Panel (Close button, Info) */}
+            <div className="flex items-center justify-between px-4 md:px-6 h-14 shrink-0">
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1 px-2 py-1.5 -ml-2 rounded-xl text-ink-500 hover:text-primary-600 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                title="收起 (Esc)"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  expand_more
+                </span>
+                <span className="text-sm font-bold">返回</span>
+              </button>
+            </div>
+
+            {/* Cover & Title */}
+            <div className="px-6 pb-4 flex flex-col md:portrait:flex-row gap-4 md:portrait:items-center shrink-0 border-b border-ink-100 dark:border-ink-800/50">
+              <div
+                className="w-full md:portrait:w-20 md:portrait:h-20 aspect-video md:portrait:aspect-square rounded-xl shadow-lg border border-ink-200 dark:border-ink-700 overflow-hidden shrink-0 cursor-pointer"
+                onClick={handleViewDetail}
+              >
+                <img
+                  src={episode.coverUrl}
+                  className="w-full h-full object-cover"
+                  alt="Cover"
+                />
+              </div>
+              <div className="flex-1 flex flex-col justify-center">
+                <h2 className="text-xl md:portrait:text-base font-bold text-ink-900 dark:text-ink-50 line-clamp-2 leading-snug">
+                  {episode.title}
+                </h2>
+                <p className="text-sm font-medium text-primary-600 dark:text-primary-400 mt-1">
+                  {episode.podcast?.title}
+                </p>
+              </div>
+            </div>
+
+            {/* Player Controls */}
+            <div className="px-6 py-5 flex flex-col gap-5 shrink-0 border-b border-ink-100 dark:border-ink-800/50">
+              {/* Progress */}
+              <div className="flex flex-col gap-2">
+                <div className="relative h-1.5 bg-ink-100 dark:bg-ink-800 rounded-full group">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-primary-600 rounded-full transition-all duration-150"
+                    style={{
+                      width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                    }}
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white border-2 border-primary-600 rounded-full shadow-sm" />
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime}
+                    onChange={(e) => {
+                      const t = parseFloat(e.target.value);
+                      if (audioRef) audioRef.currentTime = t;
+                      setCurrentTime(t);
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+                <div className="flex justify-between text-xs font-mono font-medium text-ink-400">
+                  <span>{formatSec(currentTime)}</span>
+                  <span>-{formatSec(duration - currentTime)}</span>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    const rates = [1, 1.25, 1.5, 2, 0.75];
+                    const next =
+                      rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+                    setPlaybackRate(next);
+                  }}
+                  className="w-10 h-10 rounded-full bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 font-bold text-xs hover:bg-base-300 transition-colors"
+                >
+                  {playbackRate}x
+                </button>
+                <div className="flex items-center gap-5">
+                  <button
+                    onClick={() => {
+                      const t = Math.max(0, currentTime - 5);
+                      if (audioRef) audioRef.currentTime = t;
+                      setCurrentTime(t);
+                    }}
+                    className="text-ink-600 dark:text-ink-300 active:scale-90 transition-transform"
+                  >
+                    <span className="material-symbols-outlined text-3xl">
+                      replay_5
+                    </span>
+                  </button>
+                  <button
+                    onClick={togglePlay}
+                    className="w-14 h-14 bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                  >
+                    <span
+                      className="material-symbols-outlined text-3xl"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      {isPlaying ? "pause" : "play_arrow"}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const t = Math.max(0, currentTime + 5);
+                      if (audioRef) audioRef.currentTime = t;
+                      setCurrentTime(t);
+                    }}
+                    className="text-ink-600 dark:text-ink-300 active:scale-90 transition-transform"
+                  >
+                    <span className="material-symbols-outlined text-3xl">
+                      forward_5
+                    </span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setLoopingIndex(null); // Or integrate properly with global loopMode if needed
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    repeat
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Vocab List (Only in Landscape) */}
+            <div className="hidden md:flex md:portrait:hidden flex-col flex-1 overflow-y-auto px-6 py-4 scrollbar-thin">
+              <h3 className="text-sm font-bold text-ink-800 dark:text-ink-200 mb-4 flex items-center gap-2">
+                <span>🧠</span> 本集生词
+              </h3>
+              <div className="flex flex-col gap-3">
+                {vocabList.slice(0, 15).map((v) => (
+                  <div
+                    key={v.word}
+                    className="bg-white dark:bg-ink-800/50 rounded-xl p-3 shadow-sm border border-ink-100 dark:border-ink-700/50 cursor-pointer hover:border-primary-300 transition-colors"
+                    onClick={() =>
+                      handleWordClick(
+                        v.word,
+                        v.contextSentence || "",
+                        v.translation || "",
+                        v.timestamp || 0,
+                      )
+                    }
+                  >
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="font-bold text-ink-900 dark:text-ink-100 text-[15px]">
+                        {v.word}
+                      </span>
+                    </div>
+                    <div className="text-[13px] text-ink-500 dark:text-ink-400 line-clamp-1">
+                      {v.definition}
+                    </div>
+                  </div>
+                ))}
+                {vocabList.length === 0 && (
+                  <div className="text-center py-6 text-sm text-ink-400">
+                    本集暂无推荐生词
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* ── Main Content Canvas ── */}
           <main
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50"
+            className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50 relative"
           >
+            {/* Tablet Toolbar (Mode Switcher) - Floats at the top of detail panel */}
+            <div className="hidden md:flex xl:hidden sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 px-4 py-2 items-center justify-between shadow-sm">
+              <div className="flex bg-ink-100 dark:bg-ink-800 rounded-lg p-1">
+                <button
+                  onClick={() => setTranscriptMode("read")}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    transcriptMode === "read"
+                      ? "bg-white dark:bg-ink-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                      : "text-ink-500 dark:text-ink-400"
+                  }`}
+                >
+                  📖 精读
+                </button>
+                <button
+                  onClick={() => setTranscriptMode("dictate")}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    transcriptMode === "dictate"
+                      ? "bg-white dark:bg-ink-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                      : "text-ink-500 dark:text-ink-400"
+                  }`}
+                >
+                  ✍️ 听写
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 bg-ink-100 dark:bg-ink-800 rounded-lg p-1">
+                {(["both", "en", "zh"] as VisibilityMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setVisibilityMode(mode)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      visibilityMode === mode
+                        ? "bg-white dark:bg-ink-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                        : "text-ink-500 dark:text-ink-400"
+                    }`}
+                  >
+                    {mode === "both" ? "双语" : mode === "en" ? "英" : "中"}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-6 grid grid-cols-12 gap-8">
               {/* Transcript column */}
               <div className="col-span-12 xl:col-span-8">
-                <div className="max-w-[760px] mx-auto space-y-0.5">
+                <div className="max-w-[760px] mx-auto space-y-6">
                   <AnimatePresence>
                     {processed.map((sub, index) => {
                       const isActive = index === activeIndex;
