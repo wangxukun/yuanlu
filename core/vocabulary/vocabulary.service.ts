@@ -41,7 +41,10 @@ export const vocabularyService = {
       nextReviewAt: item.nextReviewAt ? item.nextReviewAt.toISOString() : null,
       episodeTitle: item.episode?.title || "未知剧集",
       // 将 Dictionary 表中的数据合并给 dictData 供前端富渲染
-      dictData: dictMap.get(item.word) || item.dictData || null,
+      dictData: (dictMap.get(item.word) ||
+        item.dictData ||
+        null) as unknown as undefined,
+      status: item.status as "LEARNING" | "MASTERED",
     }));
   },
 

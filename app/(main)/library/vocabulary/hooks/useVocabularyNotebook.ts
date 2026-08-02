@@ -159,7 +159,9 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   );
 
   const startReview = useCallback(() => {
-    const dueWords = vocabulary.filter((v) => isDue(v.nextReviewAt));
+    const dueWords = vocabulary.filter(
+      (v) => isDue(v.nextReviewAt) && v.status !== "MASTERED",
+    );
     if (dueWords.length === 0) return;
     setReviewQueue(dueWords);
     setCurrentReviewIndex(0);
@@ -168,7 +170,7 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   }, [vocabulary]);
 
   const handleSRS = useCallback(
-    async (quality: number) => {
+    async (quality: number, onComplete?: () => void) => {
       if (isSubmitting) return;
       const currentWord = reviewQueue[currentReviewIndex];
       if (!currentWord) return;
@@ -198,11 +200,32 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
         setIsCardFlipped(false);
         setCurrentReviewIndex((prev) => prev + 1);
       } else {
-        setIsReviewOpen(false);
-        toast.success("恭喜！今日复习任务已完成 🎉");
+        if (onComplete) {
+          onComplete();
+        } else {
+          setIsReviewOpen(false);
+          toast.success("恭喜！今日复习任务已完成 🎉");
+        }
       }
     },
     [currentReviewIndex, isSubmitting, reviewQueue],
+  );
+
+  const retryForgotten = useCallback(
+    (forgottenIds: number[]) => {
+      const forgotten = vocabulary.filter((v) =>
+        forgottenIds.includes(v.vocabularyid),
+      );
+      if (forgotten.length === 0) {
+        setIsReviewOpen(false);
+        toast.success("所有生词都已掌握！🎉");
+        return;
+      }
+      setReviewQueue(forgotten);
+      setCurrentReviewIndex(0);
+      setIsCardFlipped(false);
+    },
+    [vocabulary],
   );
 
   const toggleStatus = useCallback(
@@ -270,6 +293,7 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
     handleSRS,
     toggleStatus,
     deleteVocabulary,
+    retryForgotten,
   };
 }
 

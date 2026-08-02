@@ -72,7 +72,12 @@ interface SubtitleRowProps {
   fontSizeLevel: number;
   vocabWords: Set<string>;
   onJump: (t: number) => void;
-  onWordClick: (word: string, contextEn: string, contextZh: string) => void;
+  onWordClick: (
+    word: string,
+    contextEn: string,
+    contextZh: string,
+    timestamp: number,
+  ) => void;
   onToggleLoop: () => void;
   onProofread: (sub: ProcessedSubtitle) => void;
 }
