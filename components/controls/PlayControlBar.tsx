@@ -145,7 +145,7 @@ export default function PlayControlBar() {
   return (
     <>
       <div
-        className={`fixed transition-all duration-300 items-center gap-4 lg:gap-6 z-[210] bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-base-100/95 md:bg-base-100/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-e3 border-t md:border border-base-200 pb-safe ${isLyricsOpen ? "hidden xl:flex" : "flex"}`}
+        className={`fixed transition-all duration-300 items-center gap-4 lg:gap-6 z-[210] bottom-0 left-0 w-full md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-4rem)] md:max-w-4xl bg-base-100/95 md:bg-base-100/80 backdrop-blur-2xl px-4 py-4 md:px-6 md:py-0 md:h-16 md:rounded-full shadow-e3 border-t md:border border-base-200 pb-safe ${isLyricsOpen ? "hidden" : "flex"}`}
       >
         {/* Mobile Progress Bar - Positioned at the very top of the bar */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-base-200 md:hidden overflow-hidden">

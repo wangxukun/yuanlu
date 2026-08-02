@@ -21,7 +21,7 @@ import { VocabularyModal } from "./transcript/VocabularyModal";
 import { SelectionMenu } from "./transcript/SelectionMenu";
 import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 import { useTranscriptKeyboard } from "./transcript/useTranscriptKeyboard";
-import LearningPanel, { EpisodeVocabItem } from "./transcript/LearningPanel";
+import { EpisodeVocabItem } from "./transcript/LearningPanel";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
@@ -331,6 +331,8 @@ export default function FullContentTranscript({
     setPlaybackRate,
     transcriptMode,
     setTranscriptMode,
+    isPlaylistOpen,
+    setIsPlaylistOpen,
   } = usePlayerStore();
 
   const isPlayingThis = currentEpisode?.episodeid === episode.episodeid;
@@ -354,7 +356,6 @@ export default function FullContentTranscript({
 
   // Episode vocabulary (for highlight + learning panel)
   const [vocabList, setVocabList] = useState<EpisodeVocabItem[]>([]);
-  const [isVocabLoading, setIsVocabLoading] = useState(false);
 
   // Proofread Modal State
   const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
@@ -419,7 +420,6 @@ export default function FullContentTranscript({
       return;
     }
     let cancelled = false;
-    setIsVocabLoading(true);
     fetch(`/api/vocabulary/list?episodeid=${episode.episodeid}`)
       .then((r) => r.json())
       .then((d) => {
@@ -427,10 +427,7 @@ export default function FullContentTranscript({
           setVocabList(d.data);
         }
       })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsVocabLoading(false);
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -680,260 +677,12 @@ export default function FullContentTranscript({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row md:portrait:flex-col xl:!flex-col overflow-hidden"
+          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row md:portrait:flex-col overflow-hidden"
         >
-          {/* ── Desktop Header ── */}
-          <header className="hidden xl:block w-full shrink-0 bg-white/80 dark:bg-ink-900/80 border-b border-ink-200 dark:border-ink-800 z-10 transition-colors duration-300">
-            <div className="relative flex items-center justify-between gap-3 h-14 px-3 md:px-6">
-              {/* ── Left: 收起 + 剧集信息 ── */}
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <button
-                  onClick={onClose}
-                  className="flex items-center gap-0.5 shrink-0 px-2 py-1.5 -ml-1 rounded-xl text-ink-500 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
-                  title="收起 (Esc)"
-                >
-                  <span className="material-symbols-outlined text-xl">
-                    expand_more
-                  </span>
-                  <span className="text-xs font-bold hidden md:inline">
-                    返回
-                  </span>
-                </button>
-                <span className="hidden md:block w-px h-5 bg-ink-200 dark:bg-ink-700 shrink-0" />
-                <div
-                  className="hidden md:flex items-center gap-2.5 min-w-0 cursor-pointer group"
-                  onClick={handleViewDetail}
-                  title="查看剧集详情"
-                >
-                  <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-ink-200 dark:border-ink-700">
-                    <img
-                      src={episode.coverUrl}
-                      alt={episode.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-[13px] font-bold text-ink-900 dark:text-ink-100 truncate leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors max-w-[280px] lg:max-w-[360px]">
-                      {episode.title}
-                    </h2>
-                    <p className="text-[11px] text-ink-400 dark:text-ink-500 truncate leading-tight">
-                      {episode.podcast?.title || "未知节目"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Center: 进度上下文 ── */}
-              <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-2 text-xs text-ink-400 dark:text-ink-500 select-none pointer-events-none">
-                <span className="tabular-nums font-medium">
-                  第 {activeIndex >= 0 ? activeIndex + 1 : "–"}/
-                  {processed.length} 句
-                </span>
-                <span className="w-px h-3 bg-ink-200 dark:bg-ink-700" />
-                <span className="tabular-nums font-medium">
-                  {formatSec(currentTime)} / {formatSec(duration)}
-                </span>
-              </div>
-
-              {/* ── Right: 显示模式 / 听写 / 设置 / 关闭 ── */}
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Visibility segmented control */}
-                <div className="flex items-center bg-ink-100/80 dark:bg-ink-800/80 backdrop-blur-sm p-0.5 rounded-xl gap-0.5 border border-ink-200/50 dark:border-ink-700/50">
-                  {(
-                    [
-                      {
-                        mode: "both",
-                        icon: "translate",
-                        label: "双语",
-                        tip: "显示中英双语",
-                      },
-                      {
-                        mode: "en",
-                        icon: "abc",
-                        label: "英文",
-                        tip: "仅显示英文",
-                      },
-                      {
-                        mode: "zh",
-                        icon: "text_fields",
-                        label: "中文",
-                        tip: "仅显示中文",
-                      },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.mode}
-                      onClick={() => setVisibilityMode(item.mode)}
-                      className={cn(
-                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all duration-200",
-                        visibilityMode === item.mode
-                          ? "bg-white dark:bg-primary-600 text-primary-600 dark:text-white shadow-sm"
-                          : "text-ink-500 dark:text-ink-400 hover:text-primary-500 dark:hover:text-primary-300",
-                      )}
-                      title={item.tip}
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        {item.icon}
-                      </span>
-                      <span className="hidden md:inline">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dictation mode (emphasized mode entry) */}
-                <button
-                  onClick={() =>
-                    setTranscriptMode(
-                      transcriptMode === "read" ? "dictate" : "read",
-                    )
-                  }
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200",
-                    transcriptMode === "dictate"
-                      ? "bg-primary-600 border-primary-600 text-white shadow-sm"
-                      : "border-primary-300 dark:border-primary-700 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
-                  )}
-                  title={
-                    transcriptMode === "dictate"
-                      ? "退出听写模式"
-                      : "进入听写模式"
-                  }
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    {transcriptMode === "dictate"
-                      ? "edit_note"
-                      : "edit_document"}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {transcriptMode === "dictate" ? "听写中" : "听写"}
-                  </span>
-                </button>
-
-                {/* Settings dropdown */}
-                <div className="relative" ref={settingsRef}>
-                  <button
-                    onClick={() => setIsSettingsOpen((v) => !v)}
-                    className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-xl transition-colors",
-                      isSettingsOpen
-                        ? "bg-ink-100 dark:bg-ink-800 text-primary-600 dark:text-primary-400"
-                        : "text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800",
-                    )}
-                    title="设置"
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      settings
-                    </span>
-                  </button>
-
-                  {isSettingsOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 shadow-e3 p-1.5 z-50">
-                      <SettingsRow
-                        icon={autoScroll ? "sync" : "sync_disabled"}
-                        label="自动滚动"
-                        onClick={() => setAutoScroll(!autoScroll)}
-                      >
-                        <Toggle checked={autoScroll} />
-                      </SettingsRow>
-
-                      <div className="flex items-center justify-between gap-3 px-3 py-2">
-                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
-                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
-                            format_size
-                          </span>
-                          字幕字号
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              setFontSizeLevel((v) => Math.max(0, v - 1))
-                            }
-                            disabled={fontSizeLevel === 0}
-                            className="w-7 h-7 rounded-lg text-xs font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
-                            title="减小字号"
-                          >
-                            A-
-                          </button>
-                          <span className="w-4 text-center text-xs tabular-nums text-ink-400">
-                            {fontSizeLevel + 1}
-                          </span>
-                          <button
-                            onClick={() =>
-                              setFontSizeLevel((v) => Math.min(2, v + 1))
-                            }
-                            disabled={fontSizeLevel === 2}
-                            className="w-7 h-7 rounded-lg text-sm font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
-                            title="增大字号"
-                          >
-                            A+
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 px-3 py-2">
-                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
-                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
-                            contrast
-                          </span>
-                          深浅色
-                        </div>
-                        <ThemeSwitcher className="flex items-center justify-center w-8 h-8 rounded-xl text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors" />
-                      </div>
-
-                      {isLoggedIn && (
-                        <>
-                          <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
-                          <SettingsRow
-                            icon="edit"
-                            label="字幕校对"
-                            onClick={() => {
-                              setIsProofreadingMode(!isProofreadingMode);
-                              setIsSettingsOpen(false);
-                            }}
-                          >
-                            <span
-                              className={cn(
-                                "text-[11px] font-bold",
-                                isProofreadingMode
-                                  ? "text-accent-600 dark:text-accent-400"
-                                  : "text-ink-300 dark:text-ink-600",
-                              )}
-                            >
-                              {isProofreadingMode ? "开启中" : "关闭"}
-                            </span>
-                          </SettingsRow>
-                        </>
-                      )}
-
-                      <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
-                      <p className="px-3 py-1.5 text-[11px] leading-relaxed text-ink-400 dark:text-ink-500">
-                        Space 播放 · ←/→ 句跳 · R 单句循环 · Esc 收起
-                      </p>
-                      <p className="px-3 pb-1.5 text-[11px] text-ink-300 dark:text-ink-600">
-                        注:AI 翻译仅供参考
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Close */}
-                <button
-                  onClick={onClose}
-                  className="flex items-center justify-center w-8 h-8 rounded-xl text-ink-400 hover:text-error-500 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
-                  title="关闭 (Esc)"
-                >
-                  <span className="material-symbols-outlined text-xl">
-                    close
-                  </span>
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* ── Tablet Master Panel (md ~ lg) ── */}
+          {/* ── Master Panel (Tablet & Desktop) ── */}
           <div
-            className="hidden md:flex xl:hidden flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0
-                          w-full md:w-[35%] md:max-w-[400px] h-full border-r
+            className="hidden md:flex flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0
+                          w-full md:w-[35%] md:max-w-[400px] xl:max-w-[480px] h-full border-r
                           md:portrait:w-full md:portrait:max-w-none md:portrait:h-[30%] md:portrait:border-r-0 md:portrait:border-b"
           >
             {/* Top Bar for Master Panel (Close button, Info) */}
@@ -1054,16 +803,32 @@ export default function FullContentTranscript({
                     </span>
                   </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setLoopingIndex(null); // Or integrate properly with global loopMode if needed
-                  }}
-                  className="w-10 h-10 rounded-full flex items-center justify-center bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    repeat
-                  </span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsPlaylistOpen(!isPlaylistOpen)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      isPlaylistOpen
+                        ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                        : "bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 hover:bg-base-300 dark:hover:bg-ink-700"
+                    }`}
+                    title="播放列表"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      playlist_play
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLoopingIndex(null); // Or integrate properly with global loopMode if needed
+                    }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 hover:bg-base-300 dark:hover:bg-ink-700 transition-colors"
+                    title="循环播放"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      repeat
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1110,8 +875,8 @@ export default function FullContentTranscript({
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto scrollbar-none bg-white/50 dark:bg-ink-950/50 relative"
           >
-            {/* Tablet Toolbar (Mode Switcher) - Floats at the top of detail panel */}
-            <div className="hidden md:flex xl:hidden sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 px-4 py-2 items-center justify-between shadow-sm">
+            {/* Toolbar (Mode Switcher & Settings) - Floats at the top of detail panel */}
+            <div className="hidden md:flex sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 px-4 py-2 items-center justify-between shadow-sm">
               <div className="flex bg-ink-100 dark:bg-ink-800 rounded-lg p-1">
                 <button
                   onClick={() => setTranscriptMode("read")}
@@ -1135,115 +900,205 @@ export default function FullContentTranscript({
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 bg-ink-100 dark:bg-ink-800 rounded-lg p-1">
-                {(["both", "en", "zh"] as VisibilityMode[]).map((mode) => (
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 bg-ink-100 dark:bg-ink-800 rounded-lg p-1">
+                  {(["both", "en", "zh"] as VisibilityMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setVisibilityMode(mode)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                        visibilityMode === mode
+                          ? "bg-white dark:bg-ink-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                          : "text-ink-500 dark:text-ink-400"
+                      }`}
+                    >
+                      {mode === "both" ? "双语" : mode === "en" ? "英" : "中"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Settings dropdown */}
+                <div className="relative" ref={settingsRef}>
                   <button
-                    key={mode}
-                    onClick={() => setVisibilityMode(mode)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                      visibilityMode === mode
-                        ? "bg-white dark:bg-ink-700 text-primary-600 dark:text-primary-400 shadow-sm"
-                        : "text-ink-500 dark:text-ink-400"
-                    }`}
+                    onClick={() => setIsSettingsOpen((v) => !v)}
+                    className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-xl transition-colors",
+                      isSettingsOpen
+                        ? "bg-ink-100 dark:bg-ink-800 text-primary-600 dark:text-primary-400"
+                        : "text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800",
+                    )}
+                    title="设置"
                   >
-                    {mode === "both" ? "双语" : mode === "en" ? "英" : "中"}
+                    <span className="material-symbols-outlined text-xl">
+                      settings
+                    </span>
                   </button>
-                ))}
-              </div>
-            </div>
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-6 grid grid-cols-12 gap-8">
-              {/* Transcript column */}
-              <div className="col-span-12 xl:col-span-8">
-                <div className="max-w-[760px] mx-auto space-y-6">
-                  <AnimatePresence>
-                    {processed.map((sub, index) => {
-                      const isActive = index === activeIndex;
-                      if (transcriptMode === "dictate" && isActive) {
-                        return (
-                          <DictationItem
-                            key={sub.id || index}
-                            sub={sub}
-                            isActive={isActive}
-                            isPlaying={isPlaying}
-                            showTranslation={
-                              visibilityMode === "zh" ||
-                              visibilityMode === "both"
-                            }
-                            onJump={handleJump}
-                            onSuccess={handleDictationSuccess}
-                          />
-                        );
-                      }
-                      return (
-                        <SubtitleRow
-                          key={sub.id || index}
-                          sub={sub}
-                          isActive={isActive}
-                          isLooping={loopingIndex === index}
-                          isLoggedIn={isLoggedIn}
-                          visibilityMode={visibilityMode}
-                          isProofreadingMode={isProofreadingMode}
-                          fontSizeLevel={fontSizeLevel}
-                          vocabWords={vocabWords}
-                          onJump={handleJump}
-                          onWordClick={(word, en, zh, timestamp) =>
-                            handleWordClick(word, en, zh, timestamp)
-                          }
-                          onToggleLoop={() =>
-                            setLoopingIndex((prev) =>
-                              prev === index ? null : index,
-                            )
-                          }
-                          onProofread={(sub) => {
-                            if (!session?.user) {
-                              toast("请先登录", {
-                                description: "登录后即可参与字幕校对共建！",
-                              });
-                              const loginModal = document.getElementById(
-                                "email_check_modal_box",
-                              ) as HTMLDialogElement | null;
-                              if (loginModal) loginModal.showModal();
-                              return;
-                            }
-                            setProofreadSub(sub);
-                            setIsProofreadOpen(true);
-                          }}
-                        />
-                      );
-                    })}
-                  </AnimatePresence>
-                  {!isLoggedIn && (
-                    <div className="flex justify-center mt-12 mb-8 relative z-10">
-                      <button
-                        onClick={() => {
-                          const modal = document.getElementById(
-                            "email_check_modal_box",
-                          ) as HTMLDialogElement | null;
-                          if (modal) modal.showModal();
-                        }}
-                        className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+
+                  {isSettingsOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 shadow-e3 p-1.5 z-50">
+                      <SettingsRow
+                        icon={autoScroll ? "sync" : "sync_disabled"}
+                        label="自动滚动"
+                        onClick={() => setAutoScroll(!autoScroll)}
                       >
-                        登录后解锁全部字幕
-                      </button>
+                        <Toggle checked={autoScroll} />
+                      </SettingsRow>
+
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
+                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
+                            format_size
+                          </span>
+                          字幕字号
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() =>
+                              setFontSizeLevel((v) => Math.max(0, v - 1))
+                            }
+                            disabled={fontSizeLevel === 0}
+                            className="w-7 h-7 rounded-lg text-xs font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
+                            title="减小字号"
+                          >
+                            A-
+                          </button>
+                          <span className="w-4 text-center text-xs tabular-nums text-ink-400">
+                            {fontSizeLevel + 1}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setFontSizeLevel((v) => Math.min(2, v + 1))
+                            }
+                            disabled={fontSizeLevel === 2}
+                            className="w-7 h-7 rounded-lg text-sm font-bold text-ink-500 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800 disabled:opacity-30 transition-colors"
+                            title="增大字号"
+                          >
+                            A+
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="flex items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
+                          <span className="material-symbols-outlined text-lg text-ink-400 dark:text-ink-500">
+                            contrast
+                          </span>
+                          深浅色
+                        </div>
+                        <ThemeSwitcher className="flex items-center justify-center w-8 h-8 rounded-xl text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors" />
+                      </div>
+
+                      {isLoggedIn && (
+                        <>
+                          <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
+                          <SettingsRow
+                            icon="edit"
+                            label="字幕校对"
+                            onClick={() => {
+                              setIsProofreadingMode(!isProofreadingMode);
+                              setIsSettingsOpen(false);
+                            }}
+                          >
+                            <span
+                              className={cn(
+                                "text-[11px] font-bold",
+                                isProofreadingMode
+                                  ? "text-accent-600 dark:text-accent-400"
+                                  : "text-ink-300 dark:text-ink-600",
+                              )}
+                            >
+                              {isProofreadingMode ? "开启中" : "关闭"}
+                            </span>
+                          </SettingsRow>
+                        </>
+                      )}
+
+                      <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
+                      <p className="px-3 py-1.5 text-[11px] leading-relaxed text-ink-400 dark:text-ink-500">
+                        Space 播放 · ←/→ 句跳 · R 单句循环 · Esc 收起
+                      </p>
+                      <p className="px-3 pb-1.5 text-[11px] text-ink-300 dark:text-ink-600">
+                        注:AI 翻译仅供参考
+                      </p>
                     </div>
                   )}
-                  <div className="h-40" />
-                  {/* Bottom spacer for PlayControlBar */}
                 </div>
               </div>
-
-              {/* Learning panel column */}
-              <aside className="hidden xl:block xl:col-span-4">
-                <LearningPanel
-                  episode={episode}
-                  vocabulary={vocabList}
-                  isLoading={isVocabLoading}
-                  isLoggedIn={isLoggedIn}
-                  onWordClick={handleWordClick}
-                  onJump={handleJump}
-                  onViewDetail={handleViewDetail}
-                />
-              </aside>
+            </div>
+            <div className="max-w-[800px] mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-6 space-y-6">
+              <AnimatePresence>
+                {processed.map((sub, index) => {
+                  const isActive = index === activeIndex;
+                  if (transcriptMode === "dictate" && isActive) {
+                    return (
+                      <DictationItem
+                        key={sub.id || index}
+                        sub={sub}
+                        isActive={isActive}
+                        isPlaying={isPlaying}
+                        showTranslation={
+                          visibilityMode === "zh" || visibilityMode === "both"
+                        }
+                        onJump={handleJump}
+                        onSuccess={handleDictationSuccess}
+                      />
+                    );
+                  }
+                  return (
+                    <SubtitleRow
+                      key={sub.id || index}
+                      sub={sub}
+                      isActive={isActive}
+                      isLooping={loopingIndex === index}
+                      isLoggedIn={isLoggedIn}
+                      visibilityMode={visibilityMode}
+                      isProofreadingMode={isProofreadingMode}
+                      fontSizeLevel={fontSizeLevel}
+                      vocabWords={vocabWords}
+                      onJump={handleJump}
+                      onWordClick={(word, en, zh, timestamp) =>
+                        handleWordClick(word, en, zh, timestamp)
+                      }
+                      onToggleLoop={() =>
+                        setLoopingIndex((prev) =>
+                          prev === index ? null : index,
+                        )
+                      }
+                      onProofread={(sub) => {
+                        if (!session?.user) {
+                          toast("请先登录", {
+                            description: "登录后即可参与字幕校对共建！",
+                          });
+                          const loginModal = document.getElementById(
+                            "email_check_modal_box",
+                          ) as HTMLDialogElement | null;
+                          if (loginModal) loginModal.showModal();
+                          return;
+                        }
+                        setProofreadSub(sub);
+                        setIsProofreadOpen(true);
+                      }}
+                    />
+                  );
+                })}
+              </AnimatePresence>
+              {!isLoggedIn && (
+                <div className="flex justify-center mt-12 mb-8 relative z-10">
+                  <button
+                    onClick={() => {
+                      const modal = document.getElementById(
+                        "email_check_modal_box",
+                      ) as HTMLDialogElement | null;
+                      if (modal) modal.showModal();
+                    }}
+                    className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+                  >
+                    登录后解锁全部字幕
+                  </button>
+                </div>
+              )}
+              <div className="h-40" />
+              {/* Bottom spacer for PlayControlBar */}
             </div>
           </main>
 
