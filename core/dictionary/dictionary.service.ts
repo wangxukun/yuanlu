@@ -79,6 +79,7 @@ const SYSTEM_PROMPT = `You are an authoritative, accurate, and comprehensive Eng
 async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const baseUrl = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
+  const modelName = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
   if (!apiKey) {
     throw new Error("DEEPSEEK_API_KEY is not configured");
@@ -91,13 +92,15 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "deepseek-v4-flash",
+      model: modelName,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: word },
       ],
+      response_format: { type: "json_object" },
       temperature: 0.1, // Low temperature for deterministic dictionary output
       max_tokens: 4096,
+      // reasoning_effort: "low", // 降低推理开销，提高速度
     }),
   });
 
@@ -123,16 +126,13 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
   );
 
   const message = result.choices?.[0]?.message;
-  // Some DeepSeek models put output in reasoning_content instead of content
-  const content: string = (
-    message?.content ||
-    message?.reasoning_content ||
-    ""
-  ).trim();
+  // Use message.content for the final answer. We DO NOT fallback to reasoning_content
+  // because reasoning_content contains chain-of-thought text which is not valid JSON.
+  const content: string = (message?.content || "").trim();
 
   if (!content) {
     throw new Error(
-      `DeepSeek returned empty content. Full response: ${JSON.stringify(result).slice(0, 500)}`,
+      `DeepSeek returned empty content. This usually means the model was cut off during reasoning. finish_reason: ${result.choices?.[0]?.finish_reason}`,
     );
   }
 
@@ -145,7 +145,15 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
   }
 
   const jsonStr = content.substring(startIndex, endIndex + 1);
-  const parsed: DictEntryDTO = JSON.parse(jsonStr);
+  let parsed: DictEntryDTO;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch (error) {
+    console.error("[DeepSeek] JSON parse error on string:", jsonStr);
+    throw new Error(
+      `Failed to parse LLM JSON response: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   return parsed;
 }
 

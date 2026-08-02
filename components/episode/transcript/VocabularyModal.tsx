@@ -84,7 +84,9 @@ export function VocabularyModal({
         {isLoadingDefinition ? (
           <div className="flex items-center gap-2 py-4">
             <span className="loading loading-spinner loading-md text-primary" />
-            <span className="text-sm text-base-content/60">正在查询词典…</span>
+            <span className="text-sm text-base-content/60">
+              请耐心等待，正在查询词典…
+            </span>
           </div>
         ) : dictData ? (
           <>
