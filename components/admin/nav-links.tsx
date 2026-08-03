@@ -8,6 +8,7 @@ import {
   TagIcon,
   BellAlertIcon,
   ShieldCheckIcon,
+  BookOpenIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -37,6 +38,7 @@ const links = [
     icon: ShieldCheckIcon,
     hasBadge: true,
   },
+  { name: "词典管理", href: "/admin/dictionary", icon: BookOpenIcon },
   { name: "访问日志", href: "/admin/logs", icon: ClipboardList },
 ];
 

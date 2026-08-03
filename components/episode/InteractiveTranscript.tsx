@@ -52,6 +52,8 @@ export default function InteractiveTranscript({
 }: InteractiveTranscriptProps) {
   // 1. Auth State
   const { data: session } = useSession();
+  const userRole = session?.user?.role || "USER";
+  const isLoggedIn = !!session?.user;
 
   // 2. Store State
   const {
@@ -110,15 +112,35 @@ export default function InteractiveTranscript({
   const [isSaving, setIsSaving] = useState(false);
   const [dictData, setDictData] = useState<DictEntryDTO | null>(null);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
+  const [globalVocabWords, setGlobalVocabWords] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Fetch global vocabulary words (for checking if word is saved)
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      setGlobalVocabWords(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/vocabulary/words`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.success && Array.isArray(d.data)) {
+          setGlobalVocabWords(new Set(d.data));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
 
   // Proofread Modal State
   const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
     null,
   );
   const [isProofreadOpen, setIsProofreadOpen] = useState(false);
-
-  const userRole = session?.user?.role || "USER";
-  const isLoggedIn = !!session?.user;
 
   // 4. Process Subtitles
   const processedSubtitles: ProcessedSubtitle[] = useMemo(() => {
@@ -292,6 +314,11 @@ export default function InteractiveTranscript({
       });
       if (res.ok) {
         toast.success("已加入生词本");
+        setGlobalVocabWords((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(selectedWord.toLowerCase());
+          return newSet;
+        });
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -398,6 +425,7 @@ export default function InteractiveTranscript({
         dictData={dictData}
         isLoadingDefinition={isLoadingDefinition}
         isSaving={isSaving}
+        isSaved={globalVocabWords.has(selectedWord.toLowerCase())}
         episodeTitle={episode.title}
         onSave={handleSaveVocabulary}
       />

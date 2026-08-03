@@ -40,6 +40,7 @@ export default function MobilePlayerSheet({
     setCurrentTime,
     setPlaybackRate,
     toggleLoopMode,
+    closePlayer,
   } = usePlayerStore();
 
   const [subtitles, setSubtitles] = useState<MergedSubtitleItem[]>([]);
@@ -154,7 +155,16 @@ export default function MobilePlayerSheet({
                 ✍️ 听写
               </button>
             </div>
-            <div className="w-8" /> {/* Spacer for centering */}
+            <button
+              onClick={() => {
+                onClose();
+                setTimeout(() => closePlayer(), 300); // 稍微延迟等待关闭动画
+              }}
+              className="w-8 h-8 flex items-center justify-center text-ink-400 hover:text-ink-600 dark:text-ink-500 dark:hover:text-ink-300 transition-colors"
+              title="关闭播放器"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
           </header>
 
           {/* ── Transcript Section ── */}
@@ -268,6 +278,16 @@ export default function MobilePlayerSheet({
                 <span className="material-symbols-outlined text-xl">
                   skip_next
                 </span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                  closePlayer();
+                }}
+                className="w-10 h-10 flex items-center justify-center text-ink-400 hover:text-ink-600 dark:text-ink-500 dark:hover:text-ink-300 transition-transform active:scale-95"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
           </div>

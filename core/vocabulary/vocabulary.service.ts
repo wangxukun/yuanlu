@@ -22,16 +22,18 @@ export const vocabularyService = {
       },
     });
 
-    const words = list.map((v) => v.word);
+    const wordsLower = list.map((v) => v.word.toLowerCase());
 
     // 从 Dictionary 表获取所有相关的字典数据
     const dictionaries = await prisma.dictionary.findMany({
       where: {
-        word: { in: words },
+        word: { in: wordsLower },
       },
     });
 
-    const dictMap = new Map(dictionaries.map((d) => [d.word, d.data]));
+    const dictMap = new Map(
+      dictionaries.map((d) => [d.word.toLowerCase(), d.data]),
+    );
 
     // 格式化数据以适应前端组件
     return list.map((item) => ({
@@ -41,7 +43,7 @@ export const vocabularyService = {
       nextReviewAt: item.nextReviewAt ? item.nextReviewAt.toISOString() : null,
       episodeTitle: item.episode?.title || "未知剧集",
       // 将 Dictionary 表中的数据合并给 dictData 供前端富渲染
-      dictData: (dictMap.get(item.word) ||
+      dictData: (dictMap.get(item.word.toLowerCase()) ||
         item.dictData ||
         null) as unknown as undefined,
       status: item.status as "LEARNING" | "MASTERED",

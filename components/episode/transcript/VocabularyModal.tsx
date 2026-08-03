@@ -213,7 +213,7 @@ export function VocabularyModal({
           isModalOpen && "modal-open",
         )}
       >
-        <div className="modal-box mb-[100px] md:mb-0 flex flex-col max-h-[80vh] bg-base-100 sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border border-base-200">
+        <div className="modal-box w-full max-w-none h-[100dvh] max-h-[100dvh] rounded-none flex flex-col bg-base-100 sm:h-auto sm:max-h-[80vh] sm:max-w-xl sm:rounded-xl shadow-e3 p-0 overflow-hidden border-none sm:border sm:border-base-200">
           {content}
         </div>
         <form method="dialog" className="modal-backdrop">

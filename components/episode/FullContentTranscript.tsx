@@ -390,8 +390,12 @@ export default function FullContentTranscript({
     return saved >= 0 && saved <= 2 ? saved : 1;
   });
 
-  // Episode vocabulary (for highlight + learning panel)
+  // Episode vocabulary (for learning panel)
   const [vocabList, setVocabList] = useState<EpisodeVocabItem[]>([]);
+  // Global vocabulary words (for highlighting and preventing duplicate save)
+  const [globalVocabWords, setGlobalVocabWords] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Proofread Modal State
   const [proofreadSub, setProofreadSub] = useState<ProcessedSubtitle | null>(
@@ -449,13 +453,16 @@ export default function FullContentTranscript({
     [vocabList],
   );
 
-  // ── Fetch episode vocabulary ──
+  // ── Fetch episode vocabulary & global vocabulary words ──
   useEffect(() => {
     if (!isOpen || !isLoggedIn) {
       setVocabList([]);
+      setGlobalVocabWords(new Set());
       return;
     }
     let cancelled = false;
+
+    // 获取本集生词 (用于学习面板)
     fetch(`/api/vocabulary/list?episodeid=${episode.episodeid}`)
       .then((r) => r.json())
       .then((d) => {
@@ -464,6 +471,17 @@ export default function FullContentTranscript({
         }
       })
       .catch(() => {});
+
+    // 获取全局已收藏单词 (用于高亮和去重限制)
+    fetch(`/api/vocabulary/words`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.success && Array.isArray(d.data)) {
+          setGlobalVocabWords(new Set(d.data));
+        }
+      })
+      .catch(() => {});
+
     return () => {
       cancelled = true;
     };
@@ -665,6 +683,11 @@ export default function FullContentTranscript({
               (v) => v.vocabularyid === data.data.vocabularyid,
             );
             return exists ? prev : [...prev, data.data];
+          });
+          setGlobalVocabWords((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(data.data.word.toLowerCase());
+            return newSet;
           });
         }
         setIsModalOpen(false);
@@ -1337,7 +1360,7 @@ export default function FullContentTranscript({
             dictData={dictData}
             isLoadingDefinition={isLoadingDefinition}
             isSaving={isSaving}
-            isSaved={vocabWords.has(selectedWord.toLowerCase())}
+            isSaved={globalVocabWords.has(selectedWord.toLowerCase())}
             episodeTitle={episode.title}
             onSave={handleSaveVocabulary}
           />

@@ -14,6 +14,7 @@ export default function MobilePlayerBar() {
     togglePlay,
     isMobileSheetOpen,
     setIsMobileSheetOpen,
+    closePlayer,
   } = usePlayerStore();
 
   if (!currentEpisode) return null;
@@ -98,6 +99,19 @@ export default function MobilePlayerBar() {
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 {isPlaying ? "pause" : "play_arrow"}
+              </span>
+            </button>
+            {/* Close button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closePlayer();
+              }}
+              className="w-8 h-8 flex items-center justify-center text-ink-400 hover:text-ink-600 dark:text-ink-500 dark:hover:text-ink-300 transition-colors"
+              title="关闭播放器"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                close
               </span>
             </button>
           </div>

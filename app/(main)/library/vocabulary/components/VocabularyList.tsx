@@ -43,7 +43,7 @@ export function VocabularyList({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 pb-[60vh] md:pb-[70vh]">
         {filteredList.map((item: VocabularyItem) => {
           const isExpanded = expandedId === item.vocabularyid;
           const due = isDue(item.nextReviewAt);
@@ -52,13 +52,53 @@ export function VocabularyList({
           return (
             <div
               key={item.vocabularyid}
-              onClick={() =>
-                setExpandedId(isExpanded ? null : item.vocabularyid)
-              }
-              className={`group relative rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden ${
+              id={`vocab-card-${item.vocabularyid}`}
+              onClick={(e) => {
+                const expanding = !isExpanded;
+                if (expanding) {
+                  const target = e.currentTarget;
+                  const isMobile = window.innerWidth < 768;
+                  const isTablet =
+                    window.innerWidth >= 768 && window.innerWidth < 1280;
+                  const offset = isMobile ? 160 : isTablet ? 240 : 112;
+
+                  let lostHeight = 0;
+                  if (expandedId) {
+                    const prevExpandedEl = document.getElementById(
+                      `vocab-card-${expandedId}`,
+                    );
+                    if (prevExpandedEl) {
+                      const prevRect = prevExpandedEl.getBoundingClientRect();
+                      const targetRect = target.getBoundingClientRect();
+                      // 如果之前展开的卡片在当前点击的卡片上方，它的收缩会导致当前卡片上移
+                      if (prevRect.top < targetRect.top) {
+                        const panelEl = prevExpandedEl.querySelector(
+                          ".grid.transition-all",
+                        );
+                        if (panelEl) {
+                          lostHeight = panelEl.getBoundingClientRect().height;
+                        }
+                      }
+                    }
+                  }
+
+                  const targetRect = target.getBoundingClientRect();
+                  // 目标最终的位置 = 当前位置 - 之前卡片收缩导致丢失的高度
+                  // 我们需要滚动的距离 = 目标最终的位置 - 我们期望的停留位置 (offset)
+                  const distanceToScroll = targetRect.top - lostHeight - offset;
+
+                  // 同步触发原生平滑滚动，iOS Safari 对同步触发的 scrollBy 支持最完美
+                  window.scrollBy({
+                    top: distanceToScroll,
+                    behavior: "smooth",
+                  });
+                }
+                setExpandedId(expanding ? item.vocabularyid : null);
+              }}
+              className={`group relative rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden scroll-mt-[160px] md:scroll-mt-[240px] xl:scroll-mt-28 ${
                 isExpanded
-                  ? "bg-white/80 dark:bg-ink-900/80 backdrop-blur-md shadow-xl ring-1 ring-primary/30"
-                  : "bg-white dark:bg-ink-900 shadow-sm hover:shadow-md hover:ring-1 hover:ring-primary/20"
+                  ? "bg-white/80 dark:bg-ink-900/80 backdrop-blur-md shadow-xl ring-1 ring-primary/30 z-20"
+                  : "bg-white dark:bg-ink-900 shadow-sm hover:shadow-md hover:ring-1 hover:ring-primary/20 z-10"
               }`}
             >
               {/* 卡片内容区: 紧凑视图 */}
