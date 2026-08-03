@@ -88,8 +88,8 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
   }, []);
 
   const playAudio = useCallback(
-    (e: React.MouseEvent, url?: string | null) => {
-      e.stopPropagation();
+    (e: React.MouseEvent | null, url?: string | null) => {
+      e?.stopPropagation();
       if (!url) {
         toast.error("暂无发音");
         return;

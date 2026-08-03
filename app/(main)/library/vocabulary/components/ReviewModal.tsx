@@ -240,6 +240,25 @@ export function ReviewModal({
     }
   }, [isCardFlipped]);
 
+  // Auto-play audio when card opens (front or back)
+  useEffect(() => {
+    if (!isReviewOpen || !currentItem || showSummary) return;
+
+    const audioUrl =
+      currentItem.dictData?.audio_urls?.uk ||
+      currentItem.dictData?.audio_urls?.us;
+    if (audioUrl) {
+      playAudio(null, audioUrl);
+    }
+  }, [
+    currentReviewIndex,
+    isCardFlipped,
+    isReviewOpen,
+    showSummary,
+    currentItem,
+    playAudio,
+  ]);
+
   // ==================== Computed ====================
 
   const progress =
