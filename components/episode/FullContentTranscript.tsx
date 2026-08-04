@@ -24,6 +24,7 @@ import { useTranscriptKeyboard } from "./transcript/useTranscriptKeyboard";
 import { EpisodeVocabItem } from "./transcript/LearningPanel";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
+import PlaylistDropdown from "@/components/controls/PlaylistDropdown";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { DictationItem } from "./transcript/DictationItem";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
@@ -336,7 +337,8 @@ export default function FullContentTranscript({
     playbackRate,
     setPlaybackRate,
     loopMode,
-    toggleLoopMode,
+    isShuffle,
+    cyclePlayMode,
     transcriptMode,
     setTranscriptMode,
     isPlaylistOpen,
@@ -862,7 +864,7 @@ export default function FullContentTranscript({
                     </span>
                   </button>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative">
                   <button
                     onClick={() => setIsPlaylistOpen(!isPlaylistOpen)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -877,16 +879,41 @@ export default function FullContentTranscript({
                     </span>
                   </button>
                   <button
-                    onClick={() => {
-                      setLoopingIndex(null); // Or integrate properly with global loopMode if needed
-                    }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 hover:bg-base-300 dark:hover:bg-ink-700 transition-colors"
-                    title="循环播放"
+                    onClick={cyclePlayMode}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      isShuffle || loopMode !== "none"
+                        ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                        : "bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300 hover:bg-base-300 dark:hover:bg-ink-700"
+                    }`}
+                    title={
+                      isShuffle
+                        ? "随机播放"
+                        : loopMode === "none"
+                          ? "不循环"
+                          : loopMode === "all"
+                            ? "列表循环"
+                            : "单曲循环"
+                    }
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      repeat
+                    <span
+                      className="material-symbols-outlined text-[18px]"
+                      style={{
+                        fontVariationSettings:
+                          isShuffle || loopMode !== "none"
+                            ? "'FILL' 1"
+                            : "'FILL' 0",
+                      }}
+                    >
+                      {isShuffle
+                        ? "shuffle"
+                        : loopMode === "one"
+                          ? "repeat_one"
+                          : "repeat"}
                     </span>
                   </button>
+
+                  {/* Playlist Dropdown for FullContentTranscript */}
+                  <PlaylistDropdown className="absolute bottom-full left-0 mb-4 w-72 max-h-[400px]" />
                 </div>
               </div>
             </div>
@@ -1329,11 +1356,36 @@ export default function FullContentTranscript({
                       </button>
                     </div>
                     <button
-                      onClick={toggleLoopMode}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${loopMode !== "none" ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400" : "bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300"}`}
+                      onClick={cyclePlayMode}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                        isShuffle || loopMode !== "none"
+                          ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                          : "bg-base-200 dark:bg-ink-800 text-ink-600 dark:text-ink-300"
+                      }`}
+                      title={
+                        isShuffle
+                          ? "随机播放"
+                          : loopMode === "none"
+                            ? "不循环"
+                            : loopMode === "all"
+                              ? "列表循环"
+                              : "单曲循环"
+                      }
                     >
-                      <span className="material-symbols-outlined text-xl">
-                        {loopMode === "one" ? "repeat_one" : "repeat"}
+                      <span
+                        className="material-symbols-outlined text-xl"
+                        style={{
+                          fontVariationSettings:
+                            isShuffle || loopMode !== "none"
+                              ? "'FILL' 1"
+                              : "'FILL' 0",
+                        }}
+                      >
+                        {isShuffle
+                          ? "shuffle"
+                          : loopMode === "one"
+                            ? "repeat_one"
+                            : "repeat"}
                       </span>
                     </button>
                   </div>
