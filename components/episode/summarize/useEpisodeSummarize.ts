@@ -295,7 +295,7 @@ export function useEpisodeSummarize(episode: Episode) {
         useUIStore.getState().openPremiumModal();
         return;
       }
-      router.push(`/episode/${safeId}/practice`);
+      usePlayerStore.getState().setIsPracticeOpen(true);
     } else {
       if (!session?.user) {
         (
@@ -303,7 +303,7 @@ export function useEpisodeSummarize(episode: Episode) {
         )?.showModal();
         return;
       }
-      router.push(`/episode/${safeId}/practice`);
+      usePlayerStore.getState().setIsPracticeOpen(true);
     }
   };
 

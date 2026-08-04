@@ -124,6 +124,16 @@ export function useSpeechEvaluation({
 
   const userAudioUrlRef = useRef<string | undefined>(undefined);
 
+  // Sync result when subtitle changes
+  useEffect(() => {
+    setResult(previousResult ? { ...previousResult } : undefined);
+    // Reset other states
+    setRefAudioProgress(0);
+    setIsUserAudioPlaying(false);
+    setIsSpeaking(false);
+    setIsTTSLoading(false);
+  }, [subtitle.id, previousResult]);
+
   useEffect(() => {
     userAudioUrlRef.current = result?.userAudioUrl;
   }, [result?.userAudioUrl]);

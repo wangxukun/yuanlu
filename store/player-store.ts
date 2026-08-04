@@ -49,6 +49,9 @@ interface PlayerState {
   // 沉浸式逐字稿（FullContentTranscript）开关，全局可控
   isLyricsOpen: boolean;
   setIsLyricsOpen: (isOpen: boolean) => void;
+  // 全屏沉浸式语音评测开关
+  isPracticeOpen: boolean;
+  setIsPracticeOpen: (isOpen: boolean) => void;
   // 字幕模式：read=精读 dictate=听写（FullContentTranscript 与 PlayControlBar 共享）
   transcriptMode: "read" | "dictate";
   setTranscriptMode: (mode: "read" | "dictate") => void;
@@ -82,6 +85,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isShuffle: false,
   isPlaylistOpen: false,
   isLyricsOpen: false,
+  isPracticeOpen: false,
   isMobileSheetOpen: false,
   transcriptMode: "read",
 
@@ -132,6 +136,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
   setIsPlaylistOpen: (isOpen) => set({ isPlaylistOpen: isOpen }),
   setIsLyricsOpen: (isOpen) => set({ isLyricsOpen: isOpen }),
+  setIsPracticeOpen: (isOpen) => set({ isPracticeOpen: isOpen }),
   setTranscriptMode: (mode) => set({ transcriptMode: mode }),
   setIsMobileSheetOpen: (isOpen: boolean) => set({ isMobileSheetOpen: isOpen }),
 

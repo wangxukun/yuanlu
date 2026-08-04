@@ -1,0 +1,456 @@
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence, motion, PanInfo } from "framer-motion";
+import { Episode } from "@/core/episode/episode.entity";
+import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
+import SpeechEvaluationCard from "./SpeechEvaluationCard";
+import { useUIStore } from "@/store/ui-store";
+import { toast } from "sonner";
+import { saveSpeechResult } from "@/lib/actions/speech";
+import { CheckCircle2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+
+interface ImmersiveSpeechPracticeProps {
+  isOpen: boolean;
+  onClose: () => void;
+  episode: Episode;
+}
+
+export default function ImmersiveSpeechPractice({
+  isOpen,
+  onClose,
+  episode,
+}: ImmersiveSpeechPracticeProps) {
+  // Data State
+  const [isLoading, setIsLoading] = useState(true);
+  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
+  const [records, setRecords] = useState<SpeechPracticeRecord[]>([]);
+  const [isTrialMode, setIsTrialMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // UI State
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const [playingSubtitleId, setPlayingSubtitleId] = useState<number | null>(
+    null,
+  );
+
+  // Refs
+  const cardListRef = useRef<HTMLDivElement>(null);
+
+  // Fetch Data
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/speech/practice-data?id=${episode.episodeid}`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch practice data");
+        }
+        const json = await res.json();
+
+        if (!json.success || !json.data) {
+          throw new Error(json.error || "Failed to load data");
+        }
+
+        if (isMounted) {
+          setSubtitles(json.data.subtitles || []);
+          setRecords(json.data.previousRecords || []);
+          setIsTrialMode(json.data.isTrialMode || false);
+          setActiveCardIndex(0);
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          const errMsg =
+            err instanceof Error ? err.message : "Something went wrong";
+          setError(errMsg);
+          toast.error("加载评测数据失败");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, episode.episodeid]);
+
+  // Lock body scroll
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen || subtitles.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        handleNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        handlePrev();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, activeCardIndex, subtitles.length]);
+
+  const handleDragEnd = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
+    if (info.offset.y > 150 && info.velocity.y > 200) {
+      onClose();
+    }
+  };
+
+  const handleNext = useCallback(() => {
+    setActiveCardIndex((prev) => Math.min(prev + 1, subtitles.length - 1));
+  }, [subtitles.length]);
+
+  const handlePrev = useCallback(() => {
+    setActiveCardIndex((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const handleEvaluate = async (
+    subtitleId: number,
+    recordedText: string,
+    score: number,
+  ) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return;
+
+    const newRecord: SpeechPracticeRecord = {
+      recognitionid: Date.now(),
+      userid: "current",
+      episodeid: episode.episodeid,
+      speechText: recordedText,
+      accuracyScore: score,
+      targetText: targetSub.textEn,
+      targetStartTime: targetSub.startSeconds,
+      recognitionDate: new Date().toISOString(),
+    };
+
+    setRecords((prev) => [...prev, newRecord]);
+
+    // Auto-advance if score is good
+    if (score >= 80) {
+      setTimeout(() => {
+        handleNext();
+      }, 1500);
+    }
+
+    const result = await saveSpeechResult(
+      episode.episodeid,
+      targetSub.textEn,
+      recordedText,
+      score,
+      targetSub.startSeconds,
+    );
+
+    if (result.error) {
+      toast.error("保存进度失败");
+    }
+  };
+
+  const getLatestResult = (subtitleId: number) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return undefined;
+
+    return [...records]
+      .filter(
+        (r) =>
+          Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.recognitionDate || 0).getTime() -
+          new Date(a.recognitionDate || 0).getTime(),
+      )[0];
+  };
+
+  const activeSubtitle = subtitles[activeCardIndex];
+
+  // Progress calculations
+  const uniqueIds = new Set(records.map((r) => r.targetStartTime)).size;
+  const progressPercent =
+    subtitles.length > 0 ? (uniqueIds / subtitles.length) * 100 : 0;
+  const isCompleted = progressPercent >= 100;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleDragEnd}
+          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row overflow-hidden font-sans"
+        >
+          {/* ── Left Panel (Tablet & Desktop) ── */}
+          <div className="hidden md:flex flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0 w-[35%] max-w-[400px] xl:max-w-[480px] h-full border-r">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between px-6 h-14 shrink-0">
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1 px-2 py-1.5 -ml-2 rounded-xl text-ink-500 hover:text-primary-600 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                title="收起 (Esc)"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  expand_more
+                </span>
+                <span className="text-sm font-bold">返回</span>
+              </button>
+            </div>
+
+            {/* Cover & Title */}
+            <div className="px-6 pb-6 flex flex-col gap-4 border-b border-ink-100 dark:border-ink-800/50">
+              <div className="w-full aspect-video rounded-xl shadow-lg border border-ink-200 dark:border-ink-700 overflow-hidden shrink-0 relative">
+                <img
+                  src={episode.coverUrl}
+                  alt={episode.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md">
+                  <span className="text-white text-xs font-bold tracking-widest uppercase">
+                    语音评测
+                  </span>
+                </div>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-ink-900 dark:text-ink-100 line-clamp-2 leading-tight">
+                  {episode.title}
+                </h1>
+                <p className="text-sm font-medium text-ink-500 dark:text-ink-400 mt-1 line-clamp-1">
+                  {episode.podcast?.title || "Unknown Podcast"}
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-xs font-bold text-ink-500 dark:text-ink-400 mb-1.5">
+                  <span>已练 {uniqueIds} 句</span>
+                  <span>共 {subtitles.length} 句</span>
+                </div>
+                <div className="w-full h-2 bg-ink-100 dark:bg-ink-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary-500 transition-all duration-500 rounded-full"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sentence List Navigation */}
+            <div
+              className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1"
+              ref={cardListRef}
+            >
+              <h3 className="text-xs font-bold text-ink-400 dark:text-ink-500 uppercase tracking-widest px-2 mb-3">
+                所有句子
+              </h3>
+
+              {isLoading ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-ink-300" />
+                </div>
+              ) : subtitles.length > 0 ? (
+                subtitles.map((sub, index) => {
+                  const latestResult = getLatestResult(sub.id);
+                  const isActive = index === activeCardIndex;
+                  const hasPracticed = !!latestResult;
+                  const score = latestResult?.accuracyScore || 0;
+
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setActiveCardIndex(index)}
+                      className={`w-full text-left p-3 rounded-xl transition-colors flex items-start gap-3 ${
+                        isActive
+                          ? "bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800"
+                          : "hover:bg-ink-50 dark:hover:bg-ink-800/50"
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {hasPracticed ? (
+                          score >= 85 ? (
+                            <span className="text-primary-500">✅</span>
+                          ) : score >= 60 ? (
+                            <span className="text-accent-500">🎯</span>
+                          ) : (
+                            <span className="text-error-500">⭕</span>
+                          )
+                        ) : (
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-primary-400" : "border-ink-300 dark:border-ink-600"}`}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={`text-sm line-clamp-2 leading-relaxed ${isActive ? "font-semibold text-primary-700 dark:text-primary-300" : "font-medium text-ink-700 dark:text-ink-300"}`}
+                        >
+                          {sub.textEn}
+                        </div>
+                        {isActive && sub.textZh && (
+                          <div className="text-xs text-primary-600/70 dark:text-primary-400/70 mt-1 line-clamp-1">
+                            {sub.textZh}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-ink-400 text-sm">
+                  没有找到练习句子
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right Panel / Main Area ── */}
+          <div className="flex-1 flex flex-col relative h-full bg-ink-50/50 dark:bg-ink-950/50 overflow-hidden">
+            {/* Mobile Top Bar */}
+            <div className="md:hidden flex items-center justify-between px-4 h-14 bg-white/80 dark:bg-ink-900/80 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 shrink-0 relative z-10">
+              <button onClick={onClose} className="p-2 -ml-2 text-ink-500">
+                <span className="material-symbols-outlined">expand_more</span>
+              </button>
+              <div className="text-sm font-bold text-ink-800 dark:text-ink-200">
+                语音评测
+              </div>
+              <div className="w-8"></div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-y-auto px-4 py-8 md:p-12 flex flex-col items-center justify-center relative">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center text-ink-400">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                  <p className="font-medium">加载评测数据中...</p>
+                </div>
+              ) : error ? (
+                <div className="bg-error-50 dark:bg-error-900/20 text-error-600 p-6 rounded-2xl max-w-sm text-center border border-error-100 dark:border-error-800">
+                  <span className="material-symbols-outlined text-4xl mb-2">
+                    error
+                  </span>
+                  <p className="font-bold">{error}</p>
+                </div>
+              ) : subtitles.length > 0 && activeSubtitle ? (
+                <div className="w-full max-w-2xl w-full mx-auto pb-24 md:pb-0">
+                  {isTrialMode && isCompleted && (
+                    <div className="mb-8 p-6 bg-white dark:bg-ink-900 rounded-2xl border border-primary-200 dark:border-primary-800 shadow-xl text-center">
+                      <h2 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
+                        体验已结束
+                      </h2>
+                      <p className="text-sm text-ink-500 mb-6">
+                        升级为 PRO
+                        会员，解锁本集全部练习卡片及更多独家高级内容。
+                      </p>
+                      <button
+                        onClick={() => useUIStore.getState().openPremiumModal()}
+                        className="btn btn-primary rounded-xl"
+                      >
+                        解锁全部
+                      </button>
+                    </div>
+                  )}
+
+                  {!isTrialMode && isCompleted && (
+                    <div className="mb-8 p-6 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-2xl text-center shadow-lg animate-in slide-in-from-top-4">
+                      <CheckCircle2 className="w-12 h-12 text-success-500 mx-auto mb-3" />
+                      <h2 className="text-xl font-bold text-success-700 dark:text-success-400 mb-1">
+                        会话已完成！
+                      </h2>
+                      <p className="text-sm text-success-600 dark:text-success-500">
+                        你已经练习了所有的句子。
+                      </p>
+                    </div>
+                  )}
+
+                  <SpeechEvaluationCard
+                    subtitle={activeSubtitle}
+                    audioUrl={episode.audioUrl || ""}
+                    previousResult={getLatestResult(activeSubtitle.id)}
+                    onEvaluate={handleEvaluate}
+                    currentPlayingId={playingSubtitleId}
+                    onPlayStart={(id) => setPlayingSubtitleId(id)}
+                    isActive={true}
+                    onActivate={() => {}}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-ink-400">
+                  <p>没有字幕可供练习</p>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Navigation Bar */}
+            {!isLoading && subtitles.length > 0 && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-8 md:pb-6 pointer-events-none">
+                <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-2xl flex items-center p-2 gap-4 pointer-events-auto w-full max-w-sm mx-auto">
+                  <button
+                    onClick={handlePrev}
+                    disabled={activeCardIndex === 0}
+                    className="p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+
+                  <div className="flex-1 flex flex-col items-center">
+                    <div className="text-sm font-bold text-ink-700 dark:text-ink-300">
+                      {activeCardIndex + 1}{" "}
+                      <span className="text-ink-400 mx-1">/</span>{" "}
+                      {subtitles.length}
+                    </div>
+                    <div className="w-full max-w-[120px] h-1.5 bg-ink-100 dark:bg-ink-700 rounded-full mt-1.5 overflow-hidden">
+                      <div
+                        className="h-full bg-primary-500 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${((activeCardIndex + 1) / subtitles.length) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleNext}
+                    disabled={activeCardIndex === subtitles.length - 1}
+                    className="p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}

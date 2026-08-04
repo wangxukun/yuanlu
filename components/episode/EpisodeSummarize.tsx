@@ -21,8 +21,12 @@ import { formatChineseDate } from "@/lib/tools";
 import { useEpisodeSummarize } from "./summarize/useEpisodeSummarize";
 import { ActionButtons } from "./summarize/ActionButtons";
 import { TranscriptPreviewModal } from "./summarize/TranscriptPreviewModal";
+import ImmersiveSpeechPractice from "@/components/voice/ImmersiveSpeechPractice";
+import { usePlayerStore } from "@/store/player-store";
 
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
+  const isPracticeOpen = usePlayerStore((s) => s.isPracticeOpen);
+  const setIsPracticeOpen = usePlayerStore((s) => s.setIsPracticeOpen);
   const hookOptions = useEpisodeSummarize(episode);
   const {
     isTranslatingTitle,
@@ -152,6 +156,13 @@ export default function EpisodeSummarize({ episode }: { episode: Episode }) {
 
       {/* Bilingual Transcript Preview & Intercept Modal */}
       <TranscriptPreviewModal episode={episode} hookOptions={hookOptions} />
+
+      {/* Full-screen immersive speech practice overlay */}
+      <ImmersiveSpeechPractice
+        isOpen={isPracticeOpen}
+        onClose={() => setIsPracticeOpen(false)}
+        episode={episode}
+      />
     </section>
   );
 }
