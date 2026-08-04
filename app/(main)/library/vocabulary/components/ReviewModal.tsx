@@ -179,8 +179,12 @@ export function ReviewModal({
 
   // Keyboard shortcuts (use refs to avoid stale closures)
   const handleQualitySelectRef = useRef<(q: ReviewQuality) => void>(() => {});
+  const handleChoiceSelectRef = useRef<(idx: number) => void>(() => {});
+  const currentModeRef = useRef<ReviewMode | null>(null);
+
   const currentItem = reviewQueue[currentReviewIndex];
   const currentMode = reviewModes[currentReviewIndex];
+  currentModeRef.current = currentMode;
 
   const handleQualitySelect = useCallback(
     (quality: ReviewQuality) => {
@@ -209,6 +213,15 @@ export function ReviewModal({
         if ((e.key === " " || e.key === "Enter") && !inInput) {
           e.preventDefault();
           setIsCardFlipped(true);
+        } else if (
+          currentModeRef.current === ReviewMode.MULTIPLE_CHOICE &&
+          !inInput
+        ) {
+          const key = e.key.toLowerCase();
+          const map: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 };
+          if (key in map) {
+            handleChoiceSelectRef.current(map[key]);
+          }
         }
       } else {
         if (["1", "2", "3", "4"].includes(e.key) && !isSubmitting) {
@@ -336,6 +349,7 @@ export function ReviewModal({
       }, 800);
     }
   };
+  handleChoiceSelectRef.current = handleChoiceSelect;
 
   const handleShowHint = () => {
     if (!currentItem) return;
