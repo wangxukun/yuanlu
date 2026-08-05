@@ -62,7 +62,7 @@ export const adminDictionaryService = {
         model: modelName,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: word },
+          { role: "user", content: `<word>${word}</word>` },
         ],
         response_format: { type: "json_object" },
         temperature: 0.1,

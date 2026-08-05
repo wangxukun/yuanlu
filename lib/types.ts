@@ -59,4 +59,13 @@ export interface SpeechPracticeRecord {
   targetText: string; // 对应的原文句子
   targetStartTime: number; // 对应的原文开始时间（用于定位）
   recognitionDate: string; // ISO 格式的日期字符串
+
+  // 新增字段
+  fluencyScore?: number;
+  integrityScore?: number;
+  overallScore?: number;
+  speed?: number;
+  detailUrl?: string;
+  userAudioUrl?: string;
+  subtitleId?: number;
 }

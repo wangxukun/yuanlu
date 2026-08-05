@@ -8,42 +8,42 @@ datasource db {
 }
 
 model User {
-  userid             String                @id @default(cuid())
-  password           String                @db.VarChar(255)
-  role               String?               @default("USER") @db.VarChar(50)
-  languagePreference String?               @default("zh-CN") @db.VarChar(50)
-  createAt           DateTime              @default(now()) @db.Timestamptz(6)
-  updateAt           DateTime              @updatedAt @db.Timestamptz(6)
-  isOnline           Boolean               @default(false)
-  lastActiveAt       DateTime?             @db.Timestamptz(6)
-  isCommentAllowed   Boolean               @default(true)
-  isLoginAllowed     Boolean               @default(true)
-  email              String                @unique @db.VarChar(255)
-  emailVerified      DateTime?             @db.Timestamptz(6)
-  loginCount         Int                   @default(0)
-  sessionVersion     Int                   @default(0)
-  registerIp         String?               @db.VarChar(45)
-  VisitorLog         VisitorLog[]
-  achievements       achievements[]
-  comment_likes      comment_likes[]
-  comments           comments[]
-  discussion_threads discussion_threads[]
-  episode            episode[]
-  episode_favorites  episode_favorites[]
-  group_members      group_members[]
-  learning_paths     learning_paths[]
-  listening_history  listening_history[]
-  notifications      notifications[]
-  podcast_favorites  podcast_favorites[]
-  ratings            ratings[]
-  speech_recognition speech_recognition[]
-  study_groups       study_groups[]
-  subscriptions      subscriptions[]
-  daily_activities   user_daily_activity[]
-  user_profile              user_profile?
-  vocabulary                vocabulary[]
-  proofread_submissions     subtitle_proofread[]      @relation("ProofreadSubmitter")
-  proofread_reviews         subtitle_proofread[]      @relation("ProofreadReviewer")
+  userid                String                @id @default(cuid())
+  password              String                @db.VarChar(255)
+  role                  String?               @default("USER") @db.VarChar(50)
+  languagePreference    String?               @default("zh-CN") @db.VarChar(50)
+  createAt              DateTime              @default(now()) @db.Timestamptz(6)
+  updateAt              DateTime              @updatedAt @db.Timestamptz(6)
+  isOnline              Boolean               @default(false)
+  lastActiveAt          DateTime?             @db.Timestamptz(6)
+  isCommentAllowed      Boolean               @default(true)
+  isLoginAllowed        Boolean               @default(true)
+  email                 String                @unique @db.VarChar(255)
+  emailVerified         DateTime?             @db.Timestamptz(6)
+  loginCount            Int                   @default(0)
+  sessionVersion        Int                   @default(0)
+  registerIp            String?               @db.VarChar(45)
+  VisitorLog            VisitorLog[]
+  achievements          achievements[]
+  comment_likes         comment_likes[]
+  comments              comments[]
+  discussion_threads    discussion_threads[]
+  episode               episode[]
+  episode_favorites     episode_favorites[]
+  group_members         group_members[]
+  learning_paths        learning_paths[]
+  listening_history     listening_history[]
+  notifications         notifications[]
+  podcast_favorites     podcast_favorites[]
+  ratings               ratings[]
+  speech_recognition    speech_recognition[]
+  study_groups          study_groups[]
+  subscriptions         subscriptions[]
+  daily_activities      user_daily_activity[]
+  user_profile          user_profile?
+  vocabulary            vocabulary[]
+  proofread_submissions subtitle_proofread[]  @relation("ProofreadSubmitter")
+  proofread_reviews     subtitle_proofread[]  @relation("ProofreadReviewer")
 }
 
 /// 用户资料模型，存储用户的个人信息
@@ -185,9 +185,9 @@ model episode {
   quizzes             quizzes[]
   ratings             ratings[]
   speech_recognition  speech_recognition[]
-  vocabulary            vocabulary[]
-  tags                  tag[]                 @relation("episodeTotag")
-  subtitle_proofreads   subtitle_proofread[]
+  vocabulary          vocabulary[]
+  tags                tag[]                 @relation("episodeTotag")
+  subtitle_proofreads subtitle_proofread[]
 }
 
 /// 播客剧集收藏模型，存储用户收藏的剧集信息
@@ -340,6 +340,13 @@ model speech_recognition {
   userid          String?
   recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
   accuracyScore   Float?
+  fluencyScore    Float?
+  integrityScore  Float?
+  overallScore    Float?
+  speed           Float?
+  detailUrl       String?   @db.VarChar(500)
+  userAudioUrl    String?   @db.VarChar(500)
+  subtitleId      Int?
   episodeid       String?
   speechText      String?
   targetStartTime Int?
@@ -470,22 +477,22 @@ model VisitorLog {
 /// 字幕校对请求模型
 /// 存储用户提交的字幕校对修改，支持管理员审核流程
 model subtitle_proofread {
-  id              Int       @id @default(autoincrement())
-  episodeid       String
-  subtitleIndex   Int       /// 字幕段落索引 (对应 SRT 文件中的 id)
-  originalTextEn  String    /// 原始英文内容
-  originalTextZh  String    /// 原始中文内容
-  modifiedTextEn  String    /// 修改后的英文内容
-  modifiedTextZh  String    /// 修改后的中文内容
-  status          String    @default("PENDING") @db.VarChar(20) /// PENDING | APPROVED | REJECTED
-  submitterId     String    /// 提交者用户ID
-  reviewerId      String?   /// 审核者用户ID
-  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
-  reviewedAt      DateTime? @db.Timestamptz(6)
+  id             Int       @id @default(autoincrement())
+  episodeid      String
+  subtitleIndex  Int /// 字幕段落索引 (对应 SRT 文件中的 id)
+  originalTextEn String /// 原始英文内容
+  originalTextZh String /// 原始中文内容
+  modifiedTextEn String /// 修改后的英文内容
+  modifiedTextZh String /// 修改后的中文内容
+  status         String    @default("PENDING") @db.VarChar(20) /// PENDING | APPROVED | REJECTED
+  submitterId    String /// 提交者用户ID
+  reviewerId     String? /// 审核者用户ID
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  reviewedAt     DateTime? @db.Timestamptz(6)
 
-  episode         episode   @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
-  submitter       User      @relation("ProofreadSubmitter", fields: [submitterId], references: [userid], onDelete: Cascade)
-  reviewer        User?     @relation("ProofreadReviewer", fields: [reviewerId], references: [userid], onDelete: SetNull)
+  episode   episode @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
+  submitter User    @relation("ProofreadSubmitter", fields: [submitterId], references: [userid], onDelete: Cascade)
+  reviewer  User?   @relation("ProofreadReviewer", fields: [reviewerId], references: [userid], onDelete: SetNull)
 
   @@index([episodeid])
   @@index([status])
@@ -495,10 +502,9 @@ model subtitle_proofread {
 model Dictionary {
   id        String   @id @default(cuid())
   word      String   @unique
-  data      Json     // 存放 LLM 返回的完整 JSON 对象（DictEntryDTO）
+  data      Json // 存放 LLM 返回的完整 JSON 对象（DictEntryDTO）
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([word])
 }
-

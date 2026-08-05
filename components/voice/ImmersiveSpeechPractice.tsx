@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -136,6 +137,9 @@ export default function ImmersiveSpeechPractice({
     subtitleId: number,
     recordedText: string,
     score: number,
+    fullRecord?: any,
+    rawDetails?: any,
+    audioBase64?: string,
   ) => {
     const targetSub = subtitles.find((s) => s.id === subtitleId);
     if (!targetSub) return;
@@ -149,6 +153,14 @@ export default function ImmersiveSpeechPractice({
       targetText: targetSub.textEn,
       targetStartTime: targetSub.startSeconds,
       recognitionDate: new Date().toISOString(),
+      subtitleId: subtitleId,
+      ...(fullRecord && {
+        fluencyScore: fullRecord.fluencyScore,
+        integrityScore: fullRecord.integrityScore,
+        overallScore: fullRecord.overallScore,
+        speed: fullRecord.speed,
+        userAudioUrl: fullRecord.userAudioUrl,
+      }),
     };
 
     setRecords((prev) => [...prev, newRecord]);
@@ -160,13 +172,20 @@ export default function ImmersiveSpeechPractice({
       }, 1500);
     }
 
-    const result = await saveSpeechResult(
-      episode.episodeid,
-      targetSub.textEn,
-      recordedText,
-      score,
-      targetSub.startSeconds,
-    );
+    const result = await saveSpeechResult({
+      episodeId: episode.episodeid,
+      targetText: targetSub.textEn,
+      speechText: recordedText,
+      accuracyScore: score,
+      targetStartTime: targetSub.startSeconds,
+      subtitleId: subtitleId,
+      fluencyScore: fullRecord?.fluencyScore,
+      integrityScore: fullRecord?.integrityScore,
+      overallScore: fullRecord?.overallScore,
+      speed: fullRecord?.speed,
+      audioBase64: audioBase64,
+      detailJson: rawDetails,
+    });
 
     if (result.error) {
       toast.error("保存进度失败");
@@ -187,6 +206,22 @@ export default function ImmersiveSpeechPractice({
           new Date(b.recognitionDate || 0).getTime() -
           new Date(a.recognitionDate || 0).getTime(),
       )[0];
+  };
+
+  const getHistoricalRecords = (subtitleId: number) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return [];
+
+    return [...records]
+      .filter(
+        (r) =>
+          Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.recognitionDate || 0).getTime() -
+          new Date(a.recognitionDate || 0).getTime(),
+      );
   };
 
   const activeSubtitle = subtitles[activeCardIndex];
@@ -396,6 +431,7 @@ export default function ImmersiveSpeechPractice({
                     subtitle={activeSubtitle}
                     audioUrl={episode.audioUrl || ""}
                     previousResult={getLatestResult(activeSubtitle.id)}
+                    historicalRecords={getHistoricalRecords(activeSubtitle.id)}
                     onEvaluate={handleEvaluate}
                     currentPlayingId={playingSubtitleId}
                     onPlayStart={(id) => setPlayingSubtitleId(id)}

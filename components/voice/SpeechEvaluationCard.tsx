@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React from "react";
@@ -20,11 +21,19 @@ interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
   audioUrl: string; // 原音 URL
   previousResult?: SpeechPracticeRecord;
-  onEvaluate: (subtitleId: number, recordedText: string, score: number) => void;
+  onEvaluate: (
+    subtitleId: number,
+    recordedText: string,
+    score: number,
+    fullRecord?: any,
+    rawDetails?: any,
+    audioBase64?: string,
+  ) => void;
   currentPlayingId: number | null;
   onPlayStart: (id: number) => void;
   isActive: boolean;
   onActivate: () => void;
+  historicalRecords?: SpeechPracticeRecord[];
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
@@ -36,6 +45,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   onPlayStart,
   isActive,
   onActivate,
+  historicalRecords,
 }) => {
   const {
     isRecording,
@@ -65,6 +75,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [activeWordIndex, setActiveWordIndex] = React.useState<number | null>(
     null,
   );
+
+  const [playMode, setPlayMode] = React.useState<"normal" | "slow" | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    if (refAudioProgress === 0) {
+      setPlayMode(null);
+    }
+  }, [refAudioProgress]);
 
   const handleStartRecording = () => {
     onActivate();
@@ -122,11 +142,12 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setPlayMode("normal");
               playReferenceAudio();
             }}
             className="btn btn-sm rounded-full border border-primary-200 text-primary-600 bg-transparent hover:bg-primary-50 hover:border-primary-300 relative overflow-hidden group transition-colors"
           >
-            {refAudioProgress > 0 && (
+            {refAudioProgress > 0 && playMode === "normal" && (
               <div
                 className="absolute left-0 top-0 bottom-0 bg-primary-100 transition-all duration-75"
                 style={{ width: `${refAudioProgress}%` }}
@@ -139,10 +160,17 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setPlayMode("slow");
               playReferenceAudio(0.75);
             }}
             className="btn btn-sm rounded-full border border-primary-200 text-primary-600 bg-transparent hover:bg-primary-50 hover:border-primary-300 relative overflow-hidden group transition-colors"
           >
+            {refAudioProgress > 0 && playMode === "slow" && (
+              <div
+                className="absolute left-0 top-0 bottom-0 bg-primary-100 transition-all duration-75"
+                style={{ width: `${refAudioProgress}%` }}
+              />
+            )}
             <Volume1 size={16} className="relative z-10" />
             <span className="relative z-10">慢速播放</span>
           </button>
@@ -243,198 +271,241 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       {/* 3. 下方：评测结果与反馈区 */}
       {!isRecording && !isProcessing && result && (
         <div className="p-6 md:p-8 bg-base-100 animate-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* 左侧：综合得分 */}
-            <div className="lg:col-span-4 flex flex-col items-center justify-center">
-              <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-6">
-                综合得分
-              </div>
-              <div className="relative">
-                <div
-                  className={`radial-progress ${getScoreColor(result.overallScore || 0)} bg-base-200 border-4 border-base-200`}
-                  style={
-                    {
-                      "--value": result.overallScore || 0,
-                      "--size": "10rem",
-                      "--thickness": "1rem",
-                    } as React.CSSProperties
-                  }
-                  role="progressbar"
-                >
-                  <span className="text-5xl font-black text-base-content">
-                    {Math.round(result.overallScore || 0)}
-                  </span>
-                </div>
-                {(result.overallScore || 0) >= 85 && (
-                  <div className="absolute -top-4 -right-4 text-4xl animate-bounce">
-                    ✨
-                  </div>
-                )}
-              </div>
-              <div className="mt-6 text-center">
-                <div className="font-extrabold text-xl text-base-content">
-                  {(result.overallScore || 0) >= 85
-                    ? "Excellent!"
-                    : (result.overallScore || 0) >= 60
-                      ? "Good Job!"
-                      : "Keep Trying!"}
-                </div>
-                <div className="text-sm text-base-content/60 mt-1.5 font-medium">
-                  {(result.overallScore || 0) >= 85
-                    ? "发音非常地道，请继续保持！"
-                    : "继续练习，会有更大进步！"}
-                </div>
-              </div>
-            </div>
+          {(() => {
+            const pastRecords =
+              historicalRecords?.filter(
+                (r) => r.recognitionid !== result.recognitionid,
+              ) || [];
+            const pastScores = pastRecords.map(
+              (r) => r.overallScore || r.accuracyScore || 0,
+            );
+            const highestPastScore =
+              pastScores.length > 0 ? Math.max(...pastScores) : null;
+            const currentScore = result.overallScore || 0;
+            const isNewBest =
+              highestPastScore !== null && currentScore > highestPastScore;
+            const improvement = isNewBest
+              ? currentScore - (highestPastScore as number)
+              : 0;
+            const lastAttemptScore =
+              pastRecords.length > 0
+                ? pastRecords[0].overallScore ||
+                  pastRecords[0].accuracyScore ||
+                  0
+                : null;
+            const isImprovement =
+              !isNewBest &&
+              lastAttemptScore !== null &&
+              currentScore > lastAttemptScore;
 
-            {/* 右侧：逐词反馈与维度 */}
-            <div className="lg:col-span-8 flex flex-col justify-center space-y-8">
-              {/* 逐词发音纠错 */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
-                    逐词纠错详情
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                {/* 左侧：综合得分 */}
+                <div className="lg:col-span-4 flex flex-col items-center justify-center relative">
+                  <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-6">
+                    综合得分
                   </div>
-                  {result.userAudioUrl && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleUserAudio();
-                      }}
-                      className={`btn btn-sm rounded-full border-none ${
-                        isUserAudioPlaying
-                          ? "bg-primary-600 text-white hover:bg-primary-700"
-                          : "bg-ink-100 text-ink-700 hover:bg-ink-200"
-                      }`}
+                  <div className="relative">
+                    <div
+                      className={`radial-progress ${getScoreColor(result.overallScore || 0)} bg-base-200 border-4 border-base-200`}
+                      style={
+                        {
+                          "--value": result.overallScore || 0,
+                          "--size": "10rem",
+                          "--thickness": "1rem",
+                        } as React.CSSProperties
+                      }
+                      role="progressbar"
                     >
-                      {isUserAudioPlaying ? (
-                        <Pause size={14} fill="currentColor" />
-                      ) : (
-                        <Play size={14} fill="currentColor" />
-                      )}
-                      {isUserAudioPlaying ? "回放中" : "我的录音"}
-                    </button>
-                  )}
+                      <span className="text-5xl font-black text-base-content">
+                        {Math.round(result.overallScore || 0)}
+                      </span>
+                    </div>
+                    {(result.overallScore || 0) >= 85 && !isNewBest && (
+                      <div className="absolute -top-4 -right-4 text-4xl animate-bounce">
+                        ✨
+                      </div>
+                    )}
+                    {isNewBest && (
+                      <div className="absolute -top-4 -right-12 bg-warning text-warning-content text-xs font-black px-2 py-1 rounded-full shadow-lg border-2 border-warning-content animate-bounce whitespace-nowrap">
+                        👑 历史新高 +{Math.round(improvement)}分
+                      </div>
+                    )}
+                    {isImprovement && (
+                      <div className="absolute -top-3 -right-6 bg-success text-success-content text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
+                        ↗ 进步了
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-6 text-center">
+                    <div className="font-extrabold text-xl text-base-content">
+                      {(result.overallScore || 0) >= 85
+                        ? "Excellent!"
+                        : (result.overallScore || 0) >= 60
+                          ? "Good Job!"
+                          : "Keep Trying!"}
+                    </div>
+                    <div className="text-sm text-base-content/60 mt-1.5 font-medium">
+                      {(result.overallScore || 0) >= 85
+                        ? "发音非常地道，请继续保持！"
+                        : "继续练习，会有更大进步！"}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2.5 text-lg">
-                  {result.words && result.words.length > 0 ? (
-                    result.words.map((w, i) => (
-                      <div key={i} className="relative">
-                        <span
+                {/* 右侧：逐词反馈与维度 */}
+                <div className="lg:col-span-8 flex flex-col justify-center space-y-8">
+                  {/* 逐词发音纠错 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest">
+                        逐词纠错详情
+                      </div>
+                      {result.userAudioUrl && (
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (w.score < 85) {
-                              setActiveWordIndex(
-                                activeWordIndex === i ? null : i,
-                              );
-                            }
+                            toggleUserAudio();
                           }}
-                          className={`px-3 py-1.5 rounded-lg border transition-all inline-block ${getWordColorClass(
-                            w.score,
-                          )} ${
-                            w.score < 85
-                              ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
-                              : ""
+                          className={`btn btn-sm rounded-full border-none ${
+                            isUserAudioPlaying
+                              ? "bg-primary-600 text-white hover:bg-primary-700"
+                              : "bg-ink-100 text-ink-700 hover:bg-ink-200"
                           }`}
                         >
-                          {w.word}
-                        </span>
+                          {isUserAudioPlaying ? (
+                            <Pause size={14} fill="currentColor" />
+                          ) : (
+                            <Play size={14} fill="currentColor" />
+                          )}
+                          {isUserAudioPlaying ? "回放中" : "回放我的发音"}
+                        </button>
+                      )}
+                    </div>
 
-                        {/* 对比小卡片 */}
-                        {activeWordIndex === i && w.score < 85 && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 w-52 bg-base-100 rounded-xl shadow-2xl border border-base-200 p-3 animate-in zoom-in duration-200">
-                            <div className="text-xs font-bold text-base-content/50 mb-3 text-center uppercase tracking-widest">
-                              发音对比
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  playReferenceAudio();
-                                }}
-                                className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-primary transition-colors"
-                              >
-                                <BotMessageSquare size={20} className="mb-2" />
-                                <span className="text-[11px] font-bold">
-                                  标准发音
-                                </span>
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleUserAudio();
-                                }}
-                                className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-secondary transition-colors"
-                              >
-                                <Mic size={20} className="mb-2" />
-                                <span className="text-[11px] font-bold">
-                                  你的发音
-                                </span>
-                              </button>
-                            </div>
-                            <div className="w-4 h-4 bg-base-100 border-b border-r border-base-200 rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
+                    <div className="flex flex-wrap gap-2.5 text-lg">
+                      {result.words && result.words.length > 0 ? (
+                        result.words.map((w, i) => (
+                          <div key={i} className="relative">
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (w.score < 85) {
+                                  setActiveWordIndex(
+                                    activeWordIndex === i ? null : i,
+                                  );
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border transition-all inline-block ${getWordColorClass(
+                                w.score,
+                              )} ${
+                                w.score < 85
+                                  ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+                                  : ""
+                              }`}
+                            >
+                              {w.word}
+                            </span>
+
+                            {/* 对比小卡片 */}
+                            {activeWordIndex === i && w.score < 85 && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 w-52 bg-base-100 rounded-xl shadow-2xl border border-base-200 p-3 animate-in zoom-in duration-200">
+                                <div className="text-xs font-bold text-base-content/50 mb-3 text-center uppercase tracking-widest">
+                                  发音对比
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      playReferenceAudio();
+                                    }}
+                                    className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-primary transition-colors"
+                                  >
+                                    <BotMessageSquare
+                                      size={20}
+                                      className="mb-2"
+                                    />
+                                    <span className="text-[11px] font-bold">
+                                      标准发音
+                                    </span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleUserAudio();
+                                    }}
+                                    className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-secondary transition-colors"
+                                  >
+                                    <Mic size={20} className="mb-2" />
+                                    <span className="text-[11px] font-bold">
+                                      你的发音
+                                    </span>
+                                  </button>
+                                </div>
+                                <div className="w-4 h-4 bg-base-100 border-b border-r border-base-200 rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ))
+                      ) : (
+                        <span className="text-base-content font-medium">
+                          {result.speechText}
+                        </span>
+                      )}
+                    </div>
+                    {result.words && result.words.some((w) => w.score < 85) && (
+                      <div className="mt-3 text-[11px] font-medium text-warning flex items-center gap-1.5 bg-warning/10 w-fit px-2 py-1 rounded">
+                        <Info size={12} /> 点击黄色或红色单词对比发音
                       </div>
-                    ))
-                  ) : (
-                    <span className="text-base-content font-medium">
-                      {result.speechText}
-                    </span>
-                  )}
-                </div>
-                {result.words && result.words.some((w) => w.score < 85) && (
-                  <div className="mt-3 text-[11px] font-medium text-warning flex items-center gap-1.5 bg-warning/10 w-fit px-2 py-1 rounded">
-                    <Info size={12} /> 点击黄色或红色单词对比发音
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* 多维指标横向柱状图 */}
-              <div className="space-y-4">
-                <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-2">
-                  详细维度
-                </div>
-                {[
-                  {
-                    label: "准确度",
-                    value: result.accuracyScore || 0,
-                    color:
-                      "[&::-webkit-progress-value]:bg-primary-600 [&::-moz-progress-bar]:bg-primary-600",
-                  },
-                  {
-                    label: "流利度",
-                    value: result.fluencyScore || 0,
-                    color:
-                      "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
-                  },
-                  {
-                    label: "完整度",
-                    value: result.integrityScore || 0,
-                    color:
-                      "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
-                  },
-                ].map((metric, idx) => (
-                  <div key={idx} className="flex items-center gap-4">
-                    <div className="w-16 text-sm font-bold text-base-content/60 shrink-0">
-                      {metric.label}
+                  {/* 多维指标横向柱状图 */}
+                  <div className="space-y-4">
+                    <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-2">
+                      详细维度
                     </div>
-                    <div className="flex-1">
-                      <progress
-                        className={`progress ${metric.color} w-full h-3 bg-base-200`}
-                        value={metric.value}
-                        max="100"
-                      ></progress>
-                    </div>
-                    <div className="w-10 text-right text-sm font-black text-base-content shrink-0">
-                      {metric.value}
-                    </div>
+                    {[
+                      {
+                        label: "准确度",
+                        value: result.accuracyScore || 0,
+                        color:
+                          "[&::-webkit-progress-value]:bg-primary-600 [&::-moz-progress-bar]:bg-primary-600",
+                      },
+                      {
+                        label: "流利度",
+                        value: result.fluencyScore || 0,
+                        color:
+                          "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
+                      },
+                      {
+                        label: "完整度",
+                        value: result.integrityScore || 0,
+                        color:
+                          "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
+                      },
+                    ].map((metric, idx) => (
+                      <div key={idx} className="flex items-center gap-4">
+                        <div className="w-16 text-sm font-bold text-base-content/60 shrink-0">
+                          {metric.label}
+                        </div>
+                        <div className="flex-1">
+                          <progress
+                            className={`progress ${metric.color} w-full h-3 bg-base-200`}
+                            value={metric.value}
+                            max="100"
+                          ></progress>
+                        </div>
+                        <div className="w-10 text-right text-sm font-black text-base-content shrink-0">
+                          {metric.value}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           <div className="flex justify-end mt-8 pt-6 border-t border-base-200">
             <button

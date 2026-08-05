@@ -6,7 +6,7 @@ import type { DictEntryDTO } from "./dto";
  * System prompt for the DeepSeek dictionary LLM.
  * Derived from /public/字典.md — kept as a raw string to avoid filesystem I/O at runtime.
  */
-export const SYSTEM_PROMPT = `You are an authoritative, accurate, and comprehensive English-Chinese dictionary API engine. Your task is to analyze the target English word or phrase provided by the user and output a detailed dictionary entry strictly formatted as a valid JSON object.
+export const SYSTEM_PROMPT = `You are an authoritative, accurate, and comprehensive English-Chinese dictionary API engine. Your task is to analyze the target English word or phrase provided by the user (which will be wrapped in <word> tags) and output a detailed dictionary entry strictly formatted as a valid JSON object.
 
 ### Instructions:
 
@@ -95,7 +95,7 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
       model: modelName,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: word },
+        { role: "user", content: `<word>${word}</word>` },
       ],
       response_format: { type: "json_object" },
       temperature: 0.1, // Low temperature for deterministic dictionary output

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { auth } from "@/auth";
@@ -111,32 +112,77 @@ export async function evaluateSpeech(
   }
 }
 
-export async function saveSpeechResult(
-  episodeId: string,
-  targetText: string,
-  speechText: string,
-  accuracyScore: number,
-  targetStartTime: number,
-) {
+import { uploadFile } from "@/lib/oss";
+
+export async function saveSpeechResult(params: {
+  episodeId: string;
+  targetText: string;
+  speechText: string;
+  accuracyScore: number;
+  targetStartTime: number;
+  subtitleId?: number;
+  fluencyScore?: number;
+  integrityScore?: number;
+  overallScore?: number;
+  speed?: number;
+  audioBase64?: string;
+  detailJson?: any;
+}) {
   const session = await auth();
   if (!session?.user?.userid) {
     return { error: "Unauthorized" };
   }
 
   try {
+    let userAudioUrl = undefined;
+    let detailUrl = undefined;
+    const timestamp = Date.now();
+    const randomStr = crypto.randomUUID().substring(0, 8);
+
+    // 1. Upload audio to OSS
+    if (params.audioBase64) {
+      try {
+        const audioBuffer = Buffer.from(params.audioBase64, "base64");
+        const audioFileName = `yuanlu/speech/${session.user.userid}/${params.episodeId}/${timestamp}_${randomStr}.wav`;
+        const audioUploadResult = await uploadFile(audioBuffer, audioFileName);
+        userAudioUrl = audioUploadResult.fileUrl;
+      } catch (e) {
+        console.error("Failed to upload audio to OSS", e);
+      }
+    }
+
+    // 2. Upload detail JSON to OSS
+    if (params.detailJson) {
+      try {
+        const jsonBuffer = Buffer.from(JSON.stringify(params.detailJson));
+        const jsonFileName = `yuanlu/speech/${session.user.userid}/${params.episodeId}/${timestamp}_${randomStr}.json`;
+        const jsonUploadResult = await uploadFile(jsonBuffer, jsonFileName);
+        detailUrl = jsonUploadResult.fileUrl;
+      } catch (e) {
+        console.error("Failed to upload detail JSON to OSS", e);
+      }
+    }
+
     const record = await prisma.speech_recognition.create({
       data: {
         userid: session.user.userid,
-        episodeid: episodeId,
-        targetText: targetText,
-        speechText: speechText,
-        accuracyScore: accuracyScore,
-        targetStartTime: Math.floor(targetStartTime),
+        episodeid: params.episodeId,
+        targetText: params.targetText,
+        speechText: params.speechText,
+        accuracyScore: params.accuracyScore,
+        targetStartTime: Math.floor(params.targetStartTime),
         recognitionDate: new Date(),
+        subtitleId: params.subtitleId,
+        fluencyScore: params.fluencyScore,
+        integrityScore: params.integrityScore,
+        overallScore: params.overallScore,
+        speed: params.speed,
+        userAudioUrl: userAudioUrl,
+        detailUrl: detailUrl,
       },
     });
 
-    revalidatePath(`/episode/${episodeId}/practice`);
+    revalidatePath(`/episode/${params.episodeId}/practice`);
     return { success: true, data: record };
   } catch (error) {
     console.error("Failed to save speech recognition result:", error);

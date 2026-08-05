@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -51,6 +52,9 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
     subtitleId: number,
     recordedText: string,
     score: number,
+    fullRecord?: any,
+    rawDetails?: any,
+    audioBase64?: string,
   ) => {
     const targetSub = subtitles.find((s) => s.id === subtitleId);
     if (!targetSub) return;
@@ -64,6 +68,15 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
       targetText: targetSub.textEn,
       targetStartTime: targetSub.startSeconds,
       recognitionDate: new Date().toISOString(),
+      subtitleId: subtitleId,
+      ...(fullRecord && {
+        fluencyScore: fullRecord.fluencyScore,
+        integrityScore: fullRecord.integrityScore,
+        overallScore: fullRecord.overallScore,
+        speed: fullRecord.speed,
+        // Optional local URL if frontend still wants to play it directly without hitting OSS immediately
+        userAudioUrl: fullRecord.userAudioUrl,
+      }),
     };
 
     setSessionRecords((prev) => [...prev, newRecord]);
@@ -78,18 +91,25 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
           // 可选平滑滚动
           document
             .getElementById(`card-${nextId}`)
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 1500);
       }
     }
 
-    const result = await saveSpeechResult(
-      episode.episodeid,
-      targetSub.textEn,
-      recordedText,
-      score,
-      targetSub.startSeconds,
-    );
+    const result = await saveSpeechResult({
+      episodeId: episode.episodeid,
+      targetText: targetSub.textEn,
+      speechText: recordedText,
+      accuracyScore: score,
+      targetStartTime: targetSub.startSeconds,
+      subtitleId: subtitleId,
+      fluencyScore: fullRecord?.fluencyScore,
+      integrityScore: fullRecord?.integrityScore,
+      overallScore: fullRecord?.overallScore,
+      speed: fullRecord?.speed,
+      audioBase64: audioBase64,
+      detailJson: rawDetails,
+    });
 
     if (result.error) {
       toast.error("Failed to save progress");
@@ -110,6 +130,22 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
           new Date(b.recognitionDate || 0).getTime() -
           new Date(a.recognitionDate || 0).getTime(),
       )[0];
+  };
+
+  const getHistoricalRecords = (subtitleId: number) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return [];
+
+    return [...sessionRecords]
+      .filter(
+        (r) =>
+          Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.recognitionDate || 0).getTime() -
+          new Date(a.recognitionDate || 0).getTime(),
+      );
   };
 
   return (
@@ -158,6 +194,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                       subtitle={sub}
                       audioUrl={episode.audioUrl}
                       previousResult={getLatestResult(sub.id)}
+                      historicalRecords={getHistoricalRecords(sub.id)}
                       onEvaluate={handleEvaluation}
                       currentPlayingId={playingSubtitleId}
                       onPlayStart={(id) => setPlayingSubtitleId(id)}
@@ -168,7 +205,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                           .getElementById(`card-${sub.id}`)
                           ?.scrollIntoView({
                             behavior: "smooth",
-                            block: "center",
+                            block: "start",
                           });
                       }}
                     />

@@ -132,6 +132,12 @@ export async function GET(req: NextRequest) {
         recognitionDate: record.recognitionDate
           ? record.recognitionDate.toISOString()
           : new Date().toISOString(),
+        fluencyScore: record.fluencyScore ?? undefined,
+        integrityScore: record.integrityScore ?? undefined,
+        overallScore: record.overallScore ?? undefined,
+        speed: record.speed ?? undefined,
+        detailUrl: record.detailUrl ?? undefined,
+        userAudioUrl: record.userAudioUrl ?? undefined,
       }),
     );
 

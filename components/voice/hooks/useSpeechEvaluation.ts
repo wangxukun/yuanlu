@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { evaluateSpeech } from "@/lib/actions/speech";
@@ -97,7 +100,14 @@ export function useSpeechEvaluation({
   subtitle: Subtitle;
   audioUrl: string;
   previousResult?: SpeechPracticeRecord;
-  onEvaluate: (subtitleId: number, recordedText: string, score: number) => void;
+  onEvaluate: (
+    subtitleId: number,
+    recordedText: string,
+    score: number,
+    fullRecord?: any,
+    rawDetails?: any,
+    audioBase64?: string,
+  ) => void;
   currentPlayingId: number | null;
   onPlayStart: (id: number) => void;
 }) {
@@ -106,6 +116,10 @@ export function useSpeechEvaluation({
   const [result, setResult] = useState<DetailedPracticeRecord | undefined>(
     previousResult ? { ...previousResult } : undefined,
   );
+
+  // Track whether we have a fresh local result (from current recording session)
+  // to prevent the previousResult sync effect from overwriting detailed scores.
+  const hasLocalResultRef = useRef(false);
 
   const [refAudioProgress, setRefAudioProgress] = useState(0);
   const [isUserAudioPlaying, setIsUserAudioPlaying] = useState(false);
@@ -124,15 +138,26 @@ export function useSpeechEvaluation({
 
   const userAudioUrlRef = useRef<string | undefined>(undefined);
 
-  // Sync result when subtitle changes
+  // Reset everything when navigating to a different subtitle
+  const prevSubtitleIdRef = useRef(subtitle.id);
   useEffect(() => {
-    setResult(previousResult ? { ...previousResult } : undefined);
-    // Reset other states
-    setRefAudioProgress(0);
-    setIsUserAudioPlaying(false);
-    setIsSpeaking(false);
-    setIsTTSLoading(false);
+    if (prevSubtitleIdRef.current !== subtitle.id) {
+      prevSubtitleIdRef.current = subtitle.id;
+      hasLocalResultRef.current = false;
+      setResult(previousResult ? { ...previousResult } : undefined);
+      setRefAudioProgress(0);
+      setIsUserAudioPlaying(false);
+      setIsSpeaking(false);
+      setIsTTSLoading(false);
+    }
   }, [subtitle.id, previousResult]);
+
+  // Sync from previousResult only when we don't have a fresh local result
+  useEffect(() => {
+    if (!hasLocalResultRef.current) {
+      setResult(previousResult ? { ...previousResult } : undefined);
+    }
+  }, [previousResult]);
 
   useEffect(() => {
     userAudioUrlRef.current = result?.userAudioUrl;
@@ -250,6 +275,7 @@ export function useSpeechEvaluation({
     if (result?.userAudioUrl) {
       URL.revokeObjectURL(result.userAudioUrl);
     }
+    hasLocalResultRef.current = false;
     setResult(undefined);
     audioDataRef.current = [];
 
@@ -357,8 +383,16 @@ export function useSpeechEvaluation({
           userAudioUrl: userAudioBlobUrl,
         };
 
+        hasLocalResultRef.current = true;
         setResult(newResult);
-        onEvaluate(subtitle.id, speechText, score);
+        onEvaluate(
+          subtitle.id,
+          speechText,
+          score,
+          newResult,
+          details,
+          base64String,
+        );
       };
     } catch (err) {
       console.error("Processing error:", err);
