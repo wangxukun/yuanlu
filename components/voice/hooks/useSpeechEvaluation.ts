@@ -195,7 +195,10 @@ export function useSpeechEvaluation({
   useEffect(() => {
     if (!hasLocalResultRef.current) {
       if (previousResult) {
-        if (!previousResult.words && previousResult.detailUrl) {
+        if (
+          !(previousResult as DetailedPracticeRecord).words &&
+          previousResult.detailUrl
+        ) {
           // Temporarily set without words
           setResult({ ...previousResult });
 
