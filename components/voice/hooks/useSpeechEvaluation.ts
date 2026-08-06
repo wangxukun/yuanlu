@@ -152,7 +152,10 @@ export function useSpeechEvaluation({
       hasLocalResultRef.current = false;
 
       if (previousResult) {
-        if (!previousResult.words && previousResult.detailUrl) {
+        if (
+          !(previousResult as DetailedPracticeRecord).words &&
+          previousResult.detailUrl
+        ) {
           setResult({ ...previousResult });
           fetch(`/api/speech/detail?id=${previousResult.recognitionid}`)
             .then((res) => res.json())
