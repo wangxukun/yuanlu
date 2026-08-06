@@ -277,11 +277,12 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 (r) => r.recognitionid !== result.recognitionid,
               ) || [];
             const pastScores = pastRecords.map(
-              (r) => r.overallScore || r.accuracyScore || 0,
+              (r) => r.overallScore ?? r.accuracyScore ?? 0,
             );
             const highestPastScore =
               pastScores.length > 0 ? Math.max(...pastScores) : null;
-            const currentScore = result.overallScore || 0;
+            const currentScore =
+              result.overallScore ?? result.accuracyScore ?? 0;
             const isNewBest =
               highestPastScore !== null && currentScore > highestPastScore;
             const improvement = isNewBest
@@ -289,9 +290,9 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               : 0;
             const lastAttemptScore =
               pastRecords.length > 0
-                ? pastRecords[0].overallScore ||
-                  pastRecords[0].accuracyScore ||
-                  0
+                ? (pastRecords[0].overallScore ??
+                  pastRecords[0].accuracyScore ??
+                  0)
                 : null;
             const isImprovement =
               !isNewBest &&
@@ -307,10 +308,11 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </div>
                   <div className="relative">
                     <div
-                      className={`radial-progress ${getScoreColor(result.overallScore || 0)} bg-base-200 border-4 border-base-200`}
+                      className={`radial-progress ${getScoreColor(result.overallScore ?? result.accuracyScore ?? 0)} bg-base-200 border-4 border-base-200`}
                       style={
                         {
-                          "--value": result.overallScore || 0,
+                          "--value":
+                            result.overallScore ?? result.accuracyScore ?? 0,
                           "--size": "10rem",
                           "--thickness": "1rem",
                         } as React.CSSProperties
@@ -318,14 +320,17 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       role="progressbar"
                     >
                       <span className="text-5xl font-black text-base-content">
-                        {Math.round(result.overallScore || 0)}
+                        {Math.round(
+                          result.overallScore ?? result.accuracyScore ?? 0,
+                        )}
                       </span>
                     </div>
-                    {(result.overallScore || 0) >= 85 && !isNewBest && (
-                      <div className="absolute -top-4 -right-4 text-4xl animate-bounce">
-                        ✨
-                      </div>
-                    )}
+                    {(result.overallScore ?? result.accuracyScore ?? 0) >= 85 &&
+                      !isNewBest && (
+                        <div className="absolute -top-4 -right-4 text-4xl animate-bounce">
+                          ✨
+                        </div>
+                      )}
                     {isNewBest && (
                       <div className="absolute -top-4 -right-12 bg-warning text-warning-content text-xs font-black px-2 py-1 rounded-full shadow-lg border-2 border-warning-content animate-bounce whitespace-nowrap">
                         👑 历史新高 +{Math.round(improvement)}分
@@ -339,14 +344,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </div>
                   <div className="mt-6 text-center">
                     <div className="font-extrabold text-xl text-base-content">
-                      {(result.overallScore || 0) >= 85
+                      {(result.overallScore ?? result.accuracyScore ?? 0) >= 85
                         ? "Excellent!"
-                        : (result.overallScore || 0) >= 60
+                        : (result.overallScore ?? result.accuracyScore ?? 0) >=
+                            60
                           ? "Good Job!"
                           : "Keep Trying!"}
                     </div>
                     <div className="text-sm text-base-content/60 mt-1.5 font-medium">
-                      {(result.overallScore || 0) >= 85
+                      {(result.overallScore ?? result.accuracyScore ?? 0) >= 85
                         ? "发音非常地道，请继续保持！"
                         : "继续练习，会有更大进步！"}
                     </div>
@@ -474,13 +480,14 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       },
                       {
                         label: "流利度",
-                        value: result.fluencyScore || 0,
+                        value: result.fluencyScore ?? result.accuracyScore ?? 0,
                         color:
                           "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
                       },
                       {
                         label: "完整度",
-                        value: result.integrityScore || 0,
+                        value:
+                          result.integrityScore ?? result.accuracyScore ?? 0,
                         color:
                           "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
                       },

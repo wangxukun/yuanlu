@@ -490,14 +490,13 @@ export default function FullContentTranscript({
     };
   }, [isOpen, isLoggedIn, episode.episodeid]);
 
-  // ── Handle Modal Close ──
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    if (wasPlayingBeforeModal) {
+  // ── Resume playback after closing Vocabulary Modal ──
+  useEffect(() => {
+    if (!isModalOpen && wasPlayingBeforeModal) {
       if (play) play();
       setWasPlayingBeforeModal(false);
     }
-  }, [wasPlayingBeforeModal, play]);
+  }, [isModalOpen, wasPlayingBeforeModal, play]);
 
   // ── Persist font size ──
   useEffect(() => {
@@ -673,8 +672,6 @@ export default function FullContentTranscript({
         ?.map((d) => `[${d.pos}] ${d.meaning_cn}`)
         .join("; ") || "";
 
-    // Optimistically close modal to synchronously trigger play() for mobile browsers
-    handleCloseModal();
     setIsSaving(true);
 
     try {
@@ -710,6 +707,7 @@ export default function FullContentTranscript({
             return newSet;
           });
         }
+        setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.message || "保存失败");
@@ -1422,10 +1420,7 @@ export default function FullContentTranscript({
 
           <VocabularyModal
             isModalOpen={isModalOpen}
-            setIsModalOpen={(open) => {
-              if (open) setIsModalOpen(true);
-              else handleCloseModal();
-            }}
+            setIsModalOpen={setIsModalOpen}
             selectedWord={selectedWord}
             selectedContext={selectedContext}
             selectedTranslation={selectedTranslation}

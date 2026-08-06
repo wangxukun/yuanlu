@@ -212,33 +212,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ volume });
   },
   togglePlay: () => {
-    set((state) => {
-      const newIsPlaying = !state.isPlaying;
-      if (state.audioRef) {
-        if (newIsPlaying) {
-          state.audioRef.play().catch(console.error);
-        } else {
-          state.audioRef.pause();
-        }
-      }
-      return { isPlaying: newIsPlaying };
-    });
+    set((state) => ({ isPlaying: !state.isPlaying }));
   },
   play: () => {
-    set((state) => {
-      if (state.audioRef && !state.isPlaying) {
-        state.audioRef.play().catch(console.error);
-      }
-      return { isPlaying: true };
-    });
+    set({ isPlaying: true });
   },
   pause: () => {
-    set((state) => {
-      if (state.audioRef && state.isPlaying) {
-        state.audioRef.pause();
-      }
-      return { isPlaying: false };
-    });
+    set({ isPlaying: false });
   },
   forward: () => {
     set((state) => {
