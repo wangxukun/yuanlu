@@ -120,25 +120,44 @@ export async function GET(req: NextRequest) {
     } as unknown as Episode;
 
     // 5. 转换历史记录类型
-    const formattedRecords: SpeechPracticeRecord[] = historyRecords.map(
-      (record) => ({
-        recognitionid: Number(record.recognitionid),
-        userid: record.userid || "",
-        episodeid: record.episodeid || "",
-        speechText: record.speechText || "",
-        accuracyScore: record.accuracyScore || 0,
-        targetText: record.targetText || "",
-        targetStartTime: record.targetStartTime || 0,
-        recognitionDate: record.recognitionDate
-          ? record.recognitionDate.toISOString()
-          : new Date().toISOString(),
-        fluencyScore: record.fluencyScore ?? undefined,
-        integrityScore: record.integrityScore ?? undefined,
-        overallScore: record.overallScore ?? undefined,
-        speed: record.speed ?? undefined,
-        detailUrl: record.detailUrl ?? undefined,
-        userAudioUrl: record.userAudioUrl ?? undefined,
-        subtitleId: record.subtitleId ?? undefined,
+    const formattedRecords: SpeechPracticeRecord[] = await Promise.all(
+      historyRecords.map(async (record) => {
+        let signedAudioUrl = record.userAudioUrl ?? undefined;
+        if (signedAudioUrl && signedAudioUrl.includes("aliyuncs.com/")) {
+          const fileName = decodeURIComponent(
+            signedAudioUrl.split("aliyuncs.com/")[1] || "",
+          );
+          if (fileName) {
+            try {
+              signedAudioUrl = await generateSignatureUrl(fileName, 3600 * 3);
+            } catch (e) {
+              console.error(
+                "Failed to generate signature for history audio",
+                e,
+              );
+            }
+          }
+        }
+
+        return {
+          recognitionid: Number(record.recognitionid),
+          userid: record.userid || "",
+          episodeid: record.episodeid || "",
+          speechText: record.speechText || "",
+          accuracyScore: record.accuracyScore || 0,
+          targetText: record.targetText || "",
+          targetStartTime: record.targetStartTime || 0,
+          recognitionDate: record.recognitionDate
+            ? record.recognitionDate.toISOString()
+            : new Date().toISOString(),
+          fluencyScore: record.fluencyScore ?? undefined,
+          integrityScore: record.integrityScore ?? undefined,
+          overallScore: record.overallScore ?? undefined,
+          speed: record.speed ?? undefined,
+          detailUrl: record.detailUrl ?? undefined,
+          userAudioUrl: signedAudioUrl,
+          subtitleId: record.subtitleId ?? undefined,
+        };
       }),
     );
 
