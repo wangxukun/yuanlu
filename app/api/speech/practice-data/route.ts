@@ -138,6 +138,7 @@ export async function GET(req: NextRequest) {
         speed: record.speed ?? undefined,
         detailUrl: record.detailUrl ?? undefined,
         userAudioUrl: record.userAudioUrl ?? undefined,
+        subtitleId: record.subtitleId ?? undefined,
       }),
     );
 

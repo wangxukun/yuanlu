@@ -13,6 +13,9 @@ import {
   Pause,
   BotMessageSquare,
   Info,
+  Languages,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import { useSpeechEvaluation } from "./hooks/useSpeechEvaluation";
@@ -75,6 +78,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [activeWordIndex, setActiveWordIndex] = React.useState<number | null>(
     null,
   );
+  const [showTranslation, setShowTranslation] = React.useState(false);
+  const [showDetails, setShowDetails] = React.useState(false);
 
   const [playMode, setPlayMode] = React.useState<"normal" | "slow" | null>(
     null,
@@ -117,8 +122,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       }}
     >
       {/* 1. 顶部：待朗读核心卡片区 */}
-      <div className="p-6 md:p-8">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -136,7 +141,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             ) : (
               <BotMessageSquare size={16} />
             )}
-            AI 朗读
+            <span className="hidden md:inline">AI 朗读</span>
           </button>
 
           <button
@@ -154,7 +159,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               />
             )}
             <Volume2 size={16} className="relative z-10" />
-            <span className="relative z-10">原声播放</span>
+            <span className="relative z-10 hidden md:inline">原声播放</span>
           </button>
 
           <button
@@ -172,12 +177,12 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               />
             )}
             <Volume1 size={16} className="relative z-10" />
-            <span className="relative z-10">慢速播放</span>
+            <span className="relative z-10 hidden md:inline">慢速播放</span>
           </button>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-2xl md:text-3xl font-bold text-base-content leading-relaxed font-sans tracking-wide">
+          <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-base-content leading-relaxed font-sans tracking-wide">
             {subtitle.textEn.split(" ").map((word, idx) => {
               const cleanWord = word.replace(/[.,!?]/g, "");
               const isDifficult = cleanWord.length > 6;
@@ -195,9 +200,21 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 </span>
               );
             })}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTranslation(!showTranslation);
+              }}
+              className="inline-flex md:hidden items-center justify-center p-1.5 ml-1 rounded-lg text-ink-400 hover:text-primary-600 hover:bg-primary-50 transition-colors align-middle"
+              title="显示/隐藏翻译"
+            >
+              <Languages size={20} />
+            </button>
           </h3>
           {subtitle.textZh && (
-            <p className="text-lg text-base-content/60 font-medium">
+            <p
+              className={`text-base md:text-lg text-base-content/60 font-medium animate-in slide-in-from-top-2 ${showTranslation ? "block" : "hidden md:block"}`}
+            >
               {subtitle.textZh}
             </p>
           )}
@@ -270,7 +287,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
       {/* 3. 下方：评测结果与反馈区 */}
       {!isRecording && !isProcessing && result && (
-        <div className="p-6 md:p-8 bg-base-100 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-6 lg:p-8 bg-base-100 animate-in slide-in-from-bottom-4 duration-500">
           {(() => {
             const pastRecords =
               historicalRecords?.filter(
@@ -302,24 +319,22 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             return (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                 {/* 左侧：综合得分 */}
-                <div className="lg:col-span-4 flex flex-col items-center justify-center relative">
-                  <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-6">
+                <div className="lg:col-span-4 flex flex-row md:flex-col items-center justify-center md:justify-start gap-6 md:gap-0 relative">
+                  <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-0 md:mb-6 hidden md:block">
                     综合得分
                   </div>
                   <div className="relative">
                     <div
-                      className={`radial-progress ${getScoreColor(result.overallScore ?? result.accuracyScore ?? 0)} bg-base-200 border-4 border-base-200`}
+                      className={`radial-progress ${getScoreColor(result.overallScore ?? result.accuracyScore ?? 0)} bg-base-200 border-4 border-base-200 [--size:6.5rem] md:[--size:8rem] lg:[--size:10rem] [--thickness:0.6rem] md:[--thickness:0.8rem] lg:[--thickness:1rem]`}
                       style={
                         {
                           "--value":
                             result.overallScore ?? result.accuracyScore ?? 0,
-                          "--size": "10rem",
-                          "--thickness": "1rem",
                         } as React.CSSProperties
                       }
                       role="progressbar"
                     >
-                      <span className="text-5xl font-black text-base-content">
+                      <span className="text-4xl md:text-4xl lg:text-5xl font-black text-base-content">
                         {Math.round(
                           result.overallScore ?? result.accuracyScore ?? 0,
                         )}
@@ -342,8 +357,11 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       </div>
                     )}
                   </div>
-                  <div className="mt-6 text-center">
-                    <div className="font-extrabold text-xl text-base-content">
+                  <div className="mt-0 md:mt-6 text-left md:text-center flex-1 md:flex-none">
+                    <div className="text-xs font-bold text-base-content/40 uppercase tracking-widest mb-1 md:hidden">
+                      综合得分
+                    </div>
+                    <div className="font-extrabold text-xl lg:text-2xl text-base-content">
                       {(result.overallScore ?? result.accuracyScore ?? 0) >= 85
                         ? "Excellent!"
                         : (result.overallScore ?? result.accuracyScore ?? 0) >=
@@ -351,7 +369,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                           ? "Good Job!"
                           : "Keep Trying!"}
                     </div>
-                    <div className="text-sm text-base-content/60 mt-1.5 font-medium">
+                    <div className="text-xs md:text-sm text-base-content/60 mt-1 md:mt-1.5 font-medium">
                       {(result.overallScore ?? result.accuracyScore ?? 0) >= 85
                         ? "发音非常地道，请继续保持！"
                         : "继续练习，会有更大进步！"}
@@ -467,47 +485,68 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </div>
 
                   {/* 多维指标横向柱状图 */}
-                  <div className="space-y-4">
-                    <div className="text-sm font-bold text-base-content/40 uppercase tracking-widest mb-2">
+                  <div className="space-y-4 pt-4 border-t border-base-200/50 md:pt-0 md:border-t-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDetails(!showDetails);
+                      }}
+                      className="flex md:hidden items-center justify-between w-full text-sm font-bold text-base-content/60 hover:text-primary-600 transition-colors"
+                    >
+                      <span className="uppercase tracking-widest">
+                        详细维度
+                      </span>
+                      {showDetails ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </button>
+                    <div className="hidden md:block text-sm font-bold text-base-content/40 uppercase tracking-widest mb-2">
                       详细维度
                     </div>
-                    {[
-                      {
-                        label: "准确度",
-                        value: result.accuracyScore || 0,
-                        color:
-                          "[&::-webkit-progress-value]:bg-primary-600 [&::-moz-progress-bar]:bg-primary-600",
-                      },
-                      {
-                        label: "流利度",
-                        value: result.fluencyScore ?? result.accuracyScore ?? 0,
-                        color:
-                          "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
-                      },
-                      {
-                        label: "完整度",
-                        value:
-                          result.integrityScore ?? result.accuracyScore ?? 0,
-                        color:
-                          "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
-                      },
-                    ].map((metric, idx) => (
-                      <div key={idx} className="flex items-center gap-4">
-                        <div className="w-16 text-sm font-bold text-base-content/60 shrink-0">
-                          {metric.label}
+                    <div
+                      className={`space-y-4 animate-in slide-in-from-top-2 ${showDetails ? "block" : "hidden md:block"}`}
+                    >
+                      {[
+                        {
+                          label: "准确度",
+                          value: result.accuracyScore || 0,
+                          color:
+                            "[&::-webkit-progress-value]:bg-primary-600 [&::-moz-progress-bar]:bg-primary-600",
+                        },
+                        {
+                          label: "流利度",
+                          value:
+                            result.fluencyScore ?? result.accuracyScore ?? 0,
+                          color:
+                            "[&::-webkit-progress-value]:bg-info-600 [&::-moz-progress-bar]:bg-info-600",
+                        },
+                        {
+                          label: "完整度",
+                          value:
+                            result.integrityScore ?? result.accuracyScore ?? 0,
+                          color:
+                            "[&::-webkit-progress-value]:bg-accent-600 [&::-moz-progress-bar]:bg-accent-600",
+                        },
+                      ].map((metric, idx) => (
+                        <div key={idx} className="flex items-center gap-4">
+                          <div className="w-16 text-sm font-bold text-base-content/60 shrink-0">
+                            {metric.label}
+                          </div>
+                          <div className="flex-1">
+                            <progress
+                              className={`progress ${metric.color} w-full h-3 bg-base-200`}
+                              value={metric.value}
+                              max="100"
+                            ></progress>
+                          </div>
+                          <div className="w-10 text-right text-sm font-black text-base-content shrink-0">
+                            {metric.value}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <progress
-                            className={`progress ${metric.color} w-full h-3 bg-base-200`}
-                            value={metric.value}
-                            max="100"
-                          ></progress>
-                        </div>
-                        <div className="w-10 text-right text-sm font-black text-base-content shrink-0">
-                          {metric.value}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

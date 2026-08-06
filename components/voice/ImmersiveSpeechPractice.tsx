@@ -49,7 +49,8 @@ export default function ImmersiveSpeechPractice({
       setError(null);
       try {
         const res = await fetch(
-          `/api/speech/practice-data?id=${episode.episodeid}`,
+          `/api/speech/practice-data?id=${episode.episodeid}&t=${Date.now()}`,
+          { cache: "no-store" },
         );
         if (!res.ok) {
           throw new Error("Failed to fetch practice data");
@@ -199,7 +200,9 @@ export default function ImmersiveSpeechPractice({
     return [...records]
       .filter(
         (r) =>
-          Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
+          r.subtitleId === targetSub.id ||
+          (r.targetText === targetSub.textEn &&
+            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
       )
       .sort(
         (a, b) =>
@@ -215,7 +218,9 @@ export default function ImmersiveSpeechPractice({
     return [...records]
       .filter(
         (r) =>
-          Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5,
+          r.subtitleId === targetSub.id ||
+          (r.targetText === targetSub.textEn &&
+            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
       )
       .sort(
         (a, b) =>
@@ -382,21 +387,21 @@ export default function ImmersiveSpeechPractice({
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto px-4 py-8 md:p-12 flex flex-col items-center justify-center relative">
+            <div className="flex-1 overflow-y-auto px-3 py-4 md:px-6 md:py-8 lg:p-12 flex flex-col items-center relative">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center text-ink-400">
+                <div className="flex flex-col items-center justify-center text-ink-400 my-auto">
                   <Loader2 className="w-8 h-8 animate-spin mb-4" />
                   <p className="font-medium">加载评测数据中...</p>
                 </div>
               ) : error ? (
-                <div className="bg-error-50 dark:bg-error-900/20 text-error-600 p-6 rounded-2xl max-w-sm text-center border border-error-100 dark:border-error-800">
+                <div className="bg-error-50 dark:bg-error-900/20 text-error-600 p-6 rounded-2xl max-w-sm text-center border border-error-100 dark:border-error-800 my-auto">
                   <span className="material-symbols-outlined text-4xl mb-2">
                     error
                   </span>
                   <p className="font-bold">{error}</p>
                 </div>
               ) : subtitles.length > 0 && activeSubtitle ? (
-                <div className="w-full max-w-2xl w-full mx-auto pb-24 md:pb-0">
+                <div className="w-full max-w-2xl mx-auto my-auto pb-24 md:pb-0 shrink-0">
                   {isTrialMode && isCompleted && (
                     <div className="mb-8 p-6 bg-white dark:bg-ink-900 rounded-2xl border border-primary-200 dark:border-primary-800 shadow-xl text-center">
                       <h2 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
@@ -448,12 +453,12 @@ export default function ImmersiveSpeechPractice({
 
             {/* Bottom Navigation Bar */}
             {!isLoading && subtitles.length > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-8 md:pb-6 pointer-events-none">
-                <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-2xl flex items-center p-2 gap-4 pointer-events-auto w-full max-w-sm mx-auto">
+              <div className="absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-6 md:pb-6 pointer-events-none">
+                <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-xl md:rounded-2xl flex items-center p-1.5 md:p-2 gap-3 md:gap-4 pointer-events-auto w-full max-w-sm mx-auto">
                   <button
                     onClick={handlePrev}
                     disabled={activeCardIndex === 0}
-                    className="p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                    className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
@@ -477,7 +482,7 @@ export default function ImmersiveSpeechPractice({
                   <button
                     onClick={handleNext}
                     disabled={activeCardIndex === subtitles.length - 1}
-                    className="p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                    className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
