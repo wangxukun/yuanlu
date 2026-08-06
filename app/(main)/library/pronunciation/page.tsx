@@ -19,9 +19,8 @@ export default async function PronunciationPage() {
   const userId = session.user.userid;
 
   // 1. Fetch Diagnostic Stats
-  const userProfile = await prisma.user_profile.findUnique({
+  const userProfile: any = await prisma.user_profile.findUnique({
     where: { userid: userId },
-    select: { phonemeStats: true },
   });
   const statsData: any = userProfile?.phonemeStats || {};
   const formattedStats = Object.keys(statsData).map((phoneme) => {

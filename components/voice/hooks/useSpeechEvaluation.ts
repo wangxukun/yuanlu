@@ -29,7 +29,13 @@ export interface DetailedPracticeRecord extends SpeechPracticeRecord {
   integrityScore?: number;
   overallScore?: number;
   speed?: number;
-  words?: { word: string; score: number }[];
+  words?: {
+    word: string;
+    score: number;
+    start?: number;
+    end?: number;
+    phonemes?: any[];
+  }[];
   userAudioUrl?: string; // 本地录音回放地址
 }
 
