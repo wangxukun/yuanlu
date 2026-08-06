@@ -416,6 +416,7 @@ export default function FullContentTranscript({
   const [isSaving, setIsSaving] = useState(false);
   const [dictData, setDictData] = useState<DictEntryDTO | null>(null);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
+  const [wasPlayingBeforeModal, setWasPlayingBeforeModal] = useState(false);
 
   // ── Processed subtitles ──
   const processed: ProcessedSubtitle[] = useMemo(() => {
@@ -488,6 +489,15 @@ export default function FullContentTranscript({
       cancelled = true;
     };
   }, [isOpen, isLoggedIn, episode.episodeid]);
+
+  // ── Handle Modal Close ──
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    if (wasPlayingBeforeModal) {
+      if (play) play();
+      setWasPlayingBeforeModal(false);
+    }
+  }, [wasPlayingBeforeModal, play]);
 
   // ── Persist font size ──
   useEffect(() => {
@@ -612,7 +622,12 @@ export default function FullContentTranscript({
     ) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
 
-      if (isPlayingThis && isPlaying && pause) pause();
+      if (isPlayingThis && isPlaying) {
+        setWasPlayingBeforeModal(true);
+        if (pause) pause();
+      } else {
+        setWasPlayingBeforeModal(false);
+      }
 
       const cleanWord = word.replace(/[.,!?;:"()]/g, "").trim();
       if (!cleanWord) return;
@@ -658,7 +673,10 @@ export default function FullContentTranscript({
         ?.map((d) => `[${d.pos}] ${d.meaning_cn}`)
         .join("; ") || "";
 
+    // Optimistically close modal to synchronously trigger play() for mobile browsers
+    handleCloseModal();
     setIsSaving(true);
+
     try {
       const res = await fetch("/api/vocabulary/add", {
         method: "POST",
@@ -692,7 +710,6 @@ export default function FullContentTranscript({
             return newSet;
           });
         }
-        setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.message || "保存失败");
@@ -1405,7 +1422,10 @@ export default function FullContentTranscript({
 
           <VocabularyModal
             isModalOpen={isModalOpen}
-            setIsModalOpen={setIsModalOpen}
+            setIsModalOpen={(open) => {
+              if (open) setIsModalOpen(true);
+              else handleCloseModal();
+            }}
             selectedWord={selectedWord}
             selectedContext={selectedContext}
             selectedTranslation={selectedTranslation}
