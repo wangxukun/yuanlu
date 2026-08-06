@@ -62,10 +62,23 @@ export default function ImmersiveSpeechPractice({
         }
 
         if (isMounted) {
-          setSubtitles(json.data.subtitles || []);
+          const loadedSubtitles = json.data.subtitles || [];
+          setSubtitles(loadedSubtitles);
           setRecords(json.data.previousRecords || []);
           setIsTrialMode(json.data.isTrialMode || false);
-          setActiveCardIndex(0);
+
+          let startIndex = 0;
+          if (typeof window !== "undefined") {
+            const urlParams = new URLSearchParams(window.location.search);
+            const subtitleId = urlParams.get("subtitleId");
+            if (subtitleId && loadedSubtitles.length > 0) {
+              const idx = loadedSubtitles.findIndex(
+                (s: Subtitle) => s.id === parseInt(subtitleId),
+              );
+              if (idx !== -1) startIndex = idx;
+            }
+          }
+          setActiveCardIndex(startIndex);
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -161,6 +174,7 @@ export default function ImmersiveSpeechPractice({
         overallScore: fullRecord.overallScore,
         speed: fullRecord.speed,
         userAudioUrl: fullRecord.userAudioUrl,
+        words: fullRecord.words,
       }),
     };
 

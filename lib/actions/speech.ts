@@ -182,6 +182,49 @@ export async function saveSpeechResult(params: {
       },
     });
 
+    // 3. Update phonemeStats in user_profile
+    if (params.detailJson && params.detailJson.words) {
+      try {
+        const userProfile = await prisma.user_profile.findUnique({
+          where: { userid: session.user.userid },
+        });
+
+        const phonemeStats: any = userProfile?.phonemeStats || {};
+
+        params.detailJson.words.forEach((word: any) => {
+          if (word.phonemes) {
+            word.phonemes.forEach((ph: any) => {
+              const phName = ph.phoneme;
+              const phScore = ph.score;
+              if (phName && typeof phScore === "number") {
+                if (!phonemeStats[phName]) {
+                  phonemeStats[phName] = {
+                    totalScore: 0,
+                    count: 0,
+                    lowScoreCount: 0,
+                  };
+                }
+                phonemeStats[phName].totalScore += phScore;
+                phonemeStats[phName].count += 1;
+                if (phScore < 80) {
+                  phonemeStats[phName].lowScoreCount += 1;
+                }
+              }
+            });
+          }
+        });
+
+        if (userProfile) {
+          await prisma.user_profile.update({
+            where: { userid: session.user.userid },
+            data: { phonemeStats },
+          });
+        }
+      } catch (e) {
+        console.error("Failed to update phonemeStats", e);
+      }
+    }
+
     revalidatePath(`/episode/${params.episodeId}/practice`);
     return { success: true, data: record };
   } catch (error) {

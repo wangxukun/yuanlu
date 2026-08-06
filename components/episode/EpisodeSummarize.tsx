@@ -27,6 +27,16 @@ import { usePlayerStore } from "@/store/player-store";
 export default function EpisodeSummarize({ episode }: { episode: Episode }) {
   const isPracticeOpen = usePlayerStore((s) => s.isPracticeOpen);
   const setIsPracticeOpen = usePlayerStore((s) => s.setIsPracticeOpen);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("practice") === "true") {
+        setIsPracticeOpen(true);
+      }
+    }
+  }, [setIsPracticeOpen]);
+
   const hookOptions = useEpisodeSummarize(episode);
   const {
     isTranslatingTitle,

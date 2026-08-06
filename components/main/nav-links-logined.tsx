@@ -17,13 +17,19 @@ interface NavLinkItem {
 }
 
 const links: NavLinkItem[] = [
+  { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
+  {
+    name: "发音弱项本",
+    href: "/library/pronunciation",
+    iconName: "mic",
+    mobileHide: true,
+  },
   {
     name: "学习路径",
     href: "/library/learning-paths",
     iconName: "school",
     mobileHide: true,
   },
-  { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
   {
     name: "收听历史",
     href: "/library/history",

@@ -74,8 +74,8 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
         integrityScore: fullRecord.integrityScore,
         overallScore: fullRecord.overallScore,
         speed: fullRecord.speed,
-        // Optional local URL if frontend still wants to play it directly without hitting OSS immediately
         userAudioUrl: fullRecord.userAudioUrl,
+        words: fullRecord.words,
       }),
     };
 

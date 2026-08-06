@@ -15,6 +15,7 @@ import {
   ClockIcon,
   BookmarkSquareIcon,
   BellIcon,
+  MicrophoneIcon,
 } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useNotificationStore } from "@/store/notification-store";
@@ -115,6 +116,14 @@ export default function MinePage() {
       {/* 学习与记录 (登录可见) */}
       {session && (
         <div className="bg-base-100 rounded-3xl overflow-hidden shadow-sm mb-6">
+          <Link
+            href="/library/pronunciation"
+            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
+          >
+            <MicrophoneIcon className="w-6 h-6 text-info-500 mr-4" />
+            <span className="flex-1 font-semibold">发音弱项本</span>
+            <ChevronRightIcon className="w-5 h-5 text-base-content/30" />
+          </Link>
           <Link
             href="/library/learning-paths"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"

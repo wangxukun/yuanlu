@@ -139,6 +139,20 @@ export async function GET(req: NextRequest) {
           }
         }
 
+        let signedDetailUrl = record.detailUrl ?? undefined;
+        if (signedDetailUrl && signedDetailUrl.includes("aliyuncs.com/")) {
+          const fileName = decodeURIComponent(
+            signedDetailUrl.split("aliyuncs.com/")[1] || "",
+          );
+          if (fileName) {
+            try {
+              signedDetailUrl = await generateSignatureUrl(fileName, 3600 * 3);
+            } catch (e) {
+              console.error("Failed to generate signature for detail JSON", e);
+            }
+          }
+        }
+
         return {
           recognitionid: Number(record.recognitionid),
           userid: record.userid || "",
@@ -154,7 +168,7 @@ export async function GET(req: NextRequest) {
           integrityScore: record.integrityScore ?? undefined,
           overallScore: record.overallScore ?? undefined,
           speed: record.speed ?? undefined,
-          detailUrl: record.detailUrl ?? undefined,
+          detailUrl: signedDetailUrl ?? undefined,
           userAudioUrl: signedAudioUrl,
           subtitleId: record.subtitleId ?? undefined,
         };

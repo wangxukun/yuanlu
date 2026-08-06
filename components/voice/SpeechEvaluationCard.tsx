@@ -59,6 +59,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     isSpeaking,
     isTTSLoading,
     speakWithTTS,
+    playDictAudio,
     startRecording,
     stopRecording,
     playReferenceAudio,
@@ -430,45 +431,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                             >
                               {w.word}
                             </span>
-
-                            {/* 对比小卡片 */}
-                            {activeWordIndex === i && w.score < 85 && (
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 w-52 bg-base-100 rounded-xl shadow-2xl border border-base-200 p-3 animate-in zoom-in duration-200">
-                                <div className="text-xs font-bold text-base-content/50 mb-3 text-center uppercase tracking-widest">
-                                  发音对比
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      playReferenceAudio();
-                                    }}
-                                    className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-primary transition-colors"
-                                  >
-                                    <BotMessageSquare
-                                      size={20}
-                                      className="mb-2"
-                                    />
-                                    <span className="text-[11px] font-bold">
-                                      标准发音
-                                    </span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleUserAudio();
-                                    }}
-                                    className="flex flex-col items-center p-3 rounded-xl bg-base-200 hover:bg-base-300 hover:text-secondary transition-colors"
-                                  >
-                                    <Mic size={20} className="mb-2" />
-                                    <span className="text-[11px] font-bold">
-                                      你的发音
-                                    </span>
-                                  </button>
-                                </div>
-                                <div className="w-4 h-4 bg-base-100 border-b border-r border-base-200 rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
-                              </div>
-                            )}
                           </div>
                         ))
                       ) : (
@@ -477,9 +439,111 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         </span>
                       )}
                     </div>
+
+                    {/* Inline Expand for Phonemes */}
+                    {activeWordIndex !== null &&
+                      result.words &&
+                      result.words[activeWordIndex] && (
+                        <div className="mt-4 bg-base-200/50 rounded-xl border border-base-200 p-4 animate-in slide-in-from-top-2 duration-300">
+                          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-4">
+                            <div className="text-sm font-bold text-base-content/80 flex items-center flex-wrap">
+                              单词{" "}
+                              <span className="text-primary-600 px-1.5 mx-1 bg-primary/10 rounded">
+                                {result.words[activeWordIndex].word}
+                              </span>{" "}
+                              的音素诊断：
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const w = result.words![activeWordIndex];
+                                  playDictAudio(w.word, 2);
+                                }}
+                                className="btn btn-sm bg-base-100 hover:bg-base-200 text-info-600 border border-base-300 shadow-sm"
+                              >
+                                <Volume2 size={14} /> 美音
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const w = result.words![activeWordIndex];
+                                  playDictAudio(w.word, 1);
+                                }}
+                                className="btn btn-sm bg-base-100 hover:bg-base-200 text-info-600 border border-base-300 shadow-sm"
+                              >
+                                <Volume2 size={14} /> 英音
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const w = result.words![activeWordIndex];
+                                  // Estimate reference word time based on relative start/end in user audio
+                                  // Since user audio usually starts closely to reference audio, this is a reasonable approximation
+                                  const refStart =
+                                    subtitle.startSeconds + (w.start || 0);
+                                  const refEnd =
+                                    subtitle.startSeconds +
+                                    (w.end || (w.start || 0) + 0.5);
+                                  playReferenceAudio(1.0, refStart, refEnd);
+                                }}
+                                className="btn btn-sm bg-base-100 hover:bg-base-200 text-primary-600 border border-base-300 shadow-sm"
+                              >
+                                <BotMessageSquare size={14} /> 原声
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const w = result.words![activeWordIndex];
+                                  toggleUserAudio(w.start, w.end);
+                                }}
+                                className="btn btn-sm bg-base-100 hover:bg-base-200 text-secondary-600 border border-base-300 shadow-sm"
+                              >
+                                <Mic size={14} /> 我
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {result.words[activeWordIndex].phonemes &&
+                            result.words[activeWordIndex].phonemes.length >
+                              0 ? (
+                              result.words[activeWordIndex].phonemes.map(
+                                (ph: any, pIndex: number) => {
+                                  const phScore =
+                                    ph.score ?? ph.pronunciation ?? 0;
+                                  const phName = ph.phoneme ?? ph.phone ?? "";
+                                  return (
+                                    <div
+                                      key={pIndex}
+                                      className={`flex flex-col items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg border ${
+                                        phScore >= 80
+                                          ? "bg-success/10 border-success/20 text-success-700"
+                                          : "bg-error/10 border-error/30 text-error-600 font-bold"
+                                      }`}
+                                    >
+                                      <span className="text-base font-mono tracking-wider">
+                                        /{phName}/
+                                      </span>
+                                      <span className="text-[10px] opacity-70">
+                                        {Math.round(phScore)}
+                                      </span>
+                                    </div>
+                                  );
+                                },
+                              )
+                            ) : (
+                              <div className="text-sm text-base-content/50 py-2">
+                                无详尽音素数据
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                     {result.words && result.words.some((w) => w.score < 85) && (
                       <div className="mt-3 text-[11px] font-medium text-warning flex items-center gap-1.5 bg-warning/10 w-fit px-2 py-1 rounded">
-                        <Info size={12} /> 点击黄色或红色单词对比发音
+                        <Info size={12} />{" "}
+                        点击黄色或红色单词查看音素诊断并对比发音
                       </div>
                     )}
                   </div>

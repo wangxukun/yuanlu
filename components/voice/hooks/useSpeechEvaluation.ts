@@ -144,7 +144,37 @@ export function useSpeechEvaluation({
     if (prevSubtitleIdRef.current !== subtitle.id) {
       prevSubtitleIdRef.current = subtitle.id;
       hasLocalResultRef.current = false;
-      setResult(previousResult ? { ...previousResult } : undefined);
+
+      if (previousResult) {
+        if (!previousResult.words && previousResult.detailUrl) {
+          setResult({ ...previousResult });
+          fetch(`/api/speech/detail?id=${previousResult.recognitionid}`)
+            .then((res) => res.json())
+            .then((resJson) => {
+              const details = resJson.data;
+              if (details && Array.isArray(details.words)) {
+                const wordList = details.words.map((w: any) => ({
+                  word: w.word,
+                  score: w.pronunciation,
+                  phonemes: w.phonemes,
+                  start: w.start,
+                  end: w.end,
+                }));
+                if (!hasLocalResultRef.current) {
+                  setResult((prev) =>
+                    prev ? { ...prev, words: wordList } : undefined,
+                  );
+                }
+              }
+            })
+            .catch((err) => console.error("OSS Detail Fetch Error", err));
+        } else {
+          setResult({ ...previousResult });
+        }
+      } else {
+        setResult(undefined);
+      }
+
       setRefAudioProgress(0);
       setIsUserAudioPlaying(false);
       setIsSpeaking(false);
@@ -155,7 +185,40 @@ export function useSpeechEvaluation({
   // Sync from previousResult only when we don't have a fresh local result
   useEffect(() => {
     if (!hasLocalResultRef.current) {
-      setResult(previousResult ? { ...previousResult } : undefined);
+      if (previousResult) {
+        if (!previousResult.words && previousResult.detailUrl) {
+          // Temporarily set without words
+          setResult({ ...previousResult });
+
+          fetch(`/api/speech/detail?id=${previousResult.recognitionid}`)
+            .then((res) => res.json())
+            .then((resJson) => {
+              const details = resJson.data;
+              if (details && Array.isArray(details.words)) {
+                const wordList = details.words.map((w: any) => ({
+                  word: w.word,
+                  score: w.pronunciation,
+                  phonemes: w.phonemes,
+                  start: w.start,
+                  end: w.end,
+                }));
+                // Make sure we haven't navigated away or recorded a new one in the meantime
+                if (!hasLocalResultRef.current) {
+                  setResult((prev) =>
+                    prev ? { ...prev, words: wordList } : undefined,
+                  );
+                }
+              }
+            })
+            .catch((err) =>
+              console.error("Failed to fetch speech detail from API", err),
+            );
+        } else {
+          setResult({ ...previousResult });
+        }
+      } else {
+        setResult(undefined);
+      }
     }
   }, [previousResult]);
 
@@ -190,54 +253,89 @@ export function useSpeechEvaluation({
     }
     setIsSpeaking(false);
   }, []);
-
-  const speakWithTTS = useCallback(async () => {
-    if (isSpeaking) {
-      stopAllAudio();
-      return;
-    }
-
-    stopAllAudio();
-    onPlayStart(subtitle.id);
-
-    try {
-      setIsTTSLoading(true);
-      const res = await fetch("/api/dictionary/youdao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: subtitle.textEn }),
-      });
-
-      if (!res.ok) throw new Error("获取朗读地址失败");
-
-      const data = await res.json();
-      if (data.speakUrl) {
-        const audio = new Audio(data.speakUrl);
-        ttsAudioInstanceRef.current = audio;
-
-        audio.onplay = () => setIsSpeaking(true);
-        audio.onended = () => {
-          setIsSpeaking(false);
-          ttsAudioInstanceRef.current = null;
-        };
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          ttsAudioInstanceRef.current = null;
-          toast.error("播放失败");
-        };
-
-        await audio.play();
-      } else {
-        toast.error("暂无朗读资源");
+  const speakWithTTS = useCallback(
+    async (wordToSpeak?: string) => {
+      if (isSpeaking) {
+        stopAllAudio();
+        return;
       }
-    } catch (error) {
-      console.error("TTS Error:", error);
-      toast.error("朗读服务暂时不可用");
-      setIsSpeaking(false);
-    } finally {
-      setIsTTSLoading(false);
-    }
-  }, [isSpeaking, stopAllAudio, onPlayStart, subtitle.id, subtitle.textEn]);
+
+      stopAllAudio();
+      onPlayStart(subtitle.id);
+
+      try {
+        setIsTTSLoading(true);
+        const targetText = wordToSpeak || subtitle.textEn;
+        const res = await fetch("/api/dictionary/youdao", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ word: targetText }),
+        });
+
+        if (!res.ok) throw new Error("获取朗读地址失败");
+
+        const data = await res.json();
+        if (data.speakUrl) {
+          const audio = new Audio(data.speakUrl);
+          ttsAudioInstanceRef.current = audio;
+
+          audio.onplay = () => setIsSpeaking(true);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            ttsAudioInstanceRef.current = null;
+          };
+          audio.onerror = () => {
+            setIsSpeaking(false);
+            ttsAudioInstanceRef.current = null;
+            toast.error("播放失败");
+          };
+
+          await audio.play();
+        } else {
+          toast.error("暂无朗读资源");
+        }
+      } catch (error) {
+        console.error("TTS Error:", error);
+        toast.error("朗读服务暂时不可用");
+        setIsSpeaking(false);
+      } finally {
+        setIsTTSLoading(false);
+      }
+    },
+    [isSpeaking, stopAllAudio, onPlayStart, subtitle.id, subtitle.textEn],
+  );
+  const playDictAudio = useCallback(
+    (word: string, type: 1 | 2) => {
+      stopAllAudio();
+      onPlayStart(subtitle.id);
+
+      setIsTTSLoading(true);
+      const url = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=${type}`;
+      const audio = new Audio(url);
+      ttsAudioInstanceRef.current = audio;
+
+      audio.oncanplay = () => setIsTTSLoading(false);
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        ttsAudioInstanceRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsTTSLoading(false);
+        setIsSpeaking(false);
+        console.warn("Dict audio failed, falling back to AI TTS");
+        speakWithTTS(word);
+      };
+
+      audio.play().catch((e) => {
+        console.warn("Dict audio play error, falling back to AI TTS:", e);
+        setIsTTSLoading(false);
+        setIsSpeaking(false);
+        speakWithTTS(word);
+      });
+    },
+    [stopAllAudio, onPlayStart, subtitle.id, speakWithTTS],
+  );
 
   const stopRecordingCleanup = useCallback(() => {
     if (processorRef.current) {
@@ -353,9 +451,12 @@ export function useSpeechEvaluation({
         let speechText = "";
 
         if (details && Array.isArray(details.words)) {
-          wordList = details.words.map((w) => ({
+          wordList = details.words.map((w: any) => ({
             word: w.word,
             score: w.pronunciation,
+            phonemes: w.phonemes,
+            start: w.start,
+            end: w.end,
           }));
           speechText = wordList.map((w) => w.word).join(" ");
         } else {
@@ -401,7 +502,11 @@ export function useSpeechEvaluation({
     }
   };
 
-  const playReferenceAudio = (playbackRate: number = 1.0) => {
+  const playReferenceAudio = (
+    playbackRate: number = 1.0,
+    customStart?: number,
+    customEnd?: number,
+  ) => {
     stopAllAudio();
     onPlayStart(subtitle.id);
 
@@ -409,9 +514,12 @@ export function useSpeechEvaluation({
     audio.playbackRate = playbackRate;
     audioInstanceRef.current = audio;
 
-    const startTime = subtitle.startSeconds;
-    const endTime = subtitle.endSeconds || startTime + 3;
-    const duration = endTime - startTime;
+    const startTime =
+      customStart !== undefined ? customStart : subtitle.startSeconds;
+    const endTime =
+      customEnd !== undefined
+        ? customEnd
+        : subtitle.endSeconds || startTime + 3;
 
     audio.currentTime = startTime;
     audio.play().catch((err) => console.error("Play error:", err));
@@ -434,7 +542,13 @@ export function useSpeechEvaluation({
 
       const progress = Math.min(
         100,
-        Math.max(0, ((current - startTime) / duration) * 100),
+        Math.max(
+          0,
+          ((current - subtitle.startSeconds) /
+            ((subtitle.endSeconds || subtitle.startSeconds + 3) -
+              subtitle.startSeconds)) *
+            100,
+        ),
       );
       setRefAudioProgress(progress);
       rafIdRef.current = requestAnimationFrame(tick);
@@ -443,7 +557,7 @@ export function useSpeechEvaluation({
     rafIdRef.current = requestAnimationFrame(tick);
   };
 
-  const toggleUserAudio = () => {
+  const toggleUserAudio = (customStart?: number, customEnd?: number) => {
     if (!result?.userAudioUrl) return;
 
     if (isUserAudioPlaying) {
@@ -456,10 +570,27 @@ export function useSpeechEvaluation({
       const audio = new Audio(result.userAudioUrl);
       userAudioInstanceRef.current = audio;
 
+      if (customStart !== undefined) {
+        audio.currentTime = customStart;
+      }
+
       audio.onended = () => {
         setIsUserAudioPlaying(false);
         userAudioInstanceRef.current = null;
       };
+
+      const handleTimeUpdate = () => {
+        if (customEnd !== undefined && audio.currentTime >= customEnd) {
+          audio.pause();
+          setIsUserAudioPlaying(false);
+          userAudioInstanceRef.current = null;
+          audio.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
+
+      if (customEnd !== undefined) {
+        audio.addEventListener("timeupdate", handleTimeUpdate);
+      }
 
       audio.play().catch((e) => {
         console.error("User audio play error:", e);
@@ -478,6 +609,7 @@ export function useSpeechEvaluation({
     isSpeaking,
     isTTSLoading,
     speakWithTTS,
+    playDictAudio,
     startRecording,
     stopRecording,
     playReferenceAudio,
