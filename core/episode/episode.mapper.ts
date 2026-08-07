@@ -22,6 +22,7 @@ import {
   UpdateEpisodeResult,
   UpdateEpisodeSubtitleEnResult,
   UpdateEpisodeSubtitleZhResult,
+  UpdateEpisodeSubtitleBilingualResult,
 } from "@/app/types/podcast";
 import { EpisodeSubtitles } from "@/core/episode/dto/episode-subtitles";
 import { EpisodeOSSItem } from "@/core/episode/dto/episode-oss-item";
@@ -102,6 +103,8 @@ export class EpisodeMapper {
       subtitleEnFileName: e.subtitleEnFileName,
       subtitleZhUrl: e.subtitleZhUrl,
       subtitleZhFileName: e.subtitleZhFileName,
+      subtitleBilingualUrl: e.subtitleBilingualUrl,
+      subtitleBilingualFileName: e.subtitleBilingualFileName,
     };
   }
 
@@ -133,6 +136,23 @@ export class EpisodeMapper {
     };
   }
 
+  static toUpdateSubtitleBilingualState(
+    e: UpdateEpisodeSubtitleBilingualResult,
+  ): EditEpisodeResponse {
+    const subtitleBilingualUrl =
+      "subtitleBilingualUrl" in e ? e.subtitleBilingualUrl : null;
+    const subtitleBilingualFileName =
+      "subtitleBilingualFileName" in e ? e.subtitleBilingualFileName : null;
+    return {
+      success: !!subtitleBilingualUrl && !!subtitleBilingualFileName,
+      message:
+        subtitleBilingualUrl && subtitleBilingualFileName
+          ? "更新成功"
+          : "更新失败",
+      status: subtitleBilingualUrl && subtitleBilingualFileName ? 200 : 400,
+    };
+  }
+
   /**
    * episode删除返回状态
    * @param e
@@ -150,6 +170,7 @@ export class EpisodeMapper {
       coverFileName: e.coverFileName,
       subtitleEnFileName: e.subtitleEnFileName,
       subtitleZhFileName: e.subtitleZhFileName,
+      subtitleBilingualFileName: e.subtitleBilingualFileName,
     };
   }
 }

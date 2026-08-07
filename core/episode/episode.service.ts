@@ -261,6 +261,12 @@ export const episodeService = {
         60 * 60 * 3,
       );
     }
+    if (episode.subtitleBilingualFileName) {
+      episode.subtitleBilingualUrl = await generateSignatureUrl(
+        episode.subtitleBilingualFileName,
+        60 * 60 * 3,
+      );
+    }
     return EpisodeMapper.toSubtitles(episode);
   },
 
@@ -284,6 +290,17 @@ export const episodeService = {
       data,
     );
     return EpisodeMapper.toUpdateSubtitleZhState(updatedSubtitleZh);
+  },
+
+  async updateSubtitleBilingual(
+    id: string,
+    data: Prisma.episodeUpdateInput,
+  ): Promise<EditEpisodeResponse> {
+    const updatedSubtitleBilingual =
+      await episodeRepository.updateSubtitleBilingual(id, data);
+    return EpisodeMapper.toUpdateSubtitleBilingualState(
+      updatedSubtitleBilingual,
+    );
   },
 
   async delete(id: string) {
@@ -512,6 +529,8 @@ export const episodeService = {
           subtitleEnFileName: true,
           subtitleZhUrl: true,
           subtitleZhFileName: true,
+          subtitleBilingualUrl: true,
+          subtitleBilingualFileName: true,
           publishAt: true,
           createAt: true,
           status: true,
@@ -545,6 +564,7 @@ export const episodeService = {
         let signedAudio = ep.audioUrl;
         let signedSubEn = ep.subtitleEnUrl;
         let signedSubZh = ep.subtitleZhUrl;
+        let signedSubBilingual = ep.subtitleBilingualUrl;
 
         if (ep.coverFileName) {
           try {
@@ -602,6 +622,20 @@ export const episodeService = {
           }
         }
 
+        if (ep.subtitleBilingualFileName) {
+          try {
+            signedSubBilingual = await generateSignatureUrl(
+              ep.subtitleBilingualFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(
+              `Failed to sign bilingual subtitle for episode ${ep.episodeid}`,
+              e,
+            );
+          }
+        }
+
         const history = ep.listening_history && ep.listening_history[0];
 
         return {
@@ -618,6 +652,8 @@ export const episodeService = {
           subtitleEnFileName: ep.subtitleEnFileName,
           subtitleZhUrl: signedSubZh,
           subtitleZhFileName: ep.subtitleZhFileName,
+          subtitleBilingualUrl: signedSubBilingual,
+          subtitleBilingualFileName: ep.subtitleBilingualFileName,
           publishAt: ep.publishAt,
           createAt: ep.createAt,
           status: ep.status,

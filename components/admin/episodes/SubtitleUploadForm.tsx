@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useRef, useEffect, useActionState } from "react";
-import { uploadEnSubtitle, uploadZhSubtitle } from "@/lib/actions";
+import {
+  uploadEnSubtitle,
+  uploadZhSubtitle,
+  uploadBilingualSubtitle,
+} from "@/lib/actions/oss-actions";
 import { ActionState } from "@/lib/types";
 
 interface SubtitleUploadFormProps {
   episodeId: string;
-  language: "en" | "zh";
+  language: "en" | "zh" | "bilingual";
 }
 
 /**
@@ -21,7 +25,11 @@ export function SubtitleUploadForm({
 }: SubtitleUploadFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
-    language === "en" ? uploadEnSubtitle : uploadZhSubtitle,
+    language === "en"
+      ? uploadEnSubtitle
+      : language === "zh"
+        ? uploadZhSubtitle
+        : uploadBilingualSubtitle,
     {
       success: false,
       message: "",
@@ -48,13 +56,24 @@ export function SubtitleUploadForm({
     if (!file) return;
 
     // 检查文件类型
-    if (!file.name.endsWith(".srt") && !file.name.endsWith(".vtt")) {
-      alert("请选择 .srt 或 .vtt 格式的字幕文件");
-      // 清空文件输入框
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+    if (language === "bilingual") {
+      if (!file.name.endsWith(".json")) {
+        alert("请选择 .json 格式的双语字幕文件");
+        // 清空文件输入框
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
       }
-      return;
+    } else {
+      if (!file.name.endsWith(".srt") && !file.name.endsWith(".vtt")) {
+        alert("请选择 .srt 或 .vtt 格式的字幕文件");
+        // 清空文件输入框
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
     }
     // 提交表单
     event.target.form?.requestSubmit();
@@ -67,7 +86,7 @@ export function SubtitleUploadForm({
         ref={fileInputRef}
         name="subtitleFile"
         onChange={handleFileChange}
-        accept=".srt,.vtt"
+        accept={language === "bilingual" ? ".json" : ".srt,.vtt"}
         className="hidden"
       />
       <input type="hidden" name="episodeId" value={episodeId} />

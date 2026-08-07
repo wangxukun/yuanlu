@@ -3,4 +3,5 @@ export interface EpisodeOSSItem {
   coverFileName: string;
   subtitleEnFileName: string;
   subtitleZhFileName: string;
+  subtitleBilingualFileName: string;
 }

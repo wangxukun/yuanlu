@@ -167,10 +167,12 @@ model episode {
   isExclusive         Boolean?              @default(false)
   subtitleEnUrl       String?               @db.VarChar(255)
   subtitleZhUrl       String?               @db.VarChar(255)
+  subtitleBilingualUrl String?              @db.VarChar(255)
   audioFileName       String?               @db.VarChar(255)
   coverFileName       String?               @db.VarChar(255)
   subtitleEnFileName  String?               @db.VarChar(255)
   subtitleZhFileName  String?               @db.VarChar(255)
+  subtitleBilingualFileName String?         @db.VarChar(255)
   duration            Int                   @default(0)
   publishAt           DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
   isCommentEnabled    Boolean?              @default(true)

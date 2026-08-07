@@ -101,6 +101,33 @@ export async function deleteZhSubtitle(
 }
 
 /**
+ * 删除双语字幕的 Server Action
+ * @param prevState 删除双语字幕的初始状态
+ * @param formData 删除双语字幕的表单数据
+ */
+export async function deleteBilingualSubtitle(
+  prevState: ActionState,
+  formData: FormData,
+) {
+  const id = formData.get("episodeId") as string;
+  const fileName = formData.get("fileName") as string;
+  try {
+    // 从服务器删除文件
+    await deleteOSSFile(fileName);
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleBilingualUrl: null,
+      subtitleBilingualFileName: null,
+    };
+    await episodeService.updateSubtitleBilingual(id, updateData);
+    return { success: true, message: "双语字幕删除成功" };
+  } catch (error) {
+    console.error("删除双语字幕失败:", error);
+    return { success: false, message: "删除失败" };
+  }
+}
+
+/**
  * 上传英文字幕的 Server Action
  * @param prevState 上传字幕的初始状态
  * @param formData 上传字幕的表单数据
@@ -193,6 +220,54 @@ export async function uploadZhSubtitle(
   } catch (error) {
     console.error("上传中文字幕失败:", error);
     return { success: false, message: "中文字幕上传失败" };
+  }
+}
+
+/**
+ * 上传双语字幕的 Server Action
+ * @param prevState 上传字幕的初始状态
+ * @param formData 上传字幕的表单数据
+ */
+export async function uploadBilingualSubtitle(
+  prevState: ActionState,
+  formData: FormData,
+) {
+  const id = formData.get("episodeId") as string;
+  const file = formData.get("subtitleFile") as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, message: "请选择文件" };
+  }
+
+  // 检查文件类型
+  if (!file.name.endsWith(".json")) {
+    return { success: false, message: "请选择 .json 格式的字幕文件" };
+  }
+
+  try {
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const fileName = `yuanlu/podcastes/episodes/subtitles/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到OSS
+    const result = await uploadFile(buffer, fileName);
+
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      subtitleBilingualUrl: result.fileUrl,
+      subtitleBilingualFileName: result.fileName,
+    };
+
+    await episodeService.update(id, updateData);
+
+    return { success: true, message: "双语字幕上传成功" };
+  } catch (error) {
+    console.error("上传双语字幕失败:", error);
+    return { success: false, message: "双语字幕上传失败" };
   }
 }
 

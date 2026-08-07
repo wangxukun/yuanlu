@@ -42,6 +42,8 @@ export const episodeRepository = {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        subtitleBilingualUrl: true,
+        subtitleBilingualFileName: true,
         podcastid: true,
         publishAt: true,
         createAt: true,
@@ -83,6 +85,8 @@ export const episodeRepository = {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        subtitleBilingualUrl: true,
+        subtitleBilingualFileName: true,
         podcastid: true,
         publishAt: true,
         createAt: true,
@@ -156,6 +160,15 @@ export const episodeRepository = {
       where: { episodeid: id },
       select: { subtitleZhUrl: true, subtitleZhFileName: true },
       data: { subtitleZhUrl, subtitleZhFileName },
+    });
+  },
+
+  async updateSubtitleBilingual(id: string, data: Prisma.episodeUpdateInput) {
+    const { subtitleBilingualUrl, subtitleBilingualFileName } = data;
+    return prisma.episode.update({
+      where: { episodeid: id },
+      select: { subtitleBilingualUrl: true, subtitleBilingualFileName: true },
+      data: { subtitleBilingualUrl, subtitleBilingualFileName },
     });
   },
 

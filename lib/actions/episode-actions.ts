@@ -45,8 +45,12 @@ export async function createEpisode(
 
     const subtitleEnFileName = formData.get("subtitleEnFileName") as string;
     const subtitleZhFileName = formData.get("subtitleZhFileName") as string;
+    const subtitleBilingualFileName = formData.get(
+      "subtitleBilingualFileName",
+    ) as string;
     const subtitleEnUrl = formData.get("subtitleEnUrl") as string;
     const subtitleZhUrl = formData.get("subtitleZhUrl") as string;
+    const subtitleBilingualUrl = formData.get("subtitleBilingualUrl") as string;
     const audioFileName = formData.get("audioFileName") as string;
     if (audioFileName === null || audioFileName === "") {
       return new Promise((resolve) => {
@@ -131,8 +135,10 @@ export async function createEpisode(
       coverUrl,
       subtitleEnFileName,
       subtitleZhFileName,
+      subtitleBilingualFileName,
       subtitleEnUrl,
       subtitleZhUrl,
+      subtitleBilingualUrl,
       podcastid: podcastId,
       isExclusive,
       publishAt: new Date(publishDate),
@@ -184,14 +190,17 @@ export async function deleteEpisode(
   audioFileName: string,
   subtitleEnFileName: string,
   subtitleZhFileName: string,
+  subtitleBilingualFileName: string,
 ): Promise<EpisodeDelState> {
   await requireAdminAction();
 
-  // 删除OSS中封面图片
   const delCoverResult = await deleteObject(coverFileName);
   const delAudioResult = await deleteObject(audioFileName);
   const delSubtitleEnResult = await deleteObject(subtitleEnFileName);
   const delSubtitleZhResult = await deleteObject(subtitleZhFileName);
+  const delSubtitleBilingualResult = await deleteObject(
+    subtitleBilingualFileName,
+  );
 
   const { success, message } = await episodeService.delete(id);
 
@@ -200,6 +209,7 @@ export async function deleteEpisode(
     !delAudioResult ||
     !delSubtitleEnResult ||
     !delSubtitleZhResult ||
+    !delSubtitleBilingualResult ||
     !success
   ) {
     return {
@@ -222,13 +232,16 @@ export async function deleteEpisodeById(id: string) {
     coverFileName,
     subtitleEnFileName,
     subtitleZhFileName,
+    subtitleBilingualFileName,
   } = await episodeService.getEpisodeOSSFiles(id);
 
-  // 删除OSS中文件
   const delCoverResult = await deleteObject(coverFileName);
   const delAudioResult = await deleteObject(audioFileName);
   const delSubtitleEnResult = await deleteObject(subtitleEnFileName);
   const delSubtitleZhResult = await deleteObject(subtitleZhFileName);
+  const delSubtitleBilingualResult = await deleteObject(
+    subtitleBilingualFileName,
+  );
   // 删除数据库中数据
   const { success } = await episodeService.delete(id);
 
@@ -237,6 +250,7 @@ export async function deleteEpisodeById(id: string) {
     !delAudioResult ||
     !delSubtitleEnResult ||
     !delSubtitleZhResult ||
+    !delSubtitleBilingualResult ||
     !success
   ) {
     return {

@@ -133,6 +133,51 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                     </div>
                   </div>
                 )}
+
+                {episodeSubtitles.subtitleBilingualUrl ? (
+                  <div className="bg-base-200 rounded-xl p-5 hover:bg-base-300 transition-colors duration-300">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-lg text-primary">
+                          双语字幕
+                        </h3>
+                        <p className="text-base-content/70 text-sm mt-1">
+                          Bilingual Subtitle (JSON)
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={episodeSubtitles.subtitleBilingualUrl}
+                          className="btn btn-primary"
+                          target="_blank"
+                        >
+                          下载
+                        </Link>
+                        <SubtitleDeleteForm
+                          episodeId={id}
+                          fileName={
+                            episodeSubtitles.subtitleBilingualFileName || ""
+                          }
+                          language="bilingual"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-base-200 rounded-xl p-5 hover:bg-base-300 transition-colors duration-300">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-lg text-primary">
+                          无双语字幕
+                        </h3>
+                        <p className="text-base-content/70 text-sm mt-1">
+                          No Bilingual Subtitle
+                        </p>
+                      </div>
+                      <SubtitleUploadForm episodeId={id} language="bilingual" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

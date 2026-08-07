@@ -2,13 +2,17 @@
 
 import React, { useEffect } from "react";
 import { useActionState } from "react";
-import { deleteEnSubtitle, deleteZhSubtitle } from "@/lib/actions";
+import {
+  deleteEnSubtitle,
+  deleteZhSubtitle,
+  deleteBilingualSubtitle,
+} from "@/lib/actions/oss-actions";
 import { ActionState } from "@/lib/types";
 
 interface Props {
   episodeId: string;
   fileName: string;
-  language: "en" | "zh";
+  language: "en" | "zh" | "bilingual";
 }
 
 /**
@@ -25,7 +29,11 @@ export function SubtitleDeleteForm({ episodeId, fileName, language }: Props) {
   };
 
   const [state, action, isPending] = useActionState<ActionState, FormData>(
-    language === "en" ? deleteEnSubtitle : deleteZhSubtitle,
+    language === "en"
+      ? deleteEnSubtitle
+      : language === "zh"
+        ? deleteZhSubtitle
+        : deleteBilingualSubtitle,
     initialState,
   );
 

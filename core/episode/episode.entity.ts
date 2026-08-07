@@ -13,8 +13,10 @@ export interface Episode {
   coverUrl: string;
   subtitleEnFileName: string;
   subtitleZhFileName: string;
+  subtitleBilingualFileName: string;
   subtitleEnUrl: string;
   subtitleZhUrl: string;
+  subtitleBilingualUrl: string;
   podcastid: string;
   isExclusive: boolean;
   publishAt: string;

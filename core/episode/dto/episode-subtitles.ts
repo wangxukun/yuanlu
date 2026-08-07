@@ -7,4 +7,6 @@ export interface EpisodeSubtitles {
   subtitleEnFileName: string;
   subtitleZhUrl: string;
   subtitleZhFileName: string;
+  subtitleBilingualUrl: string;
+  subtitleBilingualFileName: string;
 }

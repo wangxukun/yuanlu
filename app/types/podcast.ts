@@ -58,6 +58,11 @@ export type UpdateEpisodeSubtitleZhResult = Awaited<
   ReturnType<(typeof episodeRepository)["updateSubtitleZh"]>
 >;
 
+// 提取episodeRepository updateSubtitleBilingual函数的返回类型
+export type UpdateEpisodeSubtitleBilingualResult = Awaited<
+  ReturnType<(typeof episodeRepository)["updateSubtitleBilingual"]>
+>;
+
 // 提取episodeRepository delete函数的返回类型
 export type DeleteEpisodeResult = Awaited<
   ReturnType<(typeof episodeRepository)["delete"]>
