@@ -75,7 +75,7 @@ export function useTranscriptSelection(
               y: rect.top, // 显示在选区顶部
               text: text,
               contextEn: subData.textEn,
-              contextCn: subData.textCn,
+              contextCn: subData.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
               timestamp: subData.start,
             });
           }

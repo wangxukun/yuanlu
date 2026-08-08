@@ -268,7 +268,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             <p
               className={`text-base md:text-lg text-base-content/60 font-medium animate-in slide-in-from-top-2 ${showTranslation ? "block" : "hidden md:block"}`}
             >
-              {subtitle.textCn}
+              {subtitle.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "")}
             </p>
           )}
         </div>

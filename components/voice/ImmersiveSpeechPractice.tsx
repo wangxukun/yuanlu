@@ -378,7 +378,7 @@ export default function ImmersiveSpeechPractice({
                         </div>
                         {isActive && sub.textCn && (
                           <div className="text-xs text-primary-600/70 dark:text-primary-400/70 mt-1 line-clamp-1">
-                            {sub.textCn}
+                            {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "")}
                           </div>
                         )}
                       </div>

@@ -188,7 +188,12 @@ export const SubtitleItem = memo(function SubtitleItem({
                             return;
                           }
                           e.stopPropagation();
-                          onWordClick(part, sub.textEn, sub.textCn, sub.start);
+                          onWordClick(
+                            part,
+                            sub.textEn,
+                            sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+                            sub.start,
+                          );
                         }}
                         className="cursor-pointer rounded inline-block active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
                       >
@@ -214,7 +219,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                   : "text-ink-400",
               )}
             >
-              {sub.textCn.trim()}
+              {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "").trim()}
             </p>
           </div>
         </div>

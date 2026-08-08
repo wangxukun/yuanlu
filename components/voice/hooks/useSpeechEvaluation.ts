@@ -36,7 +36,6 @@ export interface DetailedPracticeRecord extends SpeechPracticeRecord {
     end?: number;
     phonemes?: any[];
   }[];
-  userAudioUrl?: string; // 本地录音回放地址
 }
 
 declare global {
@@ -44,23 +43,6 @@ declare global {
     webkitAudioContext?: typeof AudioContext;
   }
 }
-
-// ─── 模块级：整集音频字节流跨卡片共享缓存 ──────────────────────────────────
-// 同一 episodeId 对应同一份音频文件。原 useSpeechEvaluation 把缓存放在 hook 实例
-// 的 ref 里，导致每个 SpeechEvaluationCard 各自下载+解码整集音频（20-60MB），
-// 首次点击原声要等 20s+。提升到模块级后，同集只下载一次，所有卡片共享。
-//
-// 关键：这里只缓存下载好的 **ArrayBuffer（字节流）**，不在此处 decodeAudioData。
-// 因为 decodeAudioData 需要一个 AudioContext，而 AudioContext 在非用户手势里
-// 创建会进入 suspended 状态（浏览器自动播放策略）。若预加载时创建了它，会污染
-// playbackContextRef，导致首次点击时 currentTime 不前进、扫光高亮失效。
-// 所以：预加载只做 fetch（省掉 20s 网络），decode + 创建 AudioContext 仍在
-// 用户手势（点击 → playReferenceAudio）内完成，确保 context 进入 running 状态。
-// key 为 fetchUrl（同源代理 URL 或直连 URL），与剧集一一对应。
-const episodeBufferCache = new Map<
-  string,
-  { bytes: ArrayBuffer | null; promise: Promise<ArrayBuffer> | null }
->();
 
 // ----------------------------------------------------------------------
 // 工具函数：将 Float32Array PCM 数据编码为 WAV Blob (16bit, 16000Hz, Mono)
@@ -156,26 +138,24 @@ export function useSpeechEvaluation({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioDataRef = useRef<Float32Array[]>([]);
 
-  const audioInstanceRef = useRef<HTMLAudioElement | null>(null);
   const userAudioInstanceRef = useRef<HTMLAudioElement | null>(null);
   const ttsAudioInstanceRef = useRef<HTMLAudioElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
   const userAudioUrlRef = useRef<string | undefined>(undefined);
 
-  // ── 原声播放:Web Audio API 路径(样本级精确,根治 HTML5 seek 偏移)──
-  // HTML5 <audio> 对 VBR 远程流的 seek 用码率估算,误差常达 0.3~1s,
-  // 导致"先打开评测页时 seek 越过 This 落到 is"。改用 AudioBuffer:
-  // 一次性 decodeAudioData 得到完整 PCM,用 AudioBufferSourceNode 精确
-  // 从任意样本起点播放,无 seek 概念,与字幕时间戳严格对齐。
-  const playbackContextRef = useRef<AudioContext | null>(null);
-  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const activeGainRef = useRef<GainNode | null>(null);
-  const playStartCtxTimeRef = useRef<number>(0); // context.currentTime 当 start() 被调用
-  const playStartOffsetRef = useRef<number>(0); // AudioBuffer 内的播放起点(秒)
-  // 原声/慢速播放期间的"当前绝对时间"getter（供扫光高亮 hook 60fps 读取）。
-  // 仅在 Web Audio 播放中非空；停止/TTS 时为 null → 高亮 hook 自然不点亮。
-  const refGetTimeRef = useRef<(() => number) | null>(null);
+  // ── 原声播放：HTML5 Audio Pre-roll 流式精确对齐 ──
+  // 使用独立的 HTMLAudioElement 实例播放原声，通过"安全回退 + 静音快进"
+  // 算法消除 VBR seek 误差，同时只下载句子附近几百 KB 而非整集 20-60MB。
+  const refAudioRef = useRef<HTMLAudioElement | null>(null);
+  // 高亮门控：Pre-roll 静音快进阶段为 false，到达目标时间 unmute 后为 true。
+  // 确保扫光高亮不在静音阶段误触。
+  const isUnmutedRef = useRef(false);
+  // timeupdate 回调引用，用于清理
+  const timeupdateCleanupRef = useRef<{
+    audio: HTMLAudioElement;
+    handler: () => void;
+  } | null>(null);
 
   // Reset everything when navigating to a different subtitle
   const prevSubtitleIdRef = useRef(subtitle.id);
@@ -272,31 +252,24 @@ export function useSpeechEvaluation({
   }, [result?.userAudioUrl]);
 
   const stopAllAudio = useCallback(() => {
-    // 停止 Web Audio 原声播放(AudioBufferSourceNode 只能 start 一次,停止即作废)。
-    if (activeSourceRef.current) {
-      try {
-        activeSourceRef.current.stop();
-      } catch {
-        /* 已停止或未开始,忽略 */
-      }
-      try {
-        activeSourceRef.current.disconnect();
-      } catch {
-        /* 忽略 */
-      }
-      activeSourceRef.current = null;
+    // 停止原声播放（HTMLAudioElement Pre-roll 方案）
+    if (refAudioRef.current) {
+      refAudioRef.current.pause();
     }
+    isUnmutedRef.current = false;
+
+    // 清理 timeupdate 兜底监听
+    if (timeupdateCleanupRef.current) {
+      const { audio, handler } = timeupdateCleanupRef.current;
+      audio.removeEventListener("timeupdate", handler);
+      timeupdateCleanupRef.current = null;
+    }
+
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
-    refGetTimeRef.current = null; // 清除扫光高亮的时间源
     setRefAudioProgress(0);
-
-    // 兼容:同时暂停旧的 HTMLAudioElement 实例(若仍存在)。
-    if (audioInstanceRef.current) {
-      audioInstanceRef.current.pause();
-    }
 
     if (userAudioInstanceRef.current) {
       userAudioInstanceRef.current.pause();
@@ -423,22 +396,11 @@ export function useSpeechEvaluation({
     return () => {
       stopAllAudio();
       stopRecordingCleanup();
-      // 卸载时彻底销毁复用的原声音频实例,释放网络/内存资源
-      if (audioInstanceRef.current) {
-        audioInstanceRef.current.pause();
-        audioInstanceRef.current.src = "";
-        audioInstanceRef.current = null;
-      }
-      // 释放本实例的 Web Audio 播放上下文。
-      // 注意:整集 AudioBuffer 缓存在模块级 episodeBufferCache,跨卡片共享,
-      // 不在卸载时清空(同一集切换卡片/句子时仍可秒开)。
-      if (playbackContextRef.current) {
-        try {
-          playbackContextRef.current.close();
-        } catch {
-          /* 忽略 */
-        }
-        playbackContextRef.current = null;
+      // 卸载时销毁原声播放 Audio 实例
+      if (refAudioRef.current) {
+        refAudioRef.current.pause();
+        refAudioRef.current.src = "";
+        refAudioRef.current = null;
       }
       if (userAudioUrlRef.current) {
         URL.revokeObjectURL(userAudioUrlRef.current);
@@ -587,6 +549,7 @@ export function useSpeechEvaluation({
   ) => {
     stopAllAudio();
     onPlayStart(subtitle.id);
+    isUnmutedRef.current = false;
 
     const wordsStart =
       subtitle.words && subtitle.words.length > 0
@@ -597,7 +560,7 @@ export function useSpeechEvaluation({
         ? subtitle.words[subtitle.words.length - 1].end
         : undefined;
 
-    const rawStartTime =
+    const targetStart =
       customStart !== undefined
         ? customStart
         : wordsStart !== undefined
@@ -608,145 +571,71 @@ export function useSpeechEvaluation({
         ? customEnd
         : wordsEnd !== undefined
           ? wordsEnd
-          : subtitle.endSeconds || rawStartTime + 3;
+          : subtitle.endSeconds || targetStart + 3;
 
-    // ── Web Audio API 精确播放(根治 HTML5 seek 偏移)──
-    // HTML5 <audio> 对 VBR 远程流的 seek 用码率估算字节位置,误差常达 0.3~1s,
-    // 且无法靠缓冲彻底消除(VBR 帧大小不固定,无 Xing 头时浏览器只能估算)。
-    // 这导致"先打开评测页时 seek 越过 This 落到 is",而精读页因复用全局播放器
-    // 的已缓冲元素碰巧偏差较小。
+    // ── HTML5 Audio Pre-roll 流式精确播放 ──
+    // 通过"安全回退 + 静音快进"消除 VBR seek 误差，同时只按需下载句子附近
+    // 几百 KB（Range 请求），而非整集 20-60MB。
     //
-    // Web Audio 方案:一次性 fetch 整个音频并 decodeAudioData 得到完整 PCM(AudioBuffer),
-    // 用 AudioBufferSourceNode.start(when, offset) 从精确样本起点播放——无 seek 概念,
-    // 起点严格等于字幕时间戳,与缓冲状态、打开顺序无关。AudioBuffer 按 URL 缓存,后续句级
-    // 播放(同一集)即时响应。句首不需要 padding:offset 精确到样本,从 rawStartTime 起即可。
-    const ensurePlaybackContext = () => {
-      if (
-        !playbackContextRef.current ||
-        playbackContextRef.current.state === "closed"
-      ) {
-        const Ctor = window.AudioContext || window.webkitAudioContext;
-        playbackContextRef.current = new Ctor();
-      }
-      return playbackContextRef.current;
-    };
+    // 算法：seek 到 T-2.5s → muted + 2x 快进 → 到达 T-0.05s 时 unmute
+    // + 恢复原速 → 精确从 T 开始有声播放 → 到句尾暂停。
 
-    const ensureAudioBuffer = async (): Promise<AudioBuffer> => {
-      // 关键:OSS 音频是跨域资源,直接 fetch(arrayBuffer) 会触发 CORS 被拦截。
-      // 改走同源代理 /api/episode/audio-proxy?id=episodeId,由后端转发 OSS 流,
-      // 这样 fetch 不受 CORS 限制,decodeAudioData 才能拿到完整 PCM。
-      const fetchUrl = episodeId
-        ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
-        : audioUrl;
-      // 模块级字节缓存：命中已下载字节 → 跳过 20s 网络下载（跨卡片共享，同集只下载一次）。
-      const cached = episodeBufferCache.get(fetchUrl);
-      let arrayBuffer: ArrayBuffer;
-      if (cached?.bytes) {
-        arrayBuffer = cached.bytes;
-      } else if (cached?.promise) {
-        arrayBuffer = await cached.promise; // 命中进行中的下载，复用同一 promise
-      } else {
-        // 未命中 → 下载字节，存入模块缓存（解码留给下方用户手势内做）
-        const promise = (async () => {
-          const res = await fetch(fetchUrl);
-          if (!res.ok) throw new Error(`音频下载失败: ${res.status}`);
-          return res.arrayBuffer();
-        })();
-        episodeBufferCache.set(fetchUrl, { bytes: null, promise });
-        try {
-          arrayBuffer = await promise;
-          episodeBufferCache.set(fetchUrl, {
-            bytes: arrayBuffer,
-            promise: null,
-          });
-        } catch (e) {
-          episodeBufferCache.delete(fetchUrl);
-          throw e;
-        }
-      }
-      // 解码在此完成（位于 playReferenceAudio 调用栈内，属于用户手势上下文），
-      // 确保此处创建的 AudioContext 进入 running 状态，currentTime 正常推进。
-      const ctx = ensurePlaybackContext();
-      if (ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
-      }
-      // decodeAudioData 会消费 ArrayBuffer（detach），后续无法复用，
-      // 故对副本解码，保留原始 bytes 供其它卡片解码。
-      const buffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-      return buffer;
-    };
+    // 复用或创建独立 Audio 实例
+    let audio = refAudioRef.current;
+    if (!audio) {
+      audio = new Audio();
+      audio.preload = "auto";
+      refAudioRef.current = audio;
+    }
 
-    const startPlayback = (buffer: AudioBuffer) => {
-      const ctx = ensurePlaybackContext();
-      // 浏览器自动暂停策略:首次需在用户手势内 resume。
-      if (ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
-      }
+    // 生成有效的音频链接（优先使用同源代理以支持 OSS 签名/鉴权，解决 403 及 NotSupportedError）
+    const effectiveAudioUrl = episodeId
+      ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
+      : audioUrl;
+    if (!effectiveAudioUrl) {
+      toast.error("无效的音频来源");
+      return;
+    }
 
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      src.playbackRate.value = playbackRate;
-      const gain = ctx.createGain();
-      src.connect(gain);
-      gain.connect(ctx.destination);
-      activeSourceRef.current = src;
-      activeGainRef.current = gain;
+    // 若 src 不同（换集），更新 src。注意使用 getAttribute 防止绝对/相对路径死循环
+    if (audio.getAttribute("src") !== effectiveAudioUrl) {
+      audio.setAttribute("src", effectiveAudioUrl);
+      audio.load();
+    }
 
-      const sampleRate = buffer.sampleRate;
-      // clamp 到缓冲区范围内,并略加保护。
-      const startOffsetSec = Math.max(
-        0,
-        Math.min(rawStartTime, buffer.duration - 0.02),
-      );
-      const startOffsetSamples = Math.floor(startOffsetSec * sampleRate);
+    // Pre-roll: 安全回退 2.5 秒
+    const PRE_ROLL_OFFSET = 2.5;
+    const EARLY_UNMUTE = 0.05; // 提前 50ms 开麦，吸收 rAF 调度误差
+    const seekTarget = Math.max(0, targetStart - PRE_ROLL_OFFSET);
+    audio.currentTime = seekTarget;
+    audio.muted = true;
 
-      src.onended = () => {
-        // 自然结束或被 stop() 都会触发;仅当是当前活跃 source 时清理。
-        if (activeSourceRef.current === src) {
-          activeSourceRef.current = null;
-          activeGainRef.current = null;
-          if (rafIdRef.current) {
-            cancelAnimationFrame(rafIdRef.current);
-            rafIdRef.current = null;
-          }
-          setRefAudioProgress(0);
-        }
-      };
+    // iOS playbackRate 降级：不支持 2.0 则回退 1.0
+    try {
+      audio.playbackRate = 2.0;
+    } catch {
+      audio.playbackRate = 1.0;
+    }
 
-      const when = ctx.currentTime;
-      src.start(when, startOffsetSamples / sampleRate);
-      playStartCtxTimeRef.current = when;
-      playStartOffsetRef.current = startOffsetSec;
-      // 注册当前播放的绝对时间 getter，供扫光高亮 hook 读取。
-      // 与下方 tick 进度条用同一计算口径：offset + (ctx - startCtx) * rate
-      refGetTimeRef.current = () => {
-        const ctx2 = playbackContextRef.current;
-        if (!ctx2) return -1;
-        const elapsed =
-          (ctx2.currentTime - playStartCtxTimeRef.current) * playbackRate;
-        return playStartOffsetRef.current + elapsed;
-      };
+    // 正常播放阶段的 rAF tick（进度条 + 到句尾停止）
+    const startNormalTick = () => {
+      const progressStart =
+        wordsStart !== undefined ? wordsStart : subtitle.startSeconds;
+      const progressEnd =
+        wordsEnd !== undefined
+          ? wordsEnd
+          : subtitle.endSeconds || progressStart + 3;
 
-      // rAF 推进进度条并在到达 endTime 时停止。
       const tick = () => {
-        if (!activeSourceRef.current || !playbackContextRef.current) return;
-        const elapsed =
-          (playbackContextRef.current.currentTime -
-            playStartCtxTimeRef.current) *
-          playbackRate;
-        const current = playStartOffsetRef.current + elapsed;
+        const a = refAudioRef.current;
+        if (!a || a.paused) return;
+        const current = a.currentTime;
 
         if (current >= endTime) {
           stopAllAudio();
           return;
         }
 
-        const progressStart =
-          wordsStart !== undefined ? wordsStart : subtitle.startSeconds;
-        const progressEnd =
-          wordsEnd !== undefined
-            ? wordsEnd
-            : subtitle.endSeconds || progressStart + 3;
         const progress = Math.min(
           100,
           Math.max(
@@ -760,11 +649,60 @@ export function useSpeechEvaluation({
       rafIdRef.current = requestAnimationFrame(tick);
     };
 
-    ensureAudioBuffer()
-      .then(startPlayback)
+    // 精确开麦逻辑（由 rAF 或 timeupdate 触发）
+    let hasUnmuted = false;
+    const doUnmute = () => {
+      if (hasUnmuted) return;
+      const a = refAudioRef.current;
+      if (!a) return;
+      hasUnmuted = true;
+
+      // 微调对齐：已缓冲范围内不触发重加载
+      a.currentTime = targetStart;
+      a.muted = false;
+      a.playbackRate = playbackRate;
+      isUnmutedRef.current = true;
+
+      // 启动正常播放 tick
+      startNormalTick();
+    };
+
+    // Pre-roll 阶段的 rAF 轮询
+    const preRollCheck = () => {
+      const a = refAudioRef.current;
+      if (!a || a.paused) return;
+
+      if (a.currentTime >= targetStart - EARLY_UNMUTE) {
+        doUnmute();
+        return;
+      }
+      rafIdRef.current = requestAnimationFrame(preRollCheck);
+    };
+
+    // timeupdate 兜底：后台标签页 rAF 被节流时仍能正确触发开麦
+    const onTimeUpdate = () => {
+      const a = refAudioRef.current;
+      if (!a) return;
+      if (!hasUnmuted && a.currentTime >= targetStart - EARLY_UNMUTE) {
+        doUnmute();
+      }
+      // 正常播放阶段也用 timeupdate 兜底句尾停止
+      if (hasUnmuted && a.currentTime >= endTime) {
+        stopAllAudio();
+      }
+    };
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    timeupdateCleanupRef.current = { audio, handler: onTimeUpdate };
+
+    audio
+      .play()
+      .then(() => {
+        // 启动 pre-roll rAF 轮询
+        rafIdRef.current = requestAnimationFrame(preRollCheck);
+      })
       .catch((err) => {
         console.error("原声播放失败:", err);
-        toast.error("原声加载失败,请重试");
+        toast.error("原声加载失败，请重试");
         stopAllAudio();
       });
   };
@@ -812,53 +750,6 @@ export function useSpeechEvaluation({
     }
   };
 
-  // ── 后台预加载整集音频（仅下载字节，不解码）──────────────────────────────
-  // 首次点原声要等 fetch 整集(20-60MB)→ 20s+ 延迟。挂载后趁空闲预取字节流,
-  // 用户首次点击时大概率已就绪→秒开。失败静默(点击时 playReferenceAudio 会重试并 toast)。
-  //
-  // 关键：预加载【只 fetch 字节、不创建 AudioContext、不 decodeAudioData】。
-  // 因为 AudioContext 在非用户手势(idle callback)里创建会进入 suspended 状态,
-  // 会污染 playbackContextRef，导致首次点击时 currentTime 不前进、扫光高亮失效。
-  // decode + AudioContext 创建都留在 playReferenceAudio（用户手势内）做。
-  // 与 playReferenceAudio 共用同一模块缓存 entry,自动去重。
-  useEffect(() => {
-    const fetchUrl = episodeId
-      ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
-      : audioUrl;
-    if (!fetchUrl) return;
-
-    // 已命中(字节就绪或下载中)则无需再次发起
-    const cached = episodeBufferCache.get(fetchUrl);
-    if (cached) return;
-
-    const run = () => {
-      const promise = (async () => {
-        const res = await fetch(fetchUrl);
-        if (!res.ok) throw new Error(`音频下载失败: ${res.status}`);
-        return res.arrayBuffer();
-      })();
-      episodeBufferCache.set(fetchUrl, { bytes: null, promise });
-      promise
-        .then((bytes) => {
-          episodeBufferCache.set(fetchUrl, { bytes, promise: null });
-        })
-        .catch(() => {
-          // 预加载失败：清掉坏 entry，让真正点击时可重试
-          episodeBufferCache.delete(fetchUrl);
-        });
-    };
-
-    // 优先在浏览器空闲时跑，避免抢占首屏渲染；不支持则延迟 1.5s
-    const ric = window.requestIdleCallback;
-    if (typeof ric === "function") {
-      const id = ric(() => run(), { timeout: 4000 });
-      return () => window.cancelIdleCallback?.(id);
-    } else {
-      const id = window.setTimeout(run, 1500);
-      return () => window.clearTimeout(id);
-    }
-  }, [episodeId, audioUrl]);
-
   return {
     isRecording,
     isProcessing,
@@ -873,14 +764,18 @@ export function useSpeechEvaluation({
     stopRecording,
     playReferenceAudio,
     toggleUserAudio,
-    // 扫光高亮控制器：仅原声/慢速(Web Audio)播放中有效，TTS/停止时返回 -1
+    // 扫光高亮控制器：仅原声/慢速播放且已 unmute 后有效，TTS/停止/pre-roll 时返回 -1
     highlightController: useMemo(
       () => ({
         getTime: () => {
-          const fn = refGetTimeRef.current;
-          return fn ? fn() : -1;
+          const audio = refAudioRef.current;
+          if (!audio || audio.paused || !isUnmutedRef.current) return -1;
+          return audio.currentTime;
         },
-        isPlaying: () => !!activeSourceRef.current,
+        isPlaying: () => {
+          const audio = refAudioRef.current;
+          return !!audio && !audio.paused && isUnmutedRef.current;
+        },
       }),
       [],
     ),

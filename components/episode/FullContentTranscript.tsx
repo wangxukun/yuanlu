@@ -189,7 +189,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                         onWordClick(
                           cleanWord,
                           sub.textEn,
-                          sub.textCn,
+                          sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
                           wordObj.start,
                         );
                       }}
@@ -232,7 +232,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                           onWordClick(
                             cleanWord,
                             sub.textEn,
-                            sub.textCn,
+                            sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
                             sub.start,
                           );
                         }}
@@ -259,7 +259,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                 : "text-ink-400 dark:text-ink-500",
             )}
           >
-            {sub.textCn.trim()}
+            {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "").trim()}
           </p>
         )}
       </div>

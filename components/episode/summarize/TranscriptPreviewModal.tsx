@@ -118,7 +118,7 @@ export function TranscriptPreviewModal({
                             fontFamily: "'Noto Sans SC', sans-serif",
                           }}
                         >
-                          {sub.textCn}
+                          {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "")}
                         </p>
                       </div>
                     ),
