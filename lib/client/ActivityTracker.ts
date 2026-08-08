@@ -6,10 +6,16 @@ import { useSession, signOut } from "next-auth/react";
 const HEARTBEAT_INTERVAL = 60 * 1000; // 每 60 秒发送一次心跳
 const ACTIVITY_THROTTLE = 60 * 1000; // 用户操作 60 秒内最多记录一次
 
+let lastPingTime = 0;
+
 /**
  * 调用接口更新用户 lastActiveAt + isOnline = true
  */
 async function sendActivePing() {
+  const now = Date.now();
+  if (now - lastPingTime < ACTIVITY_THROTTLE / 2) return; // Allow some margin
+  lastPingTime = now;
+
   try {
     const res = await fetch("/api/auth/update-activity", {
       method: "POST",

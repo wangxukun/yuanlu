@@ -9,7 +9,13 @@ import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import { useUIStore } from "@/store/ui-store";
 import { toast } from "sonner";
 import { saveSpeechResult } from "@/lib/actions/speech";
-import { CheckCircle2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+} from "lucide-react";
 
 interface ImmersiveSpeechPracticeProps {
   isOpen: boolean;
@@ -370,9 +376,9 @@ export default function ImmersiveSpeechPractice({
                         >
                           {sub.textEn}
                         </div>
-                        {isActive && sub.textZh && (
+                        {isActive && sub.textCn && (
                           <div className="text-xs text-primary-600/70 dark:text-primary-400/70 mt-1 line-clamp-1">
-                            {sub.textZh}
+                            {sub.textCn}
                           </div>
                         )}
                       </div>
@@ -382,6 +388,28 @@ export default function ImmersiveSpeechPractice({
               ) : (
                 <div className="text-center py-8 text-ink-400 text-sm">
                   没有找到练习句子
+                </div>
+              )}
+
+              {/* 试用模式：在最后（第5句）下方显示解锁提示 */}
+              {!isLoading && isTrialMode && subtitles.length > 0 && (
+                <div className="mt-4 p-4 rounded-xl border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/20 text-center mx-2 mb-4">
+                  <div className="flex justify-center mb-2">
+                    <Lock className="w-6 h-6 text-primary-500" />
+                  </div>
+                  <h4 className="text-sm font-bold text-primary-800 dark:text-primary-200 mb-1">
+                    解锁全部练习句子
+                  </h4>
+                  <p className="text-xs text-primary-600/80 dark:text-primary-400/80 mb-3 leading-relaxed">
+                    您正在体验前 5 句试用，成为 PRO
+                    会员即可解锁本集全篇语音评测。
+                  </p>
+                  <button
+                    onClick={() => useUIStore.getState().openPremiumModal()}
+                    className="btn btn-sm btn-primary w-full rounded-lg"
+                  >
+                    解锁 PRO 会员
+                  </button>
                 </div>
               )}
             </div>
@@ -449,6 +477,7 @@ export default function ImmersiveSpeechPractice({
                   <SpeechEvaluationCard
                     subtitle={activeSubtitle}
                     audioUrl={episode.audioUrl || ""}
+                    episodeId={episode.episodeid}
                     previousResult={getLatestResult(activeSubtitle.id)}
                     historicalRecords={getHistoricalRecords(activeSubtitle.id)}
                     onEvaluate={handleEvaluate}

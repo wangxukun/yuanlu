@@ -22,6 +22,7 @@ export interface NotificationState {
 
 let pollingInterval: NodeJS.Timeout | null = null;
 let eventListenerAdded = false;
+let isFetchingNotifications = false;
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   unreadCount: 0,
@@ -29,6 +30,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   isInitialized: false,
 
   fetchNotifications: async () => {
+    if (isFetchingNotifications) return;
+    isFetchingNotifications = true;
     try {
       const res = await fetch("/api/notification/list");
       if (!res.ok) return;
@@ -40,14 +43,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
     } catch {
       // 忽略错误
+    } finally {
+      isFetchingNotifications = false;
     }
   },
 
   initPolling: () => {
-    const { fetchNotifications } = get();
+    const { fetchNotifications, isInitialized } = get();
 
     // 初次拉取
-    fetchNotifications();
+    if (!isInitialized) {
+      fetchNotifications();
+    }
 
     if (!pollingInterval) {
       pollingInterval = setInterval(() => {

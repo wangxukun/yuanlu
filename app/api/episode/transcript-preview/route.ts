@@ -48,6 +48,12 @@ export async function GET(req: NextRequest) {
         60 * 5,
       );
     }
+    if (episode.subtitleBilingualFileName) {
+      episode.subtitleBilingualUrl = await generateSignatureUrl(
+        episode.subtitleBilingualFileName,
+        60 * 5,
+      );
+    }
 
     // 2. Fetch merged subtitles
     const subtitles = await mergeSubtitles(episode);
@@ -77,7 +83,7 @@ export async function GET(req: NextRequest) {
         coverUrl,
         subtitles: subtitles.slice(0, 5).map((s) => ({
           textEn: s.textEn,
-          textZh: s.textZh,
+          textCn: s.textCn,
         })),
         totalSubtitles: subtitles.length,
       },

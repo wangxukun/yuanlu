@@ -100,7 +100,7 @@ export function TranscriptPreviewModal({
                 {transcriptPreview?.subtitles &&
                 transcriptPreview.subtitles.length > 0 ? (
                   transcriptPreview.subtitles.map(
-                    (sub: { textEn: string; textZh: string }, i: number) => (
+                    (sub: { textEn: string; textCn: string }, i: number) => (
                       <div key={i}>
                         <p
                           className="text-[0.6rem] sm:text-[0.65rem] leading-relaxed"
@@ -118,7 +118,7 @@ export function TranscriptPreviewModal({
                             fontFamily: "'Noto Sans SC', sans-serif",
                           }}
                         >
-                          {sub.textZh}
+                          {sub.textCn}
                         </p>
                       </div>
                     ),

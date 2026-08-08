@@ -174,6 +174,15 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
           3600 * 3,
         );
       }
+      if (
+        data.episode[i].subtitleBilingualUrl &&
+        data.episode[i].subtitleBilingualUrl.length > 0
+      ) {
+        data.episode[i].subtitleBilingualUrl = await generateSignatureUrl(
+          data.episode[i].subtitleBilingualFileName,
+          3600 * 3,
+        );
+      }
     }
   }
   return data;
@@ -239,6 +248,12 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
       3600 * 3,
     );
   }
+  if (data.subtitleBilingualUrl && data.subtitleBilingualUrl.length > 0) {
+    data.subtitleBilingualUrl = await generateSignatureUrl(
+      data.subtitleBilingualFileName,
+      3600 * 3,
+    );
+  }
   if (data.podcast) {
     data.podcast.coverUrl = await generateSignatureUrl(
       data.podcast.coverFileName,
@@ -285,9 +300,21 @@ async function data(subtitleUrl: string) {
 
 interface SubtitleItem {
   id: number;
-  startTime: string;
-  endTime: string;
+  start: number;
+  end: number;
   text: string;
+}
+
+// 辅助函数：将 SRT 的时间字符串转换为秒
+function parseSrtTimeToSeconds(timeStr: string): number {
+  const parts = timeStr.split(":");
+  if (parts.length !== 3) return 0;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  const secParts = parts[2].split(",");
+  const seconds = parseInt(secParts[0], 10);
+  const ms = secParts.length > 1 ? parseInt(secParts[1], 10) : 0;
+  return hours * 3600 + minutes * 60 + seconds + ms / 1000;
 }
 
 // SRT 文件解析函数
@@ -305,8 +332,8 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
       const text = lines.slice(2).join("\n");
       return {
         id,
-        startTime: timeMatch[1],
-        endTime: timeMatch[2],
+        start: parseSrtTimeToSeconds(timeMatch[1]),
+        end: parseSrtTimeToSeconds(timeMatch[2]),
         text,
       };
     })
@@ -318,22 +345,53 @@ const parseSrt = (srtText: string): SubtitleItem[] => {
  * @param episode
  */
 export async function mergeSubtitles(episode: Episode) {
+  // 1. 优先使用双语 JSON 字幕
+  if (episode.subtitleBilingualUrl) {
+    try {
+      const res = await fetch(episode.subtitleBilingualUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json) && json.length > 0) {
+          console.log(
+            "[Subtitle Loader] Loaded bilingual subtitles (JSON format)",
+          );
+          // JSON 字幕自带 start, end, speaker, textEn, textCn, words
+          return json.map((item) => ({
+            id: item.id,
+            start: item.start,
+            end: item.end,
+            speaker: item.speaker,
+            textEn: item.textEn,
+            textCn: item.textCn,
+            words: item.words,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch bilingual subtitle JSON", error);
+    }
+  }
+
+  // 2. 降级使用分开的 SRT 字幕
   const subtitleEn = (await data(episode.subtitleEnUrl as string)) || null;
   const subtitleZh = (await data(episode.subtitleZhUrl as string)) || null;
-  if (subtitleEn === null) {
+
+  if (subtitleEn === null || subtitleEn.length === 0) {
     return [];
   }
-  if (subtitleEn.length === 0) {
-    return [];
-  }
+
   if (subtitleZh === null) {
+    console.log("[Subtitle Loader] Loaded English-only subtitles (SRT format)");
     return subtitleEn.map((item) => {
       return {
         id: item.id,
-        startTime: item.startTime,
-        endTime: item.endTime,
+        start: item.start,
+        end: item.end,
         textEn: item.text,
-        textZh: "",
+        textCn: "",
       };
     });
   }
@@ -342,6 +400,9 @@ export async function mergeSubtitles(episode: Episode) {
     throw new Error("中英文字幕不匹配");
   }
 
+  console.log(
+    "[Subtitle Loader] Loaded Bilingual subtitles (Merged SRT format)",
+  );
   return subtitleEn.map((enItem) => {
     // 找到对应ID的中文字幕项
     const zhItem = subtitleZh.find((item) => item.id === enItem.id);
@@ -350,10 +411,10 @@ export async function mergeSubtitles(episode: Episode) {
     }
     return {
       id: enItem.id,
-      startTime: enItem.startTime,
-      endTime: enItem.endTime,
+      start: enItem.start,
+      end: enItem.end,
       textEn: enItem.text,
-      textZh: zhItem.text,
+      textCn: zhItem.text,
     };
   });
 }

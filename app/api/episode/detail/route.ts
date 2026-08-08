@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        subtitleBilingualUrl: true,
+        subtitleBilingualFileName: true,
         podcastid: true,
         publishAt: true,
         createAt: true,
@@ -68,6 +70,8 @@ export async function GET(req: NextRequest) {
         episode.subtitleEnFileName = "";
         episode.subtitleZhUrl = "";
         episode.subtitleZhFileName = "";
+        episode.subtitleBilingualUrl = "";
+        episode.subtitleBilingualFileName = "";
       }
     }
 

@@ -1,15 +1,14 @@
 export interface MergedSubtitleItem {
   id: number;
-  startTime: string;
-  endTime: string;
-  textEn: string;
-  textZh: string;
-}
-
-export interface ProcessedSubtitle extends MergedSubtitleItem {
   start: number;
   end: number;
+  speaker?: string;
+  textEn: string;
+  textCn: string;
+  words?: { word: string; start: number; end: number }[];
 }
+
+export type ProcessedSubtitle = MergedSubtitleItem;
 
 export interface SelectionMenuState {
   visible: boolean;
@@ -17,6 +16,6 @@ export interface SelectionMenuState {
   y: number;
   text: string;
   contextEn: string;
-  contextZh: string;
+  contextCn: string;
   timestamp: number;
 }

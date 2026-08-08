@@ -193,6 +193,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                     <SpeechEvaluationCard
                       subtitle={sub}
                       audioUrl={episode.audioUrl}
+                      episodeId={episode.episodeid}
                       previousResult={getLatestResult(sub.id)}
                       historicalRecords={getHistoricalRecords(sub.id)}
                       onEvaluate={handleEvaluation}

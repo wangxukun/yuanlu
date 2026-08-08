@@ -36,10 +36,12 @@ export type ActionState = {
 
 export interface MergedSubtitleItem {
   id: number;
-  startTime: string;
-  endTime: string;
+  start: number;
+  end: number;
+  speaker?: string;
   textEn: string;
-  textZh: string;
+  textCn: string;
+  words?: { word: string; start: number; end: number }[];
 }
 
 export interface Subtitle {
@@ -47,7 +49,9 @@ export interface Subtitle {
   startSeconds: number; // 开始时间（秒）
   endSeconds?: number; // 结束时间（秒），可选
   textEn: string; // 英文原文
-  textZh?: string; // 中文翻译（可选）
+  textCn?: string; // 中文翻译（可选）
+  speaker?: string; // 说话人标识（可选，由 practice-data 提供）
+  words?: { word: string; start: number; end: number }[]; // 词级时间戳（可选），start/end 为相对全集音频的绝对秒数
 }
 
 export interface SpeechPracticeRecord {

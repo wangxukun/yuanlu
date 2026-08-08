@@ -13,7 +13,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
-import { parseTimeStr } from "@/lib/tools";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
@@ -28,6 +27,7 @@ import PlaylistDropdown from "@/components/controls/PlaylistDropdown";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { DictationItem } from "./transcript/DictationItem";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
+import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
@@ -71,17 +71,20 @@ function formatSec(sec: number) {
 interface SubtitleRowProps {
   sub: ProcessedSubtitle;
   isActive: boolean;
+  isPlaying: boolean;
+  currentTime: number;
   isLooping: boolean;
   isLoggedIn: boolean;
   visibilityMode: VisibilityMode;
   isProofreadingMode: boolean;
   fontSizeLevel: number;
   vocabWords: Set<string>;
+  audioRef: HTMLAudioElement | null;
   onJump: (t: number) => void;
   onWordClick: (
     word: string,
     contextEn: string,
-    contextZh: string,
+    contextCn: string,
     timestamp: number,
   ) => void;
   onToggleLoop: () => void;
@@ -91,32 +94,53 @@ interface SubtitleRowProps {
 const SubtitleRow = React.memo(function SubtitleRow({
   sub,
   isActive,
+  isPlaying,
+  currentTime,
   isLooping,
   isLoggedIn,
   visibilityMode,
   isProofreadingMode,
   fontSizeLevel,
   vocabWords,
+  audioRef,
   onJump,
   onWordClick,
   onToggleLoop,
   onProofread,
 }: SubtitleRowProps) {
   const fontSize = FONT_SIZE_LEVELS[fontSizeLevel] ?? FONT_SIZE_LEVELS[1];
+  const textRef = useRef<HTMLDivElement>(null);
+
+  // 随语速线性过渡的扫光高亮（仅 active 播放行启动 rAF，命令式写 DOM）
+  useWordHighlight({
+    controller: {
+      getTime: () => audioRef?.currentTime ?? -1,
+      isPlaying: () => !!audioRef && !audioRef.paused,
+    },
+    containerRef: textRef,
+    isHighlighted: isActive && isPlaying,
+    words: sub.words,
+    start: sub.start,
+    end: sub.end,
+  });
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn(
-        "group relative flex items-start gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-3 transition-colors duration-200 cursor-pointer border-l-[3px]",
+        "group relative flex items-start gap-2 md:gap-3 min-w-0 rounded-xl px-3 md:px-4 py-3 transition-colors duration-200 cursor-pointer border-l-[3px]",
         isActive
           ? "border-primary-500 bg-primary-500/[0.03] dark:bg-primary-500/[0.05]"
           : "border-transparent hover:bg-ink-50 dark:hover:bg-ink-900/40",
       )}
       id={`fct-sub-${sub.id}`}
       onClick={() => {
-        if (!isActive) onJump(sub.start);
+        if (!isActive) {
+          const exactStart =
+            sub.words && sub.words.length > 0 ? sub.words[0].start : sub.start;
+          onJump(exactStart);
+        }
       }}
     >
       {/* ── Time Rail ── */}
@@ -132,63 +156,110 @@ const SubtitleRow = React.memo(function SubtitleRow({
       </span>
 
       {/* ── Text ── */}
-      <div className="flex-1 min-w-0 space-y-2">
+      <div ref={textRef} className="flex-1 min-w-0 space-y-2">
         {(visibilityMode === "both" || visibilityMode === "en") && (
           <p
             className={cn(
-              "font-serif tracking-wide",
+              "font-serif tracking-wide break-words",
               fontSize.en,
               isActive
-                ? "text-ink-900 dark:text-ink-50 font-semibold"
+                ? "text-primary-600 dark:text-primary-400 font-bold"
                 : "text-ink-800 dark:text-ink-200",
             )}
           >
-            {sub.textEn
-              .trim()
-              .split(/(\s+)/)
-              .map((part, i) => {
-                if (part.trim() === "") {
+            {sub.words && sub.words.length > 0
+              ? sub.words.map((wordObj, i) => {
+                  const cleanWord = wordObj.word
+                    .replace(/[.,!?;:"'()[\]{}]/g, "")
+                    .trim();
+                  const isSaved = vocabWords.has(cleanWord.toLowerCase());
+                  const isWordActive =
+                    isActive &&
+                    isPlaying &&
+                    currentTime >= wordObj.start &&
+                    currentTime <= wordObj.end;
                   return (
-                    <span key={i} className="inline select-text">
-                      {part}
+                    <span
+                      key={i}
+                      data-wi={i}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const sel = window.getSelection();
+                        if (sel && !sel.isCollapsed) return;
+                        onWordClick(
+                          cleanWord,
+                          sub.textEn,
+                          sub.textCn,
+                          wordObj.start,
+                        );
+                      }}
+                      className={cn(
+                        "cursor-pointer rounded-[3px] inline-block active:scale-95 transition-colors select-text mr-1",
+                        isWordActive
+                          ? "bg-accent-100 dark:bg-accent-900/40"
+                          : "hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
+                        isSaved &&
+                          "bg-accent-100/80 dark:bg-accent-900/50 text-accent-800 dark:text-accent-300",
+                      )}
+                      title={isSaved ? "已在生词本中" : undefined}
+                    >
+                      {wordObj.word}
                     </span>
                   );
-                }
-                const cleanWord = part.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
-                const isSaved = vocabWords.has(cleanWord.toLowerCase());
-                return (
-                  <span
-                    key={i}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const sel = window.getSelection();
-                      if (sel && !sel.isCollapsed) return;
-                      onWordClick(cleanWord, sub.textEn, sub.textZh, sub.start);
-                    }}
-                    className={cn(
-                      "cursor-pointer rounded-[3px] inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
-                      isSaved &&
-                        "bg-accent-100/80 dark:bg-accent-900/50 text-accent-800 dark:text-accent-300",
-                    )}
-                    title={isSaved ? "已在生词本中" : undefined}
-                  >
-                    {part}
-                  </span>
-                );
-              })}
+                })
+              : sub.textEn
+                  .trim()
+                  .split(/(\s+)/)
+                  .map((part, i) => {
+                    if (part.trim() === "") {
+                      return (
+                        <span key={i} className="inline select-text">
+                          {part}
+                        </span>
+                      );
+                    }
+                    const cleanWord = part
+                      .replace(/[.,!?;:"'()[\]{}]/g, "")
+                      .trim();
+                    const isSaved = vocabWords.has(cleanWord.toLowerCase());
+                    return (
+                      <span
+                        key={i}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const sel = window.getSelection();
+                          if (sel && !sel.isCollapsed) return;
+                          onWordClick(
+                            cleanWord,
+                            sub.textEn,
+                            sub.textCn,
+                            sub.start,
+                          );
+                        }}
+                        className={cn(
+                          "cursor-pointer rounded-[3px] inline transition-colors select-text hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
+                          isSaved &&
+                            "bg-accent-100/80 dark:bg-accent-900/50 text-accent-800 dark:text-accent-300",
+                        )}
+                        title={isSaved ? "已在生词本中" : undefined}
+                      >
+                        {part}
+                      </span>
+                    );
+                  })}
           </p>
         )}
         {(visibilityMode === "both" || visibilityMode === "zh") && (
           <p
             className={cn(
-              "font-sans",
+              "font-sans break-words",
               fontSize.zh,
               isActive
                 ? "text-ink-600 dark:text-ink-300"
                 : "text-ink-400 dark:text-ink-500",
             )}
           >
-            {sub.textZh.trim()}
+            {sub.textCn.trim()}
           </p>
         )}
       </div>
@@ -423,8 +494,6 @@ export default function FullContentTranscript({
     if (!Array.isArray(subtitles)) return [];
     return subtitles.map((item) => ({
       ...item,
-      start: parseTimeStr(item.startTime),
-      end: parseTimeStr(item.endTime),
     }));
   }, [subtitles]);
 
@@ -616,7 +685,7 @@ export default function FullContentTranscript({
     async (
       word: string,
       contextEn: string,
-      contextZh: string,
+      contextCn: string,
       timestamp: number,
     ) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
@@ -633,7 +702,7 @@ export default function FullContentTranscript({
 
       setSelectedWord(cleanWord);
       setSelectedContext(contextEn);
-      setSelectedTranslation(contextZh);
+      setSelectedTranslation(contextCn);
       setSelectedTimestamp(timestamp);
       setDictData(null);
       setIsModalOpen(true);
@@ -1150,12 +1219,15 @@ export default function FullContentTranscript({
                       key={sub.id || index}
                       sub={sub}
                       isActive={isActive}
+                      isPlaying={isPlaying}
+                      currentTime={currentTime}
                       isLooping={loopingIndex === index}
                       isLoggedIn={isLoggedIn}
                       visibilityMode={visibilityMode}
                       isProofreadingMode={isProofreadingMode}
                       fontSizeLevel={fontSizeLevel}
                       vocabWords={vocabWords}
+                      audioRef={audioRef}
                       onJump={handleJump}
                       onWordClick={(word, en, zh, timestamp) =>
                         handleWordClick(word, en, zh, timestamp)

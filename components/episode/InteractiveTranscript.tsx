@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
-import { parseTimeStr } from "@/lib/tools";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 
 // Import new decoupled components
@@ -147,8 +146,6 @@ export default function InteractiveTranscript({
     if (!Array.isArray(subtitles)) return [];
     return subtitles.map((item) => ({
       ...item,
-      start: parseTimeStr(item.startTime),
-      end: parseTimeStr(item.endTime),
     }));
   }, [subtitles]);
 
@@ -227,7 +224,7 @@ export default function InteractiveTranscript({
     async (
       word: string,
       contextEn: string,
-      contextZh: string,
+      contextCn: string,
       timestamp: number,
     ) => {
       setSelectionMenu((prev) => ({ ...prev, visible: false }));
@@ -239,7 +236,7 @@ export default function InteractiveTranscript({
 
       setSelectedWord(cleanWord);
       setSelectedContext(contextEn);
-      setSelectedTranslation(contextZh);
+      setSelectedTranslation(contextCn);
       setSelectedTimestamp(timestamp);
       setDictData(null);
       setIsModalOpen(true);
@@ -379,6 +376,7 @@ export default function InteractiveTranscript({
               sub={sub}
               isActive={isActive}
               isPlaying={isPlaying}
+              currentTime={currentTime}
               showTranslation={showTranslation}
               isLooping={loopingIndex === index}
               onToggleLoop={() =>

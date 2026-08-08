@@ -13,10 +13,10 @@ export interface TranscriptPdfInput {
   coverUrl?: string; // Signed OSS URL for the cover image
   subtitles: {
     id: number;
-    startTime: string;
-    endTime: string;
+    start: number;
+    end: number;
     textEn: string;
-    textZh: string;
+    textCn: string;
   }[];
   format?: "A4" | "A5";
 }
@@ -39,7 +39,7 @@ export interface PdfLayoutConfig {
     titleMain: number;
     titleSub: number;
     transcriptEn: number;
-    transcriptZh: number;
+    transcriptCn: number;
     footer: number;
   };
 }
@@ -94,7 +94,7 @@ function getLayoutConfig(format: "A4" | "A5"): PdfLayoutConfig {
         titleMain: 17,
         titleSub: 13,
         transcriptEn: 13,
-        transcriptZh: 12,
+        transcriptCn: 12,
         footer: 8.5,
       },
     };
@@ -123,7 +123,7 @@ function getLayoutConfig(format: "A4" | "A5"): PdfLayoutConfig {
       titleMain: 20,
       titleSub: 16,
       transcriptEn: 14.5,
-      transcriptZh: 12.5,
+      transcriptCn: 12.5,
       footer: 9.5,
     },
   };
@@ -221,7 +221,7 @@ export async function generateTranscriptPdf(
     // Render transcript blocks
     // ──────────────────────────────────────────────────────────────────────────
     for (const sub of subtitles) {
-      renderTranscriptBlock(doc, sub.textEn, sub.textZh, layout);
+      renderTranscriptBlock(doc, sub.textEn, sub.textCn, layout);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ function renderTitleBlock(
 function renderTranscriptBlock(
   doc: PDFKit.PDFDocument,
   textEn: string,
-  textZh: string,
+  textCn: string,
   layout: PdfLayoutConfig,
 ) {
   const blockStartY = doc.y;
@@ -399,9 +399,9 @@ function renderTranscriptBlock(
   // Chinese translation (Back to CJK font)
   doc
     .font("NotoSansSC")
-    .fontSize(layout.fonts.transcriptZh)
+    .fontSize(layout.fonts.transcriptCn)
     .fillColor([0, 0, 0]);
-  doc.text(textZh.trim(), layout.marginLeft, doc.y, {
+  doc.text(textCn.trim(), layout.marginLeft, doc.y, {
     width: layout.contentWidth,
     lineGap: 3,
     paragraphGap: 0,

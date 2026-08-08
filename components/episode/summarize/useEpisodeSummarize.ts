@@ -34,7 +34,7 @@ export function useEpisodeSummarize(episode: Episode) {
     podcastTitle: string;
     episodeTitle: string;
     coverUrl?: string;
-    subtitles: { textEn: string; textZh: string }[];
+    subtitles: { textEn: string; textCn: string }[];
     totalSubtitles: number;
   } | null>(null);
 

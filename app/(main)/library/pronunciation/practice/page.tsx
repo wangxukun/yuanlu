@@ -120,7 +120,7 @@ export default function PronunciationPracticePage() {
     startSeconds: currentRecord.targetStartTime || 0,
     endSeconds: (currentRecord.targetStartTime || 0) + 3, // rough estimate for sliced audio
     textEn: currentRecord.targetText,
-    textZh: "弱项句子复习",
+    textCn: "弱项句子复习",
   };
 
   return (
@@ -150,6 +150,7 @@ export default function PronunciationPracticePage() {
         <SpeechEvaluationCard
           subtitle={mockSubtitle}
           audioUrl={currentRecord.episode?.audioUrl || ""}
+          episodeId={currentRecord.episodeid}
           previousResult={undefined} // don't load the old bad score, let them start fresh
           onEvaluate={handleEvaluate}
           currentPlayingId={null}

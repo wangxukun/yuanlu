@@ -61,6 +61,8 @@ export const getPodcastDetail = cache(async (id: string) => {
           subtitleEnFileName: true,
           subtitleZhUrl: true,
           subtitleZhFileName: true,
+          subtitleBilingualUrl: true,
+          subtitleBilingualFileName: true,
           publishAt: true,
           createAt: true,
           status: true,
@@ -148,6 +150,18 @@ export const getPodcastDetail = cache(async (id: string) => {
         try {
           ep.subtitleZhUrl = await generateSignatureUrl(
             ep.subtitleZhFileName,
+            3600 * 3,
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // 双语字幕
+      if (ep.subtitleBilingualFileName) {
+        try {
+          ep.subtitleBilingualUrl = await generateSignatureUrl(
+            ep.subtitleBilingualFileName,
             3600 * 3,
           );
         } catch (e) {

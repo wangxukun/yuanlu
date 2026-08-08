@@ -206,7 +206,7 @@ export const DictationItem = memo(function DictationItem({
             )}
           >
             <p className="font-sans text-sm leading-[1.7] text-ink-600 dark:text-ink-300 font-medium border-t border-ink-200 dark:border-ink-700 pt-2">
-              {sub.textZh.trim()}
+              {sub.textCn.trim()}
             </p>
           </div>
         </div>

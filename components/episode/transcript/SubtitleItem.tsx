@@ -9,12 +9,13 @@ interface SubtitleItemProps {
   sub: ProcessedSubtitle;
   isActive: boolean;
   isPlaying: boolean;
+  currentTime: number;
   showTranslation: boolean;
   onJump: (time: number) => void;
   onWordClick: (
     word: string,
     contextEn: string,
-    contextZh: string,
+    contextCn: string,
     timestamp: number,
   ) => void;
   onProofread?: (sub: ProcessedSubtitle) => void;
@@ -26,6 +27,7 @@ export const SubtitleItem = memo(function SubtitleItem({
   sub,
   isActive,
   isPlaying,
+  currentTime,
   showTranslation,
   onJump,
   onWordClick,
@@ -116,35 +118,72 @@ export const SubtitleItem = memo(function SubtitleItem({
                 : "text-ink-700 dark:text-ink-200",
             )}
           >
-            {sub.textEn
-              .trim()
-              .split(/(\s+)/)
-              .map((part, i) => {
-                if (part.trim() === "") {
+            {sub.speaker && (
+              <span className="inline-block mr-2 px-1.5 py-0.5 rounded text-[11px] font-bold bg-base-300/50 text-base-content/70 align-text-bottom">
+                {sub.speaker}
+              </span>
+            )}
+            {sub.words && sub.words.length > 0
+              ? sub.words.map((wordObj, i) => {
+                  const isWordActive =
+                    isActive &&
+                    isPlaying &&
+                    currentTime >= wordObj.start &&
+                    currentTime <= wordObj.end;
                   return (
-                    <span key={i} className="inline select-text">
-                      {part}
+                    <span
+                      key={i}
+                      onClick={(e) => {
+                        const selection = window.getSelection();
+                        if (selection && !selection.isCollapsed) return;
+                        e.stopPropagation();
+                        onWordClick(
+                          wordObj.word,
+                          sub.textEn,
+                          sub.textCn,
+                          wordObj.start,
+                        );
+                      }}
+                      className={clsx(
+                        "cursor-pointer rounded inline active:scale-95 select-text relative transition-colors mr-1",
+                        isWordActive
+                          ? "text-primary-600 dark:text-primary-400 font-bold"
+                          : "hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
+                      )}
+                    >
+                      {wordObj.word}
                     </span>
                   );
-                }
-                return (
-                  <span
-                    key={i}
-                    onClick={(e) => {
-                      const selection = window.getSelection();
-                      // 移动端兼容：如果正在选中文本，不触发单词点击
-                      if (selection && !selection.isCollapsed) {
-                        return;
-                      }
-                      e.stopPropagation();
-                      onWordClick(part, sub.textEn, sub.textZh, sub.start);
-                    }}
-                    className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
-                  >
-                    {part}
-                  </span>
-                );
-              })}
+                })
+              : sub.textEn
+                  .trim()
+                  .split(/(\s+)/)
+                  .map((part, i) => {
+                    if (part.trim() === "") {
+                      return (
+                        <span key={i} className="inline select-text">
+                          {part}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        key={i}
+                        onClick={(e) => {
+                          const selection = window.getSelection();
+                          // 移动端兼容：如果正在选中文本，不触发单词点击
+                          if (selection && !selection.isCollapsed) {
+                            return;
+                          }
+                          e.stopPropagation();
+                          onWordClick(part, sub.textEn, sub.textCn, sub.start);
+                        }}
+                        className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
+                      >
+                        {part}
+                      </span>
+                    );
+                  })}
           </p>
 
           <div
@@ -163,7 +202,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                   : "text-ink-400",
               )}
             >
-              {sub.textZh.trim()}
+              {sub.textCn.trim()}
             </p>
           </div>
         </div>

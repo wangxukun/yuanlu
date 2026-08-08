@@ -2,7 +2,19 @@
 import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
-  return new PrismaClient();
+  let url = process.env.DATABASE_URL;
+  if (url && !url.includes("connection_limit")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url += `${separator}connection_limit=50&pool_timeout=30`;
+  }
+
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url,
+      },
+    },
+  });
 };
 
 declare const globalThis: {

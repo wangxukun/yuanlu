@@ -17,6 +17,8 @@ export async function GET() {
         subtitleEnFileName: true,
         subtitleZhUrl: true,
         subtitleZhFileName: true,
+        subtitleBilingualUrl: true,
+        subtitleBilingualFileName: true,
         publishAt: true,
         createAt: true,
         status: true,

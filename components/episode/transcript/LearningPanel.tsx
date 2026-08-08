@@ -21,7 +21,7 @@ interface LearningPanelProps {
   onWordClick: (
     word: string,
     contextEn: string,
-    contextZh: string,
+    contextCn: string,
     timestamp: number,
   ) => void;
   onJump: (t: number) => void;

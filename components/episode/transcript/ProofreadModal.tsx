@@ -26,7 +26,7 @@ export function ProofreadModal({
   userRole,
 }: ProofreadModalProps) {
   const [editTextEn, setEditTextEn] = useState("");
-  const [editTextZh, setEditTextZh] = useState("");
+  const [textCn, setTextCn] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isAdmin = userRole === "ADMIN";
@@ -35,7 +35,7 @@ export function ProofreadModal({
   useEffect(() => {
     if (subtitle) {
       setEditTextEn(subtitle.textEn);
-      setEditTextZh(subtitle.textZh);
+      setTextCn(subtitle.textCn);
     }
   }, [subtitle]);
 
@@ -44,11 +44,11 @@ export function ProofreadModal({
 
     // Check if any modifications were made
     const enTrimmed = editTextEn.trim();
-    const zhTrimmed = editTextZh.trim();
+    const cnTrimmed = textCn.trim();
     const originalEnTrimmed = subtitle.textEn.trim();
-    const originalZhTrimmed = subtitle.textZh.trim();
+    const originalCnTrimmed = subtitle.textCn.trim();
 
-    if (enTrimmed === originalEnTrimmed && zhTrimmed === originalZhTrimmed) {
+    if (enTrimmed === originalEnTrimmed && cnTrimmed === originalCnTrimmed) {
       toast.info("未进行任何更改");
       onClose();
       return;
@@ -68,9 +68,9 @@ export function ProofreadModal({
           episodeid,
           subtitleIndex: subtitle.id,
           originalTextEn: subtitle.textEn,
-          originalTextZh: subtitle.textZh,
-          modifiedTextEn: enTrimmed,
-          modifiedTextZh: zhTrimmed,
+          originalTextZh: subtitle.textCn,
+          proposedTextEn: enTrimmed,
+          proposedTextZh: cnTrimmed,
         }),
       });
 
@@ -133,10 +133,11 @@ export function ProofreadModal({
               中文翻译
             </label>
             <textarea
-              className="textarea textarea-bordered w-full h-24 bg-base-200/30 dark:bg-ink-800/50 dark:border-ink-700 dark:text-ink-200 text-base leading-relaxed focus:bg-white focus:dark:bg-ink-800 transition-colors resize-none"
-              value={editTextZh}
-              onChange={(e) => setEditTextZh(e.target.value)}
-              placeholder="中文翻译..."
+              className="w-full bg-transparent border-none p-0 focus:ring-0 resize-none font-sans text-[15px] leading-relaxed text-ink-700 dark:text-ink-200"
+              rows={4}
+              value={textCn}
+              onChange={(e) => setTextCn(e.target.value)}
+              placeholder="请输入中文译文..."
             />
           </div>
 

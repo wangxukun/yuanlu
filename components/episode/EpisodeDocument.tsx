@@ -4,10 +4,10 @@ import { BookOpenIcon } from "@heroicons/react/24/outline";
 
 interface MergedSubtitleItem {
   id: number;
-  startTime: string;
-  endTime: string;
+  start: number;
+  end: number;
   textEn: string;
-  textZh: string;
+  textCn: string;
 }
 
 interface EpisodeDocumentProps {

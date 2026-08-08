@@ -12,7 +12,7 @@ export function useTranscriptSelection(
     y: 0,
     text: "",
     contextEn: "",
-    contextZh: "",
+    contextCn: "",
     timestamp: 0,
   });
 
@@ -75,7 +75,7 @@ export function useTranscriptSelection(
               y: rect.top, // 显示在选区顶部
               text: text,
               contextEn: subData.textEn,
-              contextZh: subData.textZh,
+              contextCn: subData.textCn,
               timestamp: subData.start,
             });
           }

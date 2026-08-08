@@ -10,7 +10,7 @@ interface SelectionMenuProps {
   onWordClick: (
     word: string,
     contextEn: string,
-    contextZh: string,
+    contextCn: string,
     timestamp: number,
   ) => void;
 }
@@ -54,7 +54,7 @@ export function SelectionMenu({
             onWordClick(
               selectionMenu.text,
               selectionMenu.contextEn,
-              selectionMenu.contextZh,
+              selectionMenu.contextCn,
               selectionMenu.timestamp,
             );
             window.getSelection()?.removeAllRanges();
@@ -64,7 +64,7 @@ export function SelectionMenu({
             onWordClick(
               selectionMenu.text,
               selectionMenu.contextEn,
-              selectionMenu.contextZh,
+              selectionMenu.contextCn,
               selectionMenu.timestamp,
             );
             window.getSelection()?.removeAllRanges();

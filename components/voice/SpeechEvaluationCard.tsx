@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import { useSpeechEvaluation } from "./hooks/useSpeechEvaluation";
+import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
   audioUrl: string; // 原音 URL
+  episodeId?: string; // 剧集 ID,用于同源音频代理(避免 CORS)
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (
     subtitleId: number,
@@ -42,6 +44,7 @@ interface SpeechEvaluationCardProps {
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   subtitle,
   audioUrl,
+  episodeId,
   previousResult,
   onEvaluate,
   currentPlayingId,
@@ -64,9 +67,11 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     stopRecording,
     playReferenceAudio,
     toggleUserAudio,
+    highlightController,
   } = useSpeechEvaluation({
     subtitle,
     audioUrl,
+    episodeId,
     previousResult,
     onEvaluate,
     currentPlayingId,
@@ -85,6 +90,22 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [playMode, setPlayMode] = React.useState<"normal" | "slow" | null>(
     null,
   );
+
+  const textRef = React.useRef<HTMLHeadingElement>(null);
+  // 仅原声/慢速播放时随语速线性扫光；TTS/停止时不点亮
+  const hlWords = subtitle.words;
+  useWordHighlight({
+    controller: highlightController,
+    containerRef: textRef,
+    isHighlighted: true,
+    words: hlWords,
+    start:
+      hlWords && hlWords.length > 0 ? hlWords[0].start : subtitle.startSeconds,
+    end:
+      hlWords && hlWords.length > 0
+        ? hlWords[hlWords.length - 1].end
+        : (subtitle.endSeconds ?? subtitle.startSeconds + 3),
+  });
 
   React.useEffect(() => {
     if (refAudioProgress === 0) {
@@ -183,24 +204,55 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-base-content leading-relaxed font-sans tracking-wide">
-            {subtitle.textEn.split(" ").map((word, idx) => {
-              const cleanWord = word.replace(/[.,!?]/g, "");
-              const isDifficult = cleanWord.length > 6;
-              return (
-                <span key={idx} className="relative inline-block mr-2 group">
-                  <span
-                    className={`cursor-pointer transition-colors hover:text-primary ${
-                      isDifficult
-                        ? "underline decoration-base-300 decoration-dotted underline-offset-8"
-                        : ""
-                    }`}
-                  >
-                    {word}
-                  </span>
-                </span>
-              );
-            })}
+          <h3
+            ref={textRef}
+            className="text-xl md:text-2xl lg:text-3xl font-bold text-base-content leading-relaxed font-sans tracking-wide"
+          >
+            {subtitle.words && subtitle.words.length > 0
+              ? subtitle.words.map((wordObj, idx) => {
+                  const cleanWord = wordObj.word.replace(
+                    /[.,!?;:"'()[\]{}]/g,
+                    "",
+                  );
+                  const isDifficult = cleanWord.length > 6;
+                  return (
+                    <span
+                      key={idx}
+                      className="relative inline-block mr-2 group"
+                    >
+                      <span
+                        data-wi={idx}
+                        className={`cursor-pointer transition-colors hover:text-primary ${
+                          isDifficult
+                            ? "underline decoration-base-300 decoration-dotted underline-offset-8"
+                            : ""
+                        }`}
+                      >
+                        {wordObj.word}
+                      </span>
+                    </span>
+                  );
+                })
+              : subtitle.textEn.split(" ").map((word, idx) => {
+                  const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "");
+                  const isDifficult = cleanWord.length > 6;
+                  return (
+                    <span
+                      key={idx}
+                      className="relative inline-block mr-2 group"
+                    >
+                      <span
+                        className={`cursor-pointer transition-colors hover:text-primary ${
+                          isDifficult
+                            ? "underline decoration-base-300 decoration-dotted underline-offset-8"
+                            : ""
+                        }`}
+                      >
+                        {word}
+                      </span>
+                    </span>
+                  );
+                })}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -212,11 +264,11 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               <Languages size={20} />
             </button>
           </h3>
-          {subtitle.textZh && (
+          {subtitle.textCn && (
             <p
               className={`text-base md:text-lg text-base-content/60 font-medium animate-in slide-in-from-top-2 ${showTranslation ? "block" : "hidden md:block"}`}
             >
-              {subtitle.textZh}
+              {subtitle.textCn}
             </p>
           )}
         </div>

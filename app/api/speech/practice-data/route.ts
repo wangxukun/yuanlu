@@ -3,7 +3,6 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
-import { parseTimeStr } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 
@@ -57,6 +56,7 @@ export async function GET(req: NextRequest) {
     let coverUrl = "";
     let subtitleEnUrl = "";
     let subtitleZhUrl = "";
+    let subtitleBilingualUrl = "";
     let audioUrl = "";
 
     coverUrl = await generateSignatureUrl(
@@ -78,6 +78,13 @@ export async function GET(req: NextRequest) {
       ).catch(() => episode.subtitleZhUrl || "");
     }
 
+    if (episode.subtitleBilingualFileName) {
+      subtitleBilingualUrl = await generateSignatureUrl(
+        episode.subtitleBilingualFileName,
+        3600 * 3,
+      ).catch(() => episode.subtitleBilingualUrl || "");
+    }
+
     if (episode.audioFileName) {
       audioUrl = await generateSignatureUrl(
         episode.audioFileName,
@@ -90,6 +97,7 @@ export async function GET(req: NextRequest) {
       coverUrl: coverUrl,
       subtitleEnUrl: subtitleEnUrl || "",
       subtitleZhUrl: subtitleZhUrl || "",
+      subtitleBilingualUrl: subtitleBilingualUrl || "",
     };
 
     // 3. 获取并解析字幕
@@ -99,9 +107,11 @@ export async function GET(req: NextRequest) {
     let subtitles: Subtitle[] = mergedSubtitles.map((item) => ({
       id: item.id,
       textEn: item.textEn,
-      textZh: item.textZh,
-      startSeconds: parseTimeStr(item.startTime),
-      endSeconds: parseTimeStr(item.endTime),
+      textCn: item.textCn,
+      startSeconds: item.start,
+      endSeconds: item.end,
+      speaker: item.speaker,
+      words: item.words,
     }));
 
     // 4. 数据类型适配
@@ -182,12 +192,9 @@ export async function GET(req: NextRequest) {
 
     if (!episode.isExclusive && !isPremiumOrAdmin) {
       isTrialMode = true;
-      // 随机选取 5 组练习卡片，并按时间线顺序排列
+      // 恢复试用限制，截取前 5 句（取消随机打乱以保证上下文连贯）
       if (subtitles.length > 5) {
-        const shuffled = [...subtitles].sort(() => 0.5 - Math.random());
-        subtitles = shuffled
-          .slice(0, 5)
-          .sort((a, b) => a.startSeconds - b.startSeconds);
+        subtitles = subtitles.slice(0, 5);
       }
     }
 
