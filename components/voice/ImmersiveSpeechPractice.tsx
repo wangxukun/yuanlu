@@ -406,7 +406,7 @@ export default function ImmersiveSpeechPractice({
                   </p>
                   <button
                     onClick={() => useUIStore.getState().openPremiumModal()}
-                    className="btn btn-sm btn-primary w-full rounded-lg"
+                    className="btn btn-sm bg-primary-600 hover:bg-primary-700 text-white border-none w-full rounded-lg"
                   >
                     解锁 PRO 会员
                   </button>

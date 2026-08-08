@@ -12,7 +12,7 @@ export default function PremiumModal() {
   if (!isPremiumModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-350">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-350">
       {/* Blur-glass backdrop */}
       <div
         className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md cursor-pointer"
