@@ -1,9 +1,10 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useRef } from "react";
 import { PlayCircleIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { ProcessedSubtitle } from "./types";
+import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 
 interface SubtitleItemProps {
   sub: ProcessedSubtitle;
@@ -11,6 +12,7 @@ interface SubtitleItemProps {
   isPlaying: boolean;
   currentTime: number;
   showTranslation: boolean;
+  audioRef?: HTMLAudioElement | null;
   onJump: (time: number) => void;
   onWordClick: (
     word: string,
@@ -29,12 +31,26 @@ export const SubtitleItem = memo(function SubtitleItem({
   isPlaying,
   currentTime,
   showTranslation,
+  audioRef,
   onJump,
   onWordClick,
   onProofread,
   isLooping,
   onToggleLoop,
 }: SubtitleItemProps) {
+  const textRef = useRef<HTMLDivElement>(null);
+  // 随语速线性过渡的扫光高亮（与 FullContentTranscript 同款）
+  useWordHighlight({
+    controller: {
+      getTime: () => audioRef?.currentTime ?? -1,
+      isPlaying: () => !!audioRef && !audioRef.paused,
+    },
+    containerRef: textRef,
+    isHighlighted: isActive && isPlaying,
+    words: sub.words,
+    start: sub.start,
+    end: sub.end,
+  });
   return (
     <div
       id={`subtitle-${sub.id}`} // 关键：ID 用于反向查找数据
@@ -109,20 +125,15 @@ export const SubtitleItem = memo(function SubtitleItem({
           )}
         </button>
 
-        <div className="flex-1 min-w-0">
+        <div ref={textRef} className="flex-1 min-w-0">
           <p
             className={clsx(
               "font-serif text-lg leading-[1.85] tracking-wide transition-colors",
               isActive
-                ? "text-primary-900 dark:text-primary-100 font-medium"
+                ? "text-primary-600 dark:text-primary-400 font-bold"
                 : "text-ink-700 dark:text-ink-200",
             )}
           >
-            {sub.speaker && (
-              <span className="inline-block mr-2 px-1.5 py-0.5 rounded text-[11px] font-bold bg-base-300/50 text-base-content/70 align-text-bottom">
-                {sub.speaker}
-              </span>
-            )}
             {sub.words && sub.words.length > 0
               ? sub.words.map((wordObj, i) => {
                   const isWordActive =
@@ -133,6 +144,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                   return (
                     <span
                       key={i}
+                      data-wi={i}
                       onClick={(e) => {
                         const selection = window.getSelection();
                         if (selection && !selection.isCollapsed) return;
@@ -145,9 +157,9 @@ export const SubtitleItem = memo(function SubtitleItem({
                         );
                       }}
                       className={clsx(
-                        "cursor-pointer rounded inline active:scale-95 select-text relative transition-colors mr-1",
+                        "cursor-pointer rounded inline-block active:scale-95 select-text relative transition-colors mr-1",
                         isWordActive
-                          ? "text-primary-600 dark:text-primary-400 font-bold"
+                          ? "bg-accent-100 dark:bg-accent-900/40"
                           : "hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300",
                       )}
                     >
@@ -178,7 +190,7 @@ export const SubtitleItem = memo(function SubtitleItem({
                           e.stopPropagation();
                           onWordClick(part, sub.textEn, sub.textCn, sub.start);
                         }}
-                        className="cursor-pointer rounded inline active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
+                        className="cursor-pointer rounded inline-block active:scale-95 select-text relative hover:z-10 hover:bg-accent-100 dark:hover:bg-accent-900/40 hover:text-accent-700 dark:hover:text-accent-300"
                       >
                         {part}
                       </span>

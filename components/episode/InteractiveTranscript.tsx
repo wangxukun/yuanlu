@@ -378,6 +378,7 @@ export default function InteractiveTranscript({
               isPlaying={isPlaying}
               currentTime={currentTime}
               showTranslation={showTranslation}
+              audioRef={audioRef}
               isLooping={loopingIndex === index}
               onToggleLoop={() =>
                 setLoopingIndex(loopingIndex === index ? null : index)
