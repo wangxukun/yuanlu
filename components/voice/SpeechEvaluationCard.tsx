@@ -530,13 +530,24 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const w = result.words![activeWordIndex];
-                                  // Estimate reference word time based on relative start/end in user audio
-                                  // Since user audio usually starts closely to reference audio, this is a reasonable approximation
-                                  const refStart =
-                                    subtitle.startSeconds + (w.start || 0);
-                                  const refEnd =
-                                    subtitle.startSeconds +
-                                    (w.end || (w.start || 0) + 0.5);
+                                  // 取该词在字幕中的词级时间戳（绝对全集秒），
+                                  // 精确播放对应原声片段，不再用用户录音相对时间估算。
+                                  const targetWord = w.word
+                                    .replace(/[.,!?;:"'()[\]{}]/g, "")
+                                    .toLowerCase();
+                                  const refWord = subtitle.words?.find(
+                                    (sw) =>
+                                      sw.word
+                                        .replace(/[.,!?;:"'()[\]{}]/g, "")
+                                        .toLowerCase() === targetWord,
+                                  );
+                                  const refStart = refWord
+                                    ? refWord.start
+                                    : subtitle.startSeconds + (w.start || 0);
+                                  const refEnd = refWord
+                                    ? refWord.end
+                                    : subtitle.startSeconds +
+                                      (w.end || (w.start || 0) + 0.5);
                                   playReferenceAudio(1.0, refStart, refEnd);
                                 }}
                                 className="btn btn-sm bg-base-100 hover:bg-base-200 text-primary-600 border border-base-300 shadow-sm"

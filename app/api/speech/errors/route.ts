@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateSignatureUrl } from "@/lib/oss";
+import { mergeSubtitles } from "@/lib/data";
+import { Episode } from "@/core/episode/episode.entity";
 
 export async function GET() {
   const session = await auth();
@@ -43,6 +45,13 @@ export async function GET() {
               coverUrl: true,
               coverFileName: true,
               audioUrl: true,
+              // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
+              subtitleEnUrl: true,
+              subtitleEnFileName: true,
+              subtitleZhUrl: true,
+              subtitleZhFileName: true,
+              subtitleBilingualUrl: true,
+              subtitleBilingualFileName: true,
             },
           },
         },
@@ -72,6 +81,78 @@ export async function GET() {
           episodeCoverCache.set(episodeId, signedCover);
         }
         record.episode.coverUrl = episodeCoverCache.get(episodeId) || "";
+      }
+    }
+
+    // 为每条 record 补齐字幕数据(textCn / 词级时间戳 words / 精确结束秒)
+    // 按剧集分组，每剧集只 mergeSubtitles 一次（避免重复 fetch+decode）
+    const episodeSubtitleCache = new Map<
+      string,
+      {
+        textEn: string;
+        textCn: string;
+        start: number;
+        end: number;
+        words?: any;
+      }[]
+    >();
+
+    for (const record of uniqueRecords) {
+      try {
+        const episodeId = record.episodeid as string;
+        const ep = record.episode;
+        if (!episodeId || !ep) continue;
+
+        // 合并字幕（每剧集只做一次）
+        let subtitles = episodeSubtitleCache.get(episodeId);
+        if (subtitles === undefined) {
+          // 生成签名 URL（与 practice-data 同款），mergeSubtitles 依赖这些字段
+          const subtitleEnUrl = ep.subtitleEnFileName
+            ? await generateSignatureUrl(ep.subtitleEnFileName, 3600 * 3).catch(
+                () => ep.subtitleEnUrl || "",
+              )
+            : ep.subtitleEnUrl || "";
+          const subtitleZhUrl = ep.subtitleZhFileName
+            ? await generateSignatureUrl(ep.subtitleZhFileName, 3600 * 3).catch(
+                () => ep.subtitleZhUrl || "",
+              )
+            : ep.subtitleZhUrl || "";
+          const subtitleBilingualUrl = ep.subtitleBilingualFileName
+            ? await generateSignatureUrl(
+                ep.subtitleBilingualFileName,
+                3600 * 3,
+              ).catch(() => ep.subtitleBilingualUrl || "")
+            : ep.subtitleBilingualUrl || "";
+
+          const merged = await mergeSubtitles({
+            ...ep,
+            subtitleEnUrl,
+            subtitleZhUrl,
+            subtitleBilingualUrl,
+          } as unknown as Episode);
+          subtitles = merged.map((item) => ({
+            textEn: item.textEn,
+            textCn: item.textCn,
+            start: item.start,
+            end: item.end,
+            words: (item as any).words,
+          }));
+          episodeSubtitleCache.set(episodeId, subtitles);
+        }
+
+        // 匹配对应字幕项：文本相等优先，时间兜底
+        const targetText = (record.targetText || "").trim();
+        const targetStart = record.targetStartTime ?? 0;
+        const matched =
+          subtitles.find((s) => s.textEn.trim() === targetText) ??
+          subtitles.find((s) => Math.abs(s.start - targetStart) < 0.5);
+
+        record.subtitleTextCn = matched?.textCn ?? "";
+        record.subtitleWords = matched?.words;
+        record.subtitleEnd = matched?.end;
+      } catch {
+        // 单条字幕匹配失败不应阻断整个请求；优雅降级
+        record.subtitleTextCn = "";
       }
     }
 

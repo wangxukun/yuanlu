@@ -118,66 +118,70 @@ export default function PronunciationPracticePage() {
   const mockSubtitle = {
     id: currentRecord.subtitleId || currentRecord.recognitionid,
     startSeconds: currentRecord.targetStartTime || 0,
-    endSeconds: (currentRecord.targetStartTime || 0) + 3, // rough estimate for sliced audio
+    endSeconds:
+      currentRecord.subtitleEnd ?? (currentRecord.targetStartTime || 0) + 3,
     textEn: currentRecord.targetText,
-    textCn: "弱项句子复习",
+    textCn: currentRecord.subtitleTextCn || "",
+    words: currentRecord.subtitleWords,
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={handleExit} className="btn btn-circle btn-ghost">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold flex-1">
-          发音闯关复习 ({currentIndex + 1}/{records.length})
-        </h1>
-        {isCompleted && (
-          <span className="flex items-center gap-1.5 text-success font-bold text-sm bg-success/10 px-3 py-1 rounded-full animate-in zoom-in">
-            <CheckCircle2 size={16} /> 已达标
-          </span>
-        )}
-      </div>
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={handleExit} className="btn btn-circle btn-ghost">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold flex-1">
+            发音闯关复习 ({currentIndex + 1}/{records.length})
+          </h1>
+          {isCompleted && (
+            <span className="flex items-center gap-1.5 text-success font-bold text-sm bg-success/10 px-3 py-1 rounded-full animate-in zoom-in">
+              <CheckCircle2 size={16} /> 已达标
+            </span>
+          )}
+        </div>
 
-      <div className="w-full bg-base-200 h-1.5 rounded-full mb-12 overflow-hidden">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${((currentIndex + 1) / records.length) * 100}%` }}
-        />
-      </div>
+        <div className="w-full bg-base-200 h-1.5 rounded-full mb-12 overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / records.length) * 100}%` }}
+          />
+        </div>
 
-      <div className="relative">
-        <SpeechEvaluationCard
-          subtitle={mockSubtitle}
-          audioUrl={currentRecord.episode?.audioUrl || ""}
-          episodeId={currentRecord.episodeid}
-          previousResult={undefined} // don't load the old bad score, let them start fresh
-          onEvaluate={handleEvaluate}
-          currentPlayingId={null}
-          onPlayStart={() => {}}
-          isActive={true}
-          onActivate={() => {}}
-        />
-      </div>
+        <div className="relative">
+          <SpeechEvaluationCard
+            subtitle={mockSubtitle}
+            audioUrl={currentRecord.episode?.audioUrl || ""}
+            episodeId={currentRecord.episodeid}
+            previousResult={undefined} // don't load the old bad score, let them start fresh
+            onEvaluate={handleEvaluate}
+            currentPlayingId={null}
+            onPlayStart={() => {}}
+            isActive={true}
+            onActivate={() => {}}
+          />
+        </div>
 
-      <div className="flex items-center justify-between mt-12 px-2">
-        <button
-          onClick={prevRecord}
-          disabled={currentIndex === 0}
-          className="btn btn-ghost gap-2"
-        >
-          <ChevronLeft size={18} /> 上一题
-        </button>
+        <div className="flex items-center justify-between mt-12 px-2">
+          <button
+            onClick={prevRecord}
+            disabled={currentIndex === 0}
+            className="btn btn-ghost gap-2"
+          >
+            <ChevronLeft size={18} /> 上一题
+          </button>
 
-        <button
-          onClick={
-            currentIndex === records.length - 1 ? handleExit : nextRecord
-          }
-          className={`btn gap-2 ${isCompleted ? "btn-primary shadow-lg shadow-primary/20" : "btn-outline"}`}
-        >
-          {currentIndex === records.length - 1 ? "完成复习" : "下一题"}{" "}
-          <ChevronRight size={18} />
-        </button>
+          <button
+            onClick={
+              currentIndex === records.length - 1 ? handleExit : nextRecord
+            }
+            className="btn btn-primary bg-primary-600 text-white gap-2 shadow-lg shadow-primary/20"
+          >
+            {currentIndex === records.length - 1 ? "完成复习" : "下一题"}{" "}
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );
