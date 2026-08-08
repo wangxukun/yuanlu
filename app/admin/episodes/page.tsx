@@ -137,7 +137,7 @@ export default async function Page(props: PageProps) {
 
             <Link
               href="/admin/episodes/contribute"
-              className="shrink-0 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-md shadow-primary-200 transition-all flex items-center gap-2"
+              className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-md shadow-primary-200 transition-all flex items-center gap-2"
             >
               <MicIcon size={16} />
               投稿

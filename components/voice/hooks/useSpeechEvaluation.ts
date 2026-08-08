@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { evaluateSpeech } from "@/lib/actions/speech";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
@@ -44,6 +44,23 @@ declare global {
     webkitAudioContext?: typeof AudioContext;
   }
 }
+
+// ─── 模块级：整集音频字节流跨卡片共享缓存 ──────────────────────────────────
+// 同一 episodeId 对应同一份音频文件。原 useSpeechEvaluation 把缓存放在 hook 实例
+// 的 ref 里，导致每个 SpeechEvaluationCard 各自下载+解码整集音频（20-60MB），
+// 首次点击原声要等 20s+。提升到模块级后，同集只下载一次，所有卡片共享。
+//
+// 关键：这里只缓存下载好的 **ArrayBuffer（字节流）**，不在此处 decodeAudioData。
+// 因为 decodeAudioData 需要一个 AudioContext，而 AudioContext 在非用户手势里
+// 创建会进入 suspended 状态（浏览器自动播放策略）。若预加载时创建了它，会污染
+// playbackContextRef，导致首次点击时 currentTime 不前进、扫光高亮失效。
+// 所以：预加载只做 fetch（省掉 20s 网络），decode + 创建 AudioContext 仍在
+// 用户手势（点击 → playReferenceAudio）内完成，确保 context 进入 running 状态。
+// key 为 fetchUrl（同源代理 URL 或直连 URL），与剧集一一对应。
+const episodeBufferCache = new Map<
+  string,
+  { bytes: ArrayBuffer | null; promise: Promise<ArrayBuffer> | null }
+>();
 
 // ----------------------------------------------------------------------
 // 工具函数：将 Float32Array PCM 数据编码为 WAV Blob (16bit, 16000Hz, Mono)
@@ -152,9 +169,6 @@ export function useSpeechEvaluation({
   // 一次性 decodeAudioData 得到完整 PCM,用 AudioBufferSourceNode 精确
   // 从任意样本起点播放,无 seek 概念,与字幕时间戳严格对齐。
   const playbackContextRef = useRef<AudioContext | null>(null);
-  const audioBufferCacheRef = useRef<AudioBuffer | null>(null);
-  const audioBufferUrlRef = useRef<string>("");
-  const audioBufferPromiseRef = useRef<Promise<AudioBuffer> | null>(null);
   const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const activeGainRef = useRef<GainNode | null>(null);
   const playStartCtxTimeRef = useRef<number>(0); // context.currentTime 当 start() 被调用
@@ -415,10 +429,9 @@ export function useSpeechEvaluation({
         audioInstanceRef.current.src = "";
         audioInstanceRef.current = null;
       }
-      // 释放 Web Audio 原声播放资源
-      audioBufferCacheRef.current = null;
-      audioBufferUrlRef.current = "";
-      audioBufferPromiseRef.current = null;
+      // 释放本实例的 Web Audio 播放上下文。
+      // 注意:整集 AudioBuffer 缓存在模块级 episodeBufferCache,跨卡片共享,
+      // 不在卸载时清空(同一集切换卡片/句子时仍可秒开)。
       if (playbackContextRef.current) {
         try {
           playbackContextRef.current.close();
@@ -625,33 +638,42 @@ export function useSpeechEvaluation({
       const fetchUrl = episodeId
         ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
         : audioUrl;
-      // 同一集的 AudioBuffer 缓存(按 url 命中),避免重复 fetch+decode。
-      if (
-        audioBufferCacheRef.current &&
-        audioBufferUrlRef.current === fetchUrl
-      ) {
-        return audioBufferCacheRef.current;
+      // 模块级字节缓存：命中已下载字节 → 跳过 20s 网络下载（跨卡片共享，同集只下载一次）。
+      const cached = episodeBufferCache.get(fetchUrl);
+      let arrayBuffer: ArrayBuffer;
+      if (cached?.bytes) {
+        arrayBuffer = cached.bytes;
+      } else if (cached?.promise) {
+        arrayBuffer = await cached.promise; // 命中进行中的下载，复用同一 promise
+      } else {
+        // 未命中 → 下载字节，存入模块缓存（解码留给下方用户手势内做）
+        const promise = (async () => {
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error(`音频下载失败: ${res.status}`);
+          return res.arrayBuffer();
+        })();
+        episodeBufferCache.set(fetchUrl, { bytes: null, promise });
+        try {
+          arrayBuffer = await promise;
+          episodeBufferCache.set(fetchUrl, {
+            bytes: arrayBuffer,
+            promise: null,
+          });
+        } catch (e) {
+          episodeBufferCache.delete(fetchUrl);
+          throw e;
+        }
       }
-      // 已有进行中的 decode 请求则复用其 promise,避免并发重复下载。
-      if (
-        audioBufferUrlRef.current === fetchUrl &&
-        audioBufferPromiseRef.current
-      ) {
-        return audioBufferPromiseRef.current;
+      // 解码在此完成（位于 playReferenceAudio 调用栈内，属于用户手势上下文），
+      // 确保此处创建的 AudioContext 进入 running 状态，currentTime 正常推进。
+      const ctx = ensurePlaybackContext();
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
       }
-      audioBufferUrlRef.current = fetchUrl;
-      audioBufferPromiseRef.current = (async () => {
-        const res = await fetch(fetchUrl);
-        if (!res.ok) throw new Error(`音频下载失败: ${res.status}`);
-        const arrayBuffer = await res.arrayBuffer();
-        const ctx = ensurePlaybackContext();
-        // decodeAudioData 在某些浏览器返回 Promise,另一些用回调;统一用 Promise 形式。
-        const buffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-        audioBufferCacheRef.current = buffer;
-        audioBufferPromiseRef.current = null;
-        return buffer;
-      })();
-      return audioBufferPromiseRef.current;
+      // decodeAudioData 会消费 ArrayBuffer（detach），后续无法复用，
+      // 故对副本解码，保留原始 bytes 供其它卡片解码。
+      const buffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+      return buffer;
     };
 
     const startPlayback = (buffer: AudioBuffer) => {
@@ -790,6 +812,53 @@ export function useSpeechEvaluation({
     }
   };
 
+  // ── 后台预加载整集音频（仅下载字节，不解码）──────────────────────────────
+  // 首次点原声要等 fetch 整集(20-60MB)→ 20s+ 延迟。挂载后趁空闲预取字节流,
+  // 用户首次点击时大概率已就绪→秒开。失败静默(点击时 playReferenceAudio 会重试并 toast)。
+  //
+  // 关键：预加载【只 fetch 字节、不创建 AudioContext、不 decodeAudioData】。
+  // 因为 AudioContext 在非用户手势(idle callback)里创建会进入 suspended 状态,
+  // 会污染 playbackContextRef，导致首次点击时 currentTime 不前进、扫光高亮失效。
+  // decode + AudioContext 创建都留在 playReferenceAudio（用户手势内）做。
+  // 与 playReferenceAudio 共用同一模块缓存 entry,自动去重。
+  useEffect(() => {
+    const fetchUrl = episodeId
+      ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
+      : audioUrl;
+    if (!fetchUrl) return;
+
+    // 已命中(字节就绪或下载中)则无需再次发起
+    const cached = episodeBufferCache.get(fetchUrl);
+    if (cached) return;
+
+    const run = () => {
+      const promise = (async () => {
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error(`音频下载失败: ${res.status}`);
+        return res.arrayBuffer();
+      })();
+      episodeBufferCache.set(fetchUrl, { bytes: null, promise });
+      promise
+        .then((bytes) => {
+          episodeBufferCache.set(fetchUrl, { bytes, promise: null });
+        })
+        .catch(() => {
+          // 预加载失败：清掉坏 entry，让真正点击时可重试
+          episodeBufferCache.delete(fetchUrl);
+        });
+    };
+
+    // 优先在浏览器空闲时跑，避免抢占首屏渲染；不支持则延迟 1.5s
+    const ric = window.requestIdleCallback;
+    if (typeof ric === "function") {
+      const id = ric(() => run(), { timeout: 4000 });
+      return () => window.cancelIdleCallback?.(id);
+    } else {
+      const id = window.setTimeout(run, 1500);
+      return () => window.clearTimeout(id);
+    }
+  }, [episodeId, audioUrl]);
+
   return {
     isRecording,
     isProcessing,
@@ -805,12 +874,15 @@ export function useSpeechEvaluation({
     playReferenceAudio,
     toggleUserAudio,
     // 扫光高亮控制器：仅原声/慢速(Web Audio)播放中有效，TTS/停止时返回 -1
-    highlightController: {
-      getTime: () => {
-        const fn = refGetTimeRef.current;
-        return fn ? fn() : -1;
-      },
-      isPlaying: () => !!activeSourceRef.current,
-    },
+    highlightController: useMemo(
+      () => ({
+        getTime: () => {
+          const fn = refGetTimeRef.current;
+          return fn ? fn() : -1;
+        },
+        isPlaying: () => !!activeSourceRef.current,
+      }),
+      [],
+    ),
   };
 }
