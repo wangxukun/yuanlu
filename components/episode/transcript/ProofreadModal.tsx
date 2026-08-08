@@ -150,7 +150,7 @@ export function ProofreadModal({
               &ldquo;{subtitle.textEn.trim()}&rdquo;
             </p>
             <p className="text-xs text-ink-400 dark:text-ink-500 mt-1.5 leading-relaxed">
-              {subtitle.textZh.trim()}
+              {subtitle.textCn.trim()}
             </p>
           </div>
         </div>

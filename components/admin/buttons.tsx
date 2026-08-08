@@ -137,6 +137,7 @@ interface DeleteEpisodeProps {
   audioFileName: string;
   subtitleEnFileName: string;
   subtitleZhFileName: string;
+  subtitleBilingualFileName: string;
 }
 // 删除播客按钮
 export function DeleteEpisodeBtn({
@@ -145,6 +146,7 @@ export function DeleteEpisodeBtn({
   audioFileName,
   subtitleEnFileName,
   subtitleZhFileName,
+  subtitleBilingualFileName,
 }: DeleteEpisodeProps) {
   const delEpisodeState: EpisodeDelState = {
     message: "",
@@ -158,6 +160,7 @@ export function DeleteEpisodeBtn({
       audioFileName,
       subtitleEnFileName,
       subtitleZhFileName,
+      subtitleBilingualFileName,
     ),
     delEpisodeState,
   );

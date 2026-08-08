@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import FullContentTranscript from "@/components/episode/FullContentTranscript";
 import PlaylistDropdown from "@/components/controls/PlaylistDropdown";
 import { MergedSubtitleItem } from "@/lib/types";
-import { parseTimeStr } from "@/lib/tools";
+
 import { useSession } from "next-auth/react";
 
 export default function PlayControlBar() {
@@ -75,7 +75,7 @@ export default function PlayControlBar() {
   const parsedSubs = useMemo(
     () =>
       Array.isArray(subtitles)
-        ? subtitles.map((s) => ({ start: parseTimeStr(s.startTime) }))
+        ? subtitles.map((s) => ({ start: Number(s.start) }))
         : [],
     [subtitles],
   );

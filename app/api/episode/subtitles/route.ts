@@ -19,9 +19,7 @@ export async function GET(req: NextRequest) {
 
     const session = await auth();
     if (!session?.user) {
-      subtitles = subtitles.filter(
-        (sub: { startTime: string }) => sub.startTime < "00:03:00,000",
-      );
+      subtitles = subtitles.filter((sub) => sub.start < 180);
     }
 
     return NextResponse.json({

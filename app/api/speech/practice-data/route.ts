@@ -110,8 +110,8 @@ export async function GET(req: NextRequest) {
       textCn: item.textCn,
       startSeconds: item.start,
       endSeconds: item.end,
-      speaker: item.speaker,
-      words: item.words,
+      speaker: "speaker" in item ? item.speaker : undefined,
+      words: "words" in item ? item.words : undefined,
     }));
 
     // 4. 数据类型适配
