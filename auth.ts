@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import NextAuth, { Session, User, CredentialsSignin } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { ZodError } from "zod";
@@ -11,13 +11,8 @@ import { generateSignatureUrl } from "@/lib/oss";
 import { authConfig } from "@/auth.config";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
 
-class CustomAuthError extends CredentialsSignin {
-  code = "自定义错误";
-  constructor(message: string) {
-    super(message);
-    this.code = message;
-  }
-}
+// CustomAuthError has been removed as NextAuth strictly strips custom error properties.
+// We now use cookies as a side-channel for custom error messages.
 
 // 1. 定义期望从数据库获取的数据结构
 type UserFromPrisma = {
@@ -72,7 +67,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               code,
               scene: "LOGIN",
             });
-            if (!isValid) throw new CustomAuthError("验证码错误或已过期");
+            if (!isValid) throw new Error("验证码错误或已过期");
 
             user = (await prisma.user.findUnique({
               where: { phone },
@@ -183,13 +178,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             sessionVersion: user.sessionVersion,
           } as User;
         } catch (error) {
-          if (error instanceof ZodError) {
-            return null;
-          }
-          if (error instanceof CredentialsSignin) {
-            throw error;
-          }
-          return null;
+          if (error instanceof ZodError) return null;
+          
+          const errorMsg = error instanceof Error ? error.message : "验证码错误或已过期";
+          
+          // Use cookies as a side-channel to pass the actual error message to the client
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set("custom_auth_error", errorMsg, { maxAge: 10, path: '/' });
+          } catch (e) {}
+
+          throw new CredentialsSignin();
         }
       },
     }),

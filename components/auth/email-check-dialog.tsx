@@ -21,42 +21,31 @@ export default function EmailCheckDialog() {
     // 如果已经登录，则不显示对话框 (虽然 render 处也有判断，但此处用于逻辑防御)
     if (status === "authenticated") return;
 
-    const dialog = dialogRef.current;
+    const dialog = dialogRef.current as any;
     if (!dialog) return;
 
-    const handleFocus = () => {
-      // 增加延迟确保 DOM 完全更新后再设置焦点
+    // Monkey patch to simulate native <dialog> API
+    dialog.showModal = () => {
+      dialog.classList.add("modal-open");
+      dialog.setAttribute("open", "");
+      
+      // Handle focus delay
       setTimeout(() => {
-        const emailInput = dialog.querySelector(
-          "input[type='email']",
-        ) as HTMLInputElement;
+        const emailInput = dialog.querySelector("input[type='email']") as HTMLInputElement;
         if (emailInput) {
           emailInput.focus();
-          if (emailInput.value) {
-            emailInput.select(); // 选中所有文本，提升用户体验
-          }
+          if (emailInput.value) emailInput.select();
         }
       }, 100);
     };
 
-    // 使用 MutationObserver 监听 showModal 后的聚焦
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "open"
-        ) {
-          if (dialog.open) {
-            handleFocus();
-          }
-        }
-      });
-    });
+    dialog.close = () => {
+      dialog.classList.remove("modal-open");
+      dialog.removeAttribute("open");
+      setModalKey((prev) => prev + 1); // Reset form state
+    };
 
-    observer.observe(dialog, { attributes: true, attributeFilter: ["open"] });
-
-    // 组件卸载时断开观察器
-    return () => observer.disconnect();
+    // Note: We don't need MutationObserver anymore because we manually handle focus in showModal
   }, [status]);
 
   // 已登录状态下不渲染
@@ -64,11 +53,19 @@ export default function EmailCheckDialog() {
     return null;
   }
 
+  const handleManualClose = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    const dialog = dialogRef.current as any;
+    if (dialog && dialog.close) {
+      dialog.close();
+    }
+  };
+
   return (
-    <dialog
+    <div
       id="email_check_modal_box"
-      className="modal backdrop-blur-sm bg-base-300/30 transition-all duration-300"
-      ref={dialogRef}
+      className="modal backdrop-blur-sm bg-base-300/30 transition-all duration-300 z-40"
+      ref={dialogRef as any}
     >
       <div className="modal-box p-0 rounded-3xl shadow-2xl bg-base-100 max-w-md w-full overflow-hidden relative">
         {/* Header 区域 */}
@@ -107,15 +104,14 @@ export default function EmailCheckDialog() {
             </button>
           </div>
 
-          {/* 关闭按钮表单 */}
-          <form method="dialog" suppressContentEditableWarning>
-            <button
-              onClick={handleClose}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/40 hover:text-base-content hover:bg-base-200 transition-colors"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </form>
+          {/* 关闭按钮 */}
+          <button
+            onClick={handleManualClose}
+            type="button"
+            className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/40 hover:text-base-content hover:bg-base-200 transition-colors"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
 
         {/* 内容区域 */}
@@ -129,9 +125,9 @@ export default function EmailCheckDialog() {
       </div>
 
       {/* 点击背景关闭 */}
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={handleClose}>关闭</button>
-      </form>
-    </dialog>
+      <div className="modal-backdrop" onClick={handleManualClose}>
+        <button className="hidden">关闭</button>
+      </div>
+    </div>
   );
 }

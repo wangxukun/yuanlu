@@ -100,8 +100,17 @@ export default function PhoneAuthForm() {
         code,
       });
 
+      console.log("NextAuth signIn response:", res);
+
       if (res?.error) {
-        setError(res.error === "CredentialsSignin" ? "验证码错误或已过期" : res.error);
+        // Read custom error from side-channel cookie if present
+        let errorMsg = res.error === "CredentialsSignin" ? "验证码错误或已过期" : res.error;
+        const match = document.cookie.match(new RegExp('(^| )custom_auth_error=([^;]+)'));
+        if (match) {
+          errorMsg = decodeURIComponent(match[2]);
+          document.cookie = "custom_auth_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        }
+        setError(errorMsg);
         setLoading(false);
         return;
       }
