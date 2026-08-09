@@ -33,6 +33,8 @@ export default async function SubscribePage() {
       : null;
 
     user = {
+      userid: session.user.userid,
+      phone: session.user.phone || null,
       email: session.user.email,
       role: session.user.role || "USER",
       isPremium,

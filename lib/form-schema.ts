@@ -37,19 +37,28 @@ const validatePassword = (password: string): boolean => {
   return (hasNumber ? 1 : 0) + (hasLetter ? 1 : 0) + (hasSymbol ? 1 : 0) >= 2;
 };
 
-// 登录表单验证 Schema
-export const signInSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: "邮箱不能为空" })
-    .email({ message: "请输入有效的邮箱地址" }),
-  password: z
-    .string()
-    .min(1, { message: "密码不能为空" })
-    .refine(validatePassword, {
-      message: "密码必须为8~16位，且包含数字、字母、符号中的至少两种",
-    }),
+// 手机号登录验证 Schema
+export const phoneSignInSchema = z.object({
+  phone: z.string().regex(/^1[3-9]\d{9}$/, "请输入有效的手机号码"),
+  code: z.string().length(6, "验证码必须为6位数字"),
 });
+
+// 登录表单验证 Schema
+export const signInSchema = z.union([
+  z.object({
+    email: z
+      .string()
+      .min(1, { message: "邮箱不能为空" })
+      .email({ message: "请输入有效的邮箱地址" }),
+    password: z
+      .string()
+      .min(1, { message: "密码不能为空" })
+      .refine(validatePassword, {
+        message: "密码必须为8~16位，且包含数字、字母、符号中的至少两种",
+      }),
+  }),
+  phoneSignInSchema,
+]);
 
 // 联系我们表单验证 Schema
 export const contactSchema = z.object({

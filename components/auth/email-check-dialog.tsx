@@ -2,11 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import EmailCheckForm from "@/components/auth/email-check-form";
+import PhoneAuthForm from "@/components/auth/phone-auth-form";
 import { useSession } from "next-auth/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function EmailCheckDialog() {
   const [modalKey, setModalKey] = useState(0);
+  const [activeTab, setActiveTab] = useState<"phone" | "email">("phone");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { status } = useSession();
 
@@ -71,13 +73,39 @@ export default function EmailCheckDialog() {
       <div className="modal-box p-0 rounded-3xl shadow-2xl bg-base-100 max-w-md w-full overflow-hidden relative">
         {/* Header 区域 */}
         <div className="relative px-8 pt-8 pb-2 text-center">
-          <h3 className="text-2xl font-bold text-primary">验证邮箱</h3>
+          <h3 className="text-2xl font-bold text-primary">欢迎来到远路播客</h3>
           <p className="text-sm text-base-content/60 mt-2">
-            请输入您的邮箱以继续操作
+            请选择登录方式
           </p>
-          <p className="text-sm text-base-content/70 mb-4">
-            已有账户可直接登录，新用户我们将帮助您创建账户
-          </p>
+
+          {/* 切换 Tab */}
+          <div
+            role="tablist"
+            className="tabs tabs-boxed bg-base-200/50 dark:bg-ink-900/50 p-1 rounded-xl w-full grid grid-cols-2 gap-1 mt-6"
+          >
+            <button
+              role="tab"
+              className={`tab h-10 rounded-lg transition-all ${
+                activeTab === "phone"
+                  ? "bg-white dark:bg-ink-800 shadow-sm !text-primary-600 dark:!text-primary-400 font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("phone")}
+            >
+              手机号注册 / 登录
+            </button>
+            <button
+              role="tab"
+              className={`tab h-10 rounded-lg transition-all ${
+                activeTab === "email"
+                  ? "bg-white dark:bg-ink-800 shadow-sm !text-primary-600 dark:!text-primary-400 font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("email")}
+            >
+              邮箱注册 / 登录
+            </button>
+          </div>
 
           {/* 关闭按钮表单 */}
           <form method="dialog" suppressContentEditableWarning>
@@ -92,7 +120,11 @@ export default function EmailCheckDialog() {
 
         {/* 内容区域 */}
         <div className="px-8 pb-10 pt-4">
-          <EmailCheckForm key={modalKey} />
+          {activeTab === "phone" ? (
+            <PhoneAuthForm key={`phone-${modalKey}`} />
+          ) : (
+            <EmailCheckForm key={`email-${modalKey}`} />
+          )}
         </div>
       </div>
 

@@ -104,33 +104,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 从留言中提取邮箱
-    const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
     const remarkStr = String(remark).trim();
-    const matchedEmails = remarkStr.match(emailRegex);
 
-    let targetEmail = "";
-    if (matchedEmails && matchedEmails.length > 0) {
-      targetEmail = matchedEmails[0].toLowerCase();
-    } else if (remarkStr.includes("@")) {
-      targetEmail = remarkStr.toLowerCase();
-    }
-
-    if (!targetEmail) {
-      console.warn(`[Webhook] 无效的邮箱留言: ${remark}`);
+    if (!remarkStr) {
+      console.warn(`[Webhook] 无效的空留言`);
       return NextResponse.json({
         ec: 200,
         em: "ok",
-        detail: "订单处理完成但未激活 (无有效邮箱留言)",
+        detail: "订单处理完成但未激活 (无有效留言凭证)",
       });
     }
 
-    // 激活逻辑
-    const matched = await prisma.user.findUnique({
-      where: { email: targetEmail },
+    let matched = null;
+
+    // 1. 优先尝试使用完整留言作为 userid 匹配
+    matched = await prisma.user.findUnique({
+      where: { userid: remarkStr },
     });
+
+    // 2. 如果未匹配，尝试作为邮箱提取匹配（向下兼容历史老用户的预填邮箱）
     if (!matched) {
-      console.warn(`[Webhook] 未找到用户邮箱: ${targetEmail}`);
+      const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+      const matchedEmails = remarkStr.match(emailRegex);
+      let targetEmail = "";
+      if (matchedEmails && matchedEmails.length > 0) {
+        targetEmail = matchedEmails[0].toLowerCase();
+      } else if (remarkStr.includes("@")) {
+        targetEmail = remarkStr.toLowerCase();
+      }
+      
+      if (targetEmail) {
+        matched = await prisma.user.findUnique({
+          where: { email: targetEmail },
+        });
+      }
+    }
+
+    // 3. 如果还是未匹配，尝试将整个留言作为手机号匹配
+    if (!matched) {
+      matched = await prisma.user.findUnique({
+        where: { phone: remarkStr },
+      });
+    }
+
+    if (!matched) {
+      console.warn(`[Webhook] 未找到匹配的用户: ${remarkStr}`);
       return NextResponse.json({
         ec: 200,
         em: "ok",
@@ -212,7 +230,7 @@ export async function POST(req: NextRequest) {
     });
 
     console.log(
-      `[Webhook] 成功激活用户 ${targetEmail} 的 ${daysAdded} 天 VIP 权益。新到期时间: ${newExpiryDate.toISOString()}`,
+      `[Webhook] 成功激活用户 ${matched.userid} 的 ${daysAdded} 天 VIP 权益。新到期时间: ${newExpiryDate.toISOString()}`,
     );
 
     // Send in-app system notification to the user
@@ -228,7 +246,7 @@ export async function POST(req: NextRequest) {
         type: "SYSTEM",
         targetUrl: "/auth/subscribe",
       });
-      console.log(`[Webhook] 已向用户 ${targetEmail} 发送充值成功系统通知`);
+      console.log(`[Webhook] 已向用户 ${matched.userid} 发送充值成功系统通知`);
     } catch (notifyError) {
       // Notification failure should not block the webhook response
       console.error("[Webhook] 发送系统通知失败:", notifyError);
@@ -239,7 +257,7 @@ export async function POST(req: NextRequest) {
       em: "ok",
       data: {
         activated: true,
-        email: targetEmail,
+        userid: matched.userid,
         daysAdded,
         newExpiry: newExpiryDate.toISOString(),
       },

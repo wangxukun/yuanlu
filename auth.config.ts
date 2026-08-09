@@ -21,6 +21,7 @@ export const authConfig = {
       if (user) {
         token.userid = user.userid;
         token.email = user.email;
+        token.phone = user.phone || null;
         token.role = user.role;
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
@@ -44,6 +45,7 @@ export const authConfig = {
       if (token && session.user) {
         session.user.userid = token.userid as string;
         session.user.email = token.email as string;
+        session.user.phone = token.phone as string | null;
         session.user.role = token.role as string;
         session.user.avatarUrl = token.avatarUrl as string | null;
         session.user.nickname = token.nickname as string | null;

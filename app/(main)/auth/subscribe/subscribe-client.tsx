@@ -126,6 +126,8 @@ export function getAfdianPlanId(planKey: string): string {
 
 interface SubscribeClientProps {
   user: {
+    userid: string;
+    phone: string | null;
     email: string;
     role: string;
     isPremium: boolean;
@@ -201,9 +203,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
     }
   }, [user, isPolling, router, updateSession]);
 
-  const handleCopyEmail = () => {
+  const handleCopyUID = () => {
     if (!user) return;
-    navigator.clipboard.writeText(user.email);
+    navigator.clipboard.writeText(user.userid);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -263,7 +265,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
           )}
         </div>
 
-        {/* Email copy banner */}
+        {/* UID copy banner */}
         {user ? (
           <div className="bg-ink-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-6 border border-ink-800">
             <div className="space-y-1 text-center md:text-left">
@@ -272,12 +274,24 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 当前已登录用户身份
               </span>
               <h4 className="text-lg font-bold font-sans">
-                充值激活邮箱：
-                <span className="text-accent-400 font-mono underline">
-                  {user.email}
+                账号专属 UID：
+                <span className="text-accent-400 font-mono underline ml-2 text-sm break-all">
+                  {user.userid}
                 </span>
               </h4>
-              <p className="text-xs text-ink-400">
+              <div className="mt-2 mb-3 space-y-1">
+                {user.phone && (
+                  <div className="text-sm font-medium text-ink-300">
+                    当前绑定手机号：<span className="text-ink-100">{user.phone}</span>
+                  </div>
+                )}
+                {user.email && !user.email.includes("placeholder") && (
+                  <div className="text-sm font-medium text-ink-300">
+                    当前绑定邮箱：<span className="text-ink-100">{user.email}</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-ink-400 mt-3">
                 通过{" "}
                 <span className="text-accent-400 font-bold italic">爱发电</span>{" "}
                 无缝激活您的{" "}
@@ -285,19 +299,19 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                   {" "}
                   远路播客会员{" "}
                 </span>{" "}
-                资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的邮箱，实现秒级自动激活！用户在支付时，需确保填写的邮箱信息准确无误。
+                资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的专属账号标识 (UID)，实现秒级自动激活！用户在支付时，需确保该留言信息未被篡改。
                 <span className="text-accent-400 font-bold italic">
-                  该邮箱将作为系统自动激活会员资格的唯一凭证
+                  该 UID 将作为系统精确匹配并自动激活会员资格的唯一核心凭证
                 </span>
                 。会员有效期自支付成功之时起算。若用户在现有会员有效期内再次购买任何订阅方案，新的有效期将在当前剩余时间基础上进行对应天数的累加。
               </p>
             </div>
             <button
-              onClick={handleCopyEmail}
+              onClick={handleCopyUID}
               className="flex-shrink-0 bg-white hover:bg-ink-100 text-ink-950 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow cursor-pointer"
             >
               <ClipboardCopy className="w-4 h-4 text-ink-700" />
-              {copied ? "已复制到剪贴板！" : "复制当前激活邮箱"}
+              {copied ? "已复制到剪贴板！" : "复制专属 UID"}
             </button>
           </div>
         ) : (
@@ -308,7 +322,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 未检测到用户登录信息
               </h4>
               <p className="text-xs text-accent-900/85 dark:text-accent-300/80">
-                目前您还是游客状态。在爱发电充值时必须填写您注册在远路播客站点的对应邮箱，否则无法进行自动匹配激活。
+                目前您还是游客状态。在爱发电充值时系统需要将您的 UID（用户标识）作为留言填入，请先登录/注册以便正常使用自动充值功能。
               </p>
             </div>
             <button
@@ -332,7 +346,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             const badge = getLevelBadge(plan.level);
             const isMonthly = plan.level === "MONTHLY";
             const planId = getAfdianPlanId(plan.planKey);
-            const remark = user ? user.email : "";
+            const remark = user ? user.userid : "";
             const paymentUrl =
               planId && user
                 ? buildAfdianPaymentUrl({ planId, months: plan.months, remark })
@@ -413,9 +427,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                       </a>
                     )}
                     {user && planId && (
-                      <p className="text-[10px] text-ink-400 text-center mt-2">
-                        点击跳转至爱发电完成支付，留言已预填{" "}
-                        <code className="text-accent-500">{user.email}</code>
+                      <p className="text-[10px] text-ink-400 text-center mt-2 break-all px-2">
+                        点击跳转至爱发电完成支付，留言已预填专属 UID{" "}
+                        <code className="text-accent-500 bg-accent-50 dark:bg-accent-950/30 px-1 py-0.5 rounded">{user.userid}</code>
                       </p>
                     )}
                   </div>

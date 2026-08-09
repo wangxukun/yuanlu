@@ -1,4 +1,5 @@
-import NextAuth, { Session, User } from "next-auth";
+import { headers } from "next/headers";
+import NextAuth, { Session, User, CredentialsSignin } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { ZodError } from "zod";
 import { signInSchema } from "@/lib/form-schema";
@@ -8,12 +9,22 @@ import { JWT } from "next-auth/jwt";
 import { AdapterSession } from "@auth/core/adapters";
 import { generateSignatureUrl } from "@/lib/oss";
 import { authConfig } from "@/auth.config";
+import { SmsAuthService } from "@/core/auth/sms-auth.service";
+
+class CustomAuthError extends CredentialsSignin {
+  code = "自定义错误";
+  constructor(message: string) {
+    super(message);
+    this.code = message;
+  }
+}
 
 // 1. 定义期望从数据库获取的数据结构
 type UserFromPrisma = {
   userid: string;
   email: string;
-  password: string;
+  password: string | null;
+  phone: string | null;
   role: string | null;
   languagePreference: string | null;
   createAt: Date;
@@ -44,29 +55,82 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "email", type: "email" },
         password: { label: "password", type: "password" },
+        phone: { label: "phone", type: "text" },
+        code: { label: "code", type: "text" },
       },
       authorize: async (credentials) => {
         if (!credentials) return null;
 
         try {
-          const { email, password } =
-            await signInSchema.parseAsync(credentials);
-          // 查找用户
-          // 2. 查找用户并强制转换类型 (as UserFromPrisma | null)
-          // 这样 TypeScript 就能明确知道 user 变量包含哪些字段
-          const user = (await prisma.user.findUnique({
-            where: { email },
-            include: {
-              user_profile: true, // 关联查询资料表
-              subscriptions: {
-                where: { subscriptionType: "PREMIUM" },
-                orderBy: { endDate: "desc" },
-              },
-            },
-          })) as UserFromPrisma | null;
+          const parsed = await signInSchema.parseAsync(credentials);
+          let user: UserFromPrisma | null = null;
 
-          if (!user) {
-            throw new Error("Invalid credentials.");
+          if ("phone" in parsed) {
+            const { phone, code } = parsed;
+            const isValid = await SmsAuthService.verifySmsCode({
+              phone,
+              code,
+              scene: "LOGIN",
+            });
+            if (!isValid) throw new CustomAuthError("验证码错误或已过期");
+
+            user = (await prisma.user.findUnique({
+              where: { phone },
+              include: {
+                user_profile: true,
+                subscriptions: {
+                  where: { subscriptionType: "PREMIUM" },
+                  orderBy: { endDate: "desc" },
+                },
+              },
+            })) as UserFromPrisma | null;
+
+            if (!user) {
+              const headersList = await headers();
+              const clientIp = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "Unknown";
+              
+              // 自动注册逻辑：如果用户不存在，则创建新用户
+              const newUser = await prisma.user.create({
+                data: {
+                  phone,
+                  email: `${phone}@placeholder.yuanlu.com`, // schema 要求 email 必填
+                  registerIp: clientIp,
+                  user_profile: {
+                    create: {
+                      nickname: `用户_${phone.slice(-4)}`,
+                    }
+                  }
+                },
+                include: { user_profile: true }
+              });
+              user = {
+                ...newUser,
+                subscriptions: [],
+              } as UserFromPrisma;
+            }
+          } else {
+            const { email, password } = parsed;
+            user = (await prisma.user.findUnique({
+              where: { email },
+              include: {
+                user_profile: true,
+                subscriptions: {
+                  where: { subscriptionType: "PREMIUM" },
+                  orderBy: { endDate: "desc" },
+                },
+              },
+            })) as UserFromPrisma | null;
+
+            if (!user) {
+              throw new CustomAuthError("邮箱或密码错误");
+            }
+
+            if (!user.password) {
+               throw new CustomAuthError("该账号尚未设置密码，请使用验证码登录");
+            }
+
+            const isValid = await bcrypt.compare(password, user.password);
+            if (!isValid) return null;
           }
 
           // 检测会员是否过期并降级
@@ -93,10 +157,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             throw new Error("由于违反相关规定，您的账号已被禁止登录！");
           }
 
-          // 验证密码
-          const isValid = await bcrypt.compare(password, user.password);
-          if (!isValid) return null;
-
           // 生成头像签名 URL
           // 注意：需要处理 user_profile 可能为空的情况
           let avatarUrl = "";
@@ -114,6 +174,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             id: user.userid,
             userid: user.userid,
             email: user.email,
+            phone: user.phone || null,
             role: user.role || "USER",
             emailVerified: user.emailVerified,
             avatarUrl: avatarUrl || null,
@@ -123,8 +184,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           } as User;
         } catch (error) {
           if (error instanceof ZodError) {
-            // Return `null` to indicate that the credentials are invalid
             return null;
+          }
+          if (error instanceof CredentialsSignin) {
+            throw error;
           }
           return null;
         }
@@ -148,6 +211,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.userid = user.userid;
         token.email = user.email;
+        token.phone = user.phone;
         token.role = user.role;
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
@@ -280,6 +344,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.userid = token.userid as string;
         session.user.email = token.email as string;
+        session.user.phone = token.phone as string | null;
         session.user.role = token.role as string;
         session.user.nickname = token.nickname as string | null;
         session.user.emailVerified = token.emailVerified as Date | null;

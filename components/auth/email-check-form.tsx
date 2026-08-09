@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/store/auth-store";
-import { signInSchema } from "@/lib/form-schema";
 import { EnvelopeIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
+import { z } from "zod";
 
 const EmailCheckForm = () => {
   const setCheckedEmail = useAuthStore((state) => state.setCheckedEmail);
@@ -55,7 +55,12 @@ const EmailCheckForm = () => {
     setError("");
     try {
       // 1. 本地格式验证
-      const emailSchema = signInSchema.pick({ email: true });
+      const emailSchema = z.object({
+        email: z
+          .string()
+          .min(1, { message: "邮箱不能为空" })
+          .email({ message: "请输入有效的邮箱地址" }),
+      });
       const result = emailSchema.safeParse({ email }); // 仅验证邮箱
       if (!result.success) {
         // 提取 Zod 错误信息中关于 email 的部分

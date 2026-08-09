@@ -7,6 +7,7 @@ declare module "next-auth" {
     // ↓ 扩展 NextAuth 原生 User 类型
     email: string;
     userid: string; // → 允许用户对象携带 userid 字段
+    phone?: string | null;
     role: string; // → 允许用户对象携带 role 字段
     emailVerified?: Date | null;
     avatarUrl?: string | null;
@@ -21,6 +22,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       userid: string; // → 使 session.users.userid 类型合法化
+      phone?: string | null;
       role: string; // → 使 session.users.role 类型合法化
       emailVerified?: Date | null;
       avatarUrl?: string | null;
@@ -36,6 +38,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     userid: string;
     email: string;
+    phone?: string | null;
     role: string;
     emailVerified: Date | null;
     avatarUrl?: string | null;
