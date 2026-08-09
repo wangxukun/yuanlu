@@ -72,6 +72,9 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          NEXT_PUBLIC_CAPTCHA_APP_ID: 6476a559152502b5cfa05376a4a0b331
+          NEXT_PUBLIC_BASE_URL: https://wxkzd.cn
 
       - name: Set up SSH key
         run: |

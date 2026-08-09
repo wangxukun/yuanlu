@@ -14,6 +14,9 @@ export const redis =
   });
 
 redis.on('error', (err) => {
+  if (process.env.CI || process.env.npm_lifecycle_event === 'build') {
+    return; // 屏蔽 CI 环境或打包期间的无关报错日志
+  }
   console.error('[Redis Error] ', err.message);
 });
 
