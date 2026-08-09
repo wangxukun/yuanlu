@@ -28,10 +28,10 @@ export async function POST(request: NextRequest) {
         phone: user.phone,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Phone Register Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || '注册失败' },
+      { success: false, message: error instanceof Error ? error.message : '注册失败' },
       { status: 400 },
     );
   }

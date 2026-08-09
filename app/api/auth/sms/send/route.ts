@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
         { status: 200 }, // 返回 200，由前端根据 code 判断业务逻辑
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Send SMS Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || '内部服务器错误' },
+      { success: false, error: error instanceof Error ? error.message : '内部服务器错误' },
       { status: 500 },
     );
   }

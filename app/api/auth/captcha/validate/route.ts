@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-  } catch (error: any) {
+  } catch {
     return NextResponse.json(
       { success: false, error: '验证异常' },
       { status: 500 },

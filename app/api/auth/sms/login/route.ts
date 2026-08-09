@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
         // token: '...', 
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || '登录失败' },
+      { success: false, error: error instanceof Error ? error.message : '登录失败' },
       { status: 400 },
     );
   }

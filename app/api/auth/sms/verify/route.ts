@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || '验证失败' },
+      { success: false, error: error instanceof Error ? error.message : '验证失败' },
       { status: 500 },
     );
   }

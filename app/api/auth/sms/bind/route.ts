@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
     await SmsAuthService.bindPhone(session.user.userid, body);
 
     return NextResponse.json({ success: true, message: '绑定成功' });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || '绑定失败' },
+      { success: false, error: error instanceof Error ? error.message : '绑定失败' },
       { status: 400 },
     );
   }
