@@ -117,11 +117,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             })) as UserFromPrisma | null;
 
             if (!user) {
-              throw new CustomAuthError("邮箱或密码错误");
+              throw new Error("邮箱或密码错误");
             }
 
             if (!user.password) {
-               throw new CustomAuthError("该账号尚未设置密码，请使用验证码登录");
+               throw new Error("该账号尚未设置密码，请使用验证码登录");
             }
 
             const isValid = await bcrypt.compare(password, user.password);
