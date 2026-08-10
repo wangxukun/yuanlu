@@ -51,6 +51,11 @@ export default function ImmersiveSpeechPractice({
   const [playingSubtitleId, setPlayingSubtitleId] = useState<number | null>(
     null,
   );
+  // URL 中指定的目标 subtitleId（来自发音弱项本跳转），待 filteredSubtitles 就绪后定位。
+  // null 表示无定向跳转请求。
+  const [pendingSubtitleId, setPendingSubtitleId] = useState<number | null>(
+    null,
+  );
 
   // Settings
   const settings = usePracticeSettingsStore();
@@ -88,18 +93,17 @@ export default function ImmersiveSpeechPractice({
           setRecords(json.data.previousRecords || []);
           setIsTrialMode(json.data.isTrialMode || false);
 
-          let startIndex = 0;
+          // 解析 URL 中的 subtitleId（发音弱项本跳转），记录下来；
+          // 真正的定位在 filteredSubtitles 就绪后由专门 effect 处理，
+          // 避免在「完整列表」与「过滤后列表」之间索引错位。
+          setActiveCardIndex(0);
           if (typeof window !== "undefined") {
             const urlParams = new URLSearchParams(window.location.search);
             const subtitleId = urlParams.get("subtitleId");
-            if (subtitleId && loadedSubtitles.length > 0) {
-              const idx = loadedSubtitles.findIndex(
-                (s: Subtitle) => s.id === parseInt(subtitleId),
-              );
-              if (idx !== -1) startIndex = idx;
-            }
+            setPendingSubtitleId(subtitleId ? parseInt(subtitleId) : null);
+          } else {
+            setPendingSubtitleId(null);
           }
-          setActiveCardIndex(startIndex);
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -205,6 +209,42 @@ export default function ImmersiveSpeechPractice({
       ? (practicedInFilter / filteredSubtitles.length) * 100
       : 0;
   const isCompleted = progressPercent >= 100;
+
+  // 定向跳转：在 filteredSubtitles（而非完整 subtitles）中定位 URL 指定的句子，
+  // 修正「过滤后索引错位 / 目标被过滤掉」导致无法定位到对应句子的 bug。
+  // 此 effect 必须早于下方「越界夹回」effect 执行（声明在前），并在命中后清除 pending，
+  // 以免被夹回逻辑覆盖。
+  useEffect(() => {
+    if (pendingSubtitleId == null) return;
+    if (isLoading || filteredSubtitles.length === 0) return;
+
+    const targetIdx = filteredSubtitles.findIndex(
+      (s) => s.id === pendingSubtitleId,
+    );
+    if (targetIdx !== -1) {
+      setActiveCardIndex(targetIdx);
+    } else {
+      // 目标句被当前过滤条件（句子长度 / 只练未掌握）排除：
+      // 提示用户并定位到「目标在完整列表中的位置」最接近的可见句。
+      const fullIdx = subtitles.findIndex((s) => s.id === pendingSubtitleId);
+      const fallbackIdx =
+        fullIdx === -1
+          ? 0
+          : (() => {
+              // 找 filteredSubtitles 中 startSeconds 不小于目标的最近一句
+              const targetStart = subtitles[fullIdx].startSeconds;
+              const after = filteredSubtitles.findIndex(
+                (s) => s.startSeconds >= targetStart,
+              );
+              return after !== -1 ? after : filteredSubtitles.length - 1;
+            })();
+      setActiveCardIndex(fallbackIdx);
+      toast.info("该句被当前过滤条件排除，已定位到最近的句子", {
+        duration: 3000,
+      });
+    }
+    setPendingSubtitleId(null);
+  }, [pendingSubtitleId, isLoading, filteredSubtitles, subtitles]);
 
   // 过滤后 activeCardIndex 可能越界，夹回合法范围
   useEffect(() => {
