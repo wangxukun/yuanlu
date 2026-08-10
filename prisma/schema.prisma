@@ -71,6 +71,8 @@ model user_profile {
   weeklyWordsGoal          Int     @default(50)
   /// 用户发音诊断统计数据，记录各个音素的得分/错误次数
   phonemeStats             Json?
+  /// 发音弱项本分数线：低于该分的句子计入弱项本（默认 80）
+  weakScoreThreshold       Int     @default(80)
   User                     User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 

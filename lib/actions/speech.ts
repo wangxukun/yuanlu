@@ -190,6 +190,8 @@ export async function saveSpeechResult(params: {
         });
 
         const phonemeStats: any = userProfile?.phonemeStats || {};
+        // 弱项分数线：低于该分才计入 lowScoreCount（默认 80）
+        const weakThreshold = userProfile?.weakScoreThreshold ?? 80;
 
         params.detailJson.words.forEach((word: any) => {
           if (word.phonemes) {
@@ -206,7 +208,7 @@ export async function saveSpeechResult(params: {
                 }
                 phonemeStats[phName].totalScore += phScore;
                 phonemeStats[phName].count += 1;
-                if (phScore < 80) {
+                if (phScore < weakThreshold) {
                   phonemeStats[phName].lowScoreCount += 1;
                 }
               }
@@ -231,4 +233,40 @@ export async function saveSpeechResult(params: {
     console.error("Failed to save speech recognition result:", error);
     return { error: "Failed to save result" };
   }
+}
+
+/**
+ * 更新当前用户的发音弱项本分数线。
+ * 该阈值决定哪些句子/音素计入弱项本（pronunciation 页面、/api/speech/errors、音素 lowScoreCount）。
+ * @param score 60-95 之间的整数
+ */
+export async function updateWeakScoreThreshold(score: number) {
+  const session = await auth();
+  if (!session?.user?.userid) {
+    return { error: "Unauthorized" };
+  }
+
+  const clamped = Math.max(60, Math.min(95, Math.round(score)));
+  try {
+    await prisma.user_profile.update({
+      where: { userid: session.user.userid },
+      data: { weakScoreThreshold: clamped },
+    });
+    revalidatePath("/library/pronunciation");
+    return { success: true, weakScoreThreshold: clamped };
+  } catch (error) {
+    console.error("Failed to update weakScoreThreshold:", error);
+    return { error: "Failed to update threshold" };
+  }
+}
+
+/**
+ * 读取当前用户的发音弱项本分数线（供需要动态判定弱项的地方使用）。
+ */
+export async function getWeakScoreThreshold(userid: string): Promise<number> {
+  const profile = await prisma.user_profile.findUnique({
+    where: { userid },
+    select: { weakScoreThreshold: true },
+  });
+  return profile?.weakScoreThreshold ?? 80;
 }

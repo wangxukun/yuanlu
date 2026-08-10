@@ -1,12 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 import SpeechEvaluationCard from "./SpeechEvaluationCard";
+import PracticeSettingsButton from "./PracticeSettingsButton";
 import { useUIStore } from "@/store/ui-store";
+import {
+  usePracticeSettingsStore,
+  selectEffectivePassThreshold,
+} from "@/store/practice-settings-store";
 import { toast } from "sonner";
 import { saveSpeechResult } from "@/lib/actions/speech";
 import {
@@ -40,6 +51,10 @@ export default function ImmersiveSpeechPractice({
   const [playingSubtitleId, setPlayingSubtitleId] = useState<number | null>(
     null,
   );
+
+  // Settings
+  const settings = usePracticeSettingsStore();
+  const effectivePassThreshold = selectEffectivePassThreshold(settings);
 
   // Refs
   const cardListRef = useRef<HTMLDivElement>(null);
@@ -118,36 +133,91 @@ export default function ImmersiveSpeechPractice({
     }
   }, [isOpen]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (!isOpen || subtitles.length === 0) return;
+  const getLatestResult = (subtitleId: number) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return undefined;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        handleNext();
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        handlePrev();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, activeCardIndex, subtitles.length]);
-
-  const handleDragEnd = (
-    event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo,
-  ) => {
-    if (info.offset.y > 150 && info.velocity.y > 200) {
-      onClose();
-    }
+    return [...records]
+      .filter(
+        (r) =>
+          r.subtitleId === targetSub.id ||
+          (r.targetText === targetSub.textEn &&
+            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.recognitionDate || 0).getTime() -
+          new Date(a.recognitionDate || 0).getTime(),
+      )[0];
   };
 
+  const getHistoricalRecords = (subtitleId: number) => {
+    const targetSub = subtitles.find((s) => s.id === subtitleId);
+    if (!targetSub) return [];
+
+    return [...records]
+      .filter(
+        (r) =>
+          r.subtitleId === targetSub.id ||
+          (r.targetText === targetSub.textEn &&
+            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.recognitionDate || 0).getTime() -
+          new Date(a.recognitionDate || 0).getTime(),
+      );
+  };
+
+  // 句子长度过滤 + 只练未掌握
+  const filteredSubtitles = useMemo(() => {
+    return subtitles.filter((sub) => {
+      const wordCount = sub.textEn.trim().split(/\s+/).filter(Boolean).length;
+      if (wordCount < settings.minWords) return false;
+      if (settings.maxWords < 50 && wordCount > settings.maxWords) return false;
+      if (settings.onlyUnmastered) {
+        const latest = getLatestResult(sub.id);
+        const latestScore = latest?.accuracyScore ?? 0;
+        if (latestScore >= effectivePassThreshold) return false;
+      }
+      return true;
+    });
+    // getLatestResult 依赖 records，已纳入下方依赖数组
+  }, [
+    subtitles,
+    settings.minWords,
+    settings.maxWords,
+    settings.onlyUnmastered,
+    effectivePassThreshold,
+    records,
+  ]);
+
+  const activeSubtitle = filteredSubtitles[activeCardIndex];
+
+  // Progress calculations（基于过滤后的句子集合）
+  const practicedInFilter = new Set(
+    records
+      .filter((r) => filteredSubtitles.some((s) => s.textEn === r.targetText))
+      .map((r) => r.targetStartTime),
+  ).size;
+  const progressPercent =
+    filteredSubtitles.length > 0
+      ? (practicedInFilter / filteredSubtitles.length) * 100
+      : 0;
+  const isCompleted = progressPercent >= 100;
+
+  // 过滤后 activeCardIndex 可能越界，夹回合法范围
+  useEffect(() => {
+    setActiveCardIndex((prev) =>
+      Math.min(prev, Math.max(0, filteredSubtitles.length - 1)),
+    );
+  }, [filteredSubtitles.length]);
+
   const handleNext = useCallback(() => {
-    setActiveCardIndex((prev) => Math.min(prev + 1, subtitles.length - 1));
-  }, [subtitles.length]);
+    setActiveCardIndex((prev) =>
+      Math.min(prev + 1, filteredSubtitles.length - 1),
+    );
+  }, [filteredSubtitles.length]);
 
   const handlePrev = useCallback(() => {
     setActiveCardIndex((prev) => Math.max(prev - 1, 0));
@@ -186,8 +256,8 @@ export default function ImmersiveSpeechPractice({
 
     setRecords((prev) => [...prev, newRecord]);
 
-    // Auto-advance if score is good
-    if (score >= 80) {
+    // Auto-advance if score reaches the effective pass threshold
+    if (settings.autoAdvance && score >= effectivePassThreshold) {
       setTimeout(() => {
         handleNext();
       }, 1500);
@@ -213,49 +283,32 @@ export default function ImmersiveSpeechPractice({
     }
   };
 
-  const getLatestResult = (subtitleId: number) => {
-    const targetSub = subtitles.find((s) => s.id === subtitleId);
-    if (!targetSub) return undefined;
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen || filteredSubtitles.length === 0) return;
 
-    return [...records]
-      .filter(
-        (r) =>
-          r.subtitleId === targetSub.id ||
-          (r.targetText === targetSub.textEn &&
-            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.recognitionDate || 0).getTime() -
-          new Date(a.recognitionDate || 0).getTime(),
-      )[0];
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        handleNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        handlePrev();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, activeCardIndex, filteredSubtitles.length]);
+
+  const handleDragEnd = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
+    if (info.offset.y > 150 && info.velocity.y > 200) {
+      onClose();
+    }
   };
-
-  const getHistoricalRecords = (subtitleId: number) => {
-    const targetSub = subtitles.find((s) => s.id === subtitleId);
-    if (!targetSub) return [];
-
-    return [...records]
-      .filter(
-        (r) =>
-          r.subtitleId === targetSub.id ||
-          (r.targetText === targetSub.textEn &&
-            Math.abs((r.targetStartTime || 0) - targetSub.startSeconds) < 0.5),
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.recognitionDate || 0).getTime() -
-          new Date(a.recognitionDate || 0).getTime(),
-      );
-  };
-
-  const activeSubtitle = subtitles[activeCardIndex];
-
-  // Progress calculations
-  const uniqueIds = new Set(records.map((r) => r.targetStartTime)).size;
-  const progressPercent =
-    subtitles.length > 0 ? (uniqueIds / subtitles.length) * 100 : 0;
-  const isCompleted = progressPercent >= 100;
 
   return (
     <AnimatePresence>
@@ -285,6 +338,7 @@ export default function ImmersiveSpeechPractice({
                 </span>
                 <span className="text-sm font-bold">返回</span>
               </button>
+              <PracticeSettingsButton variant="drawer" />
             </div>
 
             {/* Cover & Title */}
@@ -313,8 +367,8 @@ export default function ImmersiveSpeechPractice({
               {/* Progress Bar */}
               <div className="mt-2">
                 <div className="flex items-center justify-between text-xs font-bold text-ink-500 dark:text-ink-400 mb-1.5">
-                  <span>已练 {uniqueIds} 句</span>
-                  <span>共 {subtitles.length} 句</span>
+                  <span>已练 {practicedInFilter} 句</span>
+                  <span>共 {filteredSubtitles.length} 句</span>
                 </div>
                 <div className="w-full h-2 bg-ink-100 dark:bg-ink-800 rounded-full overflow-hidden">
                   <div
@@ -338,8 +392,8 @@ export default function ImmersiveSpeechPractice({
                 <div className="flex justify-center p-8">
                   <Loader2 className="w-6 h-6 animate-spin text-ink-300" />
                 </div>
-              ) : subtitles.length > 0 ? (
-                subtitles.map((sub, index) => {
+              ) : filteredSubtitles.length > 0 ? (
+                filteredSubtitles.map((sub, index) => {
                   const latestResult = getLatestResult(sub.id);
                   const isActive = index === activeCardIndex;
                   const hasPracticed = !!latestResult;
@@ -425,7 +479,7 @@ export default function ImmersiveSpeechPractice({
               <div className="text-sm font-bold text-ink-800 dark:text-ink-200">
                 语音评测
               </div>
-              <div className="w-8"></div>
+              <PracticeSettingsButton variant="mobile" />
             </div>
 
             {/* Main Content */}
@@ -442,7 +496,7 @@ export default function ImmersiveSpeechPractice({
                   </span>
                   <p className="font-bold">{error}</p>
                 </div>
-              ) : subtitles.length > 0 && activeSubtitle ? (
+              ) : filteredSubtitles.length > 0 && activeSubtitle ? (
                 <div className="w-full max-w-2xl mx-auto my-auto pb-24 md:pb-0 shrink-0">
                   {isTrialMode && isCompleted && (
                     <div className="mb-8 p-6 bg-white dark:bg-ink-900 rounded-2xl border border-primary-200 dark:border-primary-800 shadow-xl text-center">
@@ -485,6 +539,11 @@ export default function ImmersiveSpeechPractice({
                     onPlayStart={(id) => setPlayingSubtitleId(id)}
                     isActive={true}
                     onActivate={() => {}}
+                    fontSizeLevel={settings.fontSizeLevel}
+                    showTranslation={settings.showTranslation}
+                    showIpa={settings.showIpa}
+                    textMode={settings.textMode}
+                    passThreshold={effectivePassThreshold}
                   />
                 </div>
               ) : (
@@ -495,7 +554,7 @@ export default function ImmersiveSpeechPractice({
             </div>
 
             {/* Bottom Navigation Bar */}
-            {!isLoading && subtitles.length > 0 && (
+            {!isLoading && filteredSubtitles.length > 0 && (
               <div className="absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-6 md:pb-6 pointer-events-none">
                 <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-xl md:rounded-2xl flex items-center p-1.5 md:p-2 gap-3 md:gap-4 pointer-events-auto w-full max-w-sm mx-auto">
                   <button
@@ -510,13 +569,13 @@ export default function ImmersiveSpeechPractice({
                     <div className="text-sm font-bold text-ink-700 dark:text-ink-300">
                       {activeCardIndex + 1}{" "}
                       <span className="text-ink-400 mx-1">/</span>{" "}
-                      {subtitles.length}
+                      {filteredSubtitles.length}
                     </div>
                     <div className="w-full max-w-[120px] h-1.5 bg-ink-100 dark:bg-ink-700 rounded-full mt-1.5 overflow-hidden">
                       <div
                         className="h-full bg-primary-500 rounded-full transition-all duration-300"
                         style={{
-                          width: `${((activeCardIndex + 1) / subtitles.length) * 100}%`,
+                          width: `${((activeCardIndex + 1) / filteredSubtitles.length) * 100}%`,
                         }}
                       />
                     </div>
@@ -524,7 +583,7 @@ export default function ImmersiveSpeechPractice({
 
                   <button
                     onClick={handleNext}
-                    disabled={activeCardIndex === subtitles.length - 1}
+                    disabled={activeCardIndex === filteredSubtitles.length - 1}
                     className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
                   >
                     <ChevronRight className="w-6 h-6" />

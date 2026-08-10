@@ -22,6 +22,8 @@ export default async function PronunciationPage() {
   const userProfile: any = await prisma.user_profile.findUnique({
     where: { userid: userId },
   });
+  // 弱项本分数线（用户可在语音评测设置中调整，默认 80）
+  const weakThreshold = userProfile?.weakScoreThreshold ?? 80;
   const statsData: any = userProfile?.phonemeStats || {};
   const formattedStats = Object.keys(statsData).map((phoneme) => {
     const data = statsData[phoneme];
@@ -36,11 +38,11 @@ export default async function PronunciationPage() {
   formattedStats.sort((a, b) => a.avgScore - b.avgScore);
 
   // 2. Fetch Errors (Weak Sentences)
-  // Step A: Find sentences that have a weak attempt (score < 80)
+  // Step A: Find sentences that have a weak attempt (score < weakThreshold)
   const potentialWeakRecords = await prisma.speech_recognition.findMany({
     where: {
       userid: userId,
-      overallScore: { lt: 80 },
+      overallScore: { lt: weakThreshold },
     },
     orderBy: { recognitionDate: "desc" },
     distinct: ["targetText"],
@@ -73,9 +75,9 @@ export default async function PronunciationPage() {
       },
     });
 
-    // Step C: Only keep them if the latest attempt is STILL < 80
+    // Step C: Only keep them if the latest attempt is STILL < weakThreshold
     uniqueRecords = latestAttempts.filter(
-      (r) => r.overallScore !== null && r.overallScore < 80,
+      (r) => r.overallScore !== null && r.overallScore < weakThreshold,
     );
   }
 
