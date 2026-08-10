@@ -2,10 +2,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import ForgotPasswordForm from "@/components/auth/forgot-password-form";
+import PhoneResetPasswordForm from "@/components/auth/PhoneResetPasswordForm";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function ForgotPasswordDialog() {
   const [modalKey, setModalKey] = useState(0);
+  const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const handleClose = () => {
@@ -18,7 +20,6 @@ export default function ForgotPasswordDialog() {
 
     const handleFocus = () => {
       setTimeout(() => {
-        // Focus on verification code input first when modal opens
         const codeInput = dialog.querySelector(
           "input[placeholder='6位验证码']",
         ) as HTMLInputElement;
@@ -56,9 +57,36 @@ export default function ForgotPasswordDialog() {
         {/* Header Section */}
         <div className="relative px-8 pt-8 pb-2 text-center">
           <h3 className="text-2xl font-bold text-primary">重置您的密码</h3>
-          <p className="text-sm text-base-content/60 mt-2">
-            请输入发送到邮箱的6位验证码并设置新密码
-          </p>
+          <p className="text-sm text-base-content/60 mt-2">请选择找回方式</p>
+
+          {/* Tab switcher */}
+          <div
+            role="tablist"
+            className="tabs tabs-boxed bg-base-200/50 dark:bg-ink-900/50 p-1 rounded-xl w-full grid grid-cols-2 gap-1 mt-5"
+          >
+            <button
+              role="tab"
+              className={`tab h-10 rounded-lg transition-all ${
+                activeTab === "email"
+                  ? "bg-white dark:bg-ink-800 shadow-sm !text-primary-600 dark:!text-primary-400 font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("email")}
+            >
+              Email 找回
+            </button>
+            <button
+              role="tab"
+              className={`tab h-10 rounded-lg transition-all ${
+                activeTab === "phone"
+                  ? "bg-white dark:bg-ink-800 shadow-sm !text-primary-600 dark:!text-primary-400 font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("phone")}
+            >
+              手机号找回
+            </button>
+          </div>
 
           {/* Close button */}
           <form method="dialog">
@@ -73,7 +101,11 @@ export default function ForgotPasswordDialog() {
 
         {/* Content Section */}
         <div className="px-8 pb-10 pt-4">
-          <ForgotPasswordForm key={modalKey} />
+          {activeTab === "email" ? (
+            <ForgotPasswordForm key={`email-${modalKey}`} />
+          ) : (
+            <PhoneResetPasswordForm key={`phone-${modalKey}`} />
+          )}
         </div>
       </div>
 

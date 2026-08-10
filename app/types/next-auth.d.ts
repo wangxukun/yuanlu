@@ -8,6 +8,7 @@ declare module "next-auth" {
     email: string;
     userid: string; // → 允许用户对象携带 userid 字段
     phone?: string | null;
+    phoneVerified?: boolean;
     role: string; // → 允许用户对象携带 role 字段
     emailVerified?: Date | null;
     avatarUrl?: string | null;
@@ -23,6 +24,7 @@ declare module "next-auth" {
       email: string;
       userid: string; // → 使 session.users.userid 类型合法化
       phone?: string | null;
+      phoneVerified?: boolean;
       role: string; // → 使 session.users.role 类型合法化
       emailVerified?: Date | null;
       avatarUrl?: string | null;
@@ -39,6 +41,7 @@ declare module "next-auth/jwt" {
     userid: string;
     email: string;
     phone?: string | null;
+    phoneVerified?: boolean;
     role: string;
     emailVerified: Date | null;
     avatarUrl?: string | null;

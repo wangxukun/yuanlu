@@ -11,6 +11,7 @@ model User {
   userid                String                @id @default(cuid())
   password              String?               @db.VarChar(255)
   phone                 String?               @unique @db.VarChar(20)
+  phoneVerified         Boolean               @default(false)
   role                  String?               @default("USER") @db.VarChar(50)
   languagePreference    String?               @default("zh-CN") @db.VarChar(50)
   createAt              DateTime              @default(now()) @db.Timestamptz(6)

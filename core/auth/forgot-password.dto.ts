@@ -9,3 +9,9 @@ export interface ResetPasswordRequestDto {
   code: string;
   password: string; // The new password to be updated
 }
+
+export interface PhoneResetPasswordRequestDto {
+  phone: string;
+  code: string;
+  password: string;
+}

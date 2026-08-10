@@ -6,12 +6,12 @@ import {
   PhoneRegisterDTO,
   PhoneLoginDTO,
   BindPhoneDTO,
-} from './sms-auth.dto';
-import { RateLimiterService } from './rate-limiter.service';
-import { CaptchaClient } from './captcha.client';
-import { AliyunSmsClient } from './aliyun-sms.client';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+} from "./sms-auth.dto";
+import { RateLimiterService } from "./rate-limiter.service";
+import { CaptchaClient } from "./captcha.client";
+import { AliyunSmsClient } from "./aliyun-sms.client";
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export class SmsAuthService {
   /**
@@ -19,17 +19,17 @@ export class SmsAuthService {
    */
   private static getTemplateCode(scene: string): string {
     switch (scene) {
-      case 'REGISTER':
-      case 'LOGIN':
+      case "REGISTER":
+      case "LOGIN":
         return process.env.ALIYUN_SMS_TEMPLATE_LOGIN_REGISTER!;
-      case 'CHANGE_PHONE':
+      case "CHANGE_PHONE":
         return process.env.ALIYUN_SMS_TEMPLATE_CHANGE_PHONE!;
-      case 'RESET_PASSWORD':
+      case "RESET_PASSWORD":
         return process.env.ALIYUN_SMS_TEMPLATE_RESET_PASSWORD!;
-      case 'BIND':
+      case "BIND":
         return process.env.ALIYUN_SMS_TEMPLATE_BIND_PHONE!;
       default:
-        throw new Error('无效的短信场景');
+        throw new Error("无效的短信场景");
     }
   }
 
@@ -49,8 +49,11 @@ export class SmsAuthService {
     if (!rateLimit.allowed) {
       return {
         success: false,
-        code: 'RATE_LIMITED',
-        error: rateLimit.reason === 'RATE_LIMITED_60S' ? '请求过于频繁，请60秒后再试' : '请求超过限制，请稍后再试',
+        code: "RATE_LIMITED",
+        error:
+          rateLimit.reason === "RATE_LIMITED_60S"
+            ? "请求过于频繁，请60秒后再试"
+            : "请求超过限制，请稍后再试",
       };
     }
 
@@ -60,7 +63,7 @@ export class SmsAuthService {
         return {
           success: false,
           requireCaptcha: true,
-          code: 'CAPTCHA_REQUIRED',
+          code: "CAPTCHA_REQUIRED",
         };
       }
 
@@ -70,7 +73,7 @@ export class SmsAuthService {
         return {
           success: false,
           requireCaptcha: true, // 验证失败，要求重新验证
-          error: '图形验证失败，请重试',
+          error: "图形验证失败，请重试",
         };
       }
     }
@@ -87,7 +90,7 @@ export class SmsAuthService {
       await RateLimiterService.recordSmsSend(dto.phone, clientIp);
       return { success: true };
     } else {
-      return { success: false, code: 'SEND_FAILED', error: '短信发送失败' };
+      return { success: false, code: "SEND_FAILED", error: "短信发送失败" };
     }
   }
 
@@ -96,13 +99,18 @@ export class SmsAuthService {
    */
   public static async verifySmsCode(dto: VerifySmsCodeDTO): Promise<boolean> {
     // 检查暴力破解
-    const canAttempt = await RateLimiterService.checkVerifyAttemptLimit(dto.phone);
+    const canAttempt = await RateLimiterService.checkVerifyAttemptLimit(
+      dto.phone,
+    );
     if (!canAttempt) {
-      throw new Error('验证失败次数过多，请30分钟后再试');
+      throw new Error("验证失败次数过多，请30分钟后再试");
     }
 
-    const isValid = await AliyunSmsClient.checkSmsVerifyCode(dto.phone, dto.code);
-    
+    const isValid = await AliyunSmsClient.checkSmsVerifyCode(
+      dto.phone,
+      dto.code,
+    );
+
     if (isValid) {
       await RateLimiterService.resetVerifyFailCount(dto.phone);
       return true;
@@ -119,11 +127,11 @@ export class SmsAuthService {
     const isValid = await this.verifySmsCode({
       phone: dto.phone,
       code: dto.code,
-      scene: 'REGISTER',
+      scene: "REGISTER",
     });
 
     if (!isValid) {
-      throw new Error('验证码错误或已失效');
+      throw new Error("验证码错误或已失效");
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -131,7 +139,7 @@ export class SmsAuthService {
     });
 
     if (existingUser) {
-      throw new Error('该手机号已注册');
+      throw new Error("该手机号已注册");
     }
 
     // 处理密码
@@ -139,7 +147,7 @@ export class SmsAuthService {
     if (dto.password) {
       hashedPassword = await bcrypt.hash(dto.password, 10);
     }
-    
+
     // 生成一个虚拟的 email 以绕过当前 schema 的约束，或者如果 schema 中 email 可以不填，则忽略
     // 因为 user 模型中 email 是 unique 的并且不是 optional，所以在未绑定 email 时可以生成伪 email。
     const tempEmail = `${dto.phone}@placeholder.yuanlu.com`;
@@ -163,11 +171,11 @@ export class SmsAuthService {
     const isValid = await this.verifySmsCode({
       phone: dto.phone,
       code: dto.code,
-      scene: 'LOGIN',
+      scene: "LOGIN",
     });
 
     if (!isValid) {
-      throw new Error('验证码错误或已失效');
+      throw new Error("验证码错误或已失效");
     }
 
     const user = await prisma.user.findUnique({
@@ -176,11 +184,11 @@ export class SmsAuthService {
 
     if (!user) {
       // 自动注册逻辑（可选）
-      throw new Error('用户不存在，请先注册');
+      throw new Error("用户不存在，请先注册");
     }
 
     if (user.isLoginAllowed === false) {
-      throw new Error('由于违反相关规定，您的账号已被禁止登录！');
+      throw new Error("由于违反相关规定，您的账号已被禁止登录！");
     }
 
     return user;
@@ -193,11 +201,11 @@ export class SmsAuthService {
     const isValid = await this.verifySmsCode({
       phone: dto.phone,
       code: dto.code,
-      scene: 'BIND',
+      scene: "BIND",
     });
 
     if (!isValid) {
-      throw new Error('验证码错误或已失效');
+      throw new Error("验证码错误或已失效");
     }
 
     // 检查碰撞
@@ -207,16 +215,52 @@ export class SmsAuthService {
 
     if (existingUser) {
       if (existingUser.userid === userid) {
-        throw new Error('您已经绑定了该手机号');
+        throw new Error("您已经绑定了该手机号");
       }
-      throw new Error('该手机号已被其他账号绑定');
+      throw new Error("该手机号已被其他账号绑定");
     }
 
     await prisma.user.update({
       where: { userid },
-      data: { phone: dto.phone },
+      data: { phone: dto.phone, phoneVerified: true },
     });
 
     return true;
+  }
+
+  /**
+   * 手机号重置密码
+   */
+  public static async resetPasswordByPhone(dto: {
+    phone: string;
+    code: string;
+    password: string;
+  }) {
+    const isValid = await this.verifySmsCode({
+      phone: dto.phone,
+      code: dto.code,
+      scene: "RESET_PASSWORD",
+    });
+
+    if (!isValid) {
+      throw new Error("验证码错误或已失效");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
+
+    if (!user) {
+      throw new Error("该手机号尚未注册");
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    await prisma.user.update({
+      where: { userid: user.userid },
+      data: { password: hashedPassword },
+    });
+
+    return { success: true, message: "密码重置成功" };
   }
 }

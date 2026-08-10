@@ -14,6 +14,7 @@ import MilestoneRoadmap from "@/components/main/profile/MilestoneRoadmap";
 import RecentHistory from "@/components/main/profile/RecentHistory";
 import Image from "next/image";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
+import AccountSecurityTab from "@/components/auth/AccountSecurityTab";
 
 export default function PersonalCenterPage() {
   const { data: session, update: updateSession } = useSession();
@@ -33,7 +34,7 @@ export default function PersonalCenterPage() {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "journey" | "achievements" | "history"
+    "journey" | "achievements" | "history" | "security"
   >("journey");
 
   const LEVEL_MAPPING: Record<string, string> = {
@@ -229,6 +230,16 @@ export default function PersonalCenterPage() {
             >
               最近听过
             </button>
+            <button
+              onClick={() => setActiveTab("security")}
+              className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
+                activeTab === "security"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-300"
+              }`}
+            >
+              账号与安全
+            </button>
           </div>
         </div>
       </div>
@@ -252,6 +263,7 @@ export default function PersonalCenterPage() {
             <RecentHistory />
           </div>
         )}
+        {activeTab === "security" && <AccountSecurityTab />}
       </div>
     </div>
   );

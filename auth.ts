@@ -20,6 +20,7 @@ type UserFromPrisma = {
   email: string;
   password: string | null;
   phone: string | null;
+  phoneVerified: boolean;
   role: string | null;
   languagePreference: string | null;
   createAt: Date;
@@ -82,8 +83,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             if (!user) {
               const headersList = await headers();
-              const clientIp = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "Unknown";
-              
+              const clientIp =
+                headersList.get("x-forwarded-for") ||
+                headersList.get("x-real-ip") ||
+                "Unknown";
+
               // 自动注册逻辑：如果用户不存在，则创建新用户
               const newUser = await prisma.user.create({
                 data: {
@@ -93,10 +97,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   user_profile: {
                     create: {
                       nickname: `用户_${phone.slice(-4)}`,
-                    }
-                  }
+                    },
+                  },
                 },
-                include: { user_profile: true }
+                include: { user_profile: true },
               });
               user = {
                 ...newUser,
@@ -121,7 +125,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
 
             if (!user.password) {
-               throw new Error("该账号尚未设置密码，请使用验证码登录");
+              throw new Error("该账号尚未设置密码，请使用验证码登录");
             }
 
             const isValid = await bcrypt.compare(password, user.password);
@@ -170,6 +174,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             userid: user.userid,
             email: user.email,
             phone: user.phone || null,
+            phoneVerified: user.phoneVerified || false,
             role: user.role || "USER",
             emailVerified: user.emailVerified,
             avatarUrl: avatarUrl || null,
@@ -179,14 +184,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           } as User;
         } catch (error) {
           if (error instanceof ZodError) return null;
-          
-          const errorMsg = error instanceof Error ? error.message : "验证码错误或已过期";
-          
+
+          const errorMsg =
+            error instanceof Error ? error.message : "验证码错误或已过期";
+
           // Use cookies as a side-channel to pass the actual error message to the client
           try {
             const cookieStore = await cookies();
-            cookieStore.set("custom_auth_error", errorMsg, { maxAge: 10, path: '/' });
-          } catch (e) {}
+            cookieStore.set("custom_auth_error", errorMsg, {
+              maxAge: 10,
+              path: "/",
+            });
+          } catch {
+            /* ignore */
+          }
 
           throw new CredentialsSignin();
         }
@@ -211,6 +222,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.userid = user.userid;
         token.email = user.email;
         token.phone = user.phone;
+        token.phoneVerified = user.phoneVerified;
         token.role = user.role;
         token.emailVerified = user.emailVerified || null;
         token.nickname = user.nickname;
@@ -226,6 +238,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
         if (session.user.role) token.role = session.user.role;
+        // Support binding updates
+        if (session.user.phone !== undefined) token.phone = session.user.phone;
+        if (session.user.phoneVerified !== undefined)
+          token.phoneVerified = session.user.phoneVerified;
+        if (session.user.email) token.email = session.user.email;
       }
 
       const now = Date.now();
@@ -344,6 +361,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.userid = token.userid as string;
         session.user.email = token.email as string;
         session.user.phone = token.phone as string | null;
+        session.user.phoneVerified = (token.phoneVerified as boolean) || false;
         session.user.role = token.role as string;
         session.user.nickname = token.nickname as string | null;
         session.user.emailVerified = token.emailVerified as Date | null;

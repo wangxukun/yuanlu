@@ -1,6 +1,12 @@
 // core/auth/sms-auth.dto.ts
 
-export type SmsScene = 'REGISTER' | 'LOGIN' | 'BIND' | 'CHANGE_PHONE' | 'RESET_PASSWORD';
+export type SmsScene =
+  | "REGISTER"
+  | "LOGIN"
+  | "BIND"
+  | "CHANGE_PHONE"
+  | "RESET_PASSWORD"
+  | "BIND_EMAIL";
 
 export interface CaptchaValidateData {
   lotNumber: string;
@@ -47,6 +53,20 @@ export interface PhoneLoginDTO {
 export interface SmsSendResultDTO {
   success: boolean;
   requireCaptcha?: boolean;
-  code?: 'CAPTCHA_REQUIRED' | 'RATE_LIMITED' | 'SEND_FAILED';
+  code?: "CAPTCHA_REQUIRED" | "RATE_LIMITED" | "SEND_FAILED";
   error?: string;
+}
+
+// 手机号用户绑定 Email
+export interface BindEmailDTO {
+  email: string;
+  code: string; // Email verification code
+  password: string; // Set password for Email login
+}
+
+// 手机号重置密码
+export interface PhoneResetPasswordDTO {
+  phone: string;
+  code: string;
+  password: string;
 }
