@@ -71,8 +71,8 @@ export const usePracticeSettingsStore = create<PracticeSettingsState>()(
   persist(
     (set) => ({
       fontSizeLevel: 1,
-      showTranslation: false,
-      showIpa: false,
+      showTranslation: true,
+      showIpa: true,
       textMode: "normal",
 
       passThreshold: 80,
