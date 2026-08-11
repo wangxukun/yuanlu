@@ -9,8 +9,6 @@ import { Podcast } from "@/core/podcast/podcast.entity";
 import { EpisodeEditItem } from "@/core/episode/dto/episode-edit-item";
 import { Tag } from "@/core/tag/tag.entity";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
 // 常量定义
 const DIFFICULTY_OPTIONS = [
   { value: "General", label: "通用 (General)" },
@@ -55,7 +53,7 @@ export default function EpisodeEditForm({ episode }: Props) {
   useEffect(() => {
     const fetchPodcastData = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/podcast/list`, {
+        const res = await fetch(`/api/podcast/list`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

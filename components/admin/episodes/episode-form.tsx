@@ -22,7 +22,6 @@ import { createEpisode, deleteFile, EpisodeState } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import { Podcast } from "@/core/podcast/podcast.entity";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 // 定义难度选项常量
 const DIFFICULTY_OPTIONS = [
   { value: "General", label: "通用 (General)" },
@@ -102,7 +101,7 @@ export default function EpisodeForm() {
     setNeedConfirm(true);
     const fetchPodcastData = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/podcast/list`, {
+        const res = await fetch(`/api/podcast/list`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
