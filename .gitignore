@@ -50,3 +50,4 @@ yuanlu-project-context.xml
 # /lib/fonts/*.woff2
 
 /.claude/
+scripts/outro-template/*

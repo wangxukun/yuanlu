@@ -46,10 +46,10 @@ async function main() {
   for (const file of files) {
     console.log(`\n============================================`);
     console.log(`正在处理文件: ${file}`);
-    const match = file.match(/^(\d{8})[_-](.+)\.en-zh\.word\.json$/);
+    const match = file.match(/^(\d{6})[_-](.+)\.en-zh\.word\.json$/);
     if (!match) {
       console.warn(
-        `[跳过] 文件名不符合格式 'YYYYMMDD_Title.en-zh.word.json': ${file}`,
+        `[跳过] 文件名不符合格式 'YYMMDD_Title.en-zh.word.json': ${file}`,
       );
       continue;
     }
@@ -57,7 +57,7 @@ async function main() {
     const titleStr = match[2];
     const searchTitle = titleStr.replace(/_/g, " ");
 
-    // Convert YYYYMMDD to a fuzzy matchable boundary if necessary, but title match might be enough.
+    // Convert YYMMDD to a fuzzy matchable boundary if necessary, but title match might be enough.
     // Let's use title matching mainly, but we can verify the date if multiple matches.
 
     try {
