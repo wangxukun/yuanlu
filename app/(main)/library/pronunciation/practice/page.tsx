@@ -153,7 +153,6 @@ export default function PronunciationPracticePage() {
           <SpeechEvaluationCard
             subtitle={mockSubtitle}
             audioUrl={currentRecord.episode?.audioUrl || ""}
-            episodeId={currentRecord.episodeid}
             previousResult={undefined} // don't load the old bad score, let them start fresh
             onEvaluate={handleEvaluate}
             currentPlayingId={null}

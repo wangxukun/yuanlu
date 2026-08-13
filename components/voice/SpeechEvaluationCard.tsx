@@ -26,7 +26,6 @@ import type { TextMode } from "@/store/practice-settings-store";
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
   audioUrl: string; // 原音 URL
-  episodeId?: string; // 剧集 ID,用于同源音频代理(避免 CORS)
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (
     subtitleId: number,
@@ -52,7 +51,6 @@ interface SpeechEvaluationCardProps {
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   subtitle,
   audioUrl,
-  episodeId,
   previousResult,
   onEvaluate,
   currentPlayingId,
@@ -84,7 +82,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   } = useSpeechEvaluation({
     subtitle,
     audioUrl,
-    episodeId,
     previousResult,
     onEvaluate,
     currentPlayingId,

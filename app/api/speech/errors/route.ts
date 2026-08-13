@@ -52,6 +52,8 @@ export async function GET() {
               coverUrl: true,
               coverFileName: true,
               audioUrl: true,
+              audioFileName: true,
+              isExclusive: true,
               // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
               subtitleEnUrl: true,
               subtitleEnFileName: true,
@@ -70,8 +72,12 @@ export async function GET() {
       );
     }
 
-    // Generate signed URLs for covers
+    // Generate signed URLs for covers and audio
     const episodeCoverCache = new Map<string, string>();
+    const episodeAudioCache = new Map<string, string>();
+    // 独家剧集仅会员/管理员可播放音频（与 practice-data / audio-proxy 鉴权一致）
+    const canPlayExclusive =
+      session.user.role === "PREMIUM" || session.user.role === "ADMIN";
     for (const record of uniqueRecords) {
       if (record.episode) {
         const episodeId = record.episodeid;
@@ -88,6 +94,23 @@ export async function GET() {
           episodeCoverCache.set(episodeId, signedCover);
         }
         record.episode.coverUrl = episodeCoverCache.get(episodeId) || "";
+
+        // 签名音频直链：独家剧集对非会员留空（禁止播放），保持与原 audio-proxy 鉴权一致
+        if (!episodeAudioCache.has(episodeId)) {
+          let signedAudio = "";
+          if (record.episode.isExclusive && !canPlayExclusive) {
+            signedAudio = "";
+          } else if (record.episode.audioFileName) {
+            signedAudio = await generateSignatureUrl(
+              record.episode.audioFileName,
+              3600 * 3,
+            ).catch(() => record.episode.audioUrl || "");
+          } else {
+            signedAudio = record.episode.audioUrl || "";
+          }
+          episodeAudioCache.set(episodeId, signedAudio);
+        }
+        record.episode.audioUrl = episodeAudioCache.get(episodeId) || "";
       }
     }
 

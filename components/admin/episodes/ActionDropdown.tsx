@@ -4,6 +4,7 @@ import {
   FileTextIcon,
   MessageSquareIcon,
   ImageResultIcon,
+  MicIcon,
 } from "./Icons";
 import Link from "next/link";
 import { EpisodeDeleteForm } from "@/components/admin/episodes/EpisodeDeleteForm";
@@ -66,6 +67,13 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
           >
             <ImageResultIcon size={16} className="mr-3" />
             <span>封面管理</span>
+          </Link>
+          <Link
+            href={`/admin/episodes/${episodeId}/audio`}
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
+          >
+            <MicIcon size={16} className="mr-3" />
+            <span>音频管理</span>
           </Link>
           <div className="border-t border-ink-200 my-1"></div>
           {/*<button className="flex w-full items-center px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 hover:text-error-700 transition-colors">*/}

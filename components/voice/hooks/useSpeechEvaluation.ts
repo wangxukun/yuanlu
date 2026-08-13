@@ -97,7 +97,6 @@ export function encodeWAV(samples: Float32Array, sampleRate: number) {
 export function useSpeechEvaluation({
   subtitle,
   audioUrl,
-  episodeId,
   previousResult,
   onEvaluate,
   currentPlayingId,
@@ -105,7 +104,6 @@ export function useSpeechEvaluation({
 }: {
   subtitle: Subtitle;
   audioUrl: string;
-  episodeId?: string;
   previousResult?: SpeechPracticeRecord;
   onEvaluate: (
     subtitleId: number,
@@ -573,12 +571,9 @@ export function useSpeechEvaluation({
           ? wordsEnd
           : subtitle.endSeconds || targetStart + 3;
 
-    // ── HTML5 Audio Pre-roll 流式精确播放 ──
-    // 通过"安全回退 + 静音快进"消除 VBR seek 误差，同时只按需下载句子附近
-    // 几百 KB（Range 请求），而非整集 20-60MB。
-    //
-    // 算法：seek 到 T-2.5s → muted + 2x 快进 → 到达 T-0.05s 时 unmute
-    // + 恢复原速 → 精确从 T 开始有声播放 → 到句尾暂停。
+    // 直连精确播放：CBR M4A（AAC-LC + faststart + seek 表 + edit list）
+    // 实测 seek 落点 0ms，不再需要 pre-roll 消除 VBR seek 误差。
+    // 直接 seek 到 T，按指定速率有声播放，到句尾停止。
 
     // 复用或创建独立 Audio 实例
     let audio = refAudioRef.current;
@@ -588,10 +583,10 @@ export function useSpeechEvaluation({
       refAudioRef.current = audio;
     }
 
-    // 生成有效的音频链接（优先使用同源代理以支持 OSS 签名/鉴权，解决 403 及 NotSupportedError）
-    const effectiveAudioUrl = episodeId
-      ? `/api/episode/audio-proxy?id=${encodeURIComponent(episodeId)}`
-      : audioUrl;
+    // 直接使用已由 /api/speech/practice-data（或 errors）路由签发并鉴权的 OSS 直链。
+    // 不再走 /api/episode/audio-proxy：代理的流式 body 与 206 必需的 Content-Length
+    // 冲突，会导致严格客户端（如 Android Edge）无法播放/seek；直连 OSS 返回干净 206。
+    const effectiveAudioUrl = audioUrl;
     if (!effectiveAudioUrl) {
       toast.error("无效的音频来源");
       return;
@@ -603,19 +598,10 @@ export function useSpeechEvaluation({
       audio.load();
     }
 
-    // Pre-roll: 安全回退 2.5 秒
-    const PRE_ROLL_OFFSET = 2.5;
-    const EARLY_UNMUTE = 0.05; // 提前 50ms 开麦，吸收 rAF 调度误差
-    const seekTarget = Math.max(0, targetStart - PRE_ROLL_OFFSET);
-    audio.currentTime = seekTarget;
-    audio.muted = true;
-
-    // iOS playbackRate 降级：不支持 2.0 则回退 1.0
-    try {
-      audio.playbackRate = 2.0;
-    } catch {
-      audio.playbackRate = 1.0;
-    }
+    // 直接 seek 到目标起点（CBR M4A 落点精确，无需 pre-roll 回退）
+    audio.currentTime = Math.max(0, targetStart);
+    audio.muted = false;
+    audio.playbackRate = playbackRate;
 
     // 正常播放阶段的 rAF tick（进度条 + 到句尾停止）
     const startNormalTick = () => {
@@ -649,45 +635,11 @@ export function useSpeechEvaluation({
       rafIdRef.current = requestAnimationFrame(tick);
     };
 
-    // 精确开麦逻辑（由 rAF 或 timeupdate 触发）
-    let hasUnmuted = false;
-    const doUnmute = () => {
-      if (hasUnmuted) return;
-      const a = refAudioRef.current;
-      if (!a) return;
-      hasUnmuted = true;
-
-      // 微调对齐：已缓冲范围内不触发重加载
-      a.currentTime = targetStart;
-      a.muted = false;
-      a.playbackRate = playbackRate;
-      isUnmutedRef.current = true;
-
-      // 启动正常播放 tick
-      startNormalTick();
-    };
-
-    // Pre-roll 阶段的 rAF 轮询
-    const preRollCheck = () => {
-      const a = refAudioRef.current;
-      if (!a || a.paused) return;
-
-      if (a.currentTime >= targetStart - EARLY_UNMUTE) {
-        doUnmute();
-        return;
-      }
-      rafIdRef.current = requestAnimationFrame(preRollCheck);
-    };
-
-    // timeupdate 兜底：后台标签页 rAF 被节流时仍能正确触发开麦
+    // timeupdate 兜底：后台标签页 rAF 被节流时仍能在句尾正确停止
     const onTimeUpdate = () => {
       const a = refAudioRef.current;
       if (!a) return;
-      if (!hasUnmuted && a.currentTime >= targetStart - EARLY_UNMUTE) {
-        doUnmute();
-      }
-      // 正常播放阶段也用 timeupdate 兜底句尾停止
-      if (hasUnmuted && a.currentTime >= endTime) {
+      if (a.currentTime >= endTime) {
         stopAllAudio();
       }
     };
@@ -697,8 +649,9 @@ export function useSpeechEvaluation({
     audio
       .play()
       .then(() => {
-        // 启动 pre-roll rAF 轮询
-        rafIdRef.current = requestAnimationFrame(preRollCheck);
+        // 播放已启动：激活高亮/开麦状态，启动进度 tick
+        isUnmutedRef.current = true;
+        startNormalTick();
       })
       .catch((err) => {
         console.error("原声播放失败:", err);

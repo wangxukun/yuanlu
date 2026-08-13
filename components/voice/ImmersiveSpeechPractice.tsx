@@ -571,7 +571,6 @@ export default function ImmersiveSpeechPractice({
                   <SpeechEvaluationCard
                     subtitle={activeSubtitle}
                     audioUrl={episode.audioUrl || ""}
-                    episodeId={episode.episodeid}
                     previousResult={getLatestResult(activeSubtitle.id)}
                     historicalRecords={getHistoricalRecords(activeSubtitle.id)}
                     onEvaluate={handleEvaluate}

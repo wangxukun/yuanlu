@@ -327,3 +327,63 @@ export async function uploadEpisodeCover(
     return { success: false, message: "封面上传失败" };
   }
 }
+
+/**
+ * 上传音频的 Server Action
+ * @param prevState 上传音频的初始状态
+ * @param formData 上传音频的表单数据
+ */
+export async function uploadEpisodeAudio(
+  prevState: ActionState,
+  formData: FormData,
+) {
+  const id = formData.get("episodeId") as string;
+  const file = formData.get("audioFile") as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, message: "请选择音频文件" };
+  }
+
+  // 检查文件类型
+  if (!file.name.match(/\.(mp3|wav|m4a|aac)$/i)) {
+    return {
+      success: false,
+      message: "请选择格式正确的音频文件 (mp3, wav, m4a, aac)",
+    };
+  }
+
+  try {
+    // 先获取旧的音频文件名以便稍后删除
+    const { audioFileName: oldAudioFileName } =
+      await episodeService.getEpisodeOSSFiles(id);
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const fileName = `yuanlu/podcastes/episodes/audios/${timestamp}_${Math.random().toString(36).substring(2)}.${file.name.split(".").pop()}`;
+
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到OSS
+    const result = await uploadFile(buffer, fileName);
+
+    // 更新数据库记录
+    const updateData: Prisma.episodeUpdateInput = {
+      audioUrl: result.fileUrl,
+      audioFileName: result.fileName,
+    };
+
+    await episodeService.update(id, updateData);
+
+    // 删除旧的音频文件
+    if (oldAudioFileName) {
+      await deleteOSSFile(oldAudioFileName);
+    }
+
+    return { success: true, message: "音频上传成功" };
+  } catch (error) {
+    console.error("上传音频失败:", error);
+    return { success: false, message: "音频上传失败" };
+  }
+}

@@ -43,6 +43,11 @@ async function main() {
     process.exit(0);
   }
 
+  let uploadCount = 0;
+  let skipCount = 0;
+  let deleteOldCount = 0;
+  let errorCount = 0;
+
   for (const file of files) {
     console.log(`\n============================================`);
     console.log(`正在处理文件: ${file}`);
@@ -51,6 +56,7 @@ async function main() {
       console.warn(
         `[跳过] 文件名不符合格式 'YYMMDD_Title.en-zh.word.json': ${file}`,
       );
+      skipCount++;
       continue;
     }
 
@@ -73,6 +79,7 @@ async function main() {
         console.warn(
           `[跳过] 在 podcast ${podcastId} 下未找到标题包含 '${searchTitle}' 的单集。`,
         );
+        skipCount++;
         continue;
       }
 
@@ -93,6 +100,7 @@ async function main() {
         console.log(
           `[跳过] 单集在 OSS 中已存在对应的 JSON 字幕: ${episode.subtitleBilingualFileName}`,
         );
+        skipCount++;
         continue;
       }
 
@@ -112,15 +120,19 @@ async function main() {
       // 尝试删除旧版 SRT 字幕
       if (episode.subtitleEnFileName) {
         console.log(`正在删除旧版英文字幕 SRT: ${episode.subtitleEnFileName}`);
-        await deleteObject(episode.subtitleEnFileName).catch((e) =>
-          console.error(`[错误] 删除 ${episode.subtitleEnFileName} 失败:`, e),
-        );
+        await deleteObject(episode.subtitleEnFileName)
+          .then(() => deleteOldCount++)
+          .catch((e) =>
+            console.error(`[错误] 删除 ${episode.subtitleEnFileName} 失败:`, e),
+          );
       }
       if (episode.subtitleZhFileName) {
         console.log(`正在删除旧版中文字幕 SRT: ${episode.subtitleZhFileName}`);
-        await deleteObject(episode.subtitleZhFileName).catch((e) =>
-          console.error(`[错误] 删除 ${episode.subtitleZhFileName} 失败:`, e),
-        );
+        await deleteObject(episode.subtitleZhFileName)
+          .then(() => deleteOldCount++)
+          .catch((e) =>
+            console.error(`[错误] 删除 ${episode.subtitleZhFileName} 失败:`, e),
+          );
       }
 
       // 更新数据库
@@ -137,13 +149,20 @@ async function main() {
         },
       });
       console.log(`文件 ${file} 处理完成！`);
+      uploadCount++;
     } catch (error) {
       console.error(`[错误] 处理文件 ${file} 时发生异常:`, error);
+      errorCount++;
     }
   }
 
   console.log(`\n============================================`);
   console.log("批量上传和更新流程执行完毕！");
+  console.log(`【汇总信息】`);
+  console.log(`- 成功上传: ${uploadCount} 份 JSON 字幕`);
+  console.log(`- 跳过处理: ${skipCount} 个文件`);
+  console.log(`- 发生异常: ${errorCount} 个文件`);
+  console.log(`- 删除旧字幕: ${deleteOldCount} 份 SRT 文件`);
 }
 
 main()
