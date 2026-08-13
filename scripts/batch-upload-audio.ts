@@ -95,20 +95,27 @@ async function main() {
   console.log(`mp3目录文件数: ${mp3Names.length}`);
   console.log(`json目录文件数: ${jsonNames.length}`);
 
-  if (mp3Names.length !== jsonNames.length) {
-    console.error(`[错误] MP3 文件数量与 JSON 文件数量不一致！`);
-    process.exit(1);
-  }
+  const mp3Set = new Set(mp3Names);
+  const jsonSet = new Set(jsonNames);
 
-  mp3Names.sort();
-  jsonNames.sort();
-  for (let i = 0; i < mp3Names.length; i++) {
-    if (mp3Names[i] !== jsonNames[i]) {
+  const missingJson = mp3Names.filter((name) => !jsonSet.has(name));
+  const missingMp3 = jsonNames.filter((name) => !mp3Set.has(name));
+
+  if (missingJson.length > 0 || missingMp3.length > 0) {
+    console.error(`[错误] 文件匹配性校验失败！`);
+    if (missingJson.length > 0) {
       console.error(
-        `[错误] 发现不匹配的文件名: ${mp3Names[i]}.mp3 与 ${jsonNames[i]}.json`,
+        `以下 MP3 文件缺少对应的 JSON 文件 (${missingJson.length}个):`,
       );
-      process.exit(1);
+      missingJson.forEach((name) => console.error(`  - ${name}.mp3`));
     }
+    if (missingMp3.length > 0) {
+      console.error(
+        `以下 JSON 文件缺少对应的 MP3 文件 (${missingMp3.length}个):`,
+      );
+      missingMp3.forEach((name) => console.error(`  - ${name}.json`));
+    }
+    process.exit(1);
   }
 
   console.log(`校验通过，所有文件完全匹配。`);
