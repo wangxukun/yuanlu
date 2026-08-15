@@ -38,6 +38,6 @@ description: 播客音频转码与 OSS 批量同步更新工具。从指定目�
 
 ## 底层逻辑说明（供参考）
 
-- **DB与JSON匹配逻辑**：利用 JSON 的 `title` 和 `publishDate`，精确匹配数据库中 `podcastid` 一致且 `title`、`publishAt` 相同的 `episode` 记录。
+- **DB与JSON匹配逻辑**：利用 JSON 的 `title` 和 `publishDate`，与数据库中 `podcastid` 一致的单集记录进行对比。匹配时会将数据库取得的剧集 title 和本地 JSON 文件中的 title 都去掉非字母字符（仅保留 `a-zA-Z`），转换为小写后再进行比对，并确保 `publishAt` 与 `publishDate` 相同。
 - **文件替换机制**：无论 OSS 上是否已经存在 `m4a`，脚本都会上传新的 `m4a` 覆盖更新。同时会自动清理原有的 `mp3` 文件。
 - **OSS 路径**：遵循现有的 OSS 目录规范，自动生成唯一文件名（如 `yuanlu/podcastes/episodes/audio/{时间戳}_{随机字符串}.m4a`）。

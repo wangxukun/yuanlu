@@ -30,6 +30,6 @@ description: 批量上传指定本地目录下的 JSON 字幕文件，并将其�
 
 ## 底层逻辑说明（供参考）
 
-- **文件匹配逻辑**：通过文件名（如 `20250110_Title.en-zh.word.json`）提取日期和标题，然后在数据库中查找指定播客下标题匹配（模糊匹配）的单集。
+- **文件匹配逻辑**：通过文件名（如 `20250110_Title.en-zh.word.json`）提取日期和标题，然后分别把数据库中取得的剧集 title 和本地 json 文件中的 title 都去掉非字母字符（仅保留 `a-zA-Z`），转换为小写后再进行精确匹配。
 - **OSS 存储路径约定**：上传路径为 `podcastes/episodes/subtitles/{时间戳}_{随机字符串}.json`。
 - **数据库更新**：成功上传后，将会把 OSS URL 和文件名更新至该单集的 `subtitleBilingualUrl` 与 `subtitleBilingualFileName` 字段，并将原本旧版中英字幕 SRT 字段（`subtitleEnUrl`, `subtitleZhUrl` 等）置空 (`null`)。

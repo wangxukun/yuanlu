@@ -153,6 +153,14 @@ async function main() {
   let deleteOldCount = 0;
   let errorCount = 0;
 
+  // 获取该播客下所有的单集以供后续匹配
+  const episodes = await prisma.episode.findMany({
+    where: {
+      podcastid: podcastId,
+    },
+  });
+  console.log(`在数据库中该播客下找到 ${episodes.length} 个单集。`);
+
   for (const name of jsonNames) {
     console.log(`\n============================================`);
     console.log(`正在处理: ${name}`);
@@ -169,19 +177,16 @@ async function main() {
         continue;
       }
 
-      // 查询数据库
-      const episodes = await prisma.episode.findMany({
-        where: {
-          podcastid: podcastId,
-          title: title,
-        },
-      });
+      const cleanLocalTitle = title.replace(/[^a-zA-Z]/g, "").toLowerCase();
 
-      // 进一步通过 publishDate 过滤
+      // 在内存中匹配剧集 (同时校验 publishDate 和 去除非字母字符后的 title)
       const targetEpisode = episodes.find((ep) => {
         if (!ep.publishAt) return false;
         const dbDateStr = ep.publishAt.toISOString().split("T")[0];
-        return dbDateStr === publishDateStr;
+        if (dbDateStr !== publishDateStr) return false;
+
+        const cleanDbTitle = ep.title.replace(/[^a-zA-Z]/g, "").toLowerCase();
+        return cleanDbTitle === cleanLocalTitle;
       });
 
       if (!targetEpisode) {

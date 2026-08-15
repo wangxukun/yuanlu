@@ -51,3 +51,9 @@ yuanlu-project-context.xml
 
 /.claude/
 scripts/outro-template/*
+
+ANDROID.md
+ANDROID_APP.md
+
+/public/BingSiteAuth.xml
+/public/baidu_verify_codeva-c5mrESdpYZ.html

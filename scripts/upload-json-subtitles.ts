@@ -48,6 +48,14 @@ async function main() {
   let deleteOldCount = 0;
   let errorCount = 0;
 
+  // 获取该播客下所有的单集以供后续匹配
+  const episodes = await prisma.episode.findMany({
+    where: {
+      podcastid: podcastId,
+    },
+  });
+  console.log(`在数据库中该播客下找到 ${episodes.length} 个单集。`);
+
   for (const file of files) {
     console.log(`\n============================================`);
     console.log(`正在处理文件: ${file}`);
@@ -61,32 +69,27 @@ async function main() {
     }
 
     const titleStr = match[2];
-    const searchTitle = titleStr.replace(/_/g, " ");
-
-    // Convert YYMMDD to a fuzzy matchable boundary if necessary, but title match might be enough.
-    // Let's use title matching mainly, but we can verify the date if multiple matches.
+    const cleanLocalTitle = titleStr.replace(/[^a-zA-Z]/g, "").toLowerCase();
 
     try {
       // 匹配数据库中的单集
-      const episodes = await prisma.episode.findMany({
-        where: {
-          podcastid: podcastId,
-          title: { contains: searchTitle, mode: "insensitive" },
-        },
+      const matchedEpisodes = episodes.filter((ep) => {
+        const cleanDbTitle = ep.title.replace(/[^a-zA-Z]/g, "").toLowerCase();
+        return cleanDbTitle === cleanLocalTitle;
       });
 
-      if (episodes.length === 0) {
+      if (matchedEpisodes.length === 0) {
         console.warn(
-          `[跳过] 在 podcast ${podcastId} 下未找到标题包含 '${searchTitle}' 的单集。`,
+          `[跳过] 在播客 ${podcastId} 下未找到标题匹配 '${titleStr}' 的单集。`,
         );
         skipCount++;
         continue;
       }
 
-      const episode = episodes[0];
-      if (episodes.length > 1) {
+      const episode = matchedEpisodes[0];
+      if (matchedEpisodes.length > 1) {
         console.warn(
-          `[警告] 找到多个标题包含 '${searchTitle}' 的单集，将使用第一个: ${episode.title} (${episode.episodeid})`,
+          `[警告] 找到多个标题匹配 '${titleStr}' 的单集，将使用第一个: ${episode.title} (${episode.episodeid})`,
         );
       }
 
