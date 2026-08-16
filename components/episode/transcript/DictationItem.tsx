@@ -1,6 +1,13 @@
 "use client";
 
-import React, { memo, useState, useEffect, useRef, useMemo } from "react";
+import React, {
+  memo,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { PlayCircleIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { ProcessedSubtitle } from "./types";
@@ -41,7 +48,6 @@ export const DictationItem = memo(function DictationItem({
   }, [isActive, sub.id]);
 
   // Basic tokenization: split by spaces, keep punctuation attached to words for simpler matching
-  // Real dictation systems use more sophisticated NLP, but this is a solid start.
   const targetWords = useMemo(() => {
     return sub.textEn
       .trim()
@@ -49,22 +55,40 @@ export const DictationItem = memo(function DictationItem({
       .filter((w) => w.length > 0);
   }, [sub.textEn]);
 
-  const inputWords = inputValue
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
+  const clean = useCallback(
+    (s: string) => s.toLowerCase().replace(/[.,!?;:"()]/g, ""),
+    [],
+  );
+
+  const inputWords = useMemo(() => {
+    const rawInput = inputValue.replace(/\s+/g, "");
+    const words: string[] = [];
+    let cursor = 0;
+    for (let i = 0; i < targetWords.length; i++) {
+      const tLen = clean(targetWords[i]).length;
+      if (tLen === 0) {
+        words.push("");
+        continue;
+      }
+      if (cursor >= rawInput.length) {
+        break;
+      }
+      const chunk = rawInput.slice(cursor, cursor + tLen);
+      words.push(chunk);
+      cursor += chunk.length;
+    }
+    return words;
+  }, [inputValue, targetWords, clean]);
 
   // Determine if fully correct
   const isCorrect = useMemo(() => {
     if (inputWords.length !== targetWords.length) return false;
-
-    // Simple case-insensitive compare (ignoring punctuation differences is better, but keeping simple for now)
-    const clean = (s: string) => s.toLowerCase().replace(/[.,!?;:"()]/g, "");
-
-    return targetWords.every(
-      (tw, i) => clean(tw) === clean(inputWords[i] || ""),
-    );
-  }, [inputWords, targetWords]);
+    return targetWords.every((tw, i) => {
+      const cw = clean(tw);
+      if (cw.length === 0) return true;
+      return cw === (inputWords[i] || "").toLowerCase();
+    });
+  }, [inputWords, targetWords, clean]);
 
   useEffect(() => {
     if (isCorrect) {
@@ -144,13 +168,19 @@ export const DictationItem = memo(function DictationItem({
           >
             {targetWords.map((targetWord, i) => {
               const inputWord = inputWords[i];
+              const cw = clean(targetWord);
+              const isPunctuationOnly = cw.length === 0;
 
-              const clean = (s: string) =>
-                s.toLowerCase().replace(/[.,!?;:"()]/g, "");
               const isMatch =
-                inputWord && clean(targetWord) === clean(inputWord);
-              const isPending = inputWord === undefined;
-              const isError = !isMatch && !isPending;
+                isPunctuationOnly ||
+                (inputWord !== undefined &&
+                  inputWord.length === cw.length &&
+                  inputWord.toLowerCase() === cw);
+              const isError =
+                !isPunctuationOnly &&
+                inputWord !== undefined &&
+                inputWord.length === cw.length &&
+                inputWord.toLowerCase() !== cw;
 
               // Force show if error count >= 3
               const showHint = errorCount >= 3;
@@ -181,17 +211,23 @@ export const DictationItem = memo(function DictationItem({
                 );
               }
 
-              // Pending state
+              // Pending state (or partial input)
               return (
                 <span
                   key={i}
-                  className="inline-block mr-2 border-b-2 border-dashed border-ink-300 dark:border-ink-600 min-w-[40px] h-6"
+                  className="inline-block mr-2 border-b-2 border-dashed border-ink-300 dark:border-ink-600 min-w-[40px] h-6 relative align-bottom leading-none"
                 >
-                  {showHint && (
-                    <span className="text-info-500 opacity-60 text-sm">
-                      {targetWord}
+                  {inputWord !== undefined && inputWord.length > 0 && (
+                    <span className="text-ink-700 dark:text-ink-200">
+                      {inputWord}
                     </span>
                   )}
+                  {showHint &&
+                    (inputWord === undefined || inputWord.length === 0) && (
+                      <span className="text-info-500 opacity-60 text-sm">
+                        {targetWord}
+                      </span>
+                    )}
                 </span>
               );
             })}
