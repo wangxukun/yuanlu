@@ -4,6 +4,7 @@ import {
   ChevronUp,
   Clock,
   PlayCircle,
+  Podcast,
   Filter,
   CheckCircle,
   RefreshCcw,
@@ -20,6 +21,7 @@ import {
   formatDate,
   UseVocabularyNotebookReturn,
 } from "../hooks/useVocabularyNotebook";
+import { useOriginalAudio } from "../hooks/useOriginalAudio";
 import { VocabularyItem } from "../VocabularyNotebook";
 import { renderContext } from "./ContextRenderer";
 
@@ -35,11 +37,18 @@ export function VocabularyList({
     playAudio,
     playContextAudio,
     playingText,
+    stopAllAudio,
     toggleStatus,
     deleteVocabulary,
   } = hookOptions;
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // 剧集原声播放（字幕对齐，与语音评测同款实现）
+  const {
+    play: playOriginal,
+    playingKey: originalPlayingKey,
+    loadingKey: originalLoadingKey,
+  } = useOriginalAudio({ onBeforePlay: stopAllAudio });
 
   return (
     <>
@@ -378,22 +387,59 @@ export function VocabularyList({
                                           {item.episodeTitle}
                                         </span>
                                       </div>
-                                      <button
-                                        onClick={(e) =>
-                                          playContextAudio(
-                                            e,
-                                            item.contextSentence,
-                                          )
-                                        }
-                                        className={`p-2.5 rounded-full transition-all shrink-0 shadow-sm ${
-                                          playingText === item.contextSentence
-                                            ? "text-primary bg-primary/10 animate-pulse"
-                                            : "text-primary/70 hover:text-primary hover:bg-primary/10 bg-white dark:bg-ink-800"
-                                        }`}
-                                        title="播放原声出处"
-                                      >
-                                        <Volume2 size={18} />
-                                      </button>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={(e) =>
+                                            playContextAudio(
+                                              e,
+                                              item.contextSentence,
+                                            )
+                                          }
+                                          className={`p-2.5 rounded-full transition-all shrink-0 shadow-sm ${
+                                            playingText === item.contextSentence
+                                              ? "text-primary bg-primary/10 animate-pulse"
+                                              : "text-primary/70 hover:text-primary hover:bg-primary/10 bg-white dark:bg-ink-800"
+                                          }`}
+                                          title="AI 朗读句子"
+                                        >
+                                          <Volume2 size={18} />
+                                        </button>
+                                        {item.episodeid && (
+                                          <button
+                                            onClick={() => {
+                                              const eid = item.episodeid;
+                                              if (!eid) return;
+                                              void playOriginal({
+                                                key: `${eid}:${item.word}`,
+                                                episodeid: eid,
+                                                timestamp: item.timestamp,
+                                                contextSentence:
+                                                  item.contextSentence,
+                                              });
+                                            }}
+                                            disabled={
+                                              originalLoadingKey ===
+                                              `${item.episodeid}:${item.word}`
+                                            }
+                                            className={`p-2.5 rounded-full transition-all shrink-0 shadow-sm ${
+                                              originalPlayingKey ===
+                                                `${item.episodeid}:${item.word}` ||
+                                              originalLoadingKey ===
+                                                `${item.episodeid}:${item.word}`
+                                                ? "text-primary bg-primary/10 animate-pulse"
+                                                : "text-primary/70 hover:text-primary hover:bg-primary/10 bg-white dark:bg-ink-800"
+                                            }`}
+                                            title="播放剧集原声"
+                                          >
+                                            {originalLoadingKey ===
+                                            `${item.episodeid}:${item.word}` ? (
+                                              <span className="loading loading-spinner loading-xs" />
+                                            ) : (
+                                              <Podcast size={18} />
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 )}

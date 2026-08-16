@@ -1,20 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import {
   BookmarkIcon,
   XMarkIcon,
   SpeakerWaveIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import { SparklesIcon } from "@heroicons/react/24/solid";
-import { toast } from "sonner";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
 
 interface VocabularyModalProps {
   isModalOpen: boolean;
   setIsModalOpen: (val: boolean) => void;
   selectedWord: string;
-  selectedContext: string;
-  selectedTranslation: string;
   dictData: DictEntryDTO | null;
   isLoadingDefinition: boolean;
   isSaving: boolean;
@@ -28,8 +25,6 @@ export function VocabularyModal({
   isModalOpen,
   setIsModalOpen,
   selectedWord,
-  selectedContext,
-  selectedTranslation,
   dictData,
   isLoadingDefinition,
   isSaving,
@@ -38,6 +33,12 @@ export function VocabularyModal({
   onSave,
   onComplete,
 }: VocabularyModalProps) {
+  // 词源记忆模块默认收缩，点击头部展开；查询新词时自动重置
+  const [isEtymologyOpen, setIsEtymologyOpen] = useState(false);
+  useEffect(() => {
+    setIsEtymologyOpen(false);
+  }, [selectedWord]);
+
   const playAudio = (url?: string) => {
     if (url) {
       new Audio(url).play().catch(console.error);
@@ -150,33 +151,91 @@ export function VocabularyModal({
               </div>
             )}
 
-            {/* Context example card */}
-            <div className="bg-primary-50/80 dark:bg-primary-950/20 p-4 rounded-xl border border-primary-100/60 dark:border-primary-800/30">
-              <p className="text-[10px] font-bold text-primary-500/60 dark:text-primary-400/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <span>📖</span> 本句出处例句
-              </p>
-              <p className="text-sm text-ink-700 dark:text-ink-300 font-serif italic leading-relaxed mb-1.5">
-                &ldquo;{selectedContext}&rdquo;
-              </p>
-              {selectedTranslation && (
-                <p className="text-xs text-ink-400 dark:text-ink-500 leading-relaxed">
-                  {selectedTranslation}
-                </p>
-              )}
-            </div>
-
-            {/* AI deep analysis button (placeholder) */}
-            <button
-              onClick={() =>
-                toast("即将推出", {
-                  description: "AI 语境用法深度剖析功能正在开发中，敬请期待！",
-                })
+            {/* Etymology memory card（默认收缩，点击展开：词素拆解 + 词源故事 + 记忆技巧） */}
+            {(() => {
+              const ety = dictData.etymology;
+              if (
+                !ety ||
+                (!ety.breakdown &&
+                  !ety.mnemonic &&
+                  !ety.prefix &&
+                  !ety.root &&
+                  !ety.suffix)
+              ) {
+                return null;
               }
-              className="btn w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white border-primary-600 gap-2"
-            >
-              <SparklesIcon className="w-5 h-5" />
-              生成 AI 语境用法深度剖析
-            </button>
+              // 收缩态预览：优先展示词根，无词根取任一可用词素
+              const collapsedPreview =
+                ety.root || ety.prefix || ety.suffix || null;
+
+              return (
+                <div className="bg-primary-50/80 dark:bg-primary-950/20 rounded-xl border border-primary-100/60 dark:border-primary-800/30 overflow-hidden">
+                  <button
+                    onClick={() => setIsEtymologyOpen((v) => !v)}
+                    aria-expanded={isEtymologyOpen}
+                    className="w-full flex items-center justify-between gap-2 p-4 pb-2.5 text-left hover:bg-primary-100/40 dark:hover:bg-primary-900/20 transition-colors"
+                  >
+                    <p className="text-[10px] font-bold text-primary-500/60 dark:text-primary-400/60 uppercase tracking-wider flex items-center gap-1">
+                      <span>🧬</span> 词源记忆
+                    </p>
+                    <span className="flex items-center gap-2 min-w-0">
+                      {!isEtymologyOpen && collapsedPreview && (
+                        <span className="text-[10px] text-primary-500/70 dark:text-primary-400/70 font-bold truncate max-w-[150px]">
+                          {collapsedPreview}
+                        </span>
+                      )}
+                      <ChevronDownIcon
+                        className={clsx(
+                          "w-4 h-4 text-primary-500/70 shrink-0 transition-transform duration-200",
+                          isEtymologyOpen && "rotate-180",
+                        )}
+                      />
+                    </span>
+                  </button>
+
+                  {isEtymologyOpen && (
+                    <div className="px-4 pb-4">
+                      {(ety.prefix || ety.root || ety.suffix) && (
+                        <div className="flex flex-wrap gap-1.5 mb-2.5">
+                          {ety.prefix && (
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                              前缀 · {ety.prefix}
+                            </span>
+                          )}
+                          {ety.root && (
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                              词根 · {ety.root}
+                            </span>
+                          )}
+                          {ety.suffix && (
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-base-200 text-base-content/70 dark:bg-ink-800 dark:text-ink-300">
+                              后缀 · {ety.suffix}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {ety.breakdown && (
+                        <p className="text-sm text-ink-700 dark:text-ink-300 leading-relaxed mb-2">
+                          {ety.breakdown}
+                        </p>
+                      )}
+
+                      {ety.mnemonic && (
+                        <div className="bg-white/70 dark:bg-ink-900/40 rounded-lg p-2.5 border border-primary-100/50 dark:border-primary-800/20">
+                          <p className="text-xs text-ink-600 dark:text-ink-400 leading-relaxed">
+                            <span className="font-bold text-primary-600 dark:text-primary-400">
+                              💡 记忆技巧：
+                            </span>
+                            {ety.mnemonic}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </>
         ) : (
           /* Error / no data state */

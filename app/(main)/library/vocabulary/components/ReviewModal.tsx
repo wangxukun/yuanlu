@@ -10,6 +10,7 @@ import {
   BrainCircuit,
   X,
   Volume2,
+  Podcast,
   ExternalLink,
   RotateCcw,
   Clock,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { renderContext } from "./ContextRenderer";
 import { ReviewQuality, calculateNextReview } from "@/lib/srs";
+import { useOriginalAudio } from "../hooks/useOriginalAudio";
 import { UseVocabularyNotebookReturn } from "../hooks/useVocabularyNotebook";
 import { VocabularyItem } from "../VocabularyNotebook";
 
@@ -129,6 +131,7 @@ export function ReviewModal({
     setIsCardFlipped,
     playContextAudio,
     playingText,
+    stopAllAudio,
     playAudio,
     isSubmitting,
     handleSRS,
@@ -145,6 +148,18 @@ export function ReviewModal({
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [isInputWrong, setIsInputWrong] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 原声播放（与语音评测同款：字幕对齐 + OSS 直连），三处入口共用
+  const {
+    play: playOriginal,
+    stop: stopOriginal,
+    playingKey: originalPlayingKey,
+    loadingKey: originalLoadingKey,
+  } = useOriginalAudio({ onBeforePlay: stopAllAudio });
+
+  // 换卡/翻面时停止原声（翻面后背面会自动播放词典发音，避免重叠）
+  useEffect(() => {
+    stopOriginal();
+  }, [currentReviewIndex, isCardFlipped, stopOriginal]);
 
   // ==================== Effects ====================
 
@@ -261,7 +276,8 @@ export function ReviewModal({
       currentItem.dictData?.audio_urls?.uk ||
       currentItem.dictData?.audio_urls?.us;
     if (audioUrl) {
-      playAudio(null, audioUrl);
+      // fallbackText：dictvoice 未收录该词（如连字符复合词）时自动降级 TTS 合成
+      playAudio(null, audioUrl, currentItem.word);
     }
   }, [
     currentReviewIndex,
@@ -308,6 +324,78 @@ export function ReviewModal({
     return { forgot, hard, good, easy, total: reviewResults.length };
   }, [reviewResults]);
 
+  // ==================== 读音与原声 ====================
+
+  const wordPhonetic =
+    currentItem?.dictData?.phonetics?.us ||
+    currentItem?.dictData?.phonetics?.uk ||
+    null;
+  const wordAudioUrl =
+    currentItem?.dictData?.audio_urls?.us ||
+    currentItem?.dictData?.audio_urls?.uk ||
+    currentItem?.speakUrl ||
+    null;
+
+  /** 读音提示：显示音标并自动播放一次单词发音（不泄露拼写；dictvoice 未收录时降级 TTS） */
+  const handlePhoneticHint = () => {
+    if (!currentItem) return;
+    setShowHint(true);
+    stopOriginal();
+    playAudio(null, wordAudioUrl, currentItem.word);
+  };
+
+  /** 播放当前生词的剧集原声片段（字幕对齐，详见 useOriginalAudio） */
+  const handlePlayOriginalAudio = () => {
+    if (!currentItem?.episodeid) return;
+    void playOriginal({
+      key: `${currentItem.episodeid}:${currentItem.word}`,
+      episodeid: currentItem.episodeid,
+      timestamp: currentItem.timestamp,
+      contextSentence: currentItem.contextSentence,
+    });
+  };
+
+  /** 当前卡的原声播放 key（正面/背面按钮共用同一状态） */
+  const originalKey = currentItem
+    ? `${currentItem.episodeid ?? ""}:${currentItem.word}`
+    : null;
+  const isOriginalActive =
+    originalKey !== null &&
+    (originalPlayingKey === originalKey || originalLoadingKey === originalKey);
+  const isOriginalLoading =
+    originalKey !== null && originalLoadingKey === originalKey;
+
+  /** 读音提示区（中译英/猜词/填空共用）：点击前为按钮，点击后显示音标+发音 */
+  const renderPhoneticHint = () =>
+    !showHint ? (
+      <button
+        onClick={handlePhoneticHint}
+        className="btn btn-sm btn-ghost gap-1.5 text-warning"
+      >
+        <Volume2 size={14} />
+        读音提示
+      </button>
+    ) : (
+      <div className="flex items-center gap-2 animate-in fade-in duration-300">
+        {wordPhonetic ? (
+          <span className="text-sm font-mono text-base-content/60">
+            {wordPhonetic}
+          </span>
+        ) : (
+          <span className="text-xs text-base-content/40">暂无音标</span>
+        )}
+        {wordAudioUrl && (
+          <button
+            onClick={() => playAudio(null, wordAudioUrl, currentItem?.word)}
+            className="btn btn-xs btn-circle btn-ghost text-primary"
+            title="播放单词发音"
+          >
+            <Volume2 size={12} />
+          </button>
+        )}
+      </div>
+    );
+
   // ==================== Handlers ====================
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,12 +439,6 @@ export function ReviewModal({
   };
   handleChoiceSelectRef.current = handleChoiceSelect;
 
-  const handleShowHint = () => {
-    if (!currentItem) return;
-    setShowHint(true);
-    if (!inputValue) setInputValue(currentItem.word[0]);
-  };
-
   const handleRetry = () => {
     const forgottenIds = reviewResults
       .filter((r) => r.quality === ReviewQuality.FORGOT)
@@ -388,16 +470,7 @@ export function ReviewModal({
         autoComplete="off"
         spellCheck={false}
       />
-      <button
-        onClick={handleShowHint}
-        disabled={showHint}
-        className="btn btn-sm btn-ghost gap-1.5 text-warning mt-4 disabled:opacity-40"
-      >
-        <Lightbulb size={14} />
-        {showHint && currentItem
-          ? `首字母: ${currentItem.word[0].toUpperCase()}`
-          : "显示首字母"}
-      </button>
+      <div className="mt-4">{renderPhoneticHint()}</div>
     </>
   );
 
@@ -441,20 +514,12 @@ export function ReviewModal({
           {currentItem.translation}
         </div>
       )}
-      <div className="flex items-center gap-3 mt-6 sm:mt-8">
-        <button
-          onClick={handleShowHint}
-          disabled={showHint}
-          className="btn btn-sm btn-ghost gap-1.5 text-warning disabled:opacity-40"
-        >
-          <Lightbulb size={14} />
-          {showHint && currentItem
-            ? `首字母: ${currentItem.word[0].toUpperCase()}`
-            : "显示首字母"}
-        </button>
+      <div className="flex items-center gap-3 mt-6 sm:mt-8 flex-wrap justify-center">
+        {renderPhoneticHint()}
         {currentItem?.contextSentence && (
           <button
             onClick={(e) => playContextAudio(e, currentItem.contextSentence)}
+            title="AI 朗读句子"
             className={`btn btn-sm btn-circle btn-ghost ${
               playingText === currentItem.contextSentence
                 ? "text-primary animate-pulse"
@@ -462,6 +527,24 @@ export function ReviewModal({
             }`}
           >
             <Volume2 size={16} />
+          </button>
+        )}
+        {currentItem?.episodeid && (
+          <button
+            onClick={handlePlayOriginalAudio}
+            title="播放剧集原声（与字幕对齐）"
+            disabled={isOriginalLoading}
+            className={`btn btn-sm btn-circle btn-ghost ${
+              isOriginalActive
+                ? "text-primary animate-pulse"
+                : "text-base-content/40"
+            }`}
+          >
+            {isOriginalLoading ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <Podcast size={16} />
+            )}
           </button>
         )}
       </div>
@@ -689,18 +772,39 @@ export function ReviewModal({
               <h4 className="text-[10px] font-bold text-base-content/40 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={12} /> 原声出处
               </h4>
-              <button
-                onClick={(e) =>
-                  playContextAudio(e, currentItem.contextSentence)
-                }
-                className={`btn btn-xs btn-circle btn-ghost ${
-                  playingText === currentItem.contextSentence
-                    ? "text-primary animate-pulse"
-                    : "text-base-content/40"
-                }`}
-              >
-                <Volume2 size={14} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) =>
+                    playContextAudio(e, currentItem.contextSentence)
+                  }
+                  className={`btn btn-xs btn-circle btn-ghost ${
+                    playingText === currentItem.contextSentence
+                      ? "text-primary animate-pulse"
+                      : "text-base-content/40"
+                  }`}
+                  title="AI 朗读句子"
+                >
+                  <Volume2 size={14} />
+                </button>
+                {currentItem.episodeid && (
+                  <button
+                    onClick={handlePlayOriginalAudio}
+                    disabled={isOriginalLoading}
+                    className={`btn btn-xs btn-circle btn-ghost ${
+                      isOriginalActive
+                        ? "text-primary animate-pulse"
+                        : "text-base-content/40"
+                    }`}
+                    title="播放剧集原声（与字幕对齐）"
+                  >
+                    {isOriginalLoading ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      <Podcast size={14} />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="text-sm font-medium leading-relaxed">
               {renderContext(currentItem.contextSentence, currentItem.word)}

@@ -88,10 +88,47 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
     setPlayingText(null);
   }, []);
 
+  /** 用有道 TTS 合成并播放发音（任意文本可读）；成功返回 true。词典发音失败时的兜底。 */
+  const speakViaTts = useCallback(async (text: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/dictionary/youdao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: text }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        // 配额拦截有自己的提示+会员弹窗，视为已处理
+        if (handleDictionaryQuotaBlock(errBody)) return true;
+        return false;
+      }
+      const data = await res.json();
+      if (!data.speakUrl) return false;
+      const audio = new Audio(data.speakUrl);
+      audioRef.current = audio;
+      audio.onended = () => setPlayingText(null);
+      await audio.play();
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const playAudio = useCallback(
-    (e: React.MouseEvent | null, url?: string | null) => {
+    (
+      e: React.MouseEvent | null,
+      url?: string | null,
+      fallbackText?: string | null,
+    ) => {
       e?.stopPropagation();
       if (!url) {
+        // 无词典发音地址（如 dictvoice 未收录该词）：直接走 TTS 合成
+        if (fallbackText) {
+          void speakViaTts(fallbackText).then((ok) => {
+            if (!ok) toast.error("暂无发音");
+          });
+          return;
+        }
         toast.error("暂无发音");
         return;
       }
@@ -101,17 +138,28 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
         audioRef.current = audio;
         audio.onended = () => setPlayingText(null);
         audio.onerror = (err) => {
-          console.error("Audio playback error:", err);
-          toast.error("播放失败");
+          // 词典发音加载失败（dictvoice 对部分复合词/生僻词返回 500）：
+          // 自动降级为 TTS 合成发音，避免直接报错
+          console.warn("Dict audio unavailable, falling back to TTS:", err);
+          if (fallbackText) {
+            void speakViaTts(fallbackText).then((ok) => {
+              if (!ok) toast.error("播放失败");
+            });
+          } else {
+            toast.error("播放失败");
+          }
           setPlayingText(null);
         };
-        audio.play();
+        // play() 在媒体加载失败时会以 NotSupportedError reject，
+        // 与 onerror 是同一失败的重复信号；失败 UX 已由上方 onerror（含 TTS 兜底）
+        // 处理，这里必须吞掉 reject，避免未处理的 Promise 拒绝触发开发面板报错
+        audio.play().catch(() => {});
       } catch (error) {
         console.error("Audio initialization error:", error);
         toast.error("音频初始化失败");
       }
     },
-    [stopAllAudio],
+    [stopAllAudio, speakViaTts],
   );
 
   const playContextAudio = useCallback(
@@ -293,6 +341,7 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
     setIsCardFlipped,
     isSubmitting,
     playingText,
+    stopAllAudio,
     stats,
     filteredList,
     playAudio,

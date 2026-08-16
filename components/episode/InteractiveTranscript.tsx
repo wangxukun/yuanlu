@@ -421,8 +421,6 @@ export default function InteractiveTranscript({
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         selectedWord={selectedWord}
-        selectedContext={selectedContext}
-        selectedTranslation={selectedTranslation}
         dictData={dictData}
         isLoadingDefinition={isLoadingDefinition}
         isSaving={isSaving}

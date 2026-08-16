@@ -56,6 +56,8 @@ export interface VocabularyItem {
   speakUrl: string | null;
   webUrl: string | null;
   timestamp: number | null;
+  /** 所属剧集 id（原声播放走 /api/episode/audio-proxy） */
+  episodeid?: string | null;
   episodeTitle?: string;
   status?: "LEARNING" | "MASTERED";
   dictData?: DictData | null;
