@@ -4,12 +4,21 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateSignatureUrl } from "@/lib/oss";
 import { mergeSubtitles } from "@/lib/data";
+import { isPremiumUser } from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.userid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 弱项本为 PRO 会员功能，与 /library/pronunciation 页面的锁定态一致
+  if (!(await isPremiumUser(session.user))) {
+    return NextResponse.json(
+      { error: "Premium membership required" },
+      { status: 403 },
+    );
   }
 
   try {
@@ -75,9 +84,9 @@ export async function GET() {
     // Generate signed URLs for covers and audio
     const episodeCoverCache = new Map<string, string>();
     const episodeAudioCache = new Map<string, string>();
-    // 独家剧集仅会员/管理员可播放音频（与 practice-data / audio-proxy 鉴权一致）
-    const canPlayExclusive =
-      session.user.role === "PREMIUM" || session.user.role === "ADMIN";
+    // 独家剧集仅会员/管理员可播放音频（与 practice-data / audio-proxy 鉴权一致，
+    // 统一走 isPremiumUser：role 或有效订阅任一命中）
+    const canPlayExclusive = await isPremiumUser(session.user);
     for (const record of uniqueRecords) {
       if (record.episode) {
         const episodeId = record.episodeid;

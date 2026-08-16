@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateSignatureUrl } from "@/lib/oss";
+import { canAccessEpisode } from "@/core/auth/guard";
 
 /**
  * GET /api/episode/audio-proxy?id=xxx
@@ -38,14 +39,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Episode not found" }, { status: 404 });
     }
 
-    // 独家剧集权限校验
-    if (episode.isExclusive) {
-      if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-        return NextResponse.json(
-          { error: "Premium membership required" },
-          { status: 403 },
-        );
-      }
+    // 会员专享剧集权限校验（统一入口 canAccessEpisode：role 或有效订阅任一命中）
+    if (!(await canAccessEpisode(session.user, episode))) {
+      return NextResponse.json(
+        { error: "Premium membership required" },
+        { status: 403 },
+      );
     }
 
     // 生成签名 URL

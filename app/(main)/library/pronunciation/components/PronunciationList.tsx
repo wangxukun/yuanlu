@@ -9,16 +9,26 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts";
 import { useRouter } from "next/navigation";
-import { Target, Trophy, Activity } from "lucide-react";
+import { Target, Trophy, Activity, Lock } from "lucide-react";
+import { useUIStore } from "@/store/ui-store";
 
 export function PronunciationList({
   stats,
   errors,
+  isPremium = true,
+  totalErrors,
 }: {
   stats: any[];
   errors: any[];
+  /** 会员为全量；非会员 errors 为试用切片，列表尾部渲染锁定卡片 */
+  isPremium?: boolean;
+  totalErrors?: number;
 }) {
   const router = useRouter();
+  const lockedCount =
+    !isPremium && totalErrors !== undefined
+      ? Math.max(0, totalErrors - errors.length)
+      : 0;
 
   const chartData = stats.slice(0, 6).map((s) => ({
     phoneme: `/${s.phoneme}/`,
@@ -152,6 +162,33 @@ export function PronunciationList({
                   </div>
                 </div>
               ))}
+
+              {/* 非会员试用：剩余弱项句子锁定卡片 */}
+              {lockedCount > 0 && (
+                <div
+                  onClick={() =>
+                    useUIStore
+                      .getState()
+                      .openPremiumModal("pronunciation_locked")
+                  }
+                  className="p-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-4 cursor-pointer"
+                >
+                  <div className="p-3 bg-primary/10 text-primary rounded-xl shrink-0">
+                    <Lock size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-base-content">
+                      还有 {lockedCount} 条弱项句子待攻克
+                    </p>
+                    <p className="text-xs text-base-content/60 mt-0.5">
+                      解锁 PRO 会员查看完整弱项本，开始针对性循环练习
+                    </p>
+                  </div>
+                  <span className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary/20 btn-sm rounded-full shrink-0 border-0">
+                    解锁
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-16 bg-base-100 dark:bg-ink-950 rounded-2xl">

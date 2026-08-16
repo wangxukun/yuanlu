@@ -120,6 +120,17 @@ export async function PUT(request: NextRequest) {
             },
           });
         }
+      } else if (role) {
+        // 角色被改为非 PREMIUM（如管理员撤销会员）时，需同步取消仍在有效期内的订阅，
+        // 否则 isPremiumUser 的"有效订阅"通道会在订阅自然到期前继续放行
+        await tx.subscriptions.updateMany({
+          where: {
+            userid,
+            subscriptionType: "PREMIUM",
+            endDate: { gt: new Date() },
+          },
+          data: { endDate: new Date() },
+        });
       }
 
       return { updatedUser, subscription };

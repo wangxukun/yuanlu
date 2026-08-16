@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { isPremiumUser } from "@/core/auth/guard";
+import {
+  FREE_VOCABULARY_LIMIT,
+  FREE_VOCABULARY_DAILY_LIMIT,
+  VOCABULARY_QUOTA_EXCEEDED,
+} from "@/lib/quota";
+import { recordConversionEvent } from "@/lib/track";
 
 export async function POST(request: Request) {
   try {
@@ -39,24 +45,51 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. 配额检查
+    // 3. 配额检查：免费用户有每日新增上限和生词本总量上限，会员不限
     const hasPremium = await isPremiumUser(session.user);
     if (!hasPremium) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayCount = await prisma.vocabulary.count({
-        where: {
-          userid: userId,
-          addedDate: { gte: today },
-        },
-      });
+      const [todayCount, totalCount] = await Promise.all([
+        prisma.vocabulary.count({
+          where: {
+            userid: userId,
+            addedDate: { gte: today },
+          },
+        }),
+        prisma.vocabulary.count({
+          where: { userid: userId },
+        }),
+      ]);
 
-      if (todayCount >= 20) {
+      if (totalCount >= FREE_VOCABULARY_LIMIT) {
+        await recordConversionEvent({
+          eventType: "QUOTA_BLOCKED",
+          source: "vocabulary_total",
+          userid: userId,
+          metadata: { totalCount },
+        });
         return NextResponse.json(
           {
             success: false,
-            message:
-              "普通用户每天最多保存 20 个生词。升级高级会员解锁无限制生词本！",
+            code: VOCABULARY_QUOTA_EXCEEDED,
+            message: `生词本已满：免费用户最多保存 ${FREE_VOCABULARY_LIMIT} 个生词。删除部分生词可腾出空间，或升级会员解锁无限生词本！`,
+          },
+          { status: 403 },
+        );
+      }
+
+      if (todayCount >= FREE_VOCABULARY_DAILY_LIMIT) {
+        await recordConversionEvent({
+          eventType: "QUOTA_BLOCKED",
+          source: "vocabulary_daily",
+          userid: userId,
+          metadata: { todayCount },
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            message: `普通用户每天最多保存 ${FREE_VOCABULARY_DAILY_LIMIT} 个生词。升级高级会员解锁无限制生词本！`,
           },
           { status: 403 },
         );

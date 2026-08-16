@@ -15,7 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
 import { useEffect, useRef, useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, TrendingUp } from "lucide-react";
 
 const links = [
   { name: "信息概况", href: "/admin", icon: Squares2X2Icon },
@@ -40,6 +40,7 @@ const links = [
   },
   { name: "词典管理", href: "/admin/dictionary", icon: BookOpenIcon },
   { name: "访问日志", href: "/admin/logs", icon: ClipboardList },
+  { name: "转化分析", href: "/admin/conversion", icon: TrendingUp },
 ];
 
 const extractPathSegment = (path: string): string =>

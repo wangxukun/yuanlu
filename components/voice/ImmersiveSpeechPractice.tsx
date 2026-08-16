@@ -319,7 +319,9 @@ export default function ImmersiveSpeechPractice({
     });
 
     if (result.error) {
-      toast.error("保存进度失败");
+      toast.error(
+        "message" in result && result.message ? result.message : "保存进度失败",
+      );
     }
   };
 
@@ -499,7 +501,9 @@ export default function ImmersiveSpeechPractice({
                     会员即可解锁本集全篇语音评测。
                   </p>
                   <button
-                    onClick={() => useUIStore.getState().openPremiumModal()}
+                    onClick={() =>
+                      useUIStore.getState().openPremiumModal("trial_unlock")
+                    }
                     className="btn btn-sm bg-primary-600 hover:bg-primary-700 text-white border-none w-full rounded-lg"
                   >
                     解锁 PRO 会员
@@ -548,7 +552,11 @@ export default function ImmersiveSpeechPractice({
                         会员，解锁本集全部练习卡片及更多独家高级内容。
                       </p>
                       <button
-                        onClick={() => useUIStore.getState().openPremiumModal()}
+                        onClick={() =>
+                          useUIStore
+                            .getState()
+                            .openPremiumModal("trial_complete")
+                        }
                         className="btn btn-primary rounded-xl"
                       >
                         解锁全部

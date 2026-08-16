@@ -96,7 +96,13 @@ export const statsService = {
    * 获取个人中心概览统计数据 (总时长、连续天数、总词汇)
    */
   async getUserProfileStats(userId: string): Promise<UserProfileStatsDto> {
-    const [streakDays, totalSecondsResult, wordsCount] = await Promise.all([
+    const [
+      streakDays,
+      totalSecondsResult,
+      wordsCount,
+      speechEvalCount,
+      speechHighScoreCount,
+    ] = await Promise.all([
       this.calculateStreak(userId),
       prisma.user_daily_activity.aggregate({
         where: { userid: userId },
@@ -104,6 +110,12 @@ export const statsService = {
       }),
       prisma.vocabulary.count({
         where: { userid: userId },
+      }),
+      prisma.speech_recognition.count({
+        where: { userid: userId },
+      }),
+      prisma.speech_recognition.count({
+        where: { userid: userId, overallScore: { gte: 85 } },
       }),
     ]);
 
@@ -114,6 +126,8 @@ export const statsService = {
       totalHours,
       streakDays,
       wordsLearned: wordsCount,
+      speechEvalCount,
+      speechHighScoreCount,
     };
   },
 

@@ -112,7 +112,11 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
     });
 
     if (result.error) {
-      toast.error("Failed to save progress");
+      toast.error(
+        "message" in result && result.message
+          ? result.message
+          : "Failed to save progress",
+      );
     }
   };
 
@@ -234,7 +238,9 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               升级为 PRO 会员，解锁本集全部练习卡片及更多独家高级内容。
             </p>
             <button
-              onClick={() => useUIStore.getState().openPremiumModal()}
+              onClick={() =>
+                useUIStore.getState().openPremiumModal("trial_complete")
+              }
               className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30"
             >
               解锁全部

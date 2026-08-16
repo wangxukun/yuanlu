@@ -11,6 +11,8 @@ export default function StatsOverview() {
     totalHours: 0,
     streakDays: 0,
     wordsLearned: 0,
+    speechEvalCount: 0,
+    speechHighScoreCount: 0,
   });
   const [loading, setLoading] = useState(true);
 

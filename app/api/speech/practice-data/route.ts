@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
+import { isPremiumUser, canAccessEpisode } from "@/core/auth/guard";
+import { recordConversionEvent } from "@/lib/track";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 
@@ -42,14 +44,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Episode not found" }, { status: 404 });
     }
 
-    // 拦截：如果是独家剧集，仅限高级会员或管理员访问口语练习
-    if (episode.isExclusive) {
-      if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-        return NextResponse.json(
-          { error: "Premium membership required" },
-          { status: 403 },
-        );
-      }
+    // 拦截：会员专享剧集的口语练习需会员权限（统一入口 canAccessEpisode）
+    if (!(await canAccessEpisode(session.user, episode))) {
+      return NextResponse.json(
+        { error: "Premium membership required" },
+        { status: 403 },
+      );
     }
 
     // 生成 OSS 签名 URL
@@ -185,15 +185,27 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    // 6. 处理非会员的试用模式 (非独享 + 普通用户)
+    // 6. 处理非会员的试用模式（仅开放前 5 句）
+    // 会员判断与配额逻辑保持一致（role 或有效订阅任一命中）
     let isTrialMode = false;
-    const isPremiumOrAdmin =
-      session.user.role === "PREMIUM" || session.user.role === "ADMIN";
+    const isPremium = await isPremiumUser(session.user);
 
-    if (!episode.isExclusive && !isPremiumOrAdmin) {
+    if (!isPremium) {
       isTrialMode = true;
-      // 恢复试用限制，截取前 5 句（取消随机打乱以保证上下文连贯）
       if (subtitles.length > 5) {
+        // 免费用户首次在本集练习且内容被截断时记录触墙事件（转化漏斗分析）
+        if (historyRecords.length === 0) {
+          await recordConversionEvent({
+            eventType: "TRIAL_REACHED",
+            source: "speech_practice",
+            userid: session.user.userid,
+            metadata: {
+              episodeid: id,
+              totalSubtitles: subtitles.length,
+            },
+          });
+        }
+        // 恢复试用限制，截取前 5 句（取消随机打乱以保证上下文连贯）
         subtitles = subtitles.slice(0, 5);
       }
     }

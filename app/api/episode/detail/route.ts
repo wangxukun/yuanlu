@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { isPremiumUser } from "@/core/auth/guard";
+import { canAccessEpisode } from "@/core/auth/guard";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -60,10 +60,11 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (episode && episode.isExclusive) {
+    // 会员专享剧集：无权限用户剥离媒体与字幕地址，仅保留元信息
+    // （统一入口 canAccessEpisode；非专享剧集短路返回，不产生 auth() 开销）
+    if (episode?.isExclusive) {
       const session = await auth();
-      const hasPremium = await isPremiumUser(session?.user);
-      if (!hasPremium) {
+      if (!(await canAccessEpisode(session?.user, episode))) {
         episode.audioUrl = "";
         episode.audioFileName = "";
         episode.subtitleEnUrl = "";

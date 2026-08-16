@@ -189,36 +189,6 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
 }
 
 /**
- * 获取episode列表
- */
-export async function fetchEpisodes(): Promise<Episode[]> {
-  const res = await fetch(`${baseUrl}/api/episode/list`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch episodes");
-  }
-  const data = await res.json();
-  if (data.length > 0) {
-    for (let i = 0; i < data.length; i++) {
-      // 生成封面图片的签名链接
-      data[i].coverUrl = await generateSignatureUrl(
-        data[i].coverFileName,
-        3600 * 3,
-      );
-
-      // 生成音频文件的签名链接
-      data[i].audioUrl = await generateSignatureUrl(
-        data[i].audioFileName,
-        3600 * 3,
-      );
-    }
-  }
-  return data;
-}
-
-/**
  * 获取单集详情，包含所属的 podcast
  * @param id episode id
  */

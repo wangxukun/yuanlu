@@ -5,6 +5,7 @@ import { Episode } from "@/core/episode/episode.entity";
 import { ChevronDown, ChevronUp, Languages, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
 export default function ShowNotes({ episode }: { episode: Episode }) {
   const { data: session } = useSession();
@@ -47,6 +48,7 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
         body: JSON.stringify({ word: episode.description }),
       });
       const data = await res.json();
+      if (handleDictionaryQuotaBlock(data)) return;
       if (res.ok && data.definition) {
         setTranslatedDesc(data.definition);
       } else {

@@ -38,6 +38,12 @@ export const achievementsService = {
         case "hours":
           isQualified = stats.totalHours >= achievement.threshold;
           break;
+        case "speechCount":
+          isQualified = stats.speechEvalCount >= achievement.threshold;
+          break;
+        case "speechHighScore":
+          isQualified = stats.speechHighScoreCount >= achievement.threshold;
+          break;
         case "manual":
           // 手动触发的成就在此不做检查，需由特定业务动作触发
           isQualified = false;

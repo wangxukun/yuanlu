@@ -5,11 +5,55 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
+import { isPremiumUser } from "@/core/auth/guard";
+import {
+  FREE_SPEECH_EVALUATIONS_PER_MONTH,
+  SPEECH_QUOTA_EXCEEDED,
+} from "@/lib/quota";
+import { recordConversionEvent } from "@/lib/track";
 
 // 环境变量获取
 const APP_KEY = process.env.YOUDAO_APP_KEY || "";
 const APP_SECRET = process.env.YOUDAO_APP_SECRET || "";
 const YOUDAO_URL = "https://openapi.youdao.com/iseapi";
+
+/**
+ * 计算当前自然月的起始时间（本地时区），作为月度配额的统计边界
+ */
+function getMonthStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+/**
+ * 查询用户本自然月已保存的语音评测次数
+ */
+async function getMonthlyEvaluationCount(userid: string): Promise<number> {
+  return prisma.speech_recognition.count({
+    where: {
+      userid,
+      recognitionDate: { gte: getMonthStart() },
+    },
+  });
+}
+
+/**
+ * 校验免费用户的月度评测配额。
+ * 会员/管理员直接放行；免费用户本月已用满则返回提示文案，否则返回 null。
+ * 注意：调用方需将文案以内联对象字面量返回，保证联合类型归一化。
+ */
+async function getEvaluationQuotaMessage(user: {
+  role?: string | null;
+  userid?: string;
+}): Promise<string | null> {
+  const hasPremium = await isPremiumUser(user);
+  if (hasPremium) return null;
+
+  const used = await getMonthlyEvaluationCount(user.userid!);
+  if (used < FREE_SPEECH_EVALUATIONS_PER_MONTH) return null;
+
+  return `本月 ${FREE_SPEECH_EVALUATIONS_PER_MONTH} 次免费语音评测已用完，升级会员解锁无限次评测！`;
+}
 
 /**
  * 对应 Python 示例中的 truncate 函数
@@ -42,6 +86,17 @@ export async function evaluateSpeech(
   const session = await auth();
   if (!session?.user?.userid) {
     return { error: "Unauthorized" };
+  }
+
+  // 配额检查放在调用有道 API 之前，超限用户不产生评测费用
+  const quotaMessage = await getEvaluationQuotaMessage(session.user);
+  if (quotaMessage) {
+    await recordConversionEvent({
+      eventType: "QUOTA_BLOCKED",
+      source: "speech_evaluation",
+      userid: session.user.userid,
+    });
+    return { error: SPEECH_QUOTA_EXCEEDED, message: quotaMessage };
   }
 
   if (!APP_KEY || !APP_SECRET) {
@@ -131,6 +186,18 @@ export async function saveSpeechResult(params: {
   const session = await auth();
   if (!session?.user?.userid) {
     return { error: "Unauthorized" };
+  }
+
+  // 兜底配额检查：正常流程在 evaluateSpeech 已拦截，这里防止并发或绕过评测接口直接保存
+  const quotaMessage = await getEvaluationQuotaMessage(session.user);
+  if (quotaMessage) {
+    await recordConversionEvent({
+      eventType: "QUOTA_BLOCKED",
+      source: "speech_save",
+      userid: session.user.userid,
+      metadata: { episodeid: params.episodeId },
+    });
+    return { error: SPEECH_QUOTA_EXCEEDED, message: quotaMessage };
   }
 
   try {

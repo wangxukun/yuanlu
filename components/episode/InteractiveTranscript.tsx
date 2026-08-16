@@ -7,6 +7,7 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
 // Import new decoupled components
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
@@ -248,6 +249,7 @@ export default function InteractiveTranscript({
         );
         if (res.ok) {
           const json = await res.json();
+          if (handleDictionaryQuotaBlock(json)) return;
           if (json.success && json.data) {
             setDictData(json.data as DictEntryDTO);
           }

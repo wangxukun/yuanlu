@@ -380,6 +380,9 @@ export default function EpisodeForm() {
             >
               付费订阅
             </label>
+            <span className="ml-2 text-xs text-base-content/50">
+              当前站点内容免费运营，专享标记暂不在前台生效；付费墙启用后自动生效
+            </span>
           </div>
         </div>
         <div className="flex flex-row">

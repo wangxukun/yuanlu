@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { toast } from "sonner";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 import {
   submitReviewAction,
   updateVocabularyStatusAction,
@@ -133,7 +134,14 @@ export function useVocabularyNotebook(initialList: VocabularyItem[]) {
           body: JSON.stringify({ word: text }),
         });
 
-        if (!res.ok) throw new Error("获取朗读地址失败");
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => null);
+          if (handleDictionaryQuotaBlock(errBody)) {
+            setPlayingText(null);
+            return;
+          }
+          throw new Error("获取朗读地址失败");
+        }
 
         const data = await res.json();
         if (data.speakUrl) {

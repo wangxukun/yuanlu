@@ -2,11 +2,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { isPremiumUser } from "@/core/auth/guard";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.userid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 诊断报告为 PRO 会员功能（当前无调用方，防御性挂墙保持与弱项本一致）
+  if (!(await isPremiumUser(session.user))) {
+    return NextResponse.json(
+      { error: "Premium membership required" },
+      { status: 403 },
+    );
   }
 
   try {

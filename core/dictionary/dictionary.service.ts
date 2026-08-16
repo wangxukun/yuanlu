@@ -159,6 +159,20 @@ async function callDeepSeekLLM(word: string): Promise<DictEntryDTO> {
 
 export const dictionaryService = {
   /**
+   * 仅检查 PostgreSQL 缓存是否命中（不发 LLM 请求）。
+   * 供 API 路由在调用 lookup 前判断是否为计费路径（缓存未命中才消耗词典配额）。
+   */
+  async isCached(word: string): Promise<boolean> {
+    const normalizedWord = word.toLowerCase().trim();
+    if (!normalizedWord) return false;
+    const cached = await prisma.dictionary.findUnique({
+      where: { word: normalizedWord },
+      select: { word: true },
+    });
+    return cached !== null;
+  },
+
+  /**
    * Look up a word using the 3-tier strategy:
    * 1. PostgreSQL cache (fastest server-side)
    * 2. DeepSeek LLM generation → persist to DB

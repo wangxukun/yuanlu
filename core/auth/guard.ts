@@ -76,11 +76,33 @@ async function hasActivePremiumSubscription(userid: string): Promise<boolean> {
 /**
  * Check if a user has PREMIUM or ADMIN role (including active subscription).
  */
-export async function isPremiumUser(user?: { role?: string | null, userid?: string }): Promise<boolean> {
+export async function isPremiumUser(
+  user?: { role?: string | null; userid?: string } | null,
+): Promise<boolean> {
   if (!user) return false;
   if (user.role === "PREMIUM" || user.role === "ADMIN") return true;
-  if (user.userid && (await hasActivePremiumSubscription(user.userid))) return true;
+  if (user.userid && (await hasActivePremiumSubscription(user.userid)))
+    return true;
   return false;
+}
+
+/**
+ * 会员专享剧集墙的唯一服务端入口。
+ * 校验用户能否访问（播放/下载/练习）指定剧集：
+ * 非专享剧集人人可访问；专享剧集需会员资格（静态 role 或有效订阅任一命中）。
+ *
+ * 各路由（episode/detail 的字段剥离、episode/audio-proxy 的 403、
+ * speech/practice-data 与 speech/errors 的拦截）统一调用本函数，
+ * 避免专享判断逻辑散落导致各处鉴权口径不一致。
+ * 当前站点处于内容全免费阶段（无剧集标记专享），本函数恒返回 true；
+ * 未来上线专享剧集后自动生效，无需改动调用方。
+ */
+export async function canAccessEpisode(
+  user?: { role?: string | null; userid?: string } | null,
+  episode?: { isExclusive?: boolean | null } | null,
+): Promise<boolean> {
+  if (!episode?.isExclusive) return true;
+  return isPremiumUser(user);
 }
 
 /**

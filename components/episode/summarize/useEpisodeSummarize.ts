@@ -7,6 +7,7 @@ import { useUIStore } from "@/store/ui-store";
 import { toggleEpisodeFavorite } from "@/lib/actions/favorite-actions";
 import { Episode } from "@/core/episode/episode.entity";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
 export function useEpisodeSummarize(episode: Episode) {
   const pathname = usePathname();
@@ -81,6 +82,7 @@ export function useEpisodeSummarize(episode: Episode) {
         body: JSON.stringify({ word: episode.title }),
       });
       const data = await res.json();
+      if (handleDictionaryQuotaBlock(data)) return;
       if (res.ok && data.definition) {
         setTranslatedTitle(data.definition);
       } else {
@@ -152,7 +154,7 @@ export function useEpisodeSummarize(episode: Episode) {
     }
 
     if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-      useUIStore.getState().openPremiumModal();
+      useUIStore.getState().openPremiumModal("episode_audio_download");
       return;
     }
 
@@ -292,7 +294,7 @@ export function useEpisodeSummarize(episode: Episode) {
         return;
       }
       if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-        useUIStore.getState().openPremiumModal();
+        useUIStore.getState().openPremiumModal("episode_practice");
         return;
       }
       usePlayerStore.getState().setIsPracticeOpen(true);

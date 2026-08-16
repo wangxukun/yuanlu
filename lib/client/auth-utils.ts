@@ -12,7 +12,7 @@ export function checkExclusivePlay(
       return false;
     }
     if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
-      useUIStore.getState().openPremiumModal();
+      useUIStore.getState().openPremiumModal("exclusive_play");
       return false;
     }
   }

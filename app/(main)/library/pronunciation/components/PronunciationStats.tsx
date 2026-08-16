@@ -8,16 +8,20 @@ import {
   PlayCircle,
   CheckCircle,
   FileText,
+  Trophy,
 } from "lucide-react";
 
 export function PronunciationStats({
   stats,
   errors,
+  totalErrors,
 }: {
   stats: any[];
   errors: any[];
+  /** 弱项句子总数；非会员试用模式下 errors 为切片，统计需展示真实总量 */
+  totalErrors?: number;
 }) {
-  const weakSentencesCount = errors.length;
+  const weakSentencesCount = totalErrors ?? errors.length;
   const weakestPhoneme = stats.length > 0 ? `/${stats[0].phoneme}/` : "-";
   const masteredPhonemesCount = stats.filter((s) => s.avgScore >= 85).length;
 
@@ -34,6 +38,15 @@ export function PronunciationStats({
             针对性攻克发音短板，提升口语地道程度。
           </p>
         </div>
+
+        {/* 发音达人榜入口（社区功能，对所有用户开放） */}
+        <Link
+          href="/library/pronunciation/leaderboard"
+          className="btn btn-sm rounded-full gap-1.5 border-warning/30 bg-warning/10 hover:bg-warning/20 text-warning-700 dark:text-warning-400 self-start xl:self-end"
+        >
+          <Trophy size={16} />
+          发音达人榜
+        </Link>
 
         {/* 统计卡片：Mobile (<xl) 使用 Grid，Desktop (>=xl) 使用 Flex 行 */}
         <div className="w-full xl:w-auto">

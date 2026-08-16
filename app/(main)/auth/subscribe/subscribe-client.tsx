@@ -24,12 +24,12 @@ const AFDIAN_PLANS = [
     planKey: "WEEKLY",
     features: [
       "7天会员特权",
-      "双语动态字幕",
-      "专属播客畅听",
-      "音频、文稿下载",
-      "语音跟读评测",
+      "无限次语音评测",
+      "完整句子跟读练习",
+      "音频、文稿 PDF 下载",
       "生词无限收藏",
-      "语速调节、单句循环",
+      "词典无限查询",
+      "发音弱项本与诊断",
     ],
   },
   {
@@ -42,12 +42,12 @@ const AFDIAN_PLANS = [
     planKey: "MONTHLY",
     features: [
       "30天会员特权",
-      "双语动态字幕",
-      "专属播客畅听",
-      "音频、文稿下载",
-      "语音跟读评测",
+      "无限次语音评测",
+      "完整句子跟读练习",
+      "音频、文稿 PDF 下载",
       "生词无限收藏",
-      "语速调节、单句循环",
+      "词典无限查询",
+      "发音弱项本与诊断",
     ],
   },
   {
@@ -60,12 +60,12 @@ const AFDIAN_PLANS = [
     planKey: "QUARTERLY",
     features: [
       "90天会员特权",
-      "双语动态字幕",
-      "专属播客畅听",
-      "音频、文稿下载",
-      "语音跟读评测",
+      "无限次语音评测",
+      "完整句子跟读练习",
+      "音频、文稿 PDF 下载",
       "生词无限收藏",
-      "语速调节、单句循环",
+      "词典无限查询",
+      "发音弱项本与诊断",
     ],
   },
   {
@@ -78,12 +78,12 @@ const AFDIAN_PLANS = [
     planKey: "YEARLY",
     features: [
       "365天至尊全权",
-      "双语动态字幕",
-      "专属播客畅听",
-      "音频、文稿下载",
-      "语音跟读评测",
+      "无限次语音评测",
+      "完整句子跟读练习",
+      "音频、文稿 PDF 下载",
       "生词无限收藏",
-      "语速调节、单句循环",
+      "词典无限查询",
+      "发音弱项本与诊断",
     ],
   },
 ];
@@ -282,12 +282,14 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               <div className="mt-2 mb-3 space-y-1">
                 {user.phone && (
                   <div className="text-sm font-medium text-ink-300">
-                    当前绑定手机号：<span className="text-ink-100">{user.phone}</span>
+                    当前绑定手机号：
+                    <span className="text-ink-100">{user.phone}</span>
                   </div>
                 )}
                 {user.email && !user.email.includes("placeholder") && (
                   <div className="text-sm font-medium text-ink-300">
-                    当前绑定邮箱：<span className="text-ink-100">{user.email}</span>
+                    当前绑定邮箱：
+                    <span className="text-ink-100">{user.email}</span>
                   </div>
                 )}
               </div>
@@ -299,7 +301,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                   {" "}
                   远路播客会员{" "}
                 </span>{" "}
-                资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的专属账号标识 (UID)，实现秒级自动激活！用户在支付时，需确保该留言信息未被篡改。
+                资格。选择合适您的方案后，系统将自动在爱发电支付留言中预填您的专属账号标识
+                (UID)，实现秒级自动激活！用户在支付时，需确保该留言信息未被篡改。
                 <span className="text-accent-400 font-bold italic">
                   该 UID 将作为系统精确匹配并自动激活会员资格的唯一核心凭证
                 </span>
@@ -322,7 +325,8 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 未检测到用户登录信息
               </h4>
               <p className="text-xs text-accent-900/85 dark:text-accent-300/80">
-                目前您还是游客状态。在爱发电充值时系统需要将您的 UID（用户标识）作为留言填入，请先登录/注册以便正常使用自动充值功能。
+                目前您还是游客状态。在爱发电充值时系统需要将您的
+                UID（用户标识）作为留言填入，请先登录/注册以便正常使用自动充值功能。
               </p>
             </div>
             <button
@@ -429,7 +433,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                     {user && planId && (
                       <p className="text-[10px] text-ink-400 text-center mt-2 break-all px-2">
                         点击跳转至爱发电完成支付，留言已预填专属 UID{" "}
-                        <code className="text-accent-500 bg-accent-50 dark:bg-accent-950/30 px-1 py-0.5 rounded">{user.userid}</code>
+                        <code className="text-accent-500 bg-accent-50 dark:bg-accent-950/30 px-1 py-0.5 rounded">
+                          {user.userid}
+                        </code>
                       </p>
                     )}
                   </div>

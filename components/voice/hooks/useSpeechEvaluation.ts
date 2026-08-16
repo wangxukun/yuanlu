@@ -5,6 +5,9 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { evaluateSpeech } from "@/lib/actions/speech";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
+import { useUIStore } from "@/store/ui-store";
+import { SPEECH_QUOTA_EXCEEDED } from "@/lib/quota";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
 // --- 类型定义 ---
 export interface YoudaoWord {
@@ -304,7 +307,13 @@ export function useSpeechEvaluation({
           body: JSON.stringify({ word: targetText }),
         });
 
-        if (!res.ok) throw new Error("获取朗读地址失败");
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => null);
+          if (handleDictionaryQuotaBlock(errBody)) {
+            return;
+          }
+          throw new Error("获取朗读地址失败");
+        }
 
         const data = await res.json();
         if (data.speakUrl) {
@@ -480,6 +489,15 @@ export function useSpeechEvaluation({
         setIsProcessing(false);
 
         if (response.error) {
+          if (response.error === SPEECH_QUOTA_EXCEEDED) {
+            const quotaMessage =
+              "message" in response && response.message
+                ? response.message
+                : "本月免费评测次数已用完";
+            toast.error(quotaMessage);
+            useUIStore.getState().openPremiumModal("speech_quota");
+            return;
+          }
           toast.error(response.error);
           return;
         }

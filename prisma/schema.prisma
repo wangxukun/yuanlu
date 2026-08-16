@@ -26,6 +26,8 @@ model User {
   sessionVersion        Int                   @default(0)
   registerIp            String?               @db.VarChar(45)
   VisitorLog            VisitorLog[]
+  conversionEvents      conversion_events[]
+  dictionary_lookups    dictionary_lookups[]
   achievements          achievements[]
   comment_likes         comment_likes[]
   comments              comments[]
@@ -482,6 +484,23 @@ model VisitorLog {
   @@index([userid])
 }
 
+/// 转化事件埋点表：记录会员转化漏斗中的关键触点
+/// - PREMIUM_MODAL_OPEN 会员弹窗被打开（source 标注触发来源）
+/// - QUOTA_BLOCKED 免费配额用尽被拦截（生词/评测）
+/// - TRIAL_REACHED 语音练习试用触墙（免费用户首次在本集练习且内容被截断）
+model conversion_events {
+  id        String   @id @default(cuid())
+  eventType String   @db.VarChar(50)
+  source    String?  @db.VarChar(100)
+  userid    String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  User      User?    @relation(fields: [userid], references: [userid])
+
+  @@index([eventType, createdAt(sort: Desc)])
+  @@index([userid, createdAt(sort: Desc)])
+}
+
 /// 字幕校对请求模型
 /// 存储用户提交的字幕校对修改，支持管理员审核流程
 model subtitle_proofread {
@@ -504,6 +523,19 @@ model subtitle_proofread {
 
   @@index([episodeid])
   @@index([status])
+}
+
+/// 词典查询配额计数表：免费用户每日查询计数（有道 API / LLM 词典缓存未命中）。
+/// 每次计费查询记一行，按 (userid, createdAt) 索引统计当日用量；会员不计数。
+model dictionary_lookups {
+  id        String   @id @default(cuid())
+  userid    String
+  source    String?  @db.VarChar(50) // youdao | llm
+  word      String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  User      User     @relation(fields: [userid], references: [userid], onDelete: Cascade)
+
+  @@index([userid, createdAt(sort: Desc)])
 }
 
 /// LLM 生成的英汉词典缓存（三级缓存的 PostgreSQL 层）

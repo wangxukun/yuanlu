@@ -3,7 +3,13 @@ export interface AchievementDef {
   name: string;
   description: string;
   icon: string; // 使用 Emoji 或图片路径
-  conditionType: "streak" | "words" | "hours" | "manual";
+  conditionType:
+    | "streak"
+    | "words"
+    | "hours"
+    | "manual"
+    | "speechCount"
+    | "speechHighScore";
   threshold: number;
 }
 
@@ -78,6 +84,48 @@ export const ACHIEVEMENT_RULES: Record<string, AchievementDef> = {
     icon: "🌅",
     conditionType: "manual", // 需要在业务逻辑中手动触发
     threshold: 1,
+  },
+
+  // --- 口语评测类 (VOICE-EVALUATION 阶段四·任务1) ---
+  SPEECH_1: {
+    key: "SPEECH_1",
+    name: "开口先锋",
+    description: "完成首次语音评测",
+    icon: "🎤",
+    conditionType: "speechCount",
+    threshold: 1,
+  },
+  SPEECH_50: {
+    key: "SPEECH_50",
+    name: "勤学苦练",
+    description: "累计完成 50 次语音评测",
+    icon: "💬",
+    conditionType: "speechCount",
+    threshold: 50,
+  },
+  SPEECH_100: {
+    key: "SPEECH_100",
+    name: "百炼成钢",
+    description: "累计完成 100 次语音评测",
+    icon: "🗣️",
+    conditionType: "speechCount",
+    threshold: 100,
+  },
+  SPEECH_GREAT_10: {
+    key: "SPEECH_GREAT_10",
+    name: "出口成章",
+    description: "累计 10 次评测综合分不低于 85",
+    icon: "✨",
+    conditionType: "speechHighScore",
+    threshold: 10,
+  },
+  SPEECH_GREAT_100: {
+    key: "SPEECH_GREAT_100",
+    name: "口语达人",
+    description: "累计 100 次评测综合分不低于 85",
+    icon: "🏅",
+    conditionType: "speechHighScore",
+    threshold: 100,
   },
 };
 

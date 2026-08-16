@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { dictionaryService } from "@/core/dictionary/dictionary.service";
+import {
+  checkDictionaryQuota,
+  recordDictionaryLookup,
+  anonymousLlmRateAllow,
+} from "@/lib/dictionary-quota";
+import {
+  DICTIONARY_QUOTA_EXCEEDED,
+  FREE_DICTIONARY_DAILY_LIMIT,
+} from "@/lib/quota";
+import { recordConversionEvent } from "@/lib/track";
 
 /**
  * GET /api/dict/[word]
@@ -7,10 +18,14 @@ import { dictionaryService } from "@/core/dictionary/dictionary.service";
  * Public RESTful dictionary endpoint with HTTP caching.
  * 3-tier strategy: Browser/Edge cache → PostgreSQL → DeepSeek LLM
  *
- * No authentication required — dictionary is a public resource.
+ * 配额策略：
+ * - 缓存命中（DB/HTTP 缓存）：零成本，任何人可查、不计数
+ * - 缓存未命中（触发 LLM 生成）：
+ *   - 登录用户计入每日词典配额（免费 30 次/天，会员无限）
+ *   - 匿名用户按 IP 做尽力而为限流（内存计数，防枚举刷 LLM）
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ word: string }> },
 ) {
   try {
@@ -24,7 +39,49 @@ export async function GET(
     }
 
     const decodedWord = decodeURIComponent(word);
+
+    // 计费路径判定：缓存未命中才会触发 LLM 生成
+    const cached = await dictionaryService.isCached(decodedWord);
+    if (!cached) {
+      const session = await auth();
+      if (session?.user?.userid) {
+        if (!(await checkDictionaryQuota(session.user))) {
+          await recordConversionEvent({
+            eventType: "QUOTA_BLOCKED",
+            source: "dictionary_daily",
+            userid: session.user.userid,
+          });
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Quota exceeded",
+              code: DICTIONARY_QUOTA_EXCEEDED,
+              message: `今日 ${FREE_DICTIONARY_DAILY_LIMIT} 次免费词典查询已用完，升级会员解锁无限查询！`,
+            },
+            { status: 403 },
+          );
+        }
+      } else {
+        const forwarded = request.headers.get("x-forwarded-for");
+        const ip = forwarded ? forwarded.split(",")[0].trim() : "local";
+        if (!anonymousLlmRateAllow(ip)) {
+          return NextResponse.json(
+            { success: false, error: "Too many requests, try tomorrow" },
+            { status: 429 },
+          );
+        }
+      }
+    }
+
     const { data, source } = await dictionaryService.lookup(decodedWord);
+
+    // LLM 生成成功才计入登录用户当日配额（缓存命中不计数）
+    if (source === "llm") {
+      const session = await auth();
+      if (session?.user?.userid) {
+        await recordDictionaryLookup(session.user.userid, "llm", decodedWord);
+      }
+    }
 
     // Tier 1: HTTP Cache-Control headers
     // DB hit: aggressive caching (browser 1 day / CDN 7 days)

@@ -237,7 +237,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (session.user.nickname) token.nickname = session.user.nickname;
         if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
-        if (session.user.role) token.role = session.user.role;
+        // [安全] role 不允许通过客户端 update() 传入，否则已登录用户可伪造会员身份。
+        // role 仅由下方 5 分钟一次的 DB 同步（含订阅过期降级）和登录时的校验决定。
         // Support binding updates
         if (session.user.phone !== undefined) token.phone = session.user.phone;
         if (session.user.phoneVerified !== undefined)

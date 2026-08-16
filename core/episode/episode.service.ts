@@ -23,6 +23,10 @@ import { EditEpisodeResponse } from "@/app/types/podcast";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
+import {
+  speechProfileService,
+  CEFR_EPISODE_MAPPING,
+} from "@/core/speech-profile/speech-profile.service";
 
 // [新增] 难度映射表：将用户配置的粗粒度等级映射为剧集的细粒度 CEFR 标准
 const LEVEL_MAPPING: Record<string, string[]> = {
@@ -327,15 +331,23 @@ export const episodeService = {
 
     // 1. 获取用户偏好并进行映射
     if (userId) {
-      const profile = await prisma.user_profile.findUnique({
-        where: { userid: userId },
-        select: { learnLevel: true },
-      });
+      // 自适应推荐：优先使用语音评测推导的 CEFR 等级（VOICE-EVALUATION 阶段四·任务3），
+      // 评测数据不足（<5 次）时回退到用户手动设置的 learnLevel
+      const derivedLevel = await speechProfileService.getDerivedLevel(userId);
+      if (derivedLevel) {
+        userLevelLabel = derivedLevel;
+        targetDifficulties = CEFR_EPISODE_MAPPING[derivedLevel] || [];
+      } else {
+        const profile = await prisma.user_profile.findUnique({
+          where: { userid: userId },
+          select: { learnLevel: true },
+        });
 
-      if (profile?.learnLevel) {
-        userLevelLabel = profile.learnLevel;
-        // 根据映射表获取对应的难度列表
-        targetDifficulties = LEVEL_MAPPING[profile.learnLevel] || [];
+        if (profile?.learnLevel) {
+          userLevelLabel = profile.learnLevel;
+          // 根据映射表获取对应的难度列表
+          targetDifficulties = LEVEL_MAPPING[profile.learnLevel] || [];
+        }
       }
     }
 

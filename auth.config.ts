@@ -36,7 +36,7 @@ export const authConfig = {
         if (session.user.nickname) token.nickname = session.user.nickname;
         if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
-        if (session.user.role) token.role = session.user.role;
+        // [安全] role 不允许通过客户端 update() 传入，否则已登录用户可伪造会员身份
       }
 
       return token;

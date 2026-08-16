@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
 import { VocabularyModal } from "./transcript/VocabularyModal";
@@ -714,6 +715,7 @@ export default function FullContentTranscript({
         );
         if (res.ok) {
           const json = await res.json();
+          if (handleDictionaryQuotaBlock(json)) return;
           if (json.success && json.data) {
             setDictData(json.data as DictEntryDTO);
           }

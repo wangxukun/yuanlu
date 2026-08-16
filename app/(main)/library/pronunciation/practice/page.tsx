@@ -9,21 +9,32 @@ import {
   Loader2,
   CheckCircle2,
   ArrowLeft,
+  Lock,
 } from "lucide-react";
 import SpeechEvaluationCard from "@/components/voice/SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
+import { useUIStore } from "@/store/ui-store";
 import { toast } from "sonner";
 
 export default function PronunciationPracticePage() {
   const router = useRouter();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locked, setLocked] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     fetch("/api/speech/errors")
-      .then((res) => res.json())
+      .then(async (res) => {
+        // 弱项练习为 PRO 会员功能（与弱项本页面锁定态一致）
+        if (res.status === 403) {
+          setLocked(true);
+          setLoading(false);
+          return { success: false };
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.success && data.data.length > 0) {
           setRecords(data.data);
@@ -68,7 +79,9 @@ export default function PronunciationPracticePage() {
     });
 
     if (result.error) {
-      toast.error("保存进度失败");
+      toast.error(
+        "message" in result && result.message ? result.message : "保存进度失败",
+      );
     }
   };
 
@@ -91,15 +104,37 @@ export default function PronunciationPracticePage() {
 
   if (loading) {
     return (
-      <div className="flex h-[70vh] justify-center items-center">
+      <div className="bg-ink-50 dark:bg-ink-900 min-h-screen flex justify-center items-center transition-colors duration-300">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div className="bg-ink-50 dark:bg-ink-900 min-h-screen flex flex-col justify-center items-center gap-4 text-center px-4 transition-colors duration-300">
+        <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-full mb-4">
+          <Lock size={28} />
+        </div>
+        <h2 className="text-2xl font-bold">弱项练习是 PRO 会员功能</h2>
+        <p className="text-base-content/60 max-w-sm">
+          升级会员解锁发音诊断、弱项句子收录与针对性循环练习。
+        </p>
+        <button
+          onClick={() =>
+            useUIStore.getState().openPremiumModal("pronunciation_locked")
+          }
+          className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary/20 mt-4 rounded-full px-8 border-0"
+        >
+          解锁 PRO 会员
+        </button>
       </div>
     );
   }
 
   if (records.length === 0) {
     return (
-      <div className="flex flex-col h-[70vh] justify-center items-center gap-4 text-center">
+      <div className="bg-ink-50 dark:bg-ink-900 min-h-screen flex flex-col justify-center items-center gap-4 text-center transition-colors duration-300">
         <div className="w-16 h-16 bg-base-200 flex items-center justify-center rounded-full text-4xl mb-4">
           🎉
         </div>
@@ -126,7 +161,7 @@ export default function PronunciationPracticePage() {
   };
 
   return (
-    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
+    <div className="bg-ink-50 dark:bg-ink-900 min-h-screen pb-20 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={handleExit} className="btn btn-circle btn-ghost">

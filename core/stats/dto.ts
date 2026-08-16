@@ -23,6 +23,10 @@ export interface UserProfileStatsDto {
   totalHours: number;
   streakDays: number;
   wordsLearned: number;
+  /** 累计语音评测次数（口语类成就判定用） */
+  speechEvalCount: number;
+  /** 综合分 ≥85 的评测次数（口语类成就判定用） */
+  speechHighScoreCount: number;
 }
 
 // 每周活动图表 - 每日数据项
