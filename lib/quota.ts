@@ -19,7 +19,7 @@ export const FREE_VOCABULARY_DAILY_LIMIT = 5;
 export const FREE_DICTIONARY_DAILY_LIMIT = 30;
 
 /** 免费用户每个自然月可使用的语音评测次数 */
-export const FREE_SPEECH_EVALUATIONS_PER_MONTH = 10;
+export const FREE_SPEECH_EVALUATIONS_PER_MONTH = 20;
 
 /**
  * 语音评测配额超限的错误码。
