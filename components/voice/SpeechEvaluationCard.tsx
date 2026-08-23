@@ -17,11 +17,16 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import { useSpeechEvaluation } from "./hooks/useSpeechEvaluation";
 import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 import { PRACTICE_FONT_SIZE_LEVELS } from "@/store/practice-settings-store";
 import type { TextMode } from "@/store/practice-settings-store";
+import { VocabularyModal } from "@/components/episode/transcript/VocabularyModal";
+import type { DictEntryDTO } from "@/core/dictionary/dto";
+import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
@@ -46,6 +51,8 @@ interface SpeechEvaluationCardProps {
   showIpa?: boolean; // 结果区显示音素诊断
   textMode?: TextMode; // 原文 / 音标 / 盲读遮罩
   passThreshold?: number; // 过关分数线（结果区达标标记/文案）
+  episodeId?: string; // 用于保存生词到生词本
+  episodeTitle?: string; // 词典弹框来源标题
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
@@ -63,7 +70,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   showIpa = true,
   textMode = "normal",
   passThreshold = 80,
+  episodeId,
+  episodeTitle,
 }) => {
+  const { data: session } = useSession();
   const {
     isRecording,
     isProcessing,
@@ -105,6 +115,132 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     setMobileCnOverride(null);
   }, [showTranslation, subtitle]);
   const [showDetails, setShowDetails] = React.useState(false);
+
+  // ── 点词查询 / 生词本相关状态 ──
+  const [selectedWord, setSelectedWord] = React.useState<string>("");
+  const [selectedContext, setSelectedContext] = React.useState<string>("");
+  const [selectedTranslation, setSelectedTranslation] =
+    React.useState<string>("");
+  const [dictData, setDictData] = React.useState<DictEntryDTO | null>(null);
+  const [isDictModalOpen, setIsDictModalOpen] = React.useState(false);
+  const [isLoadingDefinition, setIsLoadingDefinition] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [globalVocabWords, setGlobalVocabWords] = React.useState<Set<string>>(
+    new Set(),
+  );
+
+  // 登录后获取已保存的生词列表（用于标记已保存状态）
+  React.useEffect(() => {
+    if (!session?.user) {
+      setGlobalVocabWords(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/vocabulary/words")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.success && Array.isArray(d.data)) {
+          setGlobalVocabWords(new Set(d.data));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  // ── 点词查询回调 ──
+  const handleWordClick = React.useCallback(
+    async (word: string) => {
+      const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "").trim();
+      if (!cleanWord) return;
+
+      setSelectedWord(cleanWord);
+      setSelectedContext(subtitle.textEn);
+      setSelectedTranslation(subtitle.textCn || "");
+      setDictData(null);
+      setIsDictModalOpen(true);
+      setIsLoadingDefinition(true);
+
+      try {
+        const res = await fetch(
+          `/api/dict/${encodeURIComponent(cleanWord.toLowerCase())}`,
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (handleDictionaryQuotaBlock(json)) return;
+          if (json.success && json.data) {
+            setDictData(json.data as DictEntryDTO);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoadingDefinition(false);
+      }
+    },
+    [subtitle],
+  );
+
+  // ── 保存生词回调 ──
+  const handleSaveVocabulary = React.useCallback(async () => {
+    if (!selectedWord) return;
+    if (!session?.user) {
+      toast.error("请先登录后再保存生词");
+      return;
+    }
+
+    const definition =
+      dictData?.definitions
+        ?.map((d) => `[${d.pos}] ${d.meaning_cn}`)
+        .join("; ") || "";
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/vocabulary/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          word: selectedWord,
+          definition,
+          contextSentence: selectedContext,
+          translation: selectedTranslation,
+          episodeid: episodeId || "",
+          timestamp: subtitle.startSeconds,
+          speakUrl: dictData?.audio_urls?.us || "",
+          dictUrl: "",
+          webUrl: "",
+          mobileUrl: "",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(data.message || "已加入生词本");
+        setGlobalVocabWords((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(selectedWord.toLowerCase());
+          return newSet;
+        });
+        setIsDictModalOpen(false);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || "保存失败");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("网络错误");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    selectedWord,
+    session,
+    dictData,
+    selectedContext,
+    selectedTranslation,
+    episodeId,
+    subtitle.startSeconds,
+  ]);
 
   const [playMode, setPlayMode] = React.useState<"normal" | "slow" | null>(
     null,
@@ -384,7 +520,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         isDifficult
                           ? "underline decoration-base-300 decoration-dotted underline-offset-8"
                           : ""
+                      } ${
+                        globalVocabWords.has(cleanWord.toLowerCase())
+                          ? "text-primary-500 dark:text-primary-400"
+                          : ""
                       }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWordClick(word);
+                      }}
                     >
                       {ipa || word}
                     </span>
@@ -401,7 +545,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       isDifficult
                         ? "underline decoration-base-300 decoration-dotted underline-offset-8"
                         : ""
+                    } ${
+                      globalVocabWords.has(cleanWord.toLowerCase())
+                        ? "text-primary-500 dark:text-primary-400"
+                        : ""
                     }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWordClick(word);
+                    }}
                   >
                     {word}
                   </span>
@@ -644,25 +796,37 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       {result.words && result.words.length > 0 ? (
                         result.words.map((w, i) => (
                           <div key={i} className="relative">
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (w.score < 85) {
-                                  setActiveWordIndex(
-                                    activeWordIndex === i ? null : i,
-                                  );
-                                }
-                              }}
-                              className={`px-3 py-1.5 rounded-lg border transition-all inline-block ${getWordColorClass(
-                                w.score,
-                              )} ${
-                                w.score < 85
-                                  ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
-                                  : ""
-                              }`}
-                            >
-                              {w.word}
-                            </span>
+                            {textMode === "blind" && isBlindMasked ? (
+                              /* 盲读遮罩：与顶部遮罩样式一致 */
+                              <span
+                                className="px-3 py-1.5 rounded-lg border border-ink-200 dark:border-ink-600 inline-block select-none"
+                                style={{
+                                  minWidth: `${Math.max(2, w.word.length) * 0.7}em`,
+                                }}
+                              >
+                                <span className="block w-full h-[1.2em] rounded bg-ink-200 dark:bg-ink-700 blur-[2px]" />
+                              </span>
+                            ) : (
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (w.score < 85) {
+                                    setActiveWordIndex(
+                                      activeWordIndex === i ? null : i,
+                                    );
+                                  }
+                                }}
+                                className={`px-3 py-1.5 rounded-lg border transition-all inline-block ${getWordColorClass(
+                                  w.score,
+                                )} ${
+                                  w.score < 85
+                                    ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+                                    : ""
+                                }`}
+                              >
+                                {w.word}
+                              </span>
+                            )}
                           </div>
                         ))
                       ) : (
@@ -877,6 +1041,19 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* 点词查询词典弹框 */}
+      <VocabularyModal
+        isModalOpen={isDictModalOpen}
+        setIsModalOpen={setIsDictModalOpen}
+        selectedWord={selectedWord}
+        dictData={dictData}
+        isLoadingDefinition={isLoadingDefinition}
+        isSaving={isSaving}
+        isSaved={globalVocabWords.has(selectedWord.toLowerCase())}
+        episodeTitle={episodeTitle}
+        onSave={handleSaveVocabulary}
+      />
     </div>
   );
 };

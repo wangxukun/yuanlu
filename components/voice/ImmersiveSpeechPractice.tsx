@@ -591,6 +591,8 @@ export default function ImmersiveSpeechPractice({
                     showIpa={settings.showIpa}
                     textMode={settings.textMode}
                     passThreshold={effectivePassThreshold}
+                    episodeId={episode.episodeid}
+                    episodeTitle={episode.title}
                   />
                 </div>
               ) : (

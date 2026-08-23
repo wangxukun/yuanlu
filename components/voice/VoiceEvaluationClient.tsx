@@ -212,6 +212,8 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
                             block: "start",
                           });
                       }}
+                      episodeId={episode.episodeid}
+                      episodeTitle={episode.title}
                     />
                   </div>
                   {/* Connector indicator for active state */}
