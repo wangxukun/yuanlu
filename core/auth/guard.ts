@@ -2,6 +2,12 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Session } from "next-auth";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import {
+  verifyMobileToken,
+  MobileTokenVerifyResult,
+} from "@/core/auth/mobile-token.service";
+import { generateSignatureUrl } from "@/lib/oss";
 
 // Valid user roles in the system
 const VALID_ROLES = ["USER", "ADMIN", "PREMIUM"] as const;
@@ -17,23 +23,93 @@ export type AuthGuardResult =
   | { ok: false; response: NextResponse };
 
 /**
+ * Attempt to authenticate via mobile Bearer token.
+ * Reads the Authorization header and verifies the JWT.
+ * Returns a Session-like object on success, or null on failure.
+ */
+async function getMobileSession(): Promise<Session | null> {
+  try {
+    const headersList = await headers();
+    const authHeader = headersList.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+
+    const token = authHeader.slice(7);
+    const payload: MobileTokenVerifyResult | null =
+      await verifyMobileToken(token);
+    if (!payload) return null;
+
+    // Check if user is still allowed to login (may have been banned)
+    const userInDb = await prisma.user.findUnique({
+      where: { userid: payload.userid },
+      select: {
+        isLoginAllowed: true,
+        role: true,
+        user_profile: {
+          select: { avatarFileName: true, avatarUrl: true, nickname: true },
+        },
+      },
+    });
+
+    if (!userInDb || userInDb.isLoginAllowed === false) return null;
+
+    // Generate avatar URL if available
+    let avatarUrl: string | null = null;
+    if (userInDb.user_profile?.avatarFileName) {
+      try {
+        avatarUrl = await generateSignatureUrl(
+          userInDb.user_profile.avatarFileName,
+          3600 * 3,
+        );
+      } catch {
+        avatarUrl = userInDb.user_profile.avatarUrl || null;
+      }
+    }
+
+    // Construct a Session object compatible with the existing auth() result
+    return {
+      user: {
+        userid: payload.userid,
+        email: payload.email,
+        phone: payload.phone,
+        role: userInDb.role || "USER",
+        nickname: userInDb.user_profile?.nickname || payload.nickname,
+        avatarUrl,
+        emailVerified: null,
+        phoneVerified: !!payload.phone,
+        sessionVersion: 0,
+      },
+      expires: new Date(payload.exp * 1000).toISOString(),
+    } as Session;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Require an authenticated user session.
- * Returns 401 if not authenticated.
+ * First tries cookie-based auth (NextAuth), then falls back to mobile Bearer token.
+ * Returns 401 if neither succeeds.
  */
 export async function requireAuth(): Promise<AuthGuardResult> {
+  // 1. Try cookie-based auth (Web clients)
   const session = await auth();
-
-  if (!session?.user?.userid) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { success: false, error: "请先登录" },
-        { status: 401 },
-      ),
-    };
+  if (session?.user?.userid) {
+    return { ok: true, session };
   }
 
-  return { ok: true, session };
+  // 2. Fallback: try mobile Bearer token
+  const mobileSession = await getMobileSession();
+  if (mobileSession?.user?.userid) {
+    return { ok: true, session: mobileSession };
+  }
+
+  return {
+    ok: false,
+    response: NextResponse.json(
+      { success: false, error: "请先登录" },
+      { status: 401 },
+    ),
+  };
 }
 
 /**
@@ -145,11 +221,19 @@ export function isValidRole(role: string): role is UserRole {
  * Throws an error if not authenticated.
  */
 export async function requireAuthAction(): Promise<Session> {
+  // Try cookie-based auth first
   const session = await auth();
-  if (!session?.user?.userid) {
-    throw new Error("Unauthorized: 请先登录");
+  if (session?.user?.userid) {
+    return session;
   }
-  return session;
+
+  // Fallback: try mobile Bearer token
+  const mobileSession = await getMobileSession();
+  if (mobileSession?.user?.userid) {
+    return mobileSession;
+  }
+
+  throw new Error("Unauthorized: 请先登录");
 }
 
 /**
