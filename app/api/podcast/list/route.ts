@@ -20,6 +20,15 @@ export async function GET() {
         description: true,
         platform: true,
         isEditorPick: true,
+        // Android 端发现页区块（热门榜/新节目/频道聚合）所需统计字段
+        totalPlays: true,
+        followerCount: true,
+        createAt: true,
+        _count: {
+          select: {
+            episode: true,
+          },
+        },
         tags: {
           select: {
             id: true,
@@ -28,10 +37,11 @@ export async function GET() {
         },
       },
     });
-    // 并行处理签名URL
+    // 并行处理签名URL；_count.episode 扁平化为 episodeCount
     const signedPodcasts = await Promise.all(
-      podcasts.map(async (podcast) => ({
+      podcasts.map(async ({ _count, ...podcast }) => ({
         ...podcast,
+        episodeCount: _count.episode,
         coverUrl: podcast.coverFileName
           ? await generateSignatureUrl(podcast.coverFileName, 3600 * 3)
           : null,
