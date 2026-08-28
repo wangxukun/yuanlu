@@ -1,6 +1,7 @@
 // app/api/user/profile/route.ts
 
 import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { generateSignatureUrl, uploadFile } from "@/lib/oss";
@@ -19,12 +20,13 @@ interface ProfileData {
   avatarUrl?: string | null;
 }
 
-export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    console.error("Unauthorized", req);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  // requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+  const guard = await requireAuth();
+  if (!guard.ok) {
+    return guard.response;
   }
+  const session = guard.session;
 
   const profile = await prisma.user_profile.findUnique({
     where: { userid: session.user.userid },
