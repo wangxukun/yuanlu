@@ -41,10 +41,13 @@ export default function EpisodeForm() {
   const [coverFileName, setCoverFileName] = useState<string>(""); // 封面文件名
   const [subtitleEnFileName, setSubtitleEnFileName] = useState<string>(""); // 英文字幕文件名
   const [subtitleZhFileName, setSubtitleZhFileName] = useState<string>(""); // 中文字幕文件名
+  const [subtitleBilingualFileName, setSubtitleBilingualFileName] =
+    useState<string>(""); // 双语字幕文件名
   const [audioUrl, setAudioUrl] = useState<string>(""); // 音频文件url
   const [coverUrl, setCoverUrl] = useState<string>(""); // 封面文件url
   const [subtitleEnUrl, setSubtitleEnUrl] = useState<string>(""); // 英文字幕文件url
   const [subtitleZhUrl, setSubtitleZhUrl] = useState<string>(""); // 中文字幕文件url
+  const [subtitleBilingualUrl, setSubtitleBilingualUrl] = useState<string>(""); // 双语字幕文件url
   const [publishStatus, setPublishStatus] = useState("published"); // 发布状态,已发布：published 审核中：reviewing
   const [isExclusive, setIsExclusive] = useState(false); // 是否付费
   const [publishDate, setPublishDate] = useState<string>(""); // 发布时间
@@ -79,17 +82,22 @@ export default function EpisodeForm() {
     // 清空字幕文件数据
     setSubtitleEnFileName("");
     setSubtitleZhFileName("");
+    setSubtitleBilingualFileName("");
     setSubtitleEnUrl("");
     setSubtitleZhUrl("");
+    setSubtitleBilingualUrl("");
     if (response.length > 0) {
       for (const file of response) {
         console.log("字幕文件数据:", file);
         if (file.language === "英语") {
           setSubtitleEnFileName(file.response.subtitleFileName);
           setSubtitleEnUrl(file.response.subtitleUrl);
-        } else {
+        } else if (file.language === "中文") {
           setSubtitleZhFileName(file.response.subtitleFileName);
           setSubtitleZhUrl(file.response.subtitleUrl);
+        } else if (file.language === "双语") {
+          setSubtitleBilingualFileName(file.response.subtitleFileName);
+          setSubtitleBilingualUrl(file.response.subtitleUrl);
         }
       }
     }
@@ -155,6 +163,15 @@ export default function EpisodeForm() {
         console.error("删除中文字幕文件失败:", error);
       }
     }
+    // 删除已上传的双语字幕文件
+    if (subtitleBilingualFileName) {
+      try {
+        const result = await deleteFile(subtitleBilingualFileName);
+        console.log("删除双语字幕文件结果:", result);
+      } catch (error) {
+        console.error("删除双语字幕文件失败:", error);
+      }
+    }
     // 重置所有状态
     setAudioFileName("");
     setAudioUrl("");
@@ -165,6 +182,8 @@ export default function EpisodeForm() {
     setSubtitleEnUrl("");
     setSubtitleZhFileName("");
     setSubtitleZhUrl("");
+    setSubtitleBilingualFileName("");
+    setSubtitleBilingualUrl("");
   };
 
   const initialState: EpisodeState = {
@@ -389,11 +408,14 @@ export default function EpisodeForm() {
           <div className="flex items-center justify-center ml-3">
             <span className="font-semibold">字幕设置</span>
           </div>
-          {subtitleEnFileName || subtitleZhFileName ? (
+          {subtitleEnFileName ||
+          subtitleZhFileName ||
+          subtitleBilingualFileName ? (
             <div className="flex items-center bg-base-300 rounded pl-4 ml-4">
               <div>
                 已上传{subtitleEnFileName ? "【英文】" : ""}
-                {subtitleZhFileName ? "【中文】" : ""}字幕
+                {subtitleZhFileName ? "【中文】" : ""}
+                {subtitleBilingualFileName ? "【双语】" : ""}字幕
               </div>
               <button
                 className="btn btn-link"
@@ -439,8 +461,18 @@ export default function EpisodeForm() {
             name="subtitleZhFileName"
             value={subtitleZhFileName}
           />
+          <input
+            type="hidden"
+            name="subtitleBilingualFileName"
+            value={subtitleBilingualFileName}
+          />
           <input type="hidden" name="subtitleEnUrl" value={subtitleEnUrl} />
           <input type="hidden" name="subtitleZhUrl" value={subtitleZhUrl} />
+          <input
+            type="hidden"
+            name="subtitleBilingualUrl"
+            value={subtitleBilingualUrl}
+          />
         </div>
 
         <div className="divider"></div>

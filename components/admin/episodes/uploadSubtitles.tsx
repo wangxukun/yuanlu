@@ -30,6 +30,8 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
   const [subtitleLanguage, setSubtitleLanguage] = useState("");
   const [enUploadCompleted, setEnUploadCompleted] = useState(false);
   const [zhUploadCompleted, setZhUploadCompleted] = useState(false);
+  const [bilingualUploadCompleted, setBilingualUploadCompleted] =
+    useState(false);
   const [isUploading, setIsUploading] = useState(false);
   // 修改 uploadedFiles 状态，添加 response 字段用于保存上传返回数据
   const [uploadedFiles, setUploadedFiles] = useState<UploadedSubtitleFile[]>(
@@ -60,6 +62,8 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
       setEnUploadCompleted(false);
     } else if (deletedFile.language === "中文") {
       setZhUploadCompleted(false);
+    } else if (deletedFile.language === "双语") {
+      setBilingualUploadCompleted(false);
     }
 
     // 强制重置 select 元素
@@ -97,7 +101,10 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
 
         if (result.status === 200) {
           // 获取语言名称
-          const languageName = subtitleLanguage === "en" ? "英语" : "中文";
+          let languageName = "";
+          if (subtitleLanguage === "en") languageName = "英语";
+          else if (subtitleLanguage === "zh-CN") languageName = "中文";
+          else if (subtitleLanguage === "bilingual") languageName = "双语";
 
           // 添加到已上传文件列表，包含 response 数据
           setUploadedFiles((prev) => [
@@ -115,6 +122,9 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
           } else if (subtitleLanguage === "zh-CN") {
             // 上传中文字幕
             setZhUploadCompleted(true);
+          } else if (subtitleLanguage === "bilingual") {
+            // 上传双语字幕
+            setBilingualUploadCompleted(true);
           }
 
           // 重置选择
@@ -135,7 +145,7 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
       <div className="modal-box">
         <div className="flex justify-start items-center gap-4">
           <h3 className="font-bold text-sm">上传字幕</h3>
-          <span className="text-xs text-ink-500">支持srt格式</span>
+          <span className="text-xs text-ink-500">支持 srt, json 格式</span>
         </div>
         <div className="form-control w-80 flex flex-row m-10 gap-6">
           <select
@@ -158,6 +168,9 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
             <option value="zh-CN" disabled={zhUploadCompleted}>
               中文（简体）
             </option>
+            <option value="bilingual" disabled={bilingualUploadCompleted}>
+              双语（中英对照）
+            </option>
           </select>
           <button
             className="btn border-0"
@@ -165,6 +178,7 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
               !subtitleLanguage ||
               (subtitleLanguage === "en" && enUploadCompleted) ||
               (subtitleLanguage === "zh-CN" && zhUploadCompleted) ||
+              (subtitleLanguage === "bilingual" && bilingualUploadCompleted) ||
               isUploading
             }
             onClick={() => {
@@ -182,7 +196,7 @@ export default function UploadSubtitles({ onConfirm }: UploadSubtitlesProps) {
           </button>
           <input
             type="file"
-            accept=".srt"
+            accept=".srt,.json"
             ref={subtitleInputRef}
             className="hidden"
             onChange={handleUploadSubtitles}
