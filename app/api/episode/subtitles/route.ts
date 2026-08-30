@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchEpisodeById, mergeSubtitles } from "@/lib/data";
-import { auth } from "@/auth";
+import { requireAuth, canAccessEpisode } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
-import { canAccessEpisode } from "@/core/auth/guard";
 
 /**
  * GET /api/episode/subtitles?id=xxx
@@ -24,7 +23,9 @@ export async function GET(req: NextRequest) {
     const episode = await fetchEpisodeById(id);
     let subtitles = await mergeSubtitles(episode);
 
-    const session = await auth();
+    // requireAuth：Web Cookie 会话优先，回退移动端 Bearer JWT（保持原 auth() 行为并兼容 Android）
+    const authResult = await requireAuth();
+    const session = authResult.ok ? authResult.session : null;
     let audioUrl: string | null = null;
 
     if (session?.user?.userid) {

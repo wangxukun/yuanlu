@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import crypto from "crypto"; // Node.js 原生加密库
 import {
   checkDictionaryQuota,
@@ -28,10 +28,12 @@ function truncate(q: string): string {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // requireAuth：Web Cookie 会话优先，回退移动端 Bearer JWT（Android 端登录用户同样可译）
+    const authResult = await requireAuth();
+    if (!authResult.ok) {
+      return authResult.response;
     }
+    const session = authResult.session;
 
     const { word } = await request.json();
     if (!word) {
