@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import { generateSignatureUrl } from "@/lib/oss";
 import { notificationService } from "@/core/notification/notification.service";
 import { NotificationType } from "@/core/notification/notification.entity";
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
     // 1. 鉴权
-    if (!session?.user?.userid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+    const authResult = await requireAuth();
+    if (!authResult.ok) return authResult.response;
 
-    const currentUserId = session.user.userid;
+    const currentUserId = authResult.session.user.userid;
 
     // [安全修复] 检查用户是否被禁止评论
     const userRecord = await prisma.user.findUnique({

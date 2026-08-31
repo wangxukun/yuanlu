@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.userid) {
-      return NextResponse.json({ message: "未授权" }, { status: 401 });
-    }
+    // Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+    const authResult = await requireAuth();
+    if (!authResult.ok) return authResult.response;
+    const userid = authResult.session.user.userid;
 
     const { vocabularyid } = await req.json();
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (vocab.userid !== session.user.userid) {
+    if (vocab.userid !== userid) {
       return NextResponse.json({ message: "无权删除该记录" }, { status: 403 });
     }
 

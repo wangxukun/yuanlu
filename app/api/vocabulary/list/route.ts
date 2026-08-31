@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.userid) {
-      return NextResponse.json(
-        { success: false, message: "未认证用户" },
-        { status: 401 },
-      );
-    }
+    // Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+    const authResult = await requireAuth();
+    if (!authResult.ok) return authResult.response;
+    const userid = authResult.session.user.userid;
 
     const { searchParams } = new URL(request.url);
     const episodeid = searchParams.get("episodeid");
@@ -25,7 +21,7 @@ export async function GET(request: Request) {
 
     const list = await prisma.vocabulary.findMany({
       where: {
-        userid: session.user.userid,
+        userid,
         episodeid,
       },
       orderBy: [{ timestamp: "asc" }, { addedDate: "asc" }],

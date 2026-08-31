@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
-import { auth } from "@/auth";
+import { authWithMobile } from "@/core/auth/guard";
 import { Prisma } from "@prisma/client"; // 引入 auth 以获取当前用户状态
 
 export async function GET(request: Request) {
@@ -14,7 +14,8 @@ export async function GET(request: Request) {
 
   try {
     // 1. 获取当前用户 Session，用于判断 isLiked
-    const session = await auth();
+    // Cookie 优先、移动端 Bearer Token 兜底；未登录返回 null（匿名可浏览评论）
+    const session = await authWithMobile();
     const currentUserId = session?.user?.userid;
 
     // 2. 查询评论数据
