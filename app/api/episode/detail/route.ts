@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-import { canAccessEpisode } from "@/core/auth/guard";
+import { authWithMobile, canAccessEpisode } from "@/core/auth/guard";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -13,6 +12,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid episode ID", status: 400 });
   }
   try {
+    // Cookie 优先、移动端 Bearer Token 兜底；未登录返回 null（匿名可看元信息）
+    const session = await authWithMobile();
+    const userid = session?.user?.userid ?? null;
+
     const episode = await prisma.episode.findFirst({
       where: {
         episodeid: id,
@@ -63,7 +66,6 @@ export async function GET(req: NextRequest) {
     // 会员专享剧集：无权限用户剥离媒体与字幕地址，仅保留元信息
     // （统一入口 canAccessEpisode；非专享剧集短路返回，不产生 auth() 开销）
     if (episode?.isExclusive) {
-      const session = await auth();
       if (!(await canAccessEpisode(session?.user, episode))) {
         episode.audioUrl = "";
         episode.audioFileName = "";
@@ -76,7 +78,33 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(episode);
+    // 用户收听态（登录时）：断点续播进度 + 收藏态，驱动客户端续播与进度条
+    let userState = null;
+    if (userid && episode) {
+      const [history, favorite] = await Promise.all([
+        prisma.listening_history.findUnique({
+          where: { userid_episodeid: { userid, episodeid: id } },
+          select: {
+            progressSeconds: true,
+            isFinished: true,
+            listenAt: true,
+          },
+        }),
+        prisma.episode_favorites.findUnique({
+          where: { userid_episodeid: { userid, episodeid: id } },
+        }),
+      ]);
+      if (history || favorite) {
+        userState = {
+          progressSeconds: history?.progressSeconds ?? 0,
+          isFinished: history?.isFinished ?? false,
+          lastListenAt: history?.listenAt ?? null,
+          isFavorited: !!favorite,
+        };
+      }
+    }
+
+    return NextResponse.json({ ...episode, userState });
   } catch (error) {
     // 确保异常时也释放连接
     await prisma.$disconnect();

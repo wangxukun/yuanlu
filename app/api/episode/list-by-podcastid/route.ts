@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { authWithMobile } from "@/core/auth/guard";
 import { episodeService } from "@/core/episode/episode.service";
 
 export async function GET(req: NextRequest) {
@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
     | "desc";
 
   try {
-    const session = await auth();
+    // Cookie 优先、移动端 Bearer Token 兜底（Android 端进度条/收藏态依赖 userId）
+    const session = await authWithMobile();
     const userId = session?.user?.userid;
 
     const result = await episodeService.getPodcastEpisodes(podcastId, {
