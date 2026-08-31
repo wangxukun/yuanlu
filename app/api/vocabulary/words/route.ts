@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function GET() {
   try {
-    const session = await auth();
-
-    if (!session?.user?.userid) {
-      return NextResponse.json(
-        { success: false, message: "未认证用户" },
-        { status: 401 },
-      );
+    // 移动端 Bearer 兼容：Cookie 优先、Bearer 兜底（对齐 guard.ts requireAuth）
+    const authResult = await requireAuth();
+    if (!authResult.ok) {
+      return authResult.response;
     }
+    const session = authResult.session;
 
     const list = await prisma.vocabulary.findMany({
       where: {

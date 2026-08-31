@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { authWithMobile } from "@/core/auth/guard";
 import { dictionaryService } from "@/core/dictionary/dictionary.service";
 import {
   checkDictionaryQuota,
@@ -43,7 +43,7 @@ export async function GET(
     // 计费路径判定：缓存未命中才会触发 LLM 生成
     const cached = await dictionaryService.isCached(decodedWord);
     if (!cached) {
-      const session = await auth();
+      const session = await authWithMobile();
       if (session?.user?.userid) {
         if (!(await checkDictionaryQuota(session.user))) {
           await recordConversionEvent({
@@ -77,7 +77,7 @@ export async function GET(
 
     // LLM 生成成功才计入登录用户当日配额（缓存命中不计数）
     if (source === "llm") {
-      const session = await auth();
+      const session = await authWithMobile();
       if (session?.user?.userid) {
         await recordDictionaryLookup(session.user.userid, "llm", decodedWord);
       }

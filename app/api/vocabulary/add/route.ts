@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-import { isPremiumUser } from "@/core/auth/guard";
+import { isPremiumUser, requireAuth } from "@/core/auth/guard";
 import {
   FREE_VOCABULARY_LIMIT,
   FREE_VOCABULARY_DAILY_LIMIT,
@@ -11,15 +10,12 @@ import { recordConversionEvent } from "@/lib/track";
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-
-    // 1. 鉴权：使用你修正后的 userid
-    if (!session?.user?.userid) {
-      return NextResponse.json(
-        { success: false, message: "未认证用户" },
-        { status: 401 },
-      );
+    // 1. 鉴权：移动端 Bearer 兼容（Cookie 优先、Bearer 兜底）
+    const authResult = await requireAuth();
+    if (!authResult.ok) {
+      return authResult.response;
     }
+    const session = authResult.session;
 
     const userId = session.user.userid;
     const body = await request.json();

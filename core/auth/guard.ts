@@ -86,6 +86,17 @@ async function getMobileSession(): Promise<Session | null> {
 }
 
 /**
+ * Best-effort session: cookie auth (NextAuth) first, then mobile Bearer token.
+ * Returns null when neither succeeds — for endpoints that allow anonymous
+ * access but want the session when present (e.g. /api/dict quota tiers).
+ */
+export async function authWithMobile(): Promise<Session | null> {
+  const session = await auth();
+  if (session?.user?.userid) return session;
+  return await getMobileSession();
+}
+
+/**
  * Require an authenticated user session.
  * First tries cookie-based auth (NextAuth), then falls back to mobile Bearer token.
  * Returns 401 if neither succeeds.
