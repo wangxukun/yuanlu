@@ -1,12 +1,14 @@
-import { auth } from "@/auth";
 import { statsService } from "@/core/stats/stats.service";
+import { requireAuth } from "@/core/auth/guard";
 import { NextRequest, NextResponse } from "next/server";
 
+// requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireAuth();
+  if (!guard.ok) {
+    return guard.response;
   }
+  const session = guard.session;
 
   try {
     const { searchParams } = request.nextUrl;

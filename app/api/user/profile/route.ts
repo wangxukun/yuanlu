@@ -1,6 +1,5 @@
 // app/api/user/profile/route.ts
 
-import { auth } from "@/auth";
 import { requireAuth } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -56,11 +55,13 @@ export async function GET() {
   return NextResponse.json(profileWithSignature);
 }
 
+// requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
 export async function PUT(req: Request) {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireAuth();
+  if (!guard.ok) {
+    return guard.response;
   }
+  const session = guard.session;
 
   try {
     const formData = await req.formData();
