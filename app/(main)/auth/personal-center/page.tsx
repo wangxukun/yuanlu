@@ -11,7 +11,6 @@ import AchievementsCard from "@/components/main/profile/AchievementsCard";
 import StatsOverview from "@/components/main/profile/StatsOverview";
 import ActivityChart from "@/components/main/profile/ActivityChart";
 import MilestoneRoadmap from "@/components/main/profile/MilestoneRoadmap";
-import RecentHistory from "@/components/main/profile/RecentHistory";
 import Image from "next/image";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
 import AccountSecurityTab from "@/components/auth/AccountSecurityTab";
@@ -34,7 +33,7 @@ export default function PersonalCenterPage() {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "journey" | "achievements" | "history" | "security"
+    "journey" | "achievements" | "security"
   >("journey");
 
   const LEVEL_MAPPING: Record<string, string> = {
@@ -221,16 +220,6 @@ export default function PersonalCenterPage() {
               里程碑
             </button>
             <button
-              onClick={() => setActiveTab("history")}
-              className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
-                activeTab === "history"
-                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
-                  : "border-transparent text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-300"
-              }`}
-            >
-              最近听过
-            </button>
-            <button
               onClick={() => setActiveTab("security")}
               className={`pb-4 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
                 activeTab === "security"
@@ -256,11 +245,6 @@ export default function PersonalCenterPage() {
           <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <MilestoneRoadmap />
             <AchievementsCard />
-          </div>
-        )}
-        {activeTab === "history" && (
-          <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <RecentHistory />
           </div>
         )}
         {activeTab === "security" && <AccountSecurityTab />}
