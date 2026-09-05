@@ -39,24 +39,34 @@ export default function ActivityChart() {
     fetchActivity(weekOffset);
   }, [weekOffset, fetchActivity]);
 
-  const handleWeekChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setWeekOffset(parseInt(e.target.value, 10));
-  };
-
   return (
     <div className="bg-white dark:bg-ink-900 p-6 rounded-2xl border border-ink-100 dark:border-ink-800">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-ink-900 dark:text-ink-50">
           本周行程记录
         </h3>
-        <select
-          className="select select-sm select-bordered bg-ink-50 dark:bg-ink-800 border-ink-200 dark:border-ink-700 text-ink-700 dark:text-ink-300"
-          value={weekOffset}
-          onChange={handleWeekChange}
-        >
-          <option value={0}>本周</option>
-          <option value={1}>上周</option>
-        </select>
+        <div className="flex items-center bg-ink-50 dark:bg-ink-800 p-1 rounded-full">
+          <button
+            onClick={() => setWeekOffset(0)}
+            className={`px-4 py-1 text-sm rounded-full transition-all duration-300 ${
+              weekOffset === 0
+                ? "bg-white dark:bg-ink-700 text-primary-600 shadow-sm font-bold"
+                : "text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300"
+            }`}
+          >
+            本周
+          </button>
+          <button
+            onClick={() => setWeekOffset(1)}
+            className={`px-4 py-1 text-sm rounded-full transition-all duration-300 ${
+              weekOffset === 1
+                ? "bg-white dark:bg-ink-700 text-primary-600 shadow-sm font-bold"
+                : "text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300"
+            }`}
+          >
+            上周
+          </button>
+        </div>
       </div>
       <div className="h-64 w-full">
         {loading ? (
