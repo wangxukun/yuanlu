@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import { mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
-import { isPremiumUser, canAccessEpisode } from "@/core/auth/guard";
+import {
+  requireAuth,
+  isPremiumUser,
+  canAccessEpisode,
+} from "@/core/auth/guard";
 import { recordConversionEvent } from "@/lib/track";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
@@ -15,12 +18,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing episode id" }, { status: 400 });
   }
 
-  const session = await auth();
-
-  // 1. 验证用户登录
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // 1. 验证用户登录（requireAuth：Web Cookie 与移动端 Bearer 双口径，与 evaluate 一致）
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   try {
     // 2. 获取剧集和历史记录

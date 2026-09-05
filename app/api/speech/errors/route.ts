@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import { generateSignatureUrl } from "@/lib/oss";
 import { mergeSubtitles } from "@/lib/data";
-import { isPremiumUser } from "@/core/auth/guard";
+import { requireAuth, isPremiumUser } from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // requireAuth：Web Cookie 与移动端 Bearer 双口径（与 evaluate 一致）
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   // 弱项本为 PRO 会员功能，与 /library/pronunciation 页面的锁定态一致
   if (!(await isPremiumUser(session.user))) {

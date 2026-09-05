@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import { generateSignatureUrl } from "@/lib/oss";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -13,10 +13,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // requireAuth：Web Cookie 与移动端 Bearer 双口径（与 evaluate 一致）
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   try {
     const record = await prisma.speech_recognition.findUnique({
