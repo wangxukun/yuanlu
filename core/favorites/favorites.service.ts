@@ -102,6 +102,10 @@ export const favoritesService = {
         episode: {
           include: {
             podcast: true,
+            // 聚合该单集的总收藏数（移动端卡片统计行展示）
+            _count: {
+              select: { episode_favorites: true },
+            },
           },
         },
       },
@@ -161,6 +165,7 @@ export const favoritesService = {
               id: e.episodeid,
               title: e.title,
               author: e.podcast?.title || "Unknown Series",
+              platform: e.podcast?.platform || "",
               thumbnailUrl: finalCoverUrl,
               category: e.podcast?.title || "Episode", // 使用播客名作为分类
               date: e.publishAt
@@ -168,6 +173,7 @@ export const favoritesService = {
                 : "Unknown",
               duration: formatDuration(e.duration),
               playCount: e.playCount,
+              favoriteCount: e._count.episode_favorites,
               podcastId: e.podcastid || "",
             };
           },

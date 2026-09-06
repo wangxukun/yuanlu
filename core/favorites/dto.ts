@@ -17,11 +17,13 @@ export interface FavoriteEpisode {
   id: string;
   title: string;
   author: string; // 所属播客标题
+  platform: string; // 所属播客平台（移动端卡片展示；可能为空）
   thumbnailUrl: string;
   category: string;
   date: string; // 格式化后的日期
   duration: string;
   playCount: number;
+  favoriteCount: number; // 该单集的总收藏数（移动端卡片统计行展示）
   podcastId: string; // 用于跳转
 }
 
