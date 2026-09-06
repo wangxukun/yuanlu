@@ -103,6 +103,94 @@ export const listeningHistoryService = {
   },
 
   /**
+   * 获取用户的收听历史（分页 + 状态过滤，移动端 /api/user/history 用）
+   * status: all | in-progress | finished
+   */
+  async getUserHistoryPage(
+    userId: string,
+    page = 1,
+    pageSize = 20,
+    status: "all" | "in-progress" | "finished" = "all",
+  ): Promise<{
+    items: ListeningHistoryItem[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    const where = {
+      userid: userId,
+      ...(status === "in-progress" ? { isFinished: false } : {}),
+      ...(status === "finished" ? { isFinished: true } : {}),
+    };
+
+    const [total, history] = await Promise.all([
+      prisma.listening_history.count({ where }),
+      prisma.listening_history.findMany({
+        where,
+        orderBy: { listenAt: Prisma.SortOrder.desc },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          episode: {
+            include: {
+              podcast: {
+                select: { title: true, platform: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    // 复用全量查询的签名/映射逻辑（逐条并行处理封面签名）
+    const processed: (ListeningHistoryItem | null)[] = await Promise.all(
+      history.map(async (item) => {
+        const ep = item.episode;
+        if (!ep) return null;
+
+        let signedCoverUrl = ep.coverUrl || "/static/images/episode-light.png";
+        if (ep.coverFileName) {
+          try {
+            signedCoverUrl = await generateSignatureUrl(
+              ep.coverFileName,
+              3600 * 3,
+            );
+          } catch (e) {
+            console.error(`Failed to sign url for episode ${ep.title}`, e);
+            if (ep.coverUrl) signedCoverUrl = ep.coverUrl;
+          }
+        }
+
+        return {
+          historyid: item.historyid,
+          listenAt: item.listenAt
+            ? item.listenAt.toISOString()
+            : new Date().toISOString(),
+          progressSeconds: item.progressSeconds,
+          isFinished: item.isFinished,
+          episode: {
+            id: ep.episodeid,
+            title: ep.title,
+            author: ep.podcast?.platform || "未知播客",
+            category: ep.podcast?.title || "系列",
+            thumbnailUrl: signedCoverUrl,
+            duration: formatDuration(ep.duration),
+            durationSeconds: ep.duration,
+            level: "General",
+          },
+        };
+      }),
+    );
+
+    return {
+      items: processed.filter(
+        (item): item is ListeningHistoryItem => item !== null,
+      ),
+      total,
+      hasMore: page * pageSize < total,
+    };
+  },
+
+  /**
    * 删除单条历史记录
    */
   async deleteHistory(userId: string, historyId: number) {
