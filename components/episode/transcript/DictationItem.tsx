@@ -107,6 +107,45 @@ export const DictationItem = memo(function DictationItem({
     }
   };
 
+  // ── DEBUG: log word status to browser console (REMOVE after debugging) ──
+  useEffect(() => {
+    if (!isActive || inputValue.length === 0) return;
+    const rawInput = inputValue.replace(/\s+/g, "");
+    console.group("[DictationItem DEBUG]");
+    console.log("inputValue:", JSON.stringify(inputValue));
+    console.log("rawInput:", JSON.stringify(rawInput), "len:", rawInput.length);
+    console.log(
+      "targetWords:",
+      targetWords.map(
+        (tw) => `${tw}(clean=${clean(tw)},len=${clean(tw).length})`,
+      ),
+    );
+    console.log("inputWords:", inputWords);
+
+    targetWords.forEach((tw, idx) => {
+      const iw = inputWords[idx];
+      const cwLocal = clean(tw);
+      let st = "pending";
+      if (cwLocal.length === 0) {
+        st = "correct(punctuation)";
+      } else if (iw !== undefined && iw.length > 0) {
+        const iwLower = iw.toLowerCase();
+        if (iw.length >= cwLocal.length) {
+          st = iwLower === cwLocal ? "correct" : "error(full)";
+        } else {
+          st =
+            iwLower === cwLocal.slice(0, iw.length)
+              ? "pending(prefix-ok)"
+              : "error(partial)";
+        }
+      }
+      console.log(
+        `  [${idx}] target="${tw}" clean="${cwLocal}"(${cwLocal.length}) input="${iw ?? "undefined"}"(${iw?.length ?? 0}) → ${st}`,
+      );
+    });
+    console.groupEnd();
+  }, [isActive, inputValue, targetWords, inputWords, clean]);
+
   return (
     <div
       id={`subtitle-${sub.id}`}
@@ -160,10 +199,11 @@ export const DictationItem = memo(function DictationItem({
           )}
 
           {/* Rendered Dictation UI */}
-          <p
+          <div
             className={clsx(
               "font-serif text-xl sm:text-2xl leading-[1.85] tracking-wide",
               "text-ink-700 dark:text-ink-200 font-medium",
+              "flex flex-wrap items-baseline gap-y-1 overflow-hidden",
             )}
           >
             {targetWords.map((targetWord, i) => {
@@ -171,35 +211,51 @@ export const DictationItem = memo(function DictationItem({
               const cw = clean(targetWord);
               const isPunctuationOnly = cw.length === 0;
 
-              const isMatch =
-                isPunctuationOnly ||
-                (inputWord !== undefined &&
-                  inputWord.length === cw.length &&
-                  inputWord.toLowerCase() === cw);
-              const isError =
-                !isPunctuationOnly &&
-                inputWord !== undefined &&
-                inputWord.length === cw.length &&
-                inputWord.toLowerCase() !== cw;
-
-              // Force show if error count >= 3
+              // Force show hint if error count >= 3
               const showHint = errorCount >= 3;
 
-              if (isMatch) {
+              // Determine word status: 'correct' | 'error' | 'pending'
+              let status: "correct" | "error" | "pending" = "pending";
+
+              if (isPunctuationOnly) {
+                // Pure punctuation tokens are always "correct"
+                status = "correct";
+              } else if (inputWord !== undefined && inputWord.length > 0) {
+                const inputLower = inputWord.toLowerCase();
+                if (inputWord.length >= cw.length) {
+                  // User has typed enough characters for this word slot
+                  status = inputLower === cw ? "correct" : "error";
+                } else {
+                  // User is still typing — check if what they've typed
+                  // so far matches the target word's prefix
+                  status =
+                    inputLower === cw.slice(0, inputWord.length)
+                      ? "pending"
+                      : "error";
+                }
+              }
+              // else: no input yet → stays "pending"
+
+              // ── Correct: green bold, show original target word ──
+              if (status === "correct") {
                 return (
                   <span
                     key={i}
-                    className="inline mr-2 text-primary-600 dark:text-primary-400 font-bold"
+                    className="inline mr-2 text-primary-600 dark:text-primary-400 font-bold break-all"
                   >
                     {targetWord}
                   </span>
                 );
               }
 
-              if (isError) {
+              // ── Error: red text + line-through ──
+              if (status === "error") {
                 return (
-                  <span key={i} className="inline mr-2 relative group">
-                    <span className="text-error line-through decoration-2">
+                  <span key={i} className="inline mr-2 relative break-all">
+                    <span
+                      className="text-error-500 line-through decoration-2"
+                      style={{ color: "var(--color-error, #d2503f)" }}
+                    >
                       {inputWord}
                     </span>
                     {showHint && (
@@ -211,11 +267,11 @@ export const DictationItem = memo(function DictationItem({
                 );
               }
 
-              // Pending state (or partial input)
+              // ── Pending: dashed underline slot ──
               return (
                 <span
                   key={i}
-                  className="inline-block mr-2 border-b-2 border-dashed border-ink-300 dark:border-ink-600 min-w-[40px] h-6 relative align-bottom leading-none"
+                  className="inline-block mr-2 border-b-2 border-dashed border-ink-300 dark:border-ink-600 min-w-[40px] h-6 relative align-bottom leading-none break-all"
                 >
                   {inputWord !== undefined && inputWord.length > 0 && (
                     <span className="text-ink-700 dark:text-ink-200">
@@ -231,7 +287,7 @@ export const DictationItem = memo(function DictationItem({
                 </span>
               );
             })}
-          </p>
+          </div>
 
           <div
             className={clsx(
