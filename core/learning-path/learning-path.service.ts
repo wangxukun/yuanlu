@@ -112,6 +112,64 @@ export const learningPathService = {
   },
 
   /**
+   * 移动端详情装配（GET api/learning-paths/{pathid} 的数据层）：
+   * 在 getById（已含签名封面/音频）基础上合并创建者昵称与当前用户收听态，
+   * 输出与 Web 详情页 [id]/page.tsx 的 transformedPath 同构，
+   * 对齐 Android 端 LearningPathDetailDto 契约（episode 携带 progressSeconds/isFinished）。
+   */
+  async getMobileDetail(pathid: number, currentUserId?: string) {
+    const rawPath = await this.getById(pathid, currentUserId);
+    if (!rawPath) return null;
+
+    const creator = rawPath.userid
+      ? await prisma.user.findUnique({
+          where: { userid: rawPath.userid },
+          include: { user_profile: true },
+        })
+      : null;
+
+    const histories = currentUserId
+      ? await prisma.listening_history.findMany({
+          where: {
+            userid: currentUserId,
+            episodeid: { in: rawPath.items.map((item) => item.episodeid) },
+          },
+          select: { episodeid: true, progressSeconds: true, isFinished: true },
+        })
+      : [];
+    const historyMap = new Map(histories.map((h) => [h.episodeid, h]));
+
+    return {
+      pathid: rawPath.pathid,
+      userid: rawPath.userid,
+      pathName: rawPath.pathName,
+      description: rawPath.description,
+      isPublic: rawPath.isPublic,
+      creationAt: rawPath.creationAt,
+      // 路径封面 = 第一集签名封面（无剧集为 null，客户端回退标题占位）
+      coverUrl: rawPath.items[0]?.episode?.coverUrl || null,
+      creatorName: creator?.user_profile?.nickname || "User",
+      items: rawPath.items.map((item) => ({
+        id: item.id,
+        episodeid: item.episodeid,
+        order: item.order,
+        addedAt: item.addedAt,
+        episode: {
+          episodeid: item.episodeid,
+          title: item.episode.title,
+          coverUrl: item.episode.coverUrl,
+          audioUrl: item.episode.audioUrl ?? "",
+          duration: item.episode.duration,
+          isExclusive: item.episode.isExclusive ?? false,
+          podcast: { title: item.episode.podcast?.title ?? "" },
+          progressSeconds: historyMap.get(item.episodeid)?.progressSeconds ?? 0,
+          isFinished: historyMap.get(item.episodeid)?.isFinished ?? false,
+        },
+      })),
+    };
+  },
+
+  /**
    * 更新学习路径元数据
    */
   async update(
@@ -184,7 +242,10 @@ export const learningPathService = {
       include: { path: true },
     });
 
-    if (!item || item.path.userid !== userid) throw new Error("无权操作");
+    // 区分“条目不存在”与“非拥有者”：REST 层据此映射 404 / 403
+    // （Web action 侧统一 catch 显示“移除失败”，不受区分影响）
+    if (!item) throw new Error("条目不存在");
+    if (item.path.userid !== userid) throw new Error("无权操作");
 
     return await prisma.learning_path_items.delete({
       where: { id: itemId },
