@@ -1,8 +1,0 @@
-{
-  "tokenA": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyaWQiOiJhbmRyb2lkLWUyZS11c2VyLWEiLCJlbWFpbCI6ImFuZHJvaWQtZTJlLWFAdGVzdC5sb2NhbCIsInBob25lIjpudWxsLCJyb2xlIjoiVVNFUiIsIm5pY2tuYW1lIjpudWxsLCJhdmF0YXJGaWxlTmFtZSI6bnVsbCwiaXNzIjoieXVhbmx1LW1vYmlsZSIsImlhdCI6MTc4ODczOTM5MCwiZXhwIjoxNzg4ODI1NzkwfQ.wI1CkqvckVdb7xOqVoz-GhOmfKFcfqaywBy3tVODEq8",
-  "tokenB": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyaWQiOiJhbmRyb2lkLWUyZS11c2VyLWIiLCJlbWFpbCI6ImFuZHJvaWQtZTJlLWJAdGVzdC5sb2NhbCIsInBob25lIjpudWxsLCJyb2xlIjoiVVNFUiIsIm5pY2tuYW1lIjpudWxsLCJhdmF0YXJGaWxlTmFtZSI6bnVsbCwiaXNzIjoieXVhbmx1LW1vYmlsZSIsImlhdCI6MTc4ODczOTM5MCwiZXhwIjoxNzg4ODI1NzkwfQ.Z3CkG32amb7I2RWjfheOzfSZzXsENU9Oe72FA8AreyE",
-  "episode1": "cmtls6t7x04ykgxhof0j3x0xm",
-  "episode2": "cmtea7gy90c9hgxbua94a4kqy",
-  "userA": "android-e2e-user-a",
-  "userB": "android-e2e-user-b"
-}
