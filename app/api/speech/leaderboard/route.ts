@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import { generateSignatureUrl } from "@/lib/oss";
 
 /**
@@ -13,10 +13,10 @@ import { generateSignatureUrl } from "@/lib/oss";
  * - 返回 top 20 与当前用户自己的排名（未上榜也给"我的成绩"）
  */
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.userid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // requireAuth：Web Cookie 与移动端 Bearer 双口径（原 cookie-only auth() 不认移动端 Token）
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
+  const session = authResult.session;
 
   const period =
     req.nextUrl.searchParams.get("period") === "daily" ? "daily" : "weekly";
