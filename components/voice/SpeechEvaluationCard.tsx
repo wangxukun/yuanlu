@@ -28,6 +28,21 @@ import { VocabularyModal } from "@/components/episode/transcript/VocabularyModal
 import type { DictEntryDTO } from "@/core/dictionary/dto";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 
+/**
+ * 清洗词典音标，供音标文本模式（textMode = "ipa"）句内逐词拼接展示：
+ * 1) 移除定冠词等弱读变体提示 "(before vowels: /ði/)"（连同前导空白，避免留下尾空格）；
+ * 2) 移除所有斜杠分隔符（含复合标注内残留的孤立斜杠）；
+ * 3) 压缩连续空格并 trim，保证拼接后不会出现双空格。
+ * 例："/ðə/ (before vowels: /ði/)" → "ðə"；"/sʌm/" → "sʌm"；"/gəʊ / " → "gəʊ"。
+ */
+function cleanIpa(raw: string): string {
+  return raw
+    .replace(/\s*\(before vowels:[^)]*\)/gi, "")
+    .replace(/\//g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 interface SpeechEvaluationCardProps {
   subtitle: Subtitle;
   audioUrl: string; // 原音 URL
@@ -504,12 +519,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 }
 
                 if (textMode === "ipa") {
-                  // 词典返回的 phonetics.us 形如 "/ˈskedʒuːl/"，
-                  // 去掉首尾包裹的 "/" 后显示（避免出现双斜杠）。
+                  // 词典返回的 phonetics.us 形如 "/ˈskedʒuːl/"，也可能带弱读变体提示
+                  // （"/ðə/ (before vowels: /ði/)"）；cleanIpa 统一剥离斜杠与提示段后显示。
                   const rawIpa = ipaMap[cleanWord.toLowerCase()];
-                  const ipa = rawIpa
-                    ? rawIpa.replace(/^\/+/, "").replace(/\/+$/, "")
-                    : "";
+                  const ipa = rawIpa ? cleanIpa(rawIpa) : "";
                   return (
                     <span
                       key={idx}
