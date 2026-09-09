@@ -101,20 +101,21 @@ export default function HomeClient({
   return (
     <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-10">
-        {/* 问候行 */}
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1
-              className="font-display text-2xl md:text-3xl font-bold text-ink-900 dark:text-ink-50"
-              suppressHydrationWarning
-            >
-              {greeting}，{displayName}。
-            </h1>
-            <p className="mt-1 text-sm text-ink-400">
+        {/* 问候区：标题独占一行，签名与连胜徽章同行。
+            三端共用同一骨架，避免移动端徽章与标题争抢水平空间 */}
+        <div className="min-w-0">
+          <h1
+            className="font-display text-2xl md:text-3xl font-bold leading-tight text-ink-900 dark:text-ink-50"
+            suppressHydrationWarning
+          >
+            {greeting}，{displayName}。
+          </h1>
+          <div className="mt-1.5 flex items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 truncate text-sm text-ink-400">
               {userBio || "路虽远行则将至，事虽难做则可成。"}
             </p>
+            <StreakBadge stats={stats} />
           </div>
-          <StreakBadge stats={stats} />
         </div>
 
         {/* 继续收听 + 本周里程 */}

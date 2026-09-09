@@ -13,8 +13,8 @@ interface StreakBadgeProps {
  * - 已达标：`今日打卡完成` + `🔥 连续 N 天`（accent 高亮，徽章"点亮"）
  * - 无连胜（N=0）时省去连胜段，避免出现"连续 0 天"
  *
- * 响应式：移动端（<sm）打卡进度与连胜拆为上下两行、缩小字号，
- * 防止长文本挤压问候语；sm（平板）及以上恢复单行展示。
+ * 响应式：移动端两行紧凑胶囊（小字号、收窄内边距），sm 及以上单行展开。
+ * 父级将其放在签名行右侧，胶囊过宽时签名以 truncate 优雅退让，不再挤压标题。
  */
 export default function StreakBadge({ stats }: StreakBadgeProps) {
   const { streakDays, remainingMins, dailyGoalAchieved } = stats;
@@ -25,7 +25,7 @@ export default function StreakBadge({ stats }: StreakBadgeProps) {
 
   return (
     <span
-      className={`shrink-0 inline-flex flex-col sm:flex-row items-end sm:items-center gap-0.5 sm:gap-1 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold ${
+      className={`shrink-0 inline-flex flex-col sm:flex-row items-end sm:items-center gap-0.5 sm:gap-1.5 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold leading-snug ${
         dailyGoalAchieved
           ? "bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300"
           : "bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-300"
