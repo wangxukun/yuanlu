@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PodcastAuthPrompt from "@/components/main/home/podcast-auth-prompt";
 import ResumeButton, { ResumeData } from "@/components/main/home/ResumeButton";
+import StreakBadge from "@/components/main/home/StreakBadge";
 import WeeklyMileageCard from "@/components/main/home/WeeklyMileageCard";
 import JourneyStrip, { JourneyDay } from "@/components/main/home/JourneyStrip";
 import ContinueListening from "@/components/main/home/ContinueListening";
@@ -59,6 +60,7 @@ export default function HomeClient({
     streakDays: 0,
     dailyGoalMins: 30,
     remainingMins: 30,
+    dailyGoalAchieved: false,
     weeklyProgress: 0,
     listeningTimeCurrent: 0,
     listeningTimeGoal: 5,
@@ -112,11 +114,7 @@ export default function HomeClient({
               {userBio || "路虽远行则将至，事虽难做则可成。"}
             </p>
           </div>
-          {stats.streakDays > 0 && (
-            <span className="shrink-0 inline-flex items-center gap-1 bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 rounded-full px-3 py-1.5 text-sm font-semibold">
-              🔥 连续 {stats.streakDays} 天
-            </span>
-          )}
+          <StreakBadge stats={stats} />
         </div>
 
         {/* 继续收听 + 本周里程 */}

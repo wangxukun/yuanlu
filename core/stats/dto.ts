@@ -10,7 +10,10 @@ export interface UpdateUserActivityDto {
 export interface UserHomeStatsDto {
   streakDays: number;
   dailyGoalMins: number;
+  /** 距完成今日打卡还差多少分钟（秒级差值向上取整，还差 1 秒也算还差 1 分钟；达标后为 0） */
   remainingMins: number;
+  /** 今日学习时长是否已达每日目标（与打卡 isActive 共用同一条达标线） */
+  dailyGoalAchieved: boolean;
   weeklyProgress: number;
   listeningTimeCurrent: number;
   listeningTimeGoal: number;

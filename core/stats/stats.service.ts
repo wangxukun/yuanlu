@@ -18,6 +18,13 @@ import {
 } from "./dto";
 import { Prisma } from "@prisma/client";
 
+/**
+ * 每日学习时长目标兜底值（user_profile 记录缺失时使用）。
+ * 打卡(isActive)判定与 getUserHomeStats 的进度展示必须使用同一来源，否则会出现
+ * "目标显示 15 分钟、打卡却按 5 分钟生效" 的割裂。
+ */
+export const DEFAULT_DAILY_GOAL_MINS = 20;
+
 export const statsService = {
   /**
    * 处理用户活跃更新 (核心写逻辑)
@@ -32,23 +39,41 @@ export const statsService = {
     const safeSeconds = Math.round(seconds);
     const today = chinaToday(); // 中国时区今天 UTC 午夜，与 @db.Date 一致
 
-    // 1. 更新用户最后活跃时间 (User 表)
-    // 使用 Promise.allSettled 或独立的 try-catch 确保即使这步失败（极少见），也不影响下面的统计数据
-    const updateUserPromise = prisma.user
-      .update({
-        where: { userid: userId },
-        data: {
-          lastActiveAt: new Date(),
-          isOnline: true,
-        },
-      })
-      .catch((e) => {
-        console.warn(`[Stats] Update user online status failed: ${e.message}`);
-      });
+    // 1. 并行：更新用户最后活跃时间 + 读取每日学习目标
+    // [打卡规则] isActive 的达标线 = 用户设置的 dailyStudyGoalMins（图1中的"每日学习时长目标"），
+    // 不再使用硬编码阈值，保证打卡判定与主页目标进度展示强一致。
+    const [userProfile] = await Promise.all([
+      prisma.user_profile
+        .findUnique({
+          where: { userid: userId },
+          select: { dailyStudyGoalMins: true },
+        })
+        .catch((e) => {
+          console.warn(`[Stats] Load user profile failed: ${e.message}`);
+          return null;
+        }),
+      prisma.user
+        .update({
+          where: { userid: userId },
+          data: {
+            lastActiveAt: new Date(),
+            isOnline: true,
+          },
+        })
+        .catch((e) => {
+          console.warn(
+            `[Stats] Update user online status failed: ${e.message}`,
+          );
+        }),
+    ]);
+
+    const goalSeconds =
+      Math.max(1, userProfile?.dailyStudyGoalMins || DEFAULT_DAILY_GOAL_MINS) *
+      60;
 
     // 2. 更新每日活动日志 (UserDailyActivity 表)
     // [优化] 保持使用 upsert 的原子性 increment 操作
-    const updateActivityPromise = prisma.user_daily_activity.upsert({
+    const updatedActivity = await prisma.user_daily_activity.upsert({
       where: {
         userid_date: {
           userid: userId,
@@ -59,7 +84,7 @@ export const statsService = {
         userid: userId,
         date: today,
         listeningSeconds: safeSeconds,
-        isActive: safeSeconds >= 300,
+        isActive: safeSeconds >= goalSeconds,
         wordsLearned: 0,
       },
       update: {
@@ -67,23 +92,15 @@ export const statsService = {
       },
     });
 
-    // 并行执行以减少接口响应时间
-    const [, updatedActivity] = await Promise.all([
-      updateUserPromise,
-      updateActivityPromise,
-    ]);
-
-    // 3. 检查并更新达标状态 (isActive)
-    // 只有当 activity 更新成功且状态需要变更时才执行
-    if (
-      updatedActivity &&
-      !updatedActivity.isActive &&
-      updatedActivity.listeningSeconds >= 300
-    ) {
+    // 3. 同步达标状态 (isActive)：双向校正
+    // - 未达标 → 达标：正常点亮当日打卡
+    // - 达标 → 未达标：用户当天上调目标后，收回当日打卡（仅影响当天，历史日期不回溯）
+    const shouldActivate = updatedActivity.listeningSeconds >= goalSeconds;
+    if (updatedActivity.isActive !== shouldActivate) {
       try {
         await prisma.user_daily_activity.update({
           where: { id: updatedActivity.id },
-          data: { isActive: true },
+          data: { isActive: shouldActivate },
         });
       } catch (e) {
         console.warn(`[Stats] Update isActive failed: ${e}`);
@@ -162,13 +179,20 @@ export const statsService = {
     const userProfile = await userProfilePromise;
     const todayActivity = await activityPromise;
 
-    const dailyGoalMins = userProfile?.dailyStudyGoalMins || 20;
+    const dailyGoalMins =
+      userProfile?.dailyStudyGoalMins || DEFAULT_DAILY_GOAL_MINS;
     const listeningTimeGoal = userProfile?.weeklyListeningGoalHours || 2;
     const wordsLearnedGoal = userProfile?.weeklyWordsGoal || 50;
 
     const todaySeconds = todayActivity?.listeningSeconds || 0;
-    const todayMins = Math.floor(todaySeconds / 60);
-    const remainingMins = Math.max(0, dailyGoalMins - todayMins);
+    const goalSeconds = dailyGoalMins * 60;
+    // 还差分钟数 {X}：秒级差值向上取整（还差 1 秒也显示"还差 1 分钟"），
+    // 与 updateDailyActivity 的 isActive 打卡达标线共用同一 goalSeconds 基准
+    const remainingMins = Math.max(
+      0,
+      Math.ceil((goalSeconds - todaySeconds) / 60),
+    );
+    const dailyGoalAchieved = todaySeconds >= goalSeconds;
 
     const listeningTimeCurrent = parseFloat(
       (thisWeekListeningSeconds / 3600).toFixed(1),
@@ -189,6 +213,7 @@ export const statsService = {
       streakDays,
       dailyGoalMins,
       remainingMins,
+      dailyGoalAchieved,
       weeklyProgress,
       listeningTimeCurrent,
       listeningTimeGoal,
