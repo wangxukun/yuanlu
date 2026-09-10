@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BindEmailService } from "@/core/auth/bind-email.service";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user || !session.user.userid) {
-      return NextResponse.json(
-        { success: false, error: "未登录" },
-        { status: 401 },
-      );
+    // requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+    const guard = await requireAuth();
+    if (!guard.ok) {
+      return guard.response;
     }
 
     const body = await request.json();
@@ -22,11 +20,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await BindEmailService.bindEmail(session.user.userid, {
-      email,
-      code,
-      password,
-    });
+    const result = await BindEmailService.bindEmail(
+      guard.session.user.userid!,
+      {
+        email,
+        code,
+        password,
+      },
+    );
 
     return NextResponse.json({
       success: true,
