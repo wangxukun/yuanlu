@@ -29,9 +29,10 @@ export interface DeleteUserResult {
 export async function deleteUser(
   userid: string,
   operatorId: string,
+  options?: { allowSelfDelete?: boolean },
 ): Promise<DeleteUserResult> {
-  // 1. Prevent self-deletion
-  if (userid === operatorId) {
+  // 1. Prevent self-deletion unless explicitly allowed
+  if (userid === operatorId && !options?.allowSelfDelete) {
     return {
       success: false,
       message: "不能删除自己的账号",

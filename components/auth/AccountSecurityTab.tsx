@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import BindPhoneForm from "./BindPhoneForm";
 import BindEmailForm from "./BindEmailForm";
+import DeleteAccountCard from "./DeleteAccountCard";
 
 export default function AccountSecurityTab() {
   const { data: session } = useSession();
@@ -155,6 +156,9 @@ export default function AccountSecurityTab() {
           </div>
         </div>
       </div>
+
+      {/* Section: Delete Account */}
+      <DeleteAccountCard />
     </div>
   );
 }
