@@ -1,48 +1,39 @@
 "use server";
 
 import { requireAdminAction } from "@/core/auth/guard";
-import { deleteObject } from "@/lib/oss";
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+import { deleteUser as deleteUserCore } from "@/core/user/user.service";
 
 export type UserDelState = {
   message?: string;
   status: number;
 };
 
-// 删除用户
+/**
+ * Server Action: Delete a user (admin only).
+ *
+ * Directly calls core/user/user.service.ts — no internal HTTP fetch.
+ * OSS file cleanup (avatar, speech audio, detail JSON) is handled by the service.
+ */
 export async function deleteUser(
   id: string,
-  avatarFileName: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _avatarFileName: string, // Kept for backward compatibility with existing UI binding
 ): Promise<UserDelState> {
-  // [安全修复] 只有 ADMIN 才能删除用户
-  await requireAdminAction();
+  // 1. Only ADMIN can delete users
+  const session = await requireAdminAction();
 
-  let delAvatarResult = null;
-  if (avatarFileName) {
-    // 删除OSS中用户头像
-    delAvatarResult = await deleteObject(avatarFileName);
-  }
-  const res = await fetch(`${baseUrl}/api/user/delete`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userid: id }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
+  // 2. Call Core Service directly
+  const result = await deleteUserCore(id, session.user.userid);
+
+  if (!result.success) {
     return {
-      message: "",
-      status: 500,
+      message: result.message,
+      status: 400,
     };
   }
-  if (avatarFileName && !delAvatarResult) {
-    return {
-      message: "",
-      status: 500,
-    };
-  }
+
   return {
-    message: data.message,
-    status: data.status,
+    message: "redirect:/admin/users/delete-success",
+    status: 200,
   };
 }

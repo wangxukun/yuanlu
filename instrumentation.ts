@@ -5,6 +5,9 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("@/lib/sessionCleaner");
-    console.log("[Instrumentation] Session cleaner cron job registered.");
+    await import("@/lib/cleanupCron");
+    console.log(
+      "[Instrumentation] Session cleaner and data cleanup cron jobs registered.",
+    );
   }
 }

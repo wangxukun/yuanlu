@@ -188,7 +188,7 @@ model episode {
   comments            comments[]
   discussion_threads  discussion_threads[]
   podcast             podcast?              @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
-  User                User?                 @relation(fields: [uploaderid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  User                User?                 @relation(fields: [uploaderid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
   episode_favorites   episode_favorites[]
   learning_path_items learning_path_items[]
   listening_history   listening_history[]
@@ -477,7 +477,7 @@ model VisitorLog {
   path      String   @db.VarChar(255)
   userid    String?
   createAt  DateTime @default(now()) @db.Timestamptz(6)
-  User      User?    @relation(fields: [userid], references: [userid])
+  User      User?    @relation(fields: [userid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([createAt(sort: Desc)])
   @@index([ip])
@@ -495,7 +495,7 @@ model conversion_events {
   userid    String?
   metadata  Json?
   createdAt DateTime @default(now()) @db.Timestamptz(6)
-  User      User?    @relation(fields: [userid], references: [userid])
+  User      User?    @relation(fields: [userid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([eventType, createdAt(sort: Desc)])
   @@index([userid, createdAt(sort: Desc)])
