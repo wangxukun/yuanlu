@@ -44,6 +44,12 @@ async function getMobileSession(): Promise<Session | null> {
       select: {
         isLoginAllowed: true,
         role: true,
+        // [修复] 取当前真实值而非硬编码 0：移动端 JWT 不携带 sessionVersion 声明，
+        // 硬编码 0 会让 update-activity 的"踢人比对"（DB值 !== session值）对
+        // 曾被踢下线/禁登过的老用户恒 401，且重新登录也无法自愈——时长上报
+        // 因此永不累计。填入 DB 当前值后与其他 requireAuth 接口口径一致：
+        // 禁登仍由上方 isLoginAllowed 拦截，"踢下线"不再误伤移动端心跳。
+        sessionVersion: true,
         user_profile: {
           select: { avatarFileName: true, avatarUrl: true, nickname: true },
         },
@@ -76,7 +82,7 @@ async function getMobileSession(): Promise<Session | null> {
         avatarUrl,
         emailVerified: null,
         phoneVerified: !!payload.phone,
-        sessionVersion: 0,
+        sessionVersion: userInDb.sessionVersion ?? 0,
       },
       expires: new Date(payload.exp * 1000).toISOString(),
     } as Session;
