@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { authWithMobile } from "@/core/auth/guard";
 import { statsService } from "@/core/stats/stats.service";
 import { UpdateUserActivityDto } from "@/core/stats/dto";
 import prisma from "@/lib/prisma";
@@ -7,7 +7,10 @@ import prisma from "@/lib/prisma";
 export async function POST(request: NextRequest) {
   try {
     // 1. 权限校验
-    const session = await auth();
+    // [修复] 改用 authWithMobile：Web Cookie 优先 + 移动端 Bearer Token 兜底。
+    // 此前直接用 auth() 只认浏览器 Cookie，Android 端（Bearer 鉴权）的心跳
+    // 恒 401，listeningSeconds 从不累计，每日打卡时长因此一直不更新。
+    const session = await authWithMobile();
     // [修复] 处理 NextAuth 检测到的会话过期
     if (session?.error === "SessionExpired") {
       return NextResponse.json({ error: "SessionExpired" }, { status: 401 });
