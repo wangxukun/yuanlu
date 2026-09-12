@@ -22,6 +22,7 @@ export const userRoutes = [
   "/library/favorites",
   "/library/history",
   "/library/vocabulary",
+  "/library/sentences",
   "/library/learning-paths",
 ];
 

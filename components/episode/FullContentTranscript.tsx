@@ -6,6 +6,8 @@ import React, {
   useRef,
   useCallback,
   useEffect,
+  useOptimistic,
+  startTransition,
 } from "react";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { usePlayerStore } from "@/store/player-store";
@@ -15,6 +17,8 @@ import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
 import { VocabularyModal } from "./transcript/VocabularyModal";
@@ -22,6 +26,7 @@ import { SelectionMenu } from "./transcript/SelectionMenu";
 import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 import { useTranscriptKeyboard } from "./transcript/useTranscriptKeyboard";
 import { EpisodeVocabItem } from "./transcript/LearningPanel";
+import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import PlaylistDropdown from "@/components/controls/PlaylistDropdown";
@@ -90,6 +95,9 @@ interface SubtitleRowProps {
   ) => void;
   onToggleLoop: () => void;
   onProofread: (sub: ProcessedSubtitle) => void;
+  /** 句子收藏（句子本）书签态，由父组件维护（含乐观更新） */
+  isSentenceSaved?: boolean;
+  onToggleSentenceSave?: (sub: ProcessedSubtitle) => void;
 }
 
 const SubtitleRow = React.memo(function SubtitleRow({
@@ -108,6 +116,8 @@ const SubtitleRow = React.memo(function SubtitleRow({
   onWordClick,
   onToggleLoop,
   onProofread,
+  isSentenceSaved,
+  onToggleSentenceSave,
 }: SubtitleRowProps) {
   const fontSize = FONT_SIZE_LEVELS[fontSizeLevel] ?? FONT_SIZE_LEVELS[1];
   const textRef = useRef<HTMLDivElement>(null);
@@ -269,6 +279,42 @@ const SubtitleRow = React.memo(function SubtitleRow({
       <div className="flex items-center gap-0.5 shrink-0 pt-0.5">
         {!isProofreadingMode ? (
           <>
+            {/* 收藏句子（句子本）— 移动端常显且热区 44x44，桌面 hover 显示；已收藏常显 */}
+            {onToggleSentenceSave && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSentenceSave(sub);
+                }}
+                className={cn(
+                  "flex items-center justify-center rounded-full transition-all duration-200 active:scale-90",
+                  // 移动端 44x44 触控热区（负 margin 抵消布局膨胀），桌面恢复常规尺寸
+                  "w-11 h-11 -ml-2.5 md:ml-0 md:w-8 md:h-8",
+                  isSentenceSaved
+                    ? "text-warning md:opacity-100"
+                    : cn(
+                        "text-ink-300 dark:text-ink-600 hover:text-warning md:hover:bg-warning/10",
+                        "opacity-60 md:opacity-0 md:group-hover:opacity-100",
+                      ),
+                )}
+                aria-label={
+                  isSentenceSaved ? "取消收藏该句" : "收藏该句到句子本"
+                }
+                aria-pressed={isSentenceSaved}
+                title={isSentenceSaved ? "取消收藏" : "收藏句子"}
+              >
+                <span
+                  className="material-symbols-outlined text-lg"
+                  style={{
+                    fontVariationSettings: isSentenceSaved
+                      ? "'FILL' 1"
+                      : "'FILL' 0",
+                  }}
+                >
+                  bookmark
+                </span>
+              </button>
+            )}
             {/* Play this sentence */}
             <button
               onClick={(e) => {
@@ -524,6 +570,97 @@ export default function FullContentTranscript({
   const vocabWords = useMemo(
     () => new Set(vocabList.map((v) => v.word.toLowerCase())),
     [vocabList],
+  );
+
+  // ── Sentence Collection (句子本)：书签态 + 快捷打标签抽屉 ──
+  const [savedSentenceKeys, setSavedSentenceKeys] = useState<Set<number>>(
+    new Set(),
+  );
+  const [tagDrawerSentence, setTagDrawerSentence] =
+    useState<SavedSentenceItem | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !isLoggedIn || !episode?.episodeid) {
+      setSavedSentenceKeys(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/sentences/keys?episodeid=${episode.episodeid}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (
+          !cancelled &&
+          d.success &&
+          d.data &&
+          Array.isArray(d.data.subtitleIds)
+        ) {
+          setSavedSentenceKeys(new Set(d.data.subtitleIds));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isLoggedIn, episode?.episodeid]);
+
+  // 乐观更新：transition 内先翻转书签，server action 落库后回落真实状态
+  const [optimisticSavedKeys, addOptimisticSaveKey] = useOptimistic(
+    savedSentenceKeys,
+    (state: Set<number>, subId: number) => {
+      const next = new Set(state);
+      if (next.has(subId)) next.delete(subId);
+      else next.add(subId);
+      return next;
+    },
+  );
+
+  const handleToggleSentenceSave = useCallback(
+    (sub: ProcessedSubtitle) => {
+      if (!session?.user) {
+        toast("请先登录", { description: "登录后即可收藏句子到句子本" });
+        const loginModal = document.getElementById(
+          "email_check_modal_box",
+        ) as HTMLDialogElement | null;
+        if (loginModal) loginModal.showModal();
+        return;
+      }
+      const subId = sub.id;
+      startTransition(async () => {
+        addOptimisticSaveKey(subId);
+        const res = await toggleSentenceSave({
+          episodeid: episode.episodeid,
+          subtitleId: sub.id,
+          startTime: sub.start,
+          endTime: sub.end,
+          enText: sub.textEn,
+          zhText: sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+        });
+        if (res.success && res.data) {
+          setSavedSentenceKeys((prev) => {
+            const next = new Set(prev);
+            if (res.data!.saved) next.add(subId);
+            else next.delete(subId);
+            return next;
+          });
+          if (res.data.saved && res.data.sentence) {
+            // 对齐源项目：toast 携带「添加标签/笔记」action，点击才打开抽屉
+            const saved = res.data.sentence;
+            toast.success("已收藏至「句子本」", {
+              description: `"${sub.textEn.slice(0, 32)}..."`,
+              action: {
+                label: "添加标签/笔记",
+                onClick: () => setTagDrawerSentence(saved),
+              },
+            });
+          } else {
+            toast("已从「句子本」移除");
+          }
+        } else {
+          toast.error(res.message || "收藏失败，请重试");
+        }
+      });
+    },
+    [session, episode, addOptimisticSaveKey],
   );
 
   // ── Fetch episode vocabulary & global vocabulary words ──
@@ -1239,6 +1376,8 @@ export default function FullContentTranscript({
                           prev === index ? null : index,
                         )
                       }
+                      isSentenceSaved={optimisticSavedKeys.has(sub.id)}
+                      onToggleSentenceSave={handleToggleSentenceSave}
                       onProofread={(sub) => {
                         if (!session?.user) {
                           toast("请先登录", {
@@ -1510,6 +1649,13 @@ export default function FullContentTranscript({
             subtitle={proofreadSub}
             episodeid={episode.episodeid}
             userRole={userRole}
+          />
+
+          {/* 收藏成功后的快捷标签抽屉（toast「添加标签/笔记」action 打开） */}
+          <QuickTagDrawer
+            sentence={tagDrawerSentence}
+            onClose={() => setTagDrawerSentence(null)}
+            onUpdated={() => {}}
           />
         </motion.div>
       )}

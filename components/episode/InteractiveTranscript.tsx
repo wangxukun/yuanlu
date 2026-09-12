@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  useOptimistic,
+  startTransition,
+} from "react";
 import { usePlayerStore } from "@/store/player-store";
 import { useSession } from "next-auth/react";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
@@ -8,6 +15,8 @@ import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import type { SavedSentenceItem } from "@/core/sentences/dto";
 
 // Import new decoupled components
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
@@ -17,6 +26,7 @@ import { TranscriptToolbar } from "./transcript/TranscriptToolbar";
 import { SelectionMenu } from "./transcript/SelectionMenu";
 import { VocabularyModal } from "./transcript/VocabularyModal";
 import { ProofreadModal } from "./transcript/ProofreadModal";
+import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
 import { useTranscriptScroll } from "./transcript/useTranscriptScroll";
 import { useTranscriptSelection } from "./transcript/useTranscriptSelection";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
@@ -141,6 +151,100 @@ export default function InteractiveTranscript({
     null,
   );
   const [isProofreadOpen, setIsProofreadOpen] = useState(false);
+
+  // --- Sentence Collection (句子本) State ---
+  // 真实书签态（subtitleId 集合）
+  const [savedSentenceKeys, setSavedSentenceKeys] = useState<Set<number>>(
+    new Set(),
+  );
+  // 待编辑的句子（toast 的“添加标签/笔记”action 打开，非 null 时弹出抽屉）
+  const [tagDrawerSentence, setTagDrawerSentence] =
+    useState<SavedSentenceItem | null>(null);
+
+  // Fetch saved sentence keys for this episode (bookmark state)
+  React.useEffect(() => {
+    if (!isLoggedIn || !episode?.episodeid) {
+      setSavedSentenceKeys(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/sentences/keys?episodeid=${episode.episodeid}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (
+          !cancelled &&
+          d.success &&
+          d.data &&
+          Array.isArray(d.data.subtitleIds)
+        ) {
+          setSavedSentenceKeys(new Set(d.data.subtitleIds));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, episode?.episodeid]);
+
+  // 乐观更新：transition 内先翻转书签态，server action 完成后回落到真实状态
+  const [optimisticSavedKeys, addOptimisticSaveKey] = useOptimistic(
+    savedSentenceKeys,
+    (state: Set<number>, subId: number) => {
+      const next = new Set(state);
+      if (next.has(subId)) next.delete(subId);
+      else next.add(subId);
+      return next;
+    },
+  );
+
+  const handleToggleSaveSentence = useCallback(
+    (sub: ProcessedSubtitle) => {
+      if (!session?.user) {
+        toast("请先登录", { description: "登录后即可收藏句子到句子本" });
+        const loginModal = document.getElementById(
+          "email_check_modal_box",
+        ) as HTMLDialogElement | null;
+        if (loginModal) loginModal.showModal();
+        return;
+      }
+      const subId = sub.id;
+      startTransition(async () => {
+        addOptimisticSaveKey(subId);
+        const res = await toggleSentenceSave({
+          episodeid: episode.episodeid,
+          subtitleId: sub.id,
+          startTime: sub.start,
+          endTime: sub.end,
+          enText: sub.textEn,
+          zhText: sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+        });
+        if (res.success && res.data) {
+          setSavedSentenceKeys((prev) => {
+            const next = new Set(prev);
+            if (res.data!.saved) next.add(subId);
+            else next.delete(subId);
+            return next;
+          });
+          if (res.data.saved && res.data.sentence) {
+            // 对齐源项目：toast 携带「添加标签/笔记」action，点击才打开抽屉
+            const saved = res.data.sentence;
+            toast.success("已收藏至「句子本」", {
+              description: `"${sub.textEn.slice(0, 32)}..."`,
+              action: {
+                label: "添加标签/笔记",
+                onClick: () => setTagDrawerSentence(saved),
+              },
+            });
+          } else {
+            toast("已从「句子本」移除");
+          }
+        } else {
+          toast.error(res.message || "收藏失败，请重试");
+        }
+      });
+    },
+    [session, episode, addOptimisticSaveKey],
+  );
 
   // 4. Process Subtitles
   const processedSubtitles: ProcessedSubtitle[] = useMemo(() => {
@@ -388,6 +492,8 @@ export default function InteractiveTranscript({
               onJump={handleJump}
               onWordClick={handleWordClick}
               onProofread={handleProofread}
+              isSaved={optimisticSavedKeys.has(sub.id)}
+              onToggleSave={handleToggleSaveSentence}
             />
           );
         })}
@@ -435,6 +541,13 @@ export default function InteractiveTranscript({
         subtitle={proofreadSub}
         episodeid={episode.episodeid}
         userRole={userRole}
+      />
+
+      {/* 收藏成功后的快捷标签抽屉（toast「添加标签/笔记」action 打开） */}
+      <QuickTagDrawer
+        sentence={tagDrawerSentence}
+        onClose={() => setTagDrawerSentence(null)}
+        onUpdated={() => {}}
       />
     </div>
   );

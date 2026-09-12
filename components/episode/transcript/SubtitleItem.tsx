@@ -1,7 +1,12 @@
 "use client";
 
 import React, { memo, useRef } from "react";
-import { PlayCircleIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import {
+  PlayCircleIcon,
+  PencilSquareIcon,
+  BookmarkIcon,
+} from "@heroicons/react/24/outline";
+import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 import { ProcessedSubtitle } from "./types";
 import { useWordHighlight } from "@/components/transcript/useWordHighlight";
@@ -23,6 +28,9 @@ interface SubtitleItemProps {
   onProofread?: (sub: ProcessedSubtitle) => void;
   isLooping?: boolean;
   onToggleLoop?: () => void;
+  /** 句子收藏（句子本）状态，由 InteractiveTranscript 维护（含乐观更新） */
+  isSaved?: boolean;
+  onToggleSave?: (sub: ProcessedSubtitle) => void;
 }
 
 export const SubtitleItem = memo(function SubtitleItem({
@@ -37,6 +45,8 @@ export const SubtitleItem = memo(function SubtitleItem({
   onProofread,
   isLooping,
   onToggleLoop,
+  isSaved,
+  onToggleSave,
 }: SubtitleItemProps) {
   const textRef = useRef<HTMLDivElement>(null);
   // 随语速线性过渡的扫光高亮（与 FullContentTranscript 同款）
@@ -75,6 +85,36 @@ export const SubtitleItem = memo(function SubtitleItem({
         >
           <PencilSquareIcon className="w-4 h-4" />
           <span className="text-[11px]">校对</span>
+        </button>
+      )}
+
+      {/* 收藏句子（句子本）— 移动端常显（44x44 热区），桌面 hover 显示；已收藏常显 */}
+      {onToggleSave && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave(sub);
+          }}
+          className={clsx(
+            "absolute top-0 right-0 sm:top-2 sm:right-[4.5rem] z-10",
+            "flex items-center justify-center rounded-full",
+            "w-11 h-11 sm:w-8 sm:h-8 transition-all duration-200 active:scale-90",
+            isSaved
+              ? "text-warning opacity-100 sm:opacity-100"
+              : clsx(
+                  "text-ink-300 dark:text-ink-500 hover:text-warning",
+                  "opacity-70 sm:opacity-0 sm:group-hover:opacity-100",
+                ),
+          )}
+          aria-label={isSaved ? "取消收藏该句" : "收藏该句到句子本"}
+          aria-pressed={isSaved}
+          title={isSaved ? "取消收藏" : "收藏句子"}
+        >
+          {isSaved ? (
+            <BookmarkSolidIcon className="w-5 h-5 sm:w-[18px] sm:h-[18px]" />
+          ) : (
+            <BookmarkIcon className="w-5 h-5 sm:w-[18px] sm:h-[18px]" />
+          )}
         </button>
       )}
 

@@ -18,6 +18,7 @@ interface NavLinkItem {
 
 const links: NavLinkItem[] = [
   { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
+  { name: "句子本", href: "/library/sentences", iconName: "format_quote" },
   {
     name: "发音弱项本",
     href: "/library/pronunciation",

@@ -48,6 +48,7 @@ model User {
   vocabulary            vocabulary[]
   proofread_submissions subtitle_proofread[]  @relation("ProofreadSubmitter")
   proofread_reviews     subtitle_proofread[]  @relation("ProofreadReviewer")
+  savedSentences        SavedSentence[]
 }
 
 /// 用户资料模型，存储用户的个人信息
@@ -198,6 +199,7 @@ model episode {
   vocabulary          vocabulary[]
   tags                tag[]                 @relation("episodeTotag")
   subtitle_proofreads subtitle_proofread[]
+  savedSentences      SavedSentence[]
 }
 
 /// 播客剧集收藏模型，存储用户收藏的剧集信息
@@ -547,4 +549,37 @@ model Dictionary {
   updatedAt DateTime @updatedAt
 
   @@index([word])
+}
+
+/// 收藏句子模型（句子本）：精读时收藏的双语句子，保留音频时间轴上下文，
+/// 用于原音重现（episodeid + startTime/endTime 精准截取）、影子跟读
+/// （practice=true&subtitleId= 定位评测句）与移动端滑动卡片复习。
+/// 同一用户对同一字幕句只允许收藏一条（userid+episodeid+subtitleId 唯一）。
+model SavedSentence {
+  id         Int      @id @default(autoincrement())
+  userid     String
+  episodeid  String
+  /// 字幕句索引（对应 SRT/mergeSubtitles 条目 id），用于影子跟读跳转定位
+  subtitleId Int?
+  /// 句子在剧集音频中的起始时间（秒）
+  startTime  Float
+  /// 句子在剧集音频中的结束时间（秒）
+  endTime    Float
+  /// 英文原句
+  enText     String
+  /// 中文翻译
+  zhText     String?
+  /// 用户自定义笔记
+  note       String?
+  /// 用户自定义标签（如：地道表达 / 长难句 / 写作素材）
+  tags       String[] @default([])
+  createAt   DateTime @default(now()) @db.Timestamptz(6)
+  updateAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  episode    episode  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User       User     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, episodeid, subtitleId])
+  @@index([userid, createAt(sort: Desc)])
+  @@index([userid, episodeid])
 }

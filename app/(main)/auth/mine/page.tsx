@@ -16,6 +16,7 @@ import {
   BookmarkSquareIcon,
   BellIcon,
   MicrophoneIcon,
+  ChatBubbleBottomCenterTextIcon,
 } from "@heroicons/react/24/outline";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { useNotificationStore } from "@/store/notification-store";
@@ -116,6 +117,14 @@ export default function MinePage() {
       {/* 学习与记录 (登录可见) */}
       {session && (
         <div className="bg-base-100 rounded-3xl overflow-hidden shadow-sm mb-6">
+          <Link
+            href="/library/sentences"
+            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
+          >
+            <ChatBubbleBottomCenterTextIcon className="w-6 h-6 text-warning mr-4" />
+            <span className="flex-1 font-semibold">句子本</span>
+            <ChevronRightIcon className="w-5 h-5 text-base-content/30" />
+          </Link>
           <Link
             href="/library/pronunciation"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
