@@ -3,10 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  BookmarkCheck,
   Search,
   Filter,
-  Sparkles,
   X,
   BookOpen,
   LayoutGrid,
@@ -14,9 +12,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
+import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { deleteSavedSentence } from "@/lib/actions/sentences-actions";
 import { useVocabHighlightStore } from "@/store/vocab-highlight-store";
 import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
+import { SentenceStats } from "./components/SentenceStats";
 import { SentenceCard } from "./components/SentenceCard";
 import { SentenceCompactList } from "./components/SentenceCompactList";
 
@@ -47,11 +47,17 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   const [activeQuickEditSentence, setActiveQuickEditSentence] =
     useState<SavedSentenceItem | null>(null);
 
-  // 生词高亮全局镜像（VocabularyHighlighter 读取）
+  // 真实联动词汇：生词本中实际出现在收藏句子里的词（统计与高亮共用同一口径）
+  const linkedVocabWords = useMemo(
+    () => filterLinkedVocabWords(vocabWords, sentences),
+    [vocabWords, sentences],
+  );
+
+  // 生词高亮全局镜像（VocabularyHighlighter 读取）——只喂真实出现在句子中的词汇
   const setVocabWords = useVocabHighlightStore((s) => s.setWords);
   useEffect(() => {
-    setVocabWords(vocabWords);
-  }, [vocabWords, setVocabWords]);
+    setVocabWords(linkedVocabWords);
+  }, [linkedVocabWords, setVocabWords]);
 
   // Collect all unique tags across sentences
   const allTags = Array.from(
@@ -112,65 +118,13 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 space-y-6 pb-20 animate-in fade-in duration-300">
-      {/* Top Banner Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-indigo-600/15">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-white/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-bold text-indigo-100 border border-white/20">
-              <BookmarkCheck size={14} className="text-amber-300" />
-              句子收藏与精读输出系统
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              我的句子本
-            </h1>
-            <p className="text-indigo-100/90 text-sm leading-relaxed">
-              沉浸式收集播客中的地道表达与长难句。原音精准截取，与生词本深度联动，支持随时开展
-              AI 影子跟读与卡片复习。
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Start Mobile Review Mode Button */}
-            <Link
-              href="/library/sentences/review"
-              className="btn border-none bg-amber-400 hover:bg-amber-300 text-slate-900 font-black rounded-2xl px-5 h-12 shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-              title="进入全屏滑动复习卡片模式"
-            >
-              <Sparkles size={18} className="fill-slate-900" />
-              <span>卡片复习模式</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="mt-6 pt-5 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs text-indigo-100 font-medium">
-          <div>
-            共收藏{" "}
-            <strong className="text-white text-base font-bold ml-1">
-              {sentences.length}
-            </strong>{" "}
-            个关键句
-          </div>
-          <div className="w-1 h-1 rounded-full bg-white/30" />
-          <div>
-            已联动{" "}
-            <strong className="text-amber-300 text-base font-bold ml-1">
-              {vocabWords.length}
-            </strong>{" "}
-            个生词本词汇
-          </div>
-          <div className="w-1 h-1 rounded-full bg-white/30" />
-          <div>
-            包含{" "}
-            <strong className="text-white text-base font-bold ml-1">
-              {allTags.length}
-            </strong>{" "}
-            个分类标签
-          </div>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 animate-in fade-in duration-300">
+      {/* 页面头部：标题 + 统计卡片 + 复习横幅（排版对齐生词本） */}
+      <SentenceStats
+        sentenceCount={sentences.length}
+        vocabCount={linkedVocabWords.length}
+        tagCount={allTags.length}
+      />
 
       {/* Control / Search & Filter Panel */}
       <div className="bg-white dark:bg-ink-900 rounded-3xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] space-y-4">
@@ -230,7 +184,7 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
               title="卡片详情视图"
             >
               <LayoutGrid size={14} />
-              <span className="hidden sm:inline">卡片详情</span>
+              <span>卡片详情</span>
             </button>
             <button
               type="button"
@@ -243,16 +197,16 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
               title="简洁清单视图"
             >
               <List size={14} />
-              <span className="hidden sm:inline">简洁清单</span>
+              <span>简洁清单</span>
             </button>
           </div>
         </div>
 
         {/* Tag Pills Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 text-xs">
           <span className="text-gray-400 dark:text-ink-400 flex items-center gap-1 shrink-0 font-semibold">
-            <Filter size={12} className="text-gray-400 dark:text-ink-400" />{" "}
-            标签分类：
+            <Filter size={12} className="text-gray-400 dark:text-ink-400" />
+            <span className="hidden sm:inline">标签分类：</span>
           </span>
           <button
             type="button"
@@ -262,7 +216,7 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
             }}
             className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all ${
               (filterTag === "ALL" || !filterTag) && activeTab === "ALL"
-                ? "bg-indigo-600 text-white shadow-sm"
+                ? "bg-primary-600 text-white shadow-sm"
                 : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
             }`}
           >
@@ -279,11 +233,11 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
                   setActiveTab(tag);
                   setFilterTag(tag);
                 }}
-                className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
-                  isSelected
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
-                }`}
+              className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+                isSelected
+                  ? "bg-primary-600 text-white shadow-sm"
+                  : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
+              }`}
               >
                 <span>{tag}</span>
                 <span className="opacity-60 text-[10px]">({count})</span>

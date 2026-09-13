@@ -59,20 +59,20 @@ export function SentenceCompactList({
                     {item.episodeTitle}
                   </Link>
                 )}
-                <span className="font-mono text-[10px] bg-gray-100 dark:bg-ink-800 px-1.5 py-0.5 rounded">
+                <span className="hidden md:inline-block font-mono text-[10px] bg-gray-100 dark:bg-ink-800 px-1.5 py-0.5 rounded">
                   {item.startTime}s - {item.endTime}s
                 </span>
                 {item.tags?.map((t) => (
                   <span
                     key={t}
-                    className="text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                    className="hidden md:inline-block text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded text-[10px] font-medium"
                   >
                     #{t}
                   </span>
                 ))}
                 {item.note && (
                   <span
-                    className="flex items-center gap-1 text-indigo-600/80 dark:text-indigo-400/80 text-[11px] bg-indigo-500/5 px-2 py-0.5 rounded-md"
+                    className="hidden md:flex items-center gap-1 text-indigo-600/80 dark:text-indigo-400/80 text-[11px] bg-indigo-500/5 px-2 py-0.5 rounded-md"
                     title={item.note}
                   >
                     <FileText size={11} />
@@ -83,8 +83,8 @@ export function SentenceCompactList({
             </div>
           </div>
 
-          {/* Right side: audio player & actions */}
-          <div className="flex items-center gap-2 shrink-0 self-end md:self-center pl-9 md:pl-0">
+          {/* Right side: audio player & actions（移动端裸图标右对齐，与卡片视图同风格） */}
+          <div className="flex items-center justify-end gap-1 md:gap-2 shrink-0 self-end md:self-center pl-9 md:pl-0">
             <SentenceMicroPlayer
               episodeid={item.episodeid}
               startTime={item.startTime}
@@ -93,37 +93,40 @@ export function SentenceCompactList({
             {item.subtitleId != null ? (
               <Link
                 href={`/episode/${item.episodeid}?practice=true&subtitleId=${item.subtitleId}`}
-                className="btn btn-ghost btn-circle btn-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95 md:text-indigo-600 md:dark:text-indigo-400 md:hover:bg-indigo-500/10"
                 title="AI 影子跟读"
               >
-                <Mic size={15} />
+                <Mic size={16} />
               </Link>
             ) : (
               <button
                 type="button"
                 disabled
-                className="btn btn-ghost btn-circle btn-sm text-gray-300 dark:text-ink-600 cursor-not-allowed"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-ink-600 cursor-not-allowed"
                 title="该句缺少字幕定位信息，无法跟读"
               >
-                <Mic size={15} />
+                <Mic size={16} />
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => onEdit(item)}
-              className="btn btn-ghost btn-circle btn-sm text-gray-500 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100"
-              title="编辑笔记与标签"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(item)}
-              className="btn btn-ghost btn-circle btn-sm text-gray-400 dark:text-ink-400 hover:text-error"
-              title="从句子本移除"
-            >
-              <Trash2 size={14} />
-            </button>
+            {/* 编辑/删除：移动端隐藏，md 起显示 */}
+            <div className="hidden md:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onEdit(item)}
+                className="btn btn-ghost btn-circle btn-sm text-gray-500 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100"
+                title="编辑笔记与标签"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(item)}
+                className="btn btn-ghost btn-circle btn-sm text-gray-400 dark:text-ink-400 hover:text-error-500 dark:hover:text-error-400"
+                title="从句子本移除"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         </div>
       ))}

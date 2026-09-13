@@ -27,7 +27,7 @@ export default async function SentencesPage() {
   ]);
 
   return (
-    <div className="bg-[#F5F5F7] dark:bg-ink-950 min-h-screen transition-colors duration-300">
+    <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
       <SentenceNotebook sentences={sentences} vocabWords={vocabRows} />
     </div>
   );

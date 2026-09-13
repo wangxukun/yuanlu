@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Mic,
   FileText,
-  Clock,
   Radio,
   BookOpen,
   Edit2,
@@ -38,6 +37,70 @@ export function SentenceCard({
   onEdit,
   onDelete,
 }: SentenceCardProps) {
+  // 操作坞（影子跟读/编辑/删除）：桌面端渲染于卡片右上角（btn-soft/ghost 形态），
+  // 移动端渲染于播放条行居右，统一为无背景裸图标风格（与播放/循环图标一致）
+  const renderActionDock = (mobile: boolean) => (
+    <>
+      {/* Shadowing AI Pronunciation Evaluation Entry */}
+      {item.subtitleId != null ? (
+        <Link
+          href={`/episode/${item.episodeid}?practice=true&subtitleId=${item.subtitleId}`}
+          className={
+            mobile
+              ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95"
+              : "btn btn-sm btn-soft rounded-xl flex items-center gap-1.5 px-3 transition-all active:scale-95"
+          }
+          title="进入 AI 影子跟读与发音评测"
+        >
+          <Mic size={mobile ? 16 : 14} />
+          {!mobile && <span className="text-xs font-bold">影子跟读</span>}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className={
+            mobile
+              ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-ink-600 cursor-not-allowed"
+              : "btn btn-sm btn-outline border-base-300 text-base-content/40 rounded-xl flex items-center gap-1.5 px-3"
+          }
+          title="该句缺少字幕定位信息，无法跟读"
+        >
+          <Mic size={mobile ? 16 : 14} />
+          {!mobile && <span className="text-xs font-bold">影子跟读</span>}
+        </button>
+      )}
+
+      {/* Edit Note/Tag trigger */}
+      <button
+        type="button"
+        onClick={() => onEdit(item)}
+        className={
+          mobile
+            ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95"
+            : "btn btn-ghost btn-circle btn-sm text-base-content/50 hover:text-base-content"
+        }
+        title="编辑笔记与标签"
+      >
+        <Edit2 size={mobile ? 16 : 14} />
+      </button>
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={() => onDelete(item)}
+        className={
+          mobile
+            ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-error-500 dark:hover:text-error-400 transition-colors active:scale-95"
+            : "btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-error-500 dark:hover:text-error-400"
+        }
+        title="从句子本移除"
+      >
+        <Trash2 size={mobile ? 16 : 14} />
+      </button>
+    </>
+  );
+
   return (
     <div className="bg-white dark:bg-ink-900 rounded-2xl border border-transparent shadow-[0_1px_2px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.05),0_8px_24px_rgba(0,0,0,0.07)] transition-all duration-200 overflow-hidden group">
       {/* Main Card Row (Default tidy state: English sentence & audio playback) */}
@@ -65,81 +128,43 @@ export function SentenceCard({
                   </Link>
                 )}
 
-                <span className="flex items-center gap-1 font-mono text-[10px] bg-gray-100 dark:bg-ink-800 px-2 py-0.5 rounded-md">
-                  <Clock size={10} />
-                  {item.startTime}s - {item.endTime}s
-                </span>
-
-                {item.tags?.map((t) => (
-                  <span
-                    key={t}
-                    className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium"
-                  >
-                    #{t}
-                  </span>
-                ))}
+                {/* 分类标签：移动端（<sm）独占一行显示在出处链接下方，sm 起与出处同行排布 */}
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  {item.tags?.map((t) => (
+                    <span
+                      key={t}
+                      className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium"
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Action Docks */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Shadowing AI Pronunciation Evaluation Entry */}
-            {item.subtitleId != null ? (
-              <Link
-                href={`/episode/${item.episodeid}?practice=true&subtitleId=${item.subtitleId}`}
-                className="btn btn-sm btn-outline border-indigo-500/30 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 rounded-xl flex items-center gap-1.5 px-3 transition-all active:scale-95"
-                title="进入 AI 影子跟读与发音评测"
-              >
-                <Mic size={14} />
-                <span className="hidden sm:inline text-xs font-bold">
-                  影子跟读
-                </span>
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="btn btn-sm btn-outline border-base-300 text-base-content/40 rounded-xl flex items-center gap-1.5 px-3"
-                title="该句缺少字幕定位信息，无法跟读"
-              >
-                <Mic size={14} />
-                <span className="hidden sm:inline text-xs font-bold">
-                  影子跟读
-                </span>
-              </button>
-            )}
-
-            {/* Edit Note/Tag trigger */}
-            <button
-              type="button"
-              onClick={() => onEdit(item)}
-              className="btn btn-ghost btn-circle btn-sm text-base-content/50 hover:text-base-content"
-              title="编辑笔记与标签"
-            >
-              <Edit2 size={14} />
-            </button>
-
-            {/* Delete */}
-            <button
-              type="button"
-              onClick={() => onDelete(item)}
-              className="btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-error"
-              title="从句子本移除"
-            >
-              <Trash2 size={14} />
-            </button>
+          {/* Right Action Docks（桌面端右上角；移动端隐藏，改由播放条行承载） */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {renderActionDock(false)}
           </div>
         </div>
 
         {/* Micro Audio Player & Collapse Trigger Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-ink-800">
-          {/* Embedded Micro Player */}
-          <SentenceMicroPlayer
-            episodeid={item.episodeid}
-            startTime={item.startTime}
-            endTime={item.endTime}
-          />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2 border-t border-gray-100 dark:border-ink-800">
+          {/* 播放器行：移动端为 [播放][循环][影子跟读][编辑][删除] 五个裸图标整体居右 */}
+          <div className="flex items-center justify-end sm:justify-between gap-1 sm:gap-2 w-full sm:w-auto">
+            {/* Embedded Micro Player */}
+            <SentenceMicroPlayer
+              episodeid={item.episodeid}
+              startTime={item.startTime}
+              endTime={item.endTime}
+            />
+
+            {/* Mobile-only action icons */}
+            <div className="flex sm:hidden items-center gap-1 shrink-0">
+              {renderActionDock(true)}
+            </div>
+          </div>
 
           {/* Accordion Toggle for Chinese & Notes */}
           <button

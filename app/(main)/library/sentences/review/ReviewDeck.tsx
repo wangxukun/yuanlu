@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
+import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { useVocabHighlightStore } from "@/store/vocab-highlight-store";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import { getEpisodeAudioUrl } from "@/lib/client/episode-audio";
@@ -45,11 +46,17 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
 
   const currentSentence = sentences[currentIndex] || null;
 
+  // 真实联动词汇：只喂实际出现在复习句中的生词（与句子本同一口径）
+  const linkedVocabWords = useMemo(
+    () => filterLinkedVocabWords(vocabWords, sentences),
+    [vocabWords, sentences],
+  );
+
   // 生词高亮全局镜像（VocabularyHighlighter 读取）
   const setVocabWords = useVocabHighlightStore((s) => s.setWords);
   useEffect(() => {
-    setVocabWords(vocabWords);
-  }, [vocabWords, setVocabWords]);
+    setVocabWords(linkedVocabWords);
+  }, [linkedVocabWords, setVocabWords]);
 
   // Motion values for swipe gesture
   const x = useMotionValue(0);
@@ -287,7 +294,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
                   {/* Personal Note */}
                   {currentSentence.note && (
                     <div className="p-3 bg-base-200/60 rounded-2xl border border-base-300/40 text-xs text-base-content/80 leading-relaxed font-sans">
-                      <strong className="text-primary block mb-1">
+                      <strong className="text-primary-600 dark:text-primary-400 block mb-1">
                         学习笔记：
                       </strong>
                       {currentSentence.note}
