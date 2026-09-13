@@ -20,6 +20,7 @@ import {
   MousePointerClick,
   MoveLeft,
   MoveRight,
+  TextQuote,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
@@ -172,7 +173,7 @@ export default function ReviewDeck({
     return (
       <div className="min-h-[85vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center text-primary-600 dark:text-primary-400">
-          <BookOpen size={30} />
+          <TextQuote size={30} />
         </div>
         <h2 className="text-xl font-bold">句子本为空</h2>
         <p className="text-sm text-base-content/60 max-w-xs">

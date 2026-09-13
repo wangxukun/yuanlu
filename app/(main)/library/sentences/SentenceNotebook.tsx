@@ -6,7 +6,7 @@ import {
   Search,
   Filter,
   X,
-  BookOpen,
+  TextQuote,
   LayoutGrid,
   List,
   Trash2,
@@ -276,8 +276,8 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
       {/* Sentences List Area */}
       {sentences.length === 0 ? (
         <div className="bg-white dark:bg-ink-900 rounded-3xl p-12 text-center shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] space-y-4">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 flex items-center justify-center mx-auto">
-            <BookOpen size={28} />
+          <div className="w-16 h-16 rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 flex items-center justify-center mx-auto">
+            <TextQuote size={28} />
           </div>
           <div className="space-y-1 max-w-md mx-auto">
             <h3 className="text-lg font-bold text-base-content">
@@ -289,7 +289,7 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
           </div>
           <Link
             href="/discover"
-            className="btn btn-sm bg-indigo-600 hover:bg-indigo-500 text-white border-none rounded-xl px-5"
+            className="btn btn-sm bg-primary-600 hover:bg-primary-500 text-white border-none rounded-xl px-5"
           >
             去浏览播客
           </Link>
