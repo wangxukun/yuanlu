@@ -1,4 +1,5 @@
 import {
+  BookA,
   BookOpen,
   Clock,
   Award,
@@ -21,7 +22,7 @@ export function VocabularyStats({
       <header className="flex flex-col xl:flex-row justify-between xl:items-end pb-6 gap-6">
         <div>
           <h1 className="text-2xl xl:text-3xl font-bold text-base-content flex items-center">
-            <BookOpen
+            <BookA
               className="mr-3 text-primary-600 dark:text-primary-400"
               size={32}
             />

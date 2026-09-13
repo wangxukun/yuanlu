@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -9,6 +9,7 @@ import {
   BookOpen,
   LayoutGrid,
   List,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
@@ -101,21 +102,36 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
     setActiveTab("ALL");
   };
 
-  const handleDelete = async (item: SavedSentenceItem) => {
-    if (window.confirm(`确定要从句子本中移除此句吗？\n"${item.enText}"`)) {
-      try {
-        const res = await deleteSavedSentence(item.id);
-        if (res.success) {
-          setSentences((prev) => prev.filter((s) => s.id !== item.id));
-          toast.success("已从句子本中移除");
-        } else {
-          toast.error(res.message || "删除失败");
-        }
-      } catch {
-        toast.error("网络错误");
+  // 删除确认：先暂存待删句子并打开 DaisyUI 弹窗，确认后再执行真正的删除
+  const [pendingDelete, setPendingDelete] = useState<SavedSentenceItem | null>(
+    null,
+  );
+  const deleteModalRef = useRef<HTMLDialogElement>(null);
+
+  const requestDelete = (item: SavedSentenceItem) => {
+    setPendingDelete(item);
+    deleteModalRef.current?.showModal();
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const item = pendingDelete;
+    deleteModalRef.current?.close();
+    setPendingDelete(null);
+    try {
+      const res = await deleteSavedSentence(item.id);
+      if (res.success) {
+        setSentences((prev) => prev.filter((s) => s.id !== item.id));
+        toast.success("已从句子本中移除");
+      } else {
+        toast.error(res.message || "删除失败");
       }
+    } catch {
+      toast.error("网络错误");
     }
   };
+
+  const handleDelete = requestDelete;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 animate-in fade-in duration-300">
@@ -325,6 +341,45 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
           );
         }}
       />
+
+      {/* 删除确认弹窗（DaisyUI modal：原生 dialog + method="dialog" 关闭） */}
+      <dialog
+        ref={deleteModalRef}
+        className="modal"
+        onClose={() => setPendingDelete(null)}
+      >
+        <div className="modal-box max-w-sm">
+          <h3 className="text-lg font-bold flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-error-500/10 text-error-600 dark:text-error-400 flex items-center justify-center shrink-0">
+              <Trash2 size={18} />
+            </span>
+            从句子本移除
+          </h3>
+          <p className="mt-4 text-sm text-base-content/70">
+            确定要移除这个句子吗？移除后需要重新收藏。
+          </p>
+          <p className="mt-2 p-3 bg-base-200/60 rounded-xl text-xs font-serif text-base-content/80 line-clamp-3 leading-relaxed">
+            "{pendingDelete?.enText}"
+          </p>
+          <div className="modal-action gap-2">
+            <form method="dialog">
+              <button className="btn btn-sm rounded-xl text-xs text-base-content/60">
+                取消
+              </button>
+            </form>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              className="btn btn-sm rounded-xl text-xs font-bold text-white border-none bg-error-500 hover:bg-error-400"
+            >
+              确认移除
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 };

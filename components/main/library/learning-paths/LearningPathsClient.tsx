@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Search, Map, CheckCircle2, Loader2 } from "lucide-react";
+import { Plus, Search, Route, CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LearningPathCard, { LearningPath } from "./LearningPathCard";
 import { createLearningPathAction } from "@/lib/actions/learning-path-actions";
@@ -63,7 +63,7 @@ export default function LearningPathsClient({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-base-content tracking-tight flex items-center">
-            <Map
+            <Route
               className="mr-3 text-primary-600 dark:text-primary-400"
               size={32}
             />

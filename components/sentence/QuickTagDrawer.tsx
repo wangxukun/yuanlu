@@ -120,7 +120,7 @@ export function QuickTagDrawer({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-base-200">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center">
               <BookmarkCheck size={18} />
             </div>
             <div>
@@ -156,7 +156,7 @@ export function QuickTagDrawer({
           {/* Tags Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-base-content/80 flex items-center gap-1.5">
-              <Tag size={13} className="text-indigo-600 dark:text-indigo-400" />
+              <Tag size={13} className="text-primary-600 dark:text-primary-400" />
               选择分类标签
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -169,7 +169,7 @@ export function QuickTagDrawer({
                     onClick={() => toggleTag(tag)}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                       isSelected
-                        ? "bg-indigo-600 text-white shadow-xs scale-[1.02]"
+                        ? "bg-primary-600 text-white shadow-xs scale-[1.02]"
                         : "bg-gray-100 dark:bg-ink-800 text-gray-600 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
                     }`}
                   >
@@ -186,7 +186,7 @@ export function QuickTagDrawer({
                     key={tag}
                     type="button"
                     onClick={() => toggleTag(tag)}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-content shadow-xs"
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-accent-500/10 text-accent-700 dark:text-accent-300 border border-accent-400/30 shadow-xs"
                   >
                     {tag} ✕
                   </button>
@@ -230,7 +230,7 @@ export function QuickTagDrawer({
           {/* Personal Note */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-base-content/80 flex items-center gap-1.5">
-              <FileText size={13} className="text-indigo-500" />
+              <FileText size={13} className="text-primary-600 dark:text-primary-400" />
               个人学习笔记（语法解析、运用场景、生词搭配等）
             </label>
             <textarea
@@ -238,7 +238,7 @@ export function QuickTagDrawer({
               onChange={(e) => setNote(e.target.value)}
               maxLength={2000}
               placeholder="例如：长难句宾语从句倒装结构，写作开头句式..."
-              className="textarea textarea-bordered w-full rounded-2xl text-xs resize-none min-h-[80px] focus:border-indigo-500 focus:outline-none bg-base-100"
+              className="textarea textarea-bordered w-full rounded-2xl text-xs resize-none min-h-[80px] focus:border-primary-500 focus:outline-none bg-base-100"
               rows={3}
             />
           </div>
@@ -257,7 +257,7 @@ export function QuickTagDrawer({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="btn btn-sm rounded-xl px-5 text-xs font-bold shadow-sm flex items-center gap-1.5 border-none bg-indigo-600 hover:bg-indigo-500 text-white"
+            className="btn btn-sm rounded-xl px-5 text-xs font-bold shadow-sm flex items-center gap-1.5 border-none bg-primary-600 hover:bg-primary-500 text-white"
           >
             {isSaving ? (
               <Loader2 size={14} className="animate-spin" />

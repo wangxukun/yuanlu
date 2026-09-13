@@ -22,6 +22,7 @@ import {
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
+import WordScoreBadge from "./WordScoreBadge";
 import { useSpeechEvaluation } from "./hooks/useSpeechEvaluation";
 import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 import { PRACTICE_FONT_SIZE_LEVELS } from "@/store/practice-settings-store";
@@ -407,16 +408,6 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isActive, isRecording, isProcessing]);
-
-  // 逐词胶囊按得分分档着色（参考图 1）：每档 = 浅色底 + 同系前景 + 同系描边，
-  // 高分绿 / 中档琥珀 / 低分红；内联分数继承各档前景色。
-  const getWordColorClass = (score: number) => {
-    if (score >= 85)
-      return "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-800 font-medium";
-    if (score >= 60)
-      return "bg-accent-50 dark:bg-accent-950/40 text-accent-700 dark:text-accent-300 border-accent-300 dark:border-accent-800 font-semibold";
-    return "bg-error-50 dark:bg-error-950/40 text-error-600 dark:text-error-400 border-error-300 dark:border-error-800 underline decoration-error-500 decoration-wavy underline-offset-4 font-semibold";
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 85) return "text-primary-600";
@@ -833,28 +824,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                   <span className="block w-full h-[1.2em] rounded bg-ink-200 dark:bg-ink-700 blur-[2px]" />
                                 </span>
                               ) : (
-                                <span
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (w.score < 85) {
-                                      setActiveWordIndex(
-                                        activeWordIndex === i ? null : i,
-                                      );
-                                    }
-                                  }}
-                                  className={`px-3 py-1.5 rounded-full border transition-all inline-flex items-baseline gap-1 ${getWordColorClass(
-                                    w.score,
-                                  )} ${
-                                    w.score < 85
-                                      ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
-                                      : ""
-                                  }`}
-                                >
-                                  {w.word}
-                                  <span className="text-[10px] font-bold font-mono tabular-nums opacity-75">
-                                    {Math.round(w.score)}
-                                  </span>
-                                </span>
+                                <WordScoreBadge
+                                  word={w.word}
+                                  score={w.score}
+                                  onClick={() =>
+                                    setActiveWordIndex(
+                                      activeWordIndex === i ? null : i,
+                                    )
+                                  }
+                                />
                               )}
                             </div>
                           ))
