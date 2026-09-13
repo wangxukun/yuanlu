@@ -41,10 +41,10 @@ export function SentenceCard({
   // 移动端渲染于播放条行居右，统一为无背景裸图标风格（与播放/循环图标一致）
   const renderActionDock = (mobile: boolean) => (
     <>
-      {/* Shadowing AI Pronunciation Evaluation Entry */}
+      {/* Shadowing AI Pronunciation Evaluation Entry：跳独立影子跟读评测页，携带句子 id 精准定位初始卡 */}
       {item.subtitleId != null ? (
         <Link
-          href={`/episode/${item.episodeid}?practice=true&subtitleId=${item.subtitleId}`}
+          href={`/library/sentences/review/practice?id=${item.id}`}
           className={
             mobile
               ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95"

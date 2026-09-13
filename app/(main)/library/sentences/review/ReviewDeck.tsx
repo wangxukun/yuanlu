@@ -17,6 +17,9 @@ import {
   BookOpen,
   Repeat,
   HelpCircle,
+  MousePointerClick,
+  MoveLeft,
+  MoveRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
@@ -29,20 +32,33 @@ interface ReviewDeckProps {
   sentences: SavedSentenceItem[];
   /** 生词本（word + 释义），复习卡正面英文生词高亮联动 */
   vocabWords: { word: string; definition: string | null }[];
+  /** 深链定位：来自影子跟读评测页「返回卡片」，按 subtitleId 定位初始卡 */
+  initialSubtitleId?: string;
 }
 
 /**
  * 移动端刷句复习卡（复刻自 yuanlu-podcast pages/MobileReview.tsx）：
  * 顺序遍历、到末尾回环；点击卡片翻面（译文/笔记），左滑下一句、右滑重听原音；
- * 背景堆叠卡 + 手势角标 + 底部单手操作坞；顶部进度条与已复习计数。
+ * 背景堆叠卡 + 手势角标 + 底部单手操作坞；顶部进度条。
  */
-export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export default function ReviewDeck({
+  sentences,
+  vocabWords,
+  initialSubtitleId,
+}: ReviewDeckProps) {
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (!initialSubtitleId) return 0;
+    const idx = sentences.findIndex(
+      (s) => String(s.subtitleId) === initialSubtitleId,
+    );
+    return idx >= 0 ? idx : 0;
+  });
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [reviewCount, setReviewCount] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 操作说明 DaisyUI 弹窗（原生 dialog，showModal 驱动）
+  const helpModalRef = useRef<HTMLDialogElement>(null);
 
   const currentSentence = sentences[currentIndex] || null;
 
@@ -121,7 +137,6 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
   };
 
   const handleNext = () => {
-    setReviewCount((prev) => prev + 1);
     if (currentIndex < sentences.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
@@ -156,7 +171,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
   if (sentences.length === 0) {
     return (
       <div className="min-h-[85vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+        <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center text-primary-600 dark:text-primary-400">
           <BookOpen size={30} />
         </div>
         <h2 className="text-xl font-bold">句子本为空</h2>
@@ -165,7 +180,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
         </p>
         <Link
           href="/library/sentences"
-          className="btn rounded-xl px-6 border-none bg-indigo-600 hover:bg-indigo-500 text-white"
+          className="btn rounded-xl px-6 border-none bg-primary-600 hover:bg-primary-500 text-white"
         >
           返回句子本
         </Link>
@@ -187,7 +202,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
 
         <div className="flex flex-col items-center">
           <span className="text-xs font-bold text-base-content/50 uppercase tracking-wider">
-            移动端刷句复习
+            刷句复习
           </span>
           <span className="text-sm font-black text-base-content">
             {currentIndex + 1}{" "}
@@ -197,11 +212,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
 
         <button
           type="button"
-          onClick={() => {
-            alert(
-              "【手势操作指南】\n• 点击卡片空白处：翻转卡片查看译文与笔记\n• 左滑卡片 (Swipe Left)：切换到下一句\n• 右滑卡片 (Swipe Right)：重听原声音频",
-            );
-          }}
+          onClick={() => helpModalRef.current?.showModal()}
           className="btn btn-ghost btn-circle btn-sm text-base-content/50"
           title="操作说明"
         >
@@ -212,7 +223,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
       {/* Progress Line */}
       <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden my-2">
         <div
-          className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+          className="bg-primary-600 dark:bg-primary-400 h-full rounded-full transition-all duration-300"
           style={{
             width: `${((currentIndex + 1) / sentences.length) * 100}%`,
           }}
@@ -252,7 +263,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
             {/* Left Swipe indicator: Next Sentence */}
             <motion.div
               style={{ opacity: opacityLeft }}
-              className="absolute right-6 top-6 z-30 bg-indigo-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider rotate-12 border-2 border-white pointer-events-none"
+              className="absolute right-6 top-6 z-30 bg-primary-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider rotate-12 border-2 border-white pointer-events-none"
             >
               下一句 <ArrowRight size={16} />
             </motion.div>
@@ -262,16 +273,19 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
               {!isFlipped ? (
                 /* FRONT SIDE: English Sentence */
                 <div className="space-y-4 text-center">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 text-[11px] font-bold mx-auto">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 text-[11px] font-bold mx-auto">
                     <Sparkles size={12} />
                     <span>原句精听与复习</span>
                   </div>
 
-                  <div className="text-xl sm:text-2xl font-serif font-bold text-base-content leading-relaxed px-2">
-                    <VocabularyHighlighter text={currentSentence.enText} />
+                  <div className="text-xl sm:text-2xl font-serif font-bold text-ink-900 dark:text-ink-100 leading-relaxed px-2">
+                    <VocabularyHighlighter
+                      text={currentSentence.enText}
+                      highlightClassName="bg-accent-50 text-ink-900 dark:bg-accent-950/40 dark:text-accent-300 font-bold px-1 py-0.5 rounded border-b-2 border-accent-400 dark:border-accent-500 inline-block transition-all"
+                    />
                   </div>
 
-                  <div className="text-xs text-base-content/40 font-medium">
+                  <div className="text-xs text-ink-400 dark:text-ink-500 font-medium">
                     轻触卡片空白处翻转查看译文与笔记
                   </div>
                 </div>
@@ -279,21 +293,21 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
                 /* BACK SIDE: Chinese Translation & Notes */
                 <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
                   <div className="flex items-center justify-between border-b border-base-200 pb-2">
-                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    <span className="text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1">
                       <BookOpen size={13} /> 中文翻译参考
                     </span>
-                    <span className="text-[10px] text-base-content/40">
+                    <span className="text-[10px] text-ink-400 dark:text-ink-500">
                       已翻转
                     </span>
                   </div>
 
-                  <p className="text-base font-medium text-base-content/90 leading-relaxed">
+                  <p className="text-base font-medium text-ink-500 dark:text-ink-300 leading-relaxed">
                     {currentSentence.zhText || "暂无翻译"}
                   </p>
 
                   {/* Personal Note */}
                   {currentSentence.note && (
-                    <div className="p-3 bg-base-200/60 rounded-2xl border border-base-300/40 text-xs text-base-content/80 leading-relaxed font-sans">
+                    <div className="p-3 bg-base-200/60 rounded-2xl border border-base-300/40 text-xs text-ink-600 dark:text-ink-300 leading-relaxed font-sans">
                       <strong className="text-primary-600 dark:text-primary-400 block mb-1">
                         学习笔记：
                       </strong>
@@ -306,7 +320,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
                     {currentSentence.tags?.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-0.5 rounded-md bg-base-200 text-base-content/60 text-[10px] font-medium"
+                        className="px-2 py-0.5 rounded-md bg-base-200 text-ink-500 dark:text-ink-400 text-[10px] font-medium"
                       >
                         #{tag}
                       </span>
@@ -317,7 +331,7 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
             </div>
 
             {/* Card Bottom Meta Footer */}
-            <div className="pt-4 border-t border-base-200 flex items-center justify-between text-xs text-base-content/50">
+            <div className="pt-4 border-t border-base-200 flex items-center justify-between text-xs text-ink-400 dark:text-ink-500">
               <span className="truncate max-w-[180px] font-medium text-[11px]">
                 {currentSentence.episodeTitle || "播客单集原声"}
               </span>
@@ -360,12 +374,12 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
           <span>{isFlipped ? "看英文" : "看译文"}</span>
         </button>
 
-        {/* AI Shadowing Evaluation entry */}
+        {/* AI Shadowing Evaluation entry：路由到独立的影子跟读评测页（对齐发音弱项本闯关入口） */}
         {currentSentence.subtitleId != null && (
           <Link
-            href={`/episode/${currentSentence.episodeid}?practice=true&subtitleId=${currentSentence.subtitleId}`}
-            className="btn btn-outline border-indigo-500/30 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 rounded-2xl h-12 px-4 font-bold text-xs flex items-center gap-1.5"
-            title="影子跟读"
+            href={`/library/sentences/review/practice?subtitleId=${currentSentence.subtitleId}`}
+            className="btn btn-outline border-primary-500/30 text-primary-600 dark:text-primary-400 dark:border-primary-400/30 hover:bg-primary-600 hover:text-white hover:border-primary-600 dark:hover:bg-primary-500 dark:hover:text-white dark:hover:border-primary-500 rounded-2xl h-12 px-4 font-bold text-xs flex items-center gap-1.5"
+            title="AI 影子跟读评测"
           >
             <Mic size={16} />
             <span>跟读</span>
@@ -376,17 +390,66 @@ export default function ReviewDeck({ sentences, vocabWords }: ReviewDeckProps) {
         <button
           type="button"
           onClick={handleNext}
-          className="btn btn-circle rounded-full shadow-md shadow-indigo-600/20 transition-transform active:scale-90 border-none bg-indigo-600 hover:bg-indigo-500 text-white"
+          className="btn btn-circle rounded-full shadow-md shadow-primary-600/20 dark:shadow-primary-400/20 transition-transform active:scale-90 border-none bg-primary-600 hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 text-white"
           title="左滑或点击：下一句"
         >
           <ArrowRight size={22} />
         </button>
       </div>
 
-      {/* Review counter footer */}
-      <div className="text-center py-2 text-[11px] text-base-content/40 font-medium">
-        已复习 {reviewCount} 次 · 滑动或点击按钮均可操控
-      </div>
+      {/* 操作说明弹窗（DaisyUI modal：原生 dialog + method="dialog" 关闭） */}
+      <dialog ref={helpModalRef} className="modal">
+        <div className="modal-box max-w-sm">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <HelpCircle
+              size={18}
+              className="text-primary-600 dark:text-primary-400"
+            />
+            手势操作指南
+          </h3>
+          <ul className="mt-4 space-y-3 text-sm text-base-content/80">
+            <li className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <MousePointerClick size={16} />
+              </span>
+              <span>
+                <strong className="font-bold text-base-content">
+                  点击卡片空白处
+                </strong>
+                ：翻转卡片查看译文与笔记
+              </span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <MoveLeft size={16} />
+              </span>
+              <span>
+                <strong className="font-bold text-base-content">左滑卡片</strong>
+                ：切换到下一句
+              </span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <MoveRight size={16} />
+              </span>
+              <span>
+                <strong className="font-bold text-base-content">右滑卡片</strong>
+                ：重听原声音频
+              </span>
+            </li>
+          </ul>
+          <div className="modal-action">
+            <form method="dialog" className="w-full">
+              <button className="btn btn-sm w-full bg-primary-600 hover:bg-primary-500 text-white border-none rounded-xl">
+                知道了
+              </button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

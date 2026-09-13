@@ -8,7 +8,11 @@ export const metadata = {
   title: "句子复习 | 远路播客",
 };
 
-export default async function SentenceReviewPage() {
+export default async function SentenceReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subtitleId?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user?.userid) {
@@ -26,9 +30,16 @@ export default async function SentenceReviewPage() {
     }),
   ]);
 
+  // 深链定位：影子跟读评测页「返回卡片」携带 subtitleId 回到对应滑动卡
+  const { subtitleId } = (await searchParams) ?? {};
+
   return (
     <div className="bg-ink-50 dark:bg-ink-950 min-h-screen transition-colors duration-300">
-      <ReviewDeck sentences={sentences} vocabWords={vocabRows} />
+      <ReviewDeck
+        sentences={sentences}
+        vocabWords={vocabRows}
+        initialSubtitleId={subtitleId}
+      />
     </div>
   );
 }

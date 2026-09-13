@@ -92,7 +92,7 @@ export function SentenceCompactList({
             />
             {item.subtitleId != null ? (
               <Link
-                href={`/episode/${item.episodeid}?practice=true&subtitleId=${item.subtitleId}`}
+                href={`/library/sentences/review/practice?id=${item.id}`}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95 md:text-indigo-600 md:dark:text-indigo-400 md:hover:bg-indigo-500/10"
                 title="AI 影子跟读"
               >

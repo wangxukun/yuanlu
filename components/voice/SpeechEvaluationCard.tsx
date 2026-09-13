@@ -16,6 +16,8 @@ import {
   Languages,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
+  Layers,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -68,6 +70,10 @@ interface SpeechEvaluationCardProps {
   passThreshold?: number; // 过关分数线（结果区达标标记/文案）
   episodeId?: string; // 用于保存生词到生词本
   episodeTitle?: string; // 词典弹框来源标题
+  // ── 退出插槽：传入时结果区底部改为「再试一次（居左）+ 返回按钮（居右）」两端布局 ──
+  onExit?: () => void;
+  // ── 返回滑动卡片复习插槽：传入时在「返回句子本」左侧追加该按钮 ──
+  onBackToDeck?: () => void;
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
@@ -87,6 +93,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   passThreshold = 80,
   episodeId,
   episodeTitle,
+  onExit,
+  onBackToDeck,
 }) => {
   const { data: session } = useSession();
   const {
@@ -400,12 +408,14 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isActive, isRecording, isProcessing]);
 
+  // 逐词胶囊按得分分档着色（参考图 1）：每档 = 浅色底 + 同系前景 + 同系描边，
+  // 高分绿 / 中档琥珀 / 低分红；内联分数继承各档前景色。
   const getWordColorClass = (score: number) => {
     if (score >= 85)
-      return "bg-transparent text-ink-600 border-ink-200 font-medium";
+      return "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-800 font-medium";
     if (score >= 60)
-      return "bg-accent-50 text-accent-700 border-accent-300 font-semibold";
-    return "bg-error-50 text-error-600 border-error-300 underline decoration-error-500 decoration-wavy underline-offset-4 font-semibold";
+      return "bg-accent-50 dark:bg-accent-950/40 text-accent-700 dark:text-accent-300 border-accent-300 dark:border-accent-800 font-semibold";
+    return "bg-error-50 dark:bg-error-950/40 text-error-600 dark:text-error-400 border-error-300 dark:border-error-800 underline decoration-error-500 decoration-wavy underline-offset-4 font-semibold";
   };
 
   const getScoreColor = (score: number) => {
@@ -808,14 +818,14 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-2.5 text-lg">
+                      <div className="flex flex-wrap gap-2 text-base">
                         {result.words && result.words.length > 0 ? (
                           result.words.map((w, i) => (
                             <div key={i} className="relative">
                               {textMode === "blind" && isBlindMasked ? (
                                 /* 盲读遮罩：与顶部遮罩样式一致 */
                                 <span
-                                  className="px-3 py-1.5 rounded-lg border border-ink-200 dark:border-ink-600 inline-block select-none"
+                                  className="px-3 py-1.5 rounded-full border border-ink-200 dark:border-ink-600 inline-block select-none"
                                   style={{
                                     minWidth: `${Math.max(2, w.word.length) * 0.7}em`,
                                   }}
@@ -832,7 +842,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                       );
                                     }
                                   }}
-                                  className={`px-3 py-1.5 rounded-lg border transition-all inline-block ${getWordColorClass(
+                                  className={`px-3 py-1.5 rounded-full border transition-all inline-flex items-baseline gap-1 ${getWordColorClass(
                                     w.score,
                                   )} ${
                                     w.score < 85
@@ -841,6 +851,9 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                   }`}
                                 >
                                   {w.word}
+                                  <span className="text-[10px] font-bold font-mono tabular-nums opacity-75">
+                                    {Math.round(w.score)}
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -893,15 +906,26 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                     const w = result.words![activeWordIndex];
                                     // 取该词在字幕中的词级时间戳（绝对全集秒），
                                     // 精确播放对应原声片段，不再用用户录音相对时间估算。
-                                    const targetWord = w.word
-                                      .replace(/[.,!?;:"'()[\]{}]/g, "")
-                                      .toLowerCase();
-                                    const refWord = subtitle.words?.find(
-                                      (sw) =>
-                                        sw.word
-                                          .replace(/[.,!?;:"'()[\]{}]/g, "")
-                                          .toLowerCase() === targetWord,
+                                    // 按词形 + 出现次序匹配：同形词多次出现时
+                                    // （如句中两个 "the"），依据评测词序定位到正确的那个。
+                                    const cleaned = (s: string) =>
+                                      s
+                                        .replace(/[.,!?;:"'()[\]{}]/g, "")
+                                        .toLowerCase();
+                                    const targetWord = cleaned(w.word);
+                                    const occurrence =
+                                      result
+                                        .words!.slice(0, activeWordIndex + 1)
+                                        .filter(
+                                          (x) => cleaned(x.word) === targetWord,
+                                        ).length - 1;
+                                    const matches = (
+                                      subtitle.words ?? []
+                                    ).filter(
+                                      (sw) => cleaned(sw.word) === targetWord,
                                     );
+                                    const refWord =
+                                      matches[occurrence] ?? matches[0];
                                     const refStart = refWord
                                       ? refWord.start
                                       : subtitle.startSeconds + (w.start || 0);
@@ -1045,17 +1069,50 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               );
             })()}
 
-            <div className="flex justify-end mt-8 pt-6 border-t border-base-200">
+            {/* 底部操作区：默认仅右对齐「再试一次」；传入退出插槽（影子跟读评测页）时
+                改为两端布局 —— 再试一次居左，返回滑动卡片复习居中，返回句子本居右。
+                移动端（<sm）隐藏全部图标并精简文案，确保三按钮同行不溢出。 */}
+            <div
+              className={`flex flex-wrap gap-2 ${onExit ? "justify-between" : "justify-end"} mt-8 pt-6 border-t border-base-200`}
+            >
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleStartRecording();
                 }}
-                className="btn bg-transparent border border-ink-200 text-ink-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors rounded-xl"
+                className="btn px-3 sm:px-4 bg-transparent border border-ink-200 text-ink-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors rounded-xl"
               >
-                <RotateCcw size={18} />
+                <RotateCcw size={18} className="hidden sm:block" />
                 再试一次
               </button>
+              {onBackToDeck && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBackToDeck();
+                  }}
+                  className="btn px-3 sm:px-4 bg-transparent border border-ink-200 text-ink-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors rounded-xl"
+                  title="返回滑动卡片复习"
+                >
+                  <Layers size={18} className="hidden sm:block" />
+                  <span className="hidden sm:inline">返回滑动卡片复习</span>
+                  <span className="sm:hidden">返回卡片</span>
+                </button>
+              )}
+              {onExit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExit();
+                  }}
+                  className="btn px-3 sm:px-4 bg-transparent border border-ink-200 text-ink-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors rounded-xl"
+                  title="返回句子本"
+                  aria-label="返回句子本"
+                >
+                  <ArrowLeft size={18} className="hidden sm:block" />
+                  返回句子本
+                </button>
+              )}
             </div>
           </div>
         )}
