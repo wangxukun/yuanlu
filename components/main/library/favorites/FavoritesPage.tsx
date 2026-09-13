@@ -126,7 +126,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               onClick={() => setActiveTab("podcasts")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "podcasts"
-                  ? "bg-base-100 text-primary"
+                  ? "bg-base-100 text-primary-600 dark:text-primary-400"
                   : "text-base-content/60 hover:text-base-content"
               }`}
             >
@@ -136,7 +136,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               onClick={() => setActiveTab("episodes")}
               className={`flex-1 xl:flex-none px-4 xl:px-6 py-2.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold transition-all ${
                 activeTab === "episodes"
-                  ? "bg-base-100 text-primary"
+                  ? "bg-base-100 text-primary-600 dark:text-primary-400"
                   : "text-base-content/60 hover:text-base-content"
               }`}
             >
@@ -158,7 +158,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
             placeholder={`搜索收藏的${
               activeTab === "podcasts" ? "播客" : "单集"
             }...`}
-            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-base-200/50 border border-base-200 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-sm text-base-content placeholder-base-content/40"
+            className="w-full pl-10 pr-4 py-2.5 xl:py-3 bg-base-200/50 border border-base-200 rounded-xl xl:rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-400 transition-all text-sm text-base-content placeholder-base-content/40"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -193,10 +193,10 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   <div className="hidden xl:flex absolute top-3 right-3 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => handleRemove(e, "podcast", series.id)}
-                      className="p-2 bg-base-100/90 backdrop-blur rounded-full text-error hover:bg-base-100 shadow-sm transition-colors"
+                      className="p-2 bg-base-100/90 backdrop-blur rounded-full text-error-500 dark:text-error-400 hover:bg-base-100 shadow-sm transition-colors"
                       title="取消收藏"
                     >
-                      <BookmarkSquareIcon className="w-4 h-4 text-error" />
+                      <BookmarkSquareIcon className="w-4 h-4 text-error-500 dark:text-error-400" />
                     </button>
                   </div>
                 </div>
@@ -209,7 +209,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       {series.category.slice(0, 3).map((category) => (
                         <span
                           key={category.id}
-                          className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded uppercase tracking-wider"
+                          className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 px-2.5 py-1 rounded uppercase tracking-wider"
                         >
                           {category.name}
                         </span>
@@ -218,14 +218,14 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                     {/* Mobile: Single Category Tag */}
                     <div className="xl:hidden flex items-center mb-1">
                       {series.category[0] && (
-                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">
+                        <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 px-2 py-0.5 rounded uppercase">
                           {series.category[0].name}
                         </span>
                       )}
                     </div>
 
                     <h3
-                      className="font-bold text-base xl:text-lg text-base-content line-clamp-1 group-hover:text-primary transition-colors"
+                      className="font-bold text-base xl:text-lg text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
                       title={series.title}
                     >
                       {series.title}
@@ -273,9 +273,9 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                 {/* Mobile Action Button (Right Aligned) */}
                 <button
                   onClick={(e) => handleRemove(e, "podcast", series.id)}
-                  className="xl:hidden p-2 text-error bg-error/10 rounded-full transition-colors self-center shrink-0 mr-1"
+                  className="xl:hidden p-2 text-error-500 dark:text-error-400 bg-error-500/10 dark:bg-error-400/10 rounded-full transition-colors self-center shrink-0 mr-1"
                 >
-                  <BookmarkSquareIcon className="w-[18px] h-[18px] text-error" />
+                  <BookmarkSquareIcon className="w-[18px] h-[18px] text-error-500 dark:text-error-400" />
                 </button>
               </div>
             ))}
@@ -331,7 +331,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               <div className="flex-1 min-w-0 p-4 xl:p-0 xl:ml-6 xl:pr-8 flex flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2 xl:mb-1">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded xl:bg-transparent xl:px-0 xl:py-0">
+                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest bg-primary-600/10 dark:bg-primary-400/10 px-2 py-0.5 rounded xl:bg-transparent xl:px-0 xl:py-0">
                       {episode.category}
                     </span>
                     <span className="hidden xl:inline text-base-content/30">
@@ -341,7 +341,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       {formatChineseDate(episode.date)}
                     </span>
                   </div>
-                  <h4 className="text-base xl:text-lg font-bold text-base-content line-clamp-2 xl:truncate group-hover:text-primary transition-colors">
+                  <h4 className="text-base xl:text-lg font-bold text-base-content line-clamp-2 xl:truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                     {episode.title}
                   </h4>
                   <p className="text-xs xl:text-sm text-base-content/60 truncate mt-1 xl:mt-0">
@@ -363,7 +363,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   </div>
                   <button
                     onClick={(e) => handleRemove(e, "episode", episode.id)}
-                    className="p-1.5 text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors"
+                    className="p-1.5 text-error-500 dark:text-error-400 bg-error-500/10 dark:bg-error-400/10 rounded-lg hover:bg-error-500/20 dark:hover:bg-error-400/20 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -394,13 +394,13 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               <div className="hidden xl:flex items-center gap-2">
                 <button
                   onClick={(e) => handleRemove(e, "episode", episode.id)}
-                  className="p-3 text-error/70 hover:text-error hover:bg-error/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  className="p-3 text-error-500/70 dark:text-error-400/70 hover:text-error-500 dark:hover:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
                   title="取消收藏"
                 >
                   <Trash2 size={20} />
                 </button>
                 <ChevronRight
-                  className="text-base-content/30 group-hover:text-primary transition-colors"
+                  className="text-base-content/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
                   size={24}
                 />
               </div>
@@ -428,7 +428,7 @@ const EmptyState = ({ type }: { type: "podcasts" | "episodes" }) => (
     </p>
     <a
       href="/discover"
-      className="btn btn-primary rounded-full px-8 shadow-lg shadow-primary/20 text-sm xl:text-base"
+      className="btn btn-primary rounded-full px-8 shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 text-sm xl:text-base"
     >
       去发现
     </a>

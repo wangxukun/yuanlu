@@ -142,7 +142,7 @@ export default function BindPhoneForm({ onSuccess }: BindPhoneFormProps) {
     <>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {error && (
-          <div className="flex items-center gap-2 text-error bg-error/10 p-3 rounded-lg text-sm animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2 text-error-500 dark:text-error-400 bg-error-500/10 dark:bg-error-400/10 p-3 rounded-lg text-sm animate-in fade-in slide-in-from-top-1">
             <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -156,14 +156,14 @@ export default function BindPhoneForm({ onSuccess }: BindPhoneFormProps) {
         {/* Phone input */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <DevicePhoneMobileIcon className="h-5 w-5" />
             </div>
             <input
               type="tel"
               ref={inputRef}
               placeholder="请输入11位手机号码"
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 ${
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 ${
                 error && !phone ? "input-error" : ""
               }`}
               value={phone}
@@ -186,7 +186,7 @@ export default function BindPhoneForm({ onSuccess }: BindPhoneFormProps) {
               <input
                 type="text"
                 placeholder="输入6位验证码"
-                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary focus:z-10 transition-all h-12 ${
+                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12 ${
                   error && !code ? "input-error" : ""
                 }`}
                 value={code}

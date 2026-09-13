@@ -6,14 +6,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  CreditCardIcon,
-  QuestionMarkCircleIcon,
-  ChevronDownIcon,
-  UserIcon,
-  ComputerDesktopIcon,
-} from "@heroicons/react/24/outline";
+  ChevronDown,
+  CircleHelp,
+  CircleUser,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  User,
+} from "lucide-react";
 
 export default function LoginHomeBtn() {
   const { data: session } = useSession();
@@ -44,7 +44,7 @@ export default function LoginHomeBtn() {
   if (!session) {
     return (
       <button
-        className="btn btn-sm bg-primary-600 hover:bg-primary-700 border-none text-white gap-2 shadow-sm shadow-primary/20 transition-all"
+        className="btn btn-sm bg-primary-600 hover:bg-primary-700 border-none text-white gap-2 shadow-sm shadow-primary-600/20 dark:shadow-primary-400/20 transition-all"
         onClick={() => {
           const modal = document.getElementById(
             "email_check_modal_box",
@@ -54,7 +54,7 @@ export default function LoginHomeBtn() {
           }
         }}
       >
-        <UserCircleIcon className="w-5 h-5" />
+        <CircleUser className="w-5 h-5" strokeWidth={1.75} aria-hidden />
         <span>登录</span>
       </button>
     );
@@ -72,7 +72,7 @@ export default function LoginHomeBtn() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="flex items-center space-x-2 p-1 pr-3 rounded-full hover:bg-base-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-base-100 border border-transparent hover:border-base-300"
+        className="flex items-center space-x-2 p-1 pr-3 rounded-full hover:bg-base-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600/50 dark:focus:ring-primary-400/50 focus:ring-offset-2 focus:ring-offset-base-100 border border-transparent hover:border-base-300"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -88,7 +88,7 @@ export default function LoginHomeBtn() {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-base-content/50">
-              <UserIcon className="w-5 h-5" />
+              <User className="w-5 h-5" strokeWidth={1.75} aria-hidden />
             </div>
           )}
         </div>
@@ -100,7 +100,7 @@ export default function LoginHomeBtn() {
           </span>
           <div className="flex items-center w-full truncate text-[10px] font-medium text-left mt-0.5">
             {user.role === "ADMIN" ? (
-              <span className="text-primary font-bold">管理员</span>
+              <span className="text-primary-600 dark:text-primary-400 font-bold">管理员</span>
             ) : user.role === "PREMIUM" ? (
               <span className="text-accent-500 font-bold bg-accent-500/10 px-1.5 py-0.5 rounded-md leading-none">
                 高级会员
@@ -111,10 +111,12 @@ export default function LoginHomeBtn() {
           </div>
         </div>
 
-        <ChevronDownIcon
+        <ChevronDown
           className={`w-4 h-4 text-base-content/60 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
+          strokeWidth={1.75}
+          aria-hidden
         />
       </button>
 
@@ -144,9 +146,9 @@ export default function LoginHomeBtn() {
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
+                className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg flex items-center space-x-3 transition-colors"
               >
-                <ComputerDesktopIcon className="w-5 h-5" />
+                <LayoutDashboard className="w-5 h-5" strokeWidth={1.75} aria-hidden />
                 <span>控制台</span>
               </Link>
             )}
@@ -154,9 +156,9 @@ export default function LoginHomeBtn() {
             <Link
               href="/auth/personal-center"
               onClick={() => setIsOpen(false)}
-              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
+              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg flex items-center space-x-3 transition-colors"
             >
-              <UserCircleIcon className="w-5 h-5" />
+              <User className="w-5 h-5" strokeWidth={1.75} aria-hidden />
               <span>个人中心</span>
             </Link>
 
@@ -165,9 +167,9 @@ export default function LoginHomeBtn() {
                 setIsOpen(false);
                 router.push("/auth/subscribe");
               }}
-              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
+              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg flex items-center space-x-3 transition-colors"
             >
-              <CreditCardIcon className="w-5 h-5" />
+              <CreditCard className="w-5 h-5" strokeWidth={1.75} aria-hidden />
               <span>我的订阅</span>
             </button>
 
@@ -176,9 +178,9 @@ export default function LoginHomeBtn() {
                 setIsOpen(false);
                 router.push("/contact");
               }}
-              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary rounded-lg flex items-center space-x-3 transition-colors"
+              className="w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg flex items-center space-x-3 transition-colors"
             >
-              <QuestionMarkCircleIcon className="w-5 h-5" />
+              <CircleHelp className="w-5 h-5" strokeWidth={1.75} aria-hidden />
               <span>帮助与支持</span>
             </button>
           </div>
@@ -191,9 +193,9 @@ export default function LoginHomeBtn() {
                 await signOut({ redirect: false });
                 router.push("/discover");
               }}
-              className="w-full text-left px-2 py-2 text-sm text-error hover:bg-error/10 rounded-lg flex items-center space-x-3 transition-colors"
+              className="w-full text-left px-2 py-2 text-sm text-error-500 dark:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10 rounded-lg flex items-center space-x-3 transition-colors"
             >
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              <LogOut className="w-5 h-5" strokeWidth={1.75} aria-hidden />
               <span>退出登录</span>
             </button>
           </div>

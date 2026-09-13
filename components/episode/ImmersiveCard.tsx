@@ -28,7 +28,7 @@ export default function ImmersiveCard({
             </div>
             <button
               onClick={() => setIsOpen(true)}
-              className="btn bg-white hover:bg-ink-100 text-primary border-none btn-lg rounded-lg font-bold shrink-0 shadow-e1"
+              className="btn bg-white hover:bg-ink-100 text-primary-600 dark:text-primary-400 border-none btn-lg rounded-lg font-bold shrink-0 shadow-e1"
             >
               立即进入沉浸模式
             </button>

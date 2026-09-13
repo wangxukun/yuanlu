@@ -89,9 +89,9 @@ export function useEpisodeComments(episodeId: string) {
           const element = document.getElementById(hash.substring(1));
           if (element) {
             element.scrollIntoView({ behavior: "smooth", block: "center" });
-            element.classList.add("bg-primary/10", "rounded-xl");
+            element.classList.add("bg-primary-600/10 dark:bg-primary-400/10", "rounded-xl");
             setTimeout(() => {
-              element.classList.remove("bg-primary/10", "rounded-xl");
+              element.classList.remove("bg-primary-600/10 dark:bg-primary-400/10", "rounded-xl");
             }, 3000);
           }
         }, 100);

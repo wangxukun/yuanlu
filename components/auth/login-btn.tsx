@@ -11,7 +11,7 @@ export default function LoginBtn() {
   if (session) {
     return (
       <button
-        className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-error/10 hover:text-error text-base-content/70"
+        className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-error-500/10 dark:hover:bg-error-400/10 hover:text-error-500 dark:hover:text-error-400 text-base-content/70"
         onClick={async () => {
           await signOut({ redirect: false });
           router.push("/home");
@@ -25,7 +25,7 @@ export default function LoginBtn() {
 
   return (
     <button
-      className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary text-base-content/70"
+      className="flex h-[48px] w-full items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary-600/10 dark:hover:bg-primary-400/10 hover:text-primary-600 dark:hover:text-primary-400 text-base-content/70"
       onClick={() => router.push("/home")}
     >
       <PowerIcon className="w-6" />

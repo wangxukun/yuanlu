@@ -44,7 +44,7 @@ export function VocabularyControls({
           <input
             type="text"
             placeholder="搜索单词或释义..."
-            className="w-full pl-10 pr-4 py-2 bg-ink-50 dark:bg-ink-950 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 text-sm text-base-content placeholder-base-content/40 transition-colors"
+            className="w-full pl-10 pr-4 py-2 bg-ink-50 dark:bg-ink-950 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-600/30 dark:focus:ring-primary-400/30 text-sm text-base-content placeholder-base-content/40 transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

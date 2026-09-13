@@ -119,7 +119,7 @@ export default function MobilePlayerPage() {
             <div
               tabIndex={0}
               role="button"
-              className="text-primary hover:text-primary-focus font-bold text-sm active:scale-95 transition-colors p-2"
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-focus font-bold text-sm active:scale-95 transition-colors p-2"
             >
               {playbackRate}x
             </div>
@@ -137,7 +137,7 @@ export default function MobilePlayerPage() {
                     }}
                     className={`flex justify-between items-center px-4 py-2 rounded-xl transition-colors ${
                       playbackRate === rate
-                        ? "bg-primary/10 text-primary font-bold"
+                        ? "bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 font-bold"
                         : "hover:bg-base-200 text-base-content/80"
                     }`}
                   >

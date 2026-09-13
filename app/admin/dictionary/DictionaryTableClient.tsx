@@ -114,7 +114,7 @@ export default function DictionaryTableClient({
                 <tr key={item.id} className="hover">
                   <td>
                     <button
-                      className="font-bold text-primary hover:underline"
+                      className="font-bold text-primary-600 dark:text-primary-400 hover:underline"
                       onClick={() => setDetailModalData(item)}
                     >
                       {item.word}
@@ -143,7 +143,7 @@ export default function DictionaryTableClient({
                           onClick={() => playAudio(ukAudio)}
                           title="英音发音"
                         >
-                          <SpeakerWaveIcon className="w-4 h-4 text-accent" />
+                          <SpeakerWaveIcon className="w-4 h-4 text-accent-300 dark:text-accent-400" />
                         </button>
                       )}
                     </div>

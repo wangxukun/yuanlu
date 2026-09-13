@@ -205,7 +205,7 @@ export default function PodcastDetail({
             {/* 简介区块 */}
             <div className="backdrop-blur-xl rounded-[2rem] p-6 lg:p-8 mb-8">
               <h3 className="text-2xl font-bold text-base-content mb-4 flex items-center gap-2">
-                {/* <InformationCircleIcon className="w-5 h-5 text-primary" /> */}
+                {/* <InformationCircleIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" /> */}
                 关于播客
               </h3>
               <p className="text-base-content/70 leading-relaxed whitespace-pre-wrap text-sm sm:text-base">

@@ -91,7 +91,7 @@ export default function LearningPathsClient({
             className={clsx(
               "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all",
               activeTab === "my-paths"
-                ? "bg-base-100 text-primary shadow-sm" // [Refactor] bg-white -> bg-base-100, text-primary-600 -> text-primary
+                ? "bg-base-100 text-primary-600 dark:text-primary-400 shadow-sm"
                 : "text-base-content/60 hover:text-base-content", // [Refactor] text-ink-500 -> text-base-content/60
             )}
           >
@@ -102,7 +102,7 @@ export default function LearningPathsClient({
             className={clsx(
               "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all",
               activeTab === "official"
-                ? "bg-base-100 text-primary shadow-sm"
+                ? "bg-base-100 text-primary-600 dark:text-primary-400 shadow-sm"
                 : "text-base-content/60 hover:text-base-content",
             )}
           >
@@ -149,7 +149,7 @@ export default function LearningPathsClient({
         {activeTab === "my-paths" && searchQuery === "" && (
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-lg flex flex-col items-center justify-center p-8 text-base-content/40 bg-white dark:bg-ink-900 hover:text-primary transition-all h-full min-h-[300px] group"
+            className="rounded-lg flex flex-col items-center justify-center p-8 text-base-content/40 bg-white dark:bg-ink-900 hover:text-primary-600 dark:hover:text-primary-400 transition-all h-full min-h-[300px] group"
           >
             <div className="w-12 h-12 bg-ink-50 dark:bg-ink-950 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Plus size={24} />
@@ -207,7 +207,7 @@ export default function LearningPathsClient({
                   className={clsx(
                     "w-6 h-6 rounded-md border flex items-center justify-center transition-colors shrink-0",
                     isNewPathPublic
-                      ? "bg-primary border-primary" // [Refactor] bg-primary-600 -> bg-primary
+                      ? "bg-primary-600 dark:bg-primary-400 border-primary-600 dark:border-primary-400"
                       : "bg-base-100 border-base-content/20", // [Refactor] bg-white -> bg-base-100, border-ink-300 -> border-base-content/20
                   )}
                 >

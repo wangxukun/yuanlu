@@ -14,7 +14,7 @@ export function DeleteCommentModal({
       className="modal modal-bottom sm:modal-middle"
     >
       <div className="modal-box bg-base-100 border border-base-200 shadow-e3 rounded-xl">
-        <h3 className="font-bold text-lg text-error flex items-center gap-2">
+        <h3 className="font-bold text-lg text-error-500 dark:text-error-400 flex items-center gap-2">
           <TrashIcon className="w-6 h-6" />
           确认删除评论？
         </h3>

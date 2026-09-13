@@ -190,8 +190,8 @@ export default function ForgotPasswordForm() {
       {/* Target User Info Header */}
       <div className="flex flex-col items-center justify-center mb-6">
         <div className="avatar placeholder mb-2">
-          <div className="bg-base-200 text-primary rounded-full w-16 h-16 ring ring-primary ring-offset-base-100 ring-offset-2 grid place-items-center">
-            <UserIcon className="mt-4 block w-8 h-8 text-primary" />
+          <div className="bg-base-200 text-primary-600 dark:text-primary-400 rounded-full w-16 h-16 ring ring-primary-600 dark:ring-primary-400 ring-offset-base-100 ring-offset-2 grid place-items-center">
+            <UserIcon className="mt-4 block w-8 h-8 text-primary-600 dark:text-primary-400" />
           </div>
         </div>
         <div className="text-center">
@@ -217,7 +217,7 @@ export default function ForgotPasswordForm() {
               <input
                 suppressHydrationWarning
                 type="text"
-                className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary focus:z-10 transition-all h-12 text-base"
+                className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12 text-base"
                 placeholder="6位验证码"
                 value={verificationCode}
                 onChange={(e) => {
@@ -252,13 +252,13 @@ export default function ForgotPasswordForm() {
         {/* New Password Input */}
         <div className="form-control space-y-2">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
               suppressHydrationWarning
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm ${
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm ${
                 password && !isPasswordValid ? "input-warning" : ""
               } ${isPasswordValid ? "input-success" : ""}`}
               placeholder="请设置新密码"
@@ -282,13 +282,13 @@ export default function ForgotPasswordForm() {
         {/* Confirm Password Input */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
               suppressHydrationWarning
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm ${
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm ${
                 confirmPassword && !isConfirmPasswordMatch ? "input-error" : ""
               } ${isConfirmPasswordMatch ? "input-success" : ""}`}
               placeholder="请再次确认新密码"
@@ -301,7 +301,7 @@ export default function ForgotPasswordForm() {
             />
           </div>
           {confirmPassword && !isConfirmPasswordMatch && (
-            <span className="text-error text-xs mt-1.5 block ml-1 animate-in fade-in">
+            <span className="text-error-500 dark:text-error-400 text-xs mt-1.5 block ml-1 animate-in fade-in">
               两次输入的密码不一致
             </span>
           )}
@@ -310,7 +310,7 @@ export default function ForgotPasswordForm() {
         {/* Display Error Message */}
         <div className="h-6 flex items-center">
           {error && (
-            <div className="flex items-center gap-1.5 text-error text-sm animate-in slide-in-from-top-1 fade-in">
+            <div className="flex items-center gap-1.5 text-error-500 dark:text-error-400 text-sm animate-in slide-in-from-top-1 fade-in">
               <ExclamationCircleIcon className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>

@@ -96,7 +96,7 @@ export const TagSelector: React.FC<Props> = ({
 
   return (
     <div className="w-full max-w-2xl" ref={wrapperRef}>
-      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-lg border-base-300 bg-base-100 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-lg border-base-300 bg-base-100 focus-within:ring-2 focus-within:ring-primary-600 dark:focus-within:ring-primary-400 focus-within:border-primary-600 dark:focus-within:border-primary-400 transition-all shadow-sm">
         {/* 已选标签展示 */}
         {selectedTags.map((tag) => (
           <span
@@ -168,7 +168,7 @@ export const TagSelector: React.FC<Props> = ({
           支持搜索现有标签或直接创建新标签
         </span>
         <span
-          className={`text-xs ${selectedTags.length >= maxSelected ? "text-error" : "text-base-content/50"}`}
+          className={`text-xs ${selectedTags.length >= maxSelected ? "text-error-500 dark:text-error-400" : "text-base-content/50"}`}
         >
           {selectedTags.length} / {maxSelected}
         </span>

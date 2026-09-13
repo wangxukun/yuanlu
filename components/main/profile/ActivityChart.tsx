@@ -71,7 +71,7 @@ export default function ActivityChart() {
       <div className="h-64 w-full">
         {loading ? (
           <div className="h-full flex items-center justify-center">
-            <span className="loading loading-spinner loading-md text-primary" />
+            <span className="loading loading-spinner loading-md text-primary-600 dark:text-primary-400" />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

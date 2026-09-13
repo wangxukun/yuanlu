@@ -145,7 +145,7 @@ export default function NotificationsClient({
               }}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === tab.id
-                  ? "bg-primary text-primary-content"
+                  ? "bg-primary-600 dark:bg-primary-400 text-primary-content"
                   : "text-base-content/70 hover:bg-base-200"
               }`}
             >
@@ -206,7 +206,7 @@ export default function NotificationsClient({
               <div
                 key={n.notificationid}
                 className={`flex items-start gap-4 p-6 transition-colors hover:bg-base-200/50 ${
-                  n.isRead ? "opacity-75" : "bg-primary/5"
+                  n.isRead ? "opacity-75" : "bg-primary-600/5 dark:bg-primary-400/5"
                 }`}
               >
                 <div className="pt-1">
@@ -231,7 +231,7 @@ export default function NotificationsClient({
                       {timeAgo}
                     </span>
                     {!n.isRead && (
-                      <span className="w-2 h-2 rounded-full bg-error" />
+                      <span className="w-2 h-2 rounded-full bg-error-500 dark:bg-error-400" />
                     )}
                   </div>
 
@@ -239,14 +239,14 @@ export default function NotificationsClient({
                     <Link
                       href={n.targetUrl}
                       onClick={() => handleRead(n.notificationid)}
-                      className="text-base text-base-content font-medium hover:text-primary transition-colors block leading-relaxed"
+                      className="text-base text-base-content font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors block leading-relaxed"
                     >
                       {n.notificationText}
                     </Link>
                   ) : (
                     <p
                       onClick={() => handleRead(n.notificationid)}
-                      className="text-base text-base-content font-medium leading-relaxed cursor-pointer hover:text-primary transition-colors"
+                      className="text-base text-base-content font-medium leading-relaxed cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
                       {n.notificationText}
                     </p>
@@ -257,7 +257,7 @@ export default function NotificationsClient({
                 <button
                   onClick={() => handleDelete([n.notificationid])}
                   disabled={isDeleting}
-                  className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-error hover:bg-error/10"
+                  className="btn btn-ghost btn-sm btn-circle text-base-content/40 hover:text-error-500 dark:hover:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10"
                   aria-label="删除"
                 >
                   <TrashIcon className="w-5 h-5" />

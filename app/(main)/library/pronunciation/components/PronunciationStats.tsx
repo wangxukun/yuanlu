@@ -68,7 +68,7 @@ export function PronunciationStats({
 
             {/* Weakest Phoneme Card */}
             <div className="flex flex-col items-center justify-center xl:flex-row xl:justify-start xl:space-x-3 bg-white dark:bg-ink-900 px-2 py-3 xl:px-4 xl:py-3 rounded-lg xl:min-w-[140px]">
-              <div className="p-1.5 xl:p-2 bg-error/10 text-error rounded-lg mb-1 xl:mb-0">
+              <div className="p-1.5 xl:p-2 bg-error-500/10 dark:bg-error-400/10 text-error-500 dark:text-error-400 rounded-lg mb-1 xl:mb-0">
                 <Target size={16} className="xl:w-[18px] xl:h-[18px]" />
               </div>
               <div className="text-center xl:text-left">

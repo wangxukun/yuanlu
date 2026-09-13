@@ -22,7 +22,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="bg-base-100 rounded-2xl shadow-xl overflow-hidden">
         <div className="p-6 border-b border-base-300">
-          <h1 className="text-2xl font-bold text-primary">封面管理</h1>
+          <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400">封面管理</h1>
           <p className="text-base-content/70 mt-1">
             上传新图片将替换并删除原有的封面文件
           </p>
@@ -49,7 +49,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                 <div className="bg-base-200 rounded-xl p-5 hover:bg-base-300 transition-colors duration-300">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="font-semibold text-lg text-primary">
+                      <h3 className="font-semibold text-lg text-primary-600 dark:text-primary-400">
                         单集封面
                       </h3>
                       <p className="text-base-content/70 text-sm mt-1">

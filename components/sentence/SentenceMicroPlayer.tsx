@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Play, Pause, RotateCcw, Loader2 } from "lucide-react";
+import { Play, Pause, Repeat, Repeat1, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getEpisodeAudioUrl } from "@/lib/client/episode-audio";
 
@@ -14,8 +14,8 @@ interface SentenceMicroPlayerProps {
 
 /**
  * 句子微播放器（复刻自 yuanlu-podcast components/sentence/SentenceMicroPlayer）：
- * 按 startTime→endTime 精准截取播放剧集原音，提供播放/暂停、重听、
- * 进度切片可视化与「单句循环」。
+ * 按 startTime→endTime 精准截取播放剧集原音，提供播放/暂停、
+ * 进度切片可视化与「单句循环」（移动端为图标按钮）。
  * 音频直链按 episodeid 懒加载（模块级缓存，与语音评测/生词本同源）。
  */
 export default function SentenceMicroPlayer({
@@ -109,53 +109,37 @@ export default function SentenceMicroPlayer({
     }
   };
 
-  const replay = async () => {
-    const audio = await ensureAudio();
-    if (!audio) return;
-    audio.currentTime = startTime;
-    audio
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => {});
-  };
-
   return (
+    // 移动端为无背景裸图标形态（仅播放 + 循环），sm 起恢复完整播放条（胶囊容器 + 进度切片）
     <div
-      className={`flex items-center gap-2.5 bg-gray-100 dark:bg-ink-800 px-3 py-1.5 rounded-full border border-gray-200/80 dark:border-ink-700 text-xs ${className}`}
+      className={`flex items-center gap-1 sm:gap-2.5 sm:bg-gray-100 sm:dark:bg-ink-800 sm:px-3 sm:py-1.5 sm:rounded-full sm:border sm:border-gray-200/80 sm:dark:border-ink-700 text-xs ${className}`}
     >
       {/* Play / Pause button */}
       <button
         type="button"
         onClick={togglePlay}
         disabled={isLoading}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 ${
           isPlaying
-            ? "bg-indigo-600 text-white shadow-sm scale-105"
-            : "bg-white dark:bg-ink-900 text-gray-700 dark:text-ink-100 shadow-sm hover:bg-gray-200 dark:hover:bg-ink-700"
+            ? "text-primary-600 dark:text-primary-400 sm:bg-indigo-600 sm:text-white sm:shadow-sm sm:scale-105"
+            : "text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 sm:bg-white sm:dark:bg-ink-900 sm:text-gray-700 sm:dark:text-ink-100 sm:shadow-sm sm:hover:bg-gray-200 sm:dark:hover:bg-ink-700"
         }`}
         title={isPlaying ? "暂停" : "播放原音截取"}
       >
         {isLoading ? (
           <Loader2 size={14} className="animate-spin" />
         ) : isPlaying ? (
-          <Pause size={14} fill="currentColor" />
+          <Pause className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="currentColor" />
         ) : (
-          <Play size={14} className="ml-0.5" fill="currentColor" />
+          <Play
+            className="ml-0.5 w-4 h-4 sm:w-3.5 sm:h-3.5"
+            fill="currentColor"
+          />
         )}
       </button>
 
-      {/* Replay button */}
-      <button
-        type="button"
-        onClick={replay}
-        className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-ink-900 hover:bg-gray-200 dark:hover:bg-ink-700 text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100 transition-colors shadow-sm"
-        title="重听该句"
-      >
-        <RotateCcw size={12} />
-      </button>
-
-      {/* Progress slice visualization */}
-      <div className="w-16 sm:w-24 flex flex-col justify-center gap-1">
+      {/* Progress slice visualization（移动端隐藏） */}
+      <div className="hidden sm:flex w-16 sm:w-24 flex-col justify-center gap-1">
         <div className="w-full bg-gray-200 dark:bg-ink-700 h-1 rounded-full overflow-hidden">
           <div
             className="bg-indigo-600 h-full rounded-full transition-all duration-100"
@@ -168,18 +152,25 @@ export default function SentenceMicroPlayer({
         </div>
       </div>
 
-      {/* Loop toggle */}
+      {/* Loop toggle（移动端为无背景图标，sm 以上显示文字胶囊） */}
       <button
         type="button"
         onClick={() => setIsLoop(!isLoop)}
-        className={`px-2 py-0.5 rounded-full font-semibold text-[11px] transition-colors border ${
+        aria-pressed={isLoop}
+        className={`w-8 h-8 sm:w-auto sm:h-auto sm:px-2 sm:py-0.5 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
           isLoop
-            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/40"
-            : "bg-white dark:bg-ink-900 border-gray-300 dark:border-ink-600 text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100"
+            ? "text-primary-600 dark:text-primary-400 sm:bg-indigo-500/20 sm:text-indigo-600 sm:dark:text-indigo-400 sm:border sm:border-indigo-500/40"
+            : "text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 sm:bg-white sm:dark:bg-ink-900 sm:border sm:border-gray-300 sm:dark:border-ink-600 sm:hover:text-gray-700 sm:dark:hover:text-ink-100"
         }`}
         title={isLoop ? "循环开启中" : "开启单句单曲循环"}
       >
-        单句循环
+        {/* 移动端：激活时切换为带 "1" 的单句循环图标 */}
+        {isLoop ? (
+          <Repeat1 className="w-4 h-4 sm:hidden" />
+        ) : (
+          <Repeat className="w-4 h-4 sm:hidden" />
+        )}
+        <span className="hidden sm:inline">单句循环</span>
       </button>
     </div>
   );

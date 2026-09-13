@@ -219,7 +219,7 @@ export function QuickTagDrawer({
                 <button
                   type="button"
                   onClick={() => setIsAddingTag(true)}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-base-300 text-base-content/50 hover:text-primary hover:border-primary flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-base-300 text-base-content/50 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-600 dark:hover:border-primary-400 flex items-center gap-1"
                 >
                   <Plus size={12} /> 自定义
                 </button>

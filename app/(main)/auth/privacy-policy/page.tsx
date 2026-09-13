@@ -17,7 +17,7 @@ export default function Page() {
     <div className="min-h-screen bg-base-200 p-8">
       <div className="container mx-auto">
         <div className="card bg-base-100 shadow-lg p-8">
-          <h1 className="text-3xl font-extrabold text-primary mb-2">
+          <h1 className="text-3xl font-extrabold text-primary-600 dark:text-primary-400 mb-2">
             隐私政策
           </h1>
           <p className="text-sm text-base-content opacity-70 mb-6">

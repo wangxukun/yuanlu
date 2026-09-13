@@ -387,7 +387,7 @@ export function ReviewModal({
         {wordAudioUrl && (
           <button
             onClick={() => playAudio(null, wordAudioUrl, currentItem?.word)}
-            className="btn btn-xs btn-circle btn-ghost text-primary"
+            className="btn btn-xs btn-circle btn-ghost text-primary-600 dark:text-primary-400"
             title="播放单词发音"
           >
             <Volume2 size={12} />
@@ -465,7 +465,7 @@ export function ReviewModal({
         onKeyDown={handleInputKeyDown}
         placeholder={placeholder}
         className={`input input-bordered w-full max-w-xs text-center text-lg font-mono transition-colors ${
-          isInputWrong ? "input-error ring-2 ring-error/30" : "input-primary"
+          isInputWrong ? "input-error ring-2 ring-error-500/30 dark:ring-error-400/30" : "input-primary"
         }`}
         autoComplete="off"
         spellCheck={false}
@@ -496,8 +496,8 @@ export function ReviewModal({
               onKeyDown={handleInputKeyDown}
               className={`inline-block border-b-2 mx-1 align-bottom bg-transparent text-center focus:outline-none font-bold transition-colors ${
                 isInputWrong
-                  ? "border-error text-error"
-                  : "border-primary text-primary"
+                  ? "border-error-500 dark:border-error-400 text-error-500 dark:text-error-400"
+                  : "border-primary-600 dark:border-primary-400 text-primary-600 dark:text-primary-400"
               }`}
               style={{
                 width: `${Math.max(word.length * 14, 60)}px`,
@@ -522,7 +522,7 @@ export function ReviewModal({
             title="AI 朗读句子"
             className={`btn btn-sm btn-circle btn-ghost ${
               playingText === currentItem.contextSentence
-                ? "text-primary animate-pulse"
+                ? "text-primary-600 dark:text-primary-400 animate-pulse"
                 : "text-base-content/40"
             }`}
           >
@@ -536,7 +536,7 @@ export function ReviewModal({
             disabled={isOriginalLoading}
             className={`btn btn-sm btn-circle btn-ghost ${
               isOriginalActive
-                ? "text-primary animate-pulse"
+                ? "text-primary-600 dark:text-primary-400 animate-pulse"
                 : "text-base-content/40"
             }`}
           >
@@ -560,7 +560,7 @@ export function ReviewModal({
           <Tags size={14} className="inline mr-1.5 -mt-0.5" />
           选择正确释义
         </div>
-        <h2 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-primary mb-2">
+        <h2 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-primary-600 dark:text-primary-400 mb-2">
           {currentItem?.word}
         </h2>
         {currentItem?.dictData?.phonetics?.us && (
@@ -571,7 +571,7 @@ export function ReviewModal({
                 onClick={(e) =>
                   playAudio(e, currentItem.dictData!.audio_urls!.us)
                 }
-                className="btn btn-xs btn-circle btn-ghost text-primary"
+                className="btn btn-xs btn-circle btn-ghost text-primary-600 dark:text-primary-400"
               >
                 <Volume2 size={12} />
               </button>
@@ -619,7 +619,7 @@ export function ReviewModal({
       <div className="text-center mb-8 space-y-3">
         {currentItem?.dictData?.definitions?.map((def, idx) => (
           <div key={idx}>
-            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded mr-2">
+            <span className="px-2 py-0.5 bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 text-xs font-bold rounded mr-2">
               {def.pos}
             </span>
             <span className="text-lg sm:text-xl font-medium text-base-content">
@@ -681,13 +681,13 @@ export function ReviewModal({
       <div className="p-5 sm:p-6 xl:p-8 space-y-5">
         {/* Word + Phonetics + Audio */}
         <div className="text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-2 break-words">
+          <h2 className="text-3xl sm:text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2 break-words">
             {currentItem.word}
           </h2>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {dict?.phonetics?.us && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-primary uppercase">
+                <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase">
                   US
                 </span>
                 <span className="text-sm font-mono text-base-content/60">
@@ -696,7 +696,7 @@ export function ReviewModal({
                 {dict?.audio_urls?.us && (
                   <button
                     onClick={(e) => playAudio(e, dict.audio_urls!.us)}
-                    className="btn btn-xs btn-circle btn-ghost text-primary"
+                    className="btn btn-xs btn-circle btn-ghost text-primary-600 dark:text-primary-400"
                   >
                     <Volume2 size={12} />
                   </button>
@@ -727,7 +727,7 @@ export function ReviewModal({
               href={currentItem.webUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary/60 hover:text-primary mt-2 transition-colors"
+              className="inline-flex items-center gap-1 text-xs text-primary-600/60 dark:text-primary-400/60 hover:text-primary-600 dark:hover:text-primary-400 mt-2 transition-colors"
             >
               <ExternalLink size={12} /> 查看词典
             </a>
@@ -742,7 +742,7 @@ export function ReviewModal({
             </h4>
             {dict.definitions.map((def, idx) => (
               <div key={idx} className="flex items-start gap-2">
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded shrink-0 mt-0.5">
+                <span className="px-1.5 py-0.5 bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 text-[10px] font-bold rounded shrink-0 mt-0.5">
                   {def.pos}
                 </span>
                 <div className="flex-1">
@@ -756,7 +756,7 @@ export function ReviewModal({
                   )}
                 </div>
                 {def.cefr_level && (
-                  <span className="px-1.5 py-0.5 bg-info/10 text-info text-[9px] font-bold rounded uppercase shrink-0">
+                  <span className="px-1.5 py-0.5 bg-info-500/10 dark:bg-info-400/10 text-info-500 dark:text-info-400 text-[9px] font-bold rounded uppercase shrink-0">
                     {def.cefr_level}
                   </span>
                 )}
@@ -767,7 +767,7 @@ export function ReviewModal({
 
         {/* Context Sentence */}
         {currentItem.contextSentence && (
-          <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl p-4">
+          <div className="bg-gradient-to-br from-primary-600/5 dark:from-primary-400/5 to-secondary/5 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[10px] font-bold text-base-content/40 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={12} /> 原声出处
@@ -779,7 +779,7 @@ export function ReviewModal({
                   }
                   className={`btn btn-xs btn-circle btn-ghost ${
                     playingText === currentItem.contextSentence
-                      ? "text-primary animate-pulse"
+                      ? "text-primary-600 dark:text-primary-400 animate-pulse"
                       : "text-base-content/40"
                   }`}
                   title="AI 朗读句子"
@@ -792,7 +792,7 @@ export function ReviewModal({
                     disabled={isOriginalLoading}
                     className={`btn btn-xs btn-circle btn-ghost ${
                       isOriginalActive
-                        ? "text-primary animate-pulse"
+                        ? "text-primary-600 dark:text-primary-400 animate-pulse"
                         : "text-base-content/40"
                     }`}
                     title="播放剧集原声（与字幕对齐）"
@@ -897,13 +897,13 @@ export function ReviewModal({
             )}
             {dict?.antonyms && dict.antonyms.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-bold text-error uppercase">
+                <span className="text-[10px] font-bold text-error-500 dark:text-error-400 uppercase">
                   反义
                 </span>
                 {dict.antonyms.map((a, i) => (
                   <span
                     key={i}
-                    className="text-xs text-base-content/70 bg-error/5 px-2 py-0.5 rounded"
+                    className="text-xs text-base-content/70 bg-error-500/5 dark:bg-error-400/5 px-2 py-0.5 rounded"
                   >
                     {a}
                   </span>
@@ -964,12 +964,12 @@ export function ReviewModal({
             <span
               className={`text-xs font-bold uppercase ${
                 r.quality === ReviewQuality.FORGOT
-                  ? "text-error"
+                  ? "text-error-500 dark:text-error-400"
                   : r.quality === ReviewQuality.HARD
                     ? "text-warning"
                     : r.quality === ReviewQuality.GOOD
                       ? "text-success"
-                      : "text-info"
+                      : "text-info-500 dark:text-info-400"
               }`}
             >
               {r.quality === ReviewQuality.FORGOT
@@ -988,7 +988,7 @@ export function ReviewModal({
         {summaryStats.forgot > 0 && (
           <button
             onClick={handleRetry}
-            className="w-full flex-1 flex items-center justify-center gap-2 h-14 py-3.5 px-6 shrink-0 rounded-xl text-base font-bold shadow-lg shadow-primary/20 bg-primary-600 hover:bg-primary-700 text-white transition-all active:scale-[0.98]"
+            className="w-full flex-1 flex items-center justify-center gap-2 h-14 py-3.5 px-6 shrink-0 rounded-xl text-base font-bold shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 bg-primary-600 hover:bg-primary-700 text-white transition-all active:scale-[0.98]"
           >
             <RefreshCcw size={18} />
             再来一轮 ({summaryStats.forgot}个)
@@ -1013,7 +1013,7 @@ export function ReviewModal({
       icon: RotateCcw,
       label: "忘记",
       interval: intervalPreviews.forgot,
-      hover: "hover:text-error hover:ring-error/30",
+      hover: "hover:text-error-500 dark:hover:text-error-400 hover:ring-error-500/30 dark:hover:ring-error-400/30",
       key: "1",
     },
     {
@@ -1037,7 +1037,7 @@ export function ReviewModal({
       icon: Award,
       label: "简单",
       interval: intervalPreviews.easy,
-      hover: "hover:text-info hover:ring-info/30",
+      hover: "hover:text-info-500 dark:hover:text-info-400 hover:ring-info-500/30 dark:hover:ring-info-400/30",
       key: "4",
     },
   ];
@@ -1061,13 +1061,13 @@ export function ReviewModal({
           {/* Progress Bar */}
           <div className="h-1 bg-base-200 dark:bg-ink-800">
             <div
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out rounded-r-full"
+              className="h-full bg-gradient-to-r from-primary-600 dark:from-primary-400 to-secondary transition-all duration-500 ease-out rounded-r-full"
               style={{ width: `${showSummary ? 100 : progress}%` }}
             />
           </div>
           <div className="px-4 sm:px-6 py-3 flex justify-between items-center border-b border-base-200 dark:border-ink-800 bg-base-100">
             <div className="flex items-center space-x-2 text-sm font-bold text-base-content/70">
-              <BrainCircuit className="w-4 h-4 text-primary" />
+              <BrainCircuit className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>
                 {showSummary
                   ? "复习总结"
@@ -1138,7 +1138,7 @@ export function ReviewModal({
               {!isCardFlipped ? (
                 <button
                   onClick={() => setIsCardFlipped(true)}
-                  className="w-full h-12 btn rounded-xl font-bold shadow-lg shadow-primary/20 bg-primary-600 hover:bg-primary-700 text-white border-primary-600 transition-all active:scale-[0.98]"
+                  className="w-full h-12 btn rounded-xl font-bold shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 bg-primary-600 hover:bg-primary-700 text-white border-primary-600 transition-all active:scale-[0.98]"
                 >
                   显示答案
                   <span className="text-xs opacity-60 ml-2 hidden xl:inline">

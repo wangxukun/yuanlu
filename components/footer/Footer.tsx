@@ -18,14 +18,14 @@ export default function Footer() {
               href="https://space.bilibili.com/1439010402"
               target="_blank"
               rel="noopener noreferrer"
-              className="lg:block transition-colors font-medium hover:text-primary"
+              className="lg:block transition-colors font-medium hover:text-primary-600 dark:hover:text-primary-400"
             >
               B站号：（远路漫漫）1439010402
             </a>
             <div className="hidden lg:block w-px h-3 bg-base-300"></div>
             <Link
               href="/contact"
-              className="hover:text-primary transition-colors font-medium"
+              className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
             >
               联系我们
             </Link>
@@ -38,7 +38,7 @@ export default function Footer() {
               href="https://beian.miit.gov.cn/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden lg:block text-neutral-content hover:text-primary transition-colors"
+              className="hidden lg:block text-neutral-content hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               滇ICP备2023001663号
             </a>
@@ -47,7 +47,7 @@ export default function Footer() {
               href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=53032202530362"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden lg:block text-neutral-content hover:text-primary transition-colors"
+              className="hidden lg:block text-neutral-content hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               滇公网安备 53032202530362号
             </a>

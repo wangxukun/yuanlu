@@ -106,8 +106,8 @@ export function VocabularyList({
               }}
               className={`group relative rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden scroll-mt-[160px] md:scroll-mt-[240px] xl:scroll-mt-28 ${
                 isExpanded
-                  ? "bg-white/80 dark:bg-ink-900/80 backdrop-blur-md shadow-xl ring-1 ring-primary/30 z-20"
-                  : "bg-white dark:bg-ink-900 shadow-sm hover:shadow-md hover:ring-1 hover:ring-primary/20 z-10"
+                  ? "bg-white/80 dark:bg-ink-900/80 backdrop-blur-md shadow-xl ring-1 ring-primary-600/30 dark:ring-primary-400/30 z-20"
+                  : "bg-white dark:bg-ink-900 shadow-sm hover:shadow-md hover:ring-1 hover:ring-primary-600/20 dark:hover:ring-primary-400/20 z-10"
               }`}
             >
               {/* 卡片内容区: 紧凑视图 */}
@@ -161,7 +161,7 @@ export function VocabularyList({
                                 item.dictData?.audio_urls?.us || item.speakUrl,
                               )
                             }
-                            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-primary/60 hover:text-primary hover:bg-primary/10 active:scale-90 rounded-full transition-all shrink-0"
+                            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-primary-600/60 dark:text-primary-400/60 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 active:scale-90 rounded-full transition-all shrink-0"
                           >
                             <Volume2 size={20} />
                           </button>
@@ -188,7 +188,7 @@ export function VocabularyList({
                         key={level}
                         className={`w-1.5 xl:w-2 rounded-full transition-all duration-500 ${
                           level <= item.proficiency
-                            ? "h-4 xl:h-6 bg-gradient-to-t from-primary to-primary-400 shadow-sm shadow-primary/20"
+                            ? "h-4 xl:h-6 bg-gradient-to-t from-primary-600 dark:from-primary-400 to-primary-400 shadow-sm shadow-primary-600/20 dark:shadow-primary-400/20"
                             : "h-3 xl:h-4 bg-ink-100 dark:bg-ink-800"
                         }`}
                       />
@@ -259,7 +259,7 @@ export function VocabularyList({
                         <div className="flex flex-wrap items-center gap-4">
                           {item.dictData?.phonetics?.us && (
                             <div className="flex items-center space-x-3 bg-white/60 dark:bg-ink-800/60 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/10">
-                              <span className="text-xs font-black text-primary uppercase tracking-widest">
+                              <span className="text-xs font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">
                                 US
                               </span>
                               <span className="text-sm font-mono text-base-content/80">
@@ -270,7 +270,7 @@ export function VocabularyList({
                                   onClick={(e) =>
                                     playAudio(e, item.dictData!.audio_urls!.us)
                                   }
-                                  className="text-primary/70 hover:text-primary hover:scale-110 active:scale-95 transition-all"
+                                  className="text-primary-600/70 dark:text-primary-400/70 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-110 active:scale-95 transition-all"
                                 >
                                   <Volume2 size={18} />
                                 </button>
@@ -309,7 +309,7 @@ export function VocabularyList({
                                   <h4 className="flex items-center text-sm font-extrabold text-base-content/80 mb-4 tracking-wide">
                                     <BookOpen
                                       size={16}
-                                      className="mr-2 text-primary"
+                                      className="mr-2 text-primary-600 dark:text-primary-400"
                                     />
                                     核心释义
                                   </h4>
@@ -321,14 +321,14 @@ export function VocabularyList({
                                           className="relative overflow-hidden bg-white/80 dark:bg-ink-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/5 flex flex-col sm:flex-row gap-3 sm:gap-5"
                                         >
                                           {/* 左侧彩色指示条 */}
-                                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/50 to-primary rounded-l-2xl"></div>
+                                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-600/50 dark:from-primary-400/50 to-primary-600 dark:to-primary-400 rounded-l-2xl"></div>
 
                                           <div className="flex items-start gap-2 sm:flex-col sm:w-20 shrink-0 pl-2">
-                                            <span className="px-2.5 py-1 bg-primary/10 dark:bg-primary/20 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg shadow-sm border border-primary/20">
+                                            <span className="px-2.5 py-1 bg-primary-600/10 dark:bg-primary-400/10 dark:bg-primary-400/20 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg shadow-sm border border-primary-600/20 dark:border-primary-400/20">
                                               {def.pos}
                                             </span>
                                             {def.cefr_level && (
-                                              <span className="px-2 py-0.5 bg-info/10 text-info-700 dark:text-info-300 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                                              <span className="px-2 py-0.5 bg-info-500/10 dark:bg-info-400/10 text-info-700 dark:text-info-300 text-[10px] font-bold rounded-md uppercase tracking-wider">
                                                 {def.cefr_level}
                                               </span>
                                             )}
@@ -362,8 +362,8 @@ export function VocabularyList({
                               <div className="space-y-4">
                                 {/* 优先展示原播客例句（若有） */}
                                 {item.contextSentence && (
-                                  <div className="relative bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 p-5 rounded-2xl ring-1 ring-primary/20 shadow-sm transition-all duration-300 hover:shadow-md hover:ring-primary/40 hover:from-primary/10 hover:to-secondary/10">
-                                    <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase rounded-bl-xl rounded-tr-2xl shadow-sm">
+                                  <div className="relative bg-gradient-to-br from-primary-600/5 dark:from-primary-400/5 to-secondary/5 dark:from-primary-400/10 dark:to-secondary/10 p-5 rounded-2xl ring-1 ring-primary-600/20 dark:ring-primary-400/20 shadow-sm transition-all duration-300 hover:shadow-md hover:ring-primary-600/40 dark:hover:ring-primary-400/40 hover:from-primary-600/10 dark:hover:from-primary-400/10 hover:to-secondary/10">
+                                    <div className="absolute top-0 right-0 px-3 py-1 bg-primary-600 dark:bg-primary-400 text-white text-[10px] font-bold uppercase rounded-bl-xl rounded-tr-2xl shadow-sm">
                                       原声出处
                                     </div>
                                     <div className="text-base font-medium text-base-content mb-3 pr-16 leading-relaxed">
@@ -381,7 +381,7 @@ export function VocabularyList({
                                       <div className="flex items-center space-x-2 text-xs font-medium text-base-content/50 bg-white/50 dark:bg-ink-900/50 px-2 py-1 rounded-md">
                                         <PlayCircle
                                           size={12}
-                                          className="text-primary"
+                                          className="text-primary-600 dark:text-primary-400"
                                         />
                                         <span className="truncate max-w-[150px] sm:max-w-[200px]">
                                           {item.episodeTitle}
@@ -397,8 +397,8 @@ export function VocabularyList({
                                           }
                                           className={`p-2.5 rounded-full transition-all shrink-0 shadow-sm ${
                                             playingText === item.contextSentence
-                                              ? "text-primary bg-primary/10 animate-pulse"
-                                              : "text-primary/70 hover:text-primary hover:bg-primary/10 bg-white dark:bg-ink-800"
+                                              ? "text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 animate-pulse"
+                                              : "text-primary-600/70 dark:text-primary-400/70 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 bg-white dark:bg-ink-800"
                                           }`}
                                           title="AI 朗读句子"
                                         >
@@ -426,8 +426,8 @@ export function VocabularyList({
                                                 `${item.episodeid}:${item.word}` ||
                                               originalLoadingKey ===
                                                 `${item.episodeid}:${item.word}`
-                                                ? "text-primary bg-primary/10 animate-pulse"
-                                                : "text-primary/70 hover:text-primary hover:bg-primary/10 bg-white dark:bg-ink-800"
+                                                ? "text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 animate-pulse"
+                                                : "text-primary-600/70 dark:text-primary-400/70 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 bg-white dark:bg-ink-800"
                                             }`}
                                             title="播放剧集原声"
                                           >
@@ -448,7 +448,7 @@ export function VocabularyList({
                                 {item.dictData?.examples?.map((ex, idx) => (
                                   <div
                                     key={idx}
-                                    className="group bg-white/80 dark:bg-ink-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/5 transition-all duration-300 hover:shadow-md hover:ring-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 cursor-default"
+                                    className="group bg-white/80 dark:bg-ink-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/5 transition-all duration-300 hover:shadow-md hover:ring-primary-600/30 dark:hover:ring-primary-400/30 hover:bg-primary-600/5 dark:hover:bg-primary-400/5 dark:hover:bg-primary-400/10 cursor-default"
                                   >
                                     <div className="flex items-start justify-between gap-4">
                                       <div className="flex-1">
@@ -470,8 +470,8 @@ export function VocabularyList({
                                         }
                                         className={`p-2 rounded-full transition-all shrink-0 ${
                                           playingText === ex.en
-                                            ? "text-primary bg-primary/10 animate-pulse"
-                                            : "text-base-content/30 group-hover:text-primary group-hover:bg-primary/5 bg-ink-50 dark:bg-ink-900"
+                                            ? "text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 animate-pulse"
+                                            : "text-base-content/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:bg-primary-600/5 dark:group-hover:bg-primary-400/5 bg-ink-50 dark:bg-ink-900"
                                         }`}
                                       >
                                         <Volume2 size={16} />
@@ -494,7 +494,7 @@ export function VocabularyList({
                                   <h4 className="flex items-center text-sm font-extrabold text-base-content/80 mb-4 tracking-wide">
                                     <Activity
                                       size={16}
-                                      className="mr-2 text-info"
+                                      className="mr-2 text-info-500 dark:text-info-400"
                                     />
                                     词形变化
                                   </h4>
@@ -593,7 +593,7 @@ export function VocabularyList({
                                           </div>
                                         )}
                                         {item.dictData.etymology.root && (
-                                          <div className="px-2.5 py-1 bg-error/10 text-error-700 dark:text-error-300 rounded-md text-xs font-medium border border-error/20">
+                                          <div className="px-2.5 py-1 bg-error-500/10 dark:bg-error-400/10 text-error-700 dark:text-error-300 rounded-md text-xs font-medium border border-error-500/20 dark:border-error-400/20">
                                             <span className="font-bold opacity-60 mr-1">
                                               词根
                                             </span>
@@ -643,7 +643,7 @@ export function VocabularyList({
                                   <h4 className="flex items-center text-sm font-extrabold text-base-content/80 mb-4 tracking-wide">
                                     <Tags
                                       size={16}
-                                      className="mr-2 text-accent"
+                                      className="mr-2 text-accent-300 dark:text-accent-400"
                                     />
                                     短语搭配
                                   </h4>
@@ -690,7 +690,7 @@ export function VocabularyList({
                                             (syn, i) => (
                                               <span
                                                 key={i}
-                                                className="text-sm font-medium text-base-content/80 hover:text-primary cursor-pointer transition-colors"
+                                                className="text-sm font-medium text-base-content/80 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer transition-colors"
                                               >
                                                 {syn}
                                                 {i <
@@ -708,7 +708,7 @@ export function VocabularyList({
                                   {item.dictData?.antonyms &&
                                     item.dictData.antonyms.length > 0 && (
                                       <div className="bg-white/80 dark:bg-ink-800/80 p-4 rounded-2xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/5 flex flex-col sm:flex-row gap-2">
-                                        <span className="px-2.5 py-1 bg-error/10 text-error-700 dark:text-error-300 rounded-md text-[10px] font-bold uppercase tracking-wider h-fit w-fit">
+                                        <span className="px-2.5 py-1 bg-error-500/10 dark:bg-error-400/10 text-error-700 dark:text-error-300 rounded-md text-[10px] font-bold uppercase tracking-wider h-fit w-fit">
                                           反义 Antonyms
                                         </span>
                                         <div className="flex flex-wrap gap-1.5 mt-1 sm:mt-0 sm:ml-2">
@@ -716,7 +716,7 @@ export function VocabularyList({
                                             (ant, i) => (
                                               <span
                                                 key={i}
-                                                className="text-sm font-medium text-base-content/80 hover:text-primary cursor-pointer transition-colors"
+                                                className="text-sm font-medium text-base-content/80 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer transition-colors"
                                               >
                                                 {ant}
                                                 {i <
@@ -757,8 +757,8 @@ export function VocabularyList({
                                     }
                                     className={`p-2 rounded-full transition-all ${
                                       playingText === item.contextSentence
-                                        ? "text-primary bg-primary/20 animate-pulse"
-                                        : "text-base-content/40 hover:text-primary bg-ink-50 dark:bg-ink-800"
+                                        ? "text-primary-600 dark:text-primary-400 bg-primary-600/20 dark:bg-primary-400/20 animate-pulse"
+                                        : "text-base-content/40 hover:text-primary-600 dark:hover:text-primary-400 bg-ink-50 dark:bg-ink-800"
                                     }`}
                                     title="朗读例句"
                                   >
@@ -786,7 +786,7 @@ export function VocabularyList({
                             <div className="flex items-center space-x-3 text-sm text-base-content/80 bg-white dark:bg-ink-900 p-3 rounded-xl shadow-sm ring-1 ring-base-200 dark:ring-base-content/10">
                               <PlayCircle
                                 size={18}
-                                className="text-primary shrink-0"
+                                className="text-primary-600 dark:text-primary-400 shrink-0"
                               />
                               <span className="font-medium truncate">
                                 {item.episodeTitle}
@@ -859,7 +859,7 @@ export function VocabularyList({
                           href={item.webUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-5 py-2.5 bg-white dark:bg-ink-800 rounded-xl text-sm font-bold text-base-content/70 hover:text-primary shadow-sm ring-1 ring-base-200 dark:ring-base-content/10 hover:shadow-md transition-all"
+                          className="px-5 py-2.5 bg-white dark:bg-ink-800 rounded-xl text-sm font-bold text-base-content/70 hover:text-primary-600 dark:hover:text-primary-400 shadow-sm ring-1 ring-base-200 dark:ring-base-content/10 hover:shadow-md transition-all"
                           onClick={(e) => e.stopPropagation()}
                         >
                           查看网络词典

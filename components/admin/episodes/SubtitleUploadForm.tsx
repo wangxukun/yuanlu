@@ -100,7 +100,7 @@ export function SubtitleUploadForm({
       </button>
       {state?.message && (
         <p
-          className={`mt-2 text-sm ${state.success ? "text-success" : "text-error"}`}
+          className={`mt-2 text-sm ${state.success ? "text-success" : "text-error-500 dark:text-error-400"}`}
         >
           {state.message}
         </p>

@@ -8,7 +8,7 @@ export default function PlayControls() {
     usePlayerStore();
 
   const iconClass =
-    "text-base-content/70 hover:text-primary transition-all duration-200 active:scale-90";
+    "text-base-content/70 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 active:scale-90";
   const disabledClass = "text-base-content/20 cursor-not-allowed";
 
   return (
@@ -29,7 +29,7 @@ export default function PlayControls() {
         disabled={!currentEpisode}
         className={`h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center rounded-full transition-all duration-300 shadow-md ${
           currentEpisode
-            ? "bg-primary text-primary-content hover:bg-primary-focus hover:scale-105 active:scale-95 shadow-primary/30"
+            ? "bg-primary-600 dark:bg-primary-400 text-primary-content hover:bg-primary-focus hover:scale-105 active:scale-95 shadow-primary-600/30 dark:shadow-primary-400/30"
             : "bg-base-300 text-base-content/20 cursor-not-allowed"
         }`}
       >

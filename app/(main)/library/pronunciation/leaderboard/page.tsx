@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
         <div className="bg-white dark:bg-ink-900 rounded-2xl border border-base-200/60 dark:border-ink-800 shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-400" />
             </div>
           ) : entries.length === 0 ? (
             <div className="text-center py-16">
@@ -187,7 +187,7 @@ export default function LeaderboardPage() {
                     {entry.nickname}
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="font-black text-primary">
+                    <span className="font-black text-primary-600 dark:text-primary-400">
                       {metric === "score"
                         ? `${entry.avgScore} 分`
                         : `${entry.evalCount} 次`}
@@ -206,8 +206,8 @@ export default function LeaderboardPage() {
 
         {/* 我的排名 */}
         {me && (
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl px-5 py-4 flex items-center gap-4">
-            <span className="text-2xl font-black text-primary">#{me.rank}</span>
+          <div className="bg-primary-600/5 dark:bg-primary-400/5 border border-primary-600/20 dark:border-primary-400/20 rounded-2xl px-5 py-4 flex items-center gap-4">
+            <span className="text-2xl font-black text-primary-600 dark:text-primary-400">#{me.rank}</span>
             <div>
               <p className="font-bold text-sm text-base-content">我的排名</p>
               <p className="text-xs text-base-content/60">

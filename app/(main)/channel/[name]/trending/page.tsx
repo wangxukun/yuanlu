@@ -47,8 +47,8 @@ export default async function ChannelTrendingPage({ params }: Props) {
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </Link>
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <ArrowTrendingUpIcon className="w-6 h-6 text-primary" />
+            <div className="bg-primary-600/10 dark:bg-primary-400/10 p-2 rounded-lg">
+              <ArrowTrendingUpIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
               <h1 className="text-2xl xl:text-3xl font-bold text-base-content">
@@ -68,7 +68,7 @@ export default async function ChannelTrendingPage({ params }: Props) {
               <Link
                 href={`/podcast/${show.podcastid}`}
                 key={show.podcastid}
-                className="card bg-base-100 shadow-sm hover:shadow-lg border border-base-200 hover:border-primary/20 transition-all duration-300 group overflow-hidden"
+                className="card bg-base-100 shadow-sm hover:shadow-lg border border-base-200 hover:border-primary-600/20 dark:hover:border-primary-400/20 transition-all duration-300 group overflow-hidden"
               >
                 {/* Cover image */}
                 <figure className="relative aspect-square overflow-hidden">
@@ -104,14 +104,14 @@ export default async function ChannelTrendingPage({ params }: Props) {
                   )}
                   {/* Play overlay on hover */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-xl">
+                    <div className="w-14 h-14 rounded-full bg-primary-600 dark:bg-primary-400 text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-xl">
                       <PlayIcon className="w-6 h-6 ml-1" />
                     </div>
                   </div>
                 </figure>
                 {/* Card body */}
                 <div className="card-body p-4 xl:p-5">
-                  <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+                  <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                     {show.title}
                   </h3>
                   <div className="flex items-center justify-between mt-1">

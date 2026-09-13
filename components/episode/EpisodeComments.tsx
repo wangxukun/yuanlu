@@ -19,7 +19,7 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
         <div className="space-y-4">
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <span className="loading loading-dots loading-lg text-primary/40"></span>
+              <span className="loading loading-dots loading-lg text-primary-600/40 dark:text-primary-400/40"></span>
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-12">

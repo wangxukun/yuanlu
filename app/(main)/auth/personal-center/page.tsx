@@ -109,7 +109,7 @@ export default function PersonalCenterPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ink-50 dark:bg-ink-950 text-ink-900 dark:text-ink-100">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <span className="loading loading-spinner loading-lg text-primary-600 dark:text-primary-400"></span>
       </div>
     );
   }

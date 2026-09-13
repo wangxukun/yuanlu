@@ -111,7 +111,7 @@ export default function SignInForm() {
       {/* 用户信息展示区 */}
       <div className="flex flex-col items-center justify-center space-y-3 mb-8">
         <div className="avatar placeholder animate-in zoom-in duration-300">
-          <div className="bg-base-200 text-primary rounded-full w-20 h-20 ring ring-primary ring-offset-base-100 ring-offset-2 flex items-center justify-center shadow-lg">
+          <div className="bg-base-200 text-primary-600 dark:text-primary-400 rounded-full w-20 h-20 ring ring-primary-600 dark:ring-primary-400 ring-offset-base-100 ring-offset-2 flex items-center justify-center shadow-lg">
             <span className="flex items-center justify-center w-full h-full text-3xl font-bold text-secondary">
               {checkedEmail?.charAt(0).toUpperCase() || (
                 <UserIcon className="w-20 h-20" />
@@ -134,13 +134,13 @@ export default function SignInForm() {
       >
         <div className="form-control space-y-2">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
               suppressHydrationWarning
-              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"
+              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm"
               placeholder="请输入密码"
               value={password}
               onChange={(e) => {
@@ -155,7 +155,7 @@ export default function SignInForm() {
           {/* 错误提示 */}
           <div className="h-6 flex items-center">
             {error && (
-              <div className="flex items-center gap-1.5 text-error text-sm animate-in slide-in-from-top-1 fade-in">
+              <div className="flex items-center gap-1.5 text-error-500 dark:text-error-400 text-sm animate-in slide-in-from-top-1 fade-in">
                 <ExclamationCircleIcon className="w-4 h-4" />
                 <span>{error}</span>
               </div>
@@ -193,7 +193,7 @@ export default function SignInForm() {
           <button
             type="button"
             onClick={onForgotPassword}
-            className="text-xs text-base-content/40 hover:text-primary transition-colors"
+            className="text-xs text-base-content/40 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             忘记密码?
           </button>

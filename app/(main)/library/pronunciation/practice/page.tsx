@@ -105,7 +105,7 @@ export default function PronunciationPracticePage() {
   if (loading) {
     return (
       <div className="bg-ink-50 dark:bg-ink-900 min-h-screen flex justify-center items-center transition-colors duration-300">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary-600 dark:text-primary-400" />
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function PronunciationPracticePage() {
   if (locked) {
     return (
       <div className="bg-ink-50 dark:bg-ink-900 min-h-screen flex flex-col justify-center items-center gap-4 text-center px-4 transition-colors duration-300">
-        <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-full mb-4">
+        <div className="w-16 h-16 bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 flex items-center justify-center rounded-full mb-4">
           <Lock size={28} />
         </div>
         <h2 className="text-2xl font-bold">弱项练习是 PRO 会员功能</h2>
@@ -124,7 +124,7 @@ export default function PronunciationPracticePage() {
           onClick={() =>
             useUIStore.getState().openPremiumModal("pronunciation_locked")
           }
-          className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary/20 mt-4 rounded-full px-8 border-0"
+          className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 mt-4 rounded-full px-8 border-0"
         >
           解锁 PRO 会员
         </button>
@@ -179,7 +179,7 @@ export default function PronunciationPracticePage() {
 
         <div className="w-full bg-base-200 h-1.5 rounded-full mb-12 overflow-hidden">
           <div
-            className="h-full bg-primary transition-all duration-300"
+            className="h-full bg-primary-600 dark:bg-primary-400 transition-all duration-300"
             style={{ width: `${((currentIndex + 1) / records.length) * 100}%` }}
           />
         </div>
@@ -210,7 +210,7 @@ export default function PronunciationPracticePage() {
             onClick={
               currentIndex === records.length - 1 ? handleExit : nextRecord
             }
-            className="btn btn-primary bg-primary-600 text-white gap-2 shadow-lg shadow-primary/20"
+            className="btn btn-primary bg-primary-600 text-white gap-2 shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20"
           >
             {currentIndex === records.length - 1 ? "完成复习" : "下一题"}{" "}
             <ChevronRight size={18} />

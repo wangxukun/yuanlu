@@ -337,7 +337,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
             <button
               onClick={handlePlayAll}
               disabled={selectedPath.items.length === 0}
-              // [Refactor] shadow-primary-200 -> shadow-primary/20: 阴影颜色适配
+              // [Refactor] shadow-primary-200 -> shadow-primary-600/20: dark:shadow-primary-400/20: 阴影颜色适配
               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-bold transition-all shadow-md shadow-primary-600/20 text-sm md:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlayCircle size={20} /> 播放全部
@@ -367,7 +367,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                     <button
                       onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                       className={`p-3 w-full md:w-auto flex justify-center text-base-content/60 hover:bg-base-200 rounded-lg transition-colors ${
-                        isMoreMenuOpen ? "bg-base-200 text-primary" : ""
+                        isMoreMenuOpen ? "bg-base-200 text-primary-600 dark:text-primary-400" : ""
                       }`}
                     >
                       <MoreHorizontal size={20} />
@@ -389,7 +389,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                           </button>
                           <button
                             onClick={handleDeletePath}
-                            className="w-full text-left px-4 py-2.5 text-sm text-error hover:bg-error/10 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2.5 text-sm text-error-500 dark:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10 flex items-center gap-2"
                           >
                             <Trash2 size={16} /> 删除路径
                           </button>
@@ -430,11 +430,11 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <div
                   key={item.id}
                   onClick={() => onPlayEpisode(item.episode)}
-                  // [Refactor] bg-white -> bg-base-100, hover:border-primary-100 -> hover:border-primary/50
-                  className="group bg-base-100 p-2 md:p-4 rounded-xl border border-base-300 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
+                  // [Refactor] bg-white -> bg-base-100, hover:border-primary-100 -> hover:border-primary-600/50 dark:hover:border-primary-400/50
+                  className="group bg-base-100 p-2 md:p-4 rounded-xl border border-base-300 hover:border-primary-600/50 dark:hover:border-primary-400/50 hover:shadow-md transition-all cursor-pointer flex items-center gap-2 md:gap-4 w-full overflow-hidden"
                 >
                   {/* Index */}
-                  <div className="w-5 md:w-8 text-center font-bold text-base-content/30 group-hover:text-primary transition-colors text-xs md:text-base shrink-0">
+                  <div className="w-5 md:w-8 text-center font-bold text-base-content/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-xs md:text-base shrink-0">
                     {index + 1}
                   </div>
 
@@ -461,7 +461,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                     {progressPercentage > 0 && (
                       <div className="sm:hidden absolute bottom-0 left-0 w-full h-1 bg-base-300/50 z-30">
                         <div
-                          className={`h-full ${isFinished ? "bg-success" : "bg-primary"}`}
+                          className={`h-full ${isFinished ? "bg-success" : "bg-primary-600 dark:bg-primary-400"}`}
                           style={{ width: `${progressPercentage}%` }}
                         ></div>
                       </div>
@@ -471,7 +471,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   {/* Text Info */}
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <h3
-                      className="font-bold text-base-content line-clamp-2 break-words group-hover:text-primary transition-colors text-sm md:text-base leading-snug mb-0.5"
+                      className="font-bold text-base-content line-clamp-2 break-words group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-sm md:text-base leading-snug mb-0.5"
                       title={item.episode.title}
                     >
                       {item.episode.title}
@@ -487,7 +487,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                           <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
-                                isFinished ? "bg-success" : "bg-primary"
+                                isFinished ? "bg-success" : "bg-primary-600 dark:bg-primary-400"
                               }`}
                               style={{
                                 width: `${progressPercentage}%`,
@@ -508,7 +508,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                       <div className="flex items-center gap-1 md:gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => handleRemoveItem(e, item.id)}
-                          className="p-2 text-base-content/30 hover:text-error hover:bg-error/10 rounded-full transition-colors shrink-0"
+                          className="p-2 text-base-content/30 hover:text-error-500 dark:hover:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10 rounded-full transition-colors shrink-0"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -552,7 +552,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                   autoFocus
                   placeholder="搜索..."
                   // [Refactor] bg-ink-50 -> bg-base-200
-                  className="w-full pl-9 pr-4 py-2.5 bg-base-200 border border-transparent focus:bg-base-100 focus:border-primary rounded-xl focus:outline-none focus:ring-0 transition-all text-sm text-base-content placeholder:text-base-content/40"
+                  className="w-full pl-9 pr-4 py-2.5 bg-base-200 border border-transparent focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 rounded-xl focus:outline-none focus:ring-0 transition-all text-sm text-base-content placeholder:text-base-content/40"
                   value={episodeSearchQuery}
                   onChange={(e) => setEpisodeSearchQuery(e.target.value)}
                 />
@@ -562,7 +562,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
             <div className="flex-1 overflow-y-auto p-2 min-h-[200px]">
               {isSearching ? (
                 <div className="py-8 flex justify-center">
-                  <Loader2 className="animate-spin text-primary" size={24} />
+                  <Loader2 className="animate-spin text-primary-600 dark:text-primary-400" size={24} />
                 </div>
               ) : availableEpisodes.length > 0 ? (
                 availableEpisodes.map((episode) => {
@@ -598,7 +598,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                           {episode.author}
                         </p>
                       </div>
-                      <div className="p-2 text-primary shrink-0">
+                      <div className="p-2 text-primary-600 dark:text-primary-400 shrink-0">
                         {isAdded ? (
                           <CheckCircle2
                             size={20}
@@ -673,7 +673,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <div
                   className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                     isEditPathPublic
-                      ? "bg-primary border-primary"
+                      ? "bg-primary-600 dark:bg-primary-400 border-primary-600 dark:border-primary-400"
                       : "bg-base-100 border-base-300"
                   }`}
                 >
@@ -702,7 +702,7 @@ const LearningPathDetailClient: React.FC<LearningPathDetailClientProps> = ({
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="btn btn-primary flex-1 rounded-xl shadow-lg shadow-primary/20"
+                  className="btn btn-primary flex-1 rounded-xl shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20"
                 >
                   {isSaving && (
                     <Loader2 className="animate-spin w-4 h-4 mr-2" />

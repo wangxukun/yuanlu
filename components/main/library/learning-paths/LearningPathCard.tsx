@@ -80,8 +80,8 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
       <div className="p-5 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
           <h3
-            // [Refactor] text-ink-900 -> text-base-content, hover:text-primary
-            className="text-lg font-bold text-base-content leading-tight group-hover:text-primary transition-colors line-clamp-1"
+            // [Refactor] text-ink-900 -> text-base-content, hover:text-primary-600 dark:hover:text-primary-400
+            className="text-lg font-bold text-base-content leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-1"
             title={path.pathName}
           >
             {path.pathName}
@@ -108,8 +108,8 @@ const LearningPathCard: React.FC<LearningPathCardProps> = ({
             {/* [Refactor] bg-ink-100 -> bg-base-200 */}
             <div className="h-1.5 w-full bg-base-200 rounded-full overflow-hidden">
               <div
-                // [Refactor] bg-primary-500 -> bg-primary
-                className="h-full bg-primary rounded-full transition-all duration-500"
+                // [Refactor] bg-primary-500 -> bg-primary-600 dark:bg-primary-400
+                className="h-full bg-primary-600 dark:bg-primary-400 rounded-full transition-all duration-500"
                 style={{ width: `${path.progress}%` }}
               ></div>
             </div>

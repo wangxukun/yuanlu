@@ -60,7 +60,7 @@ export function VocabularyModal({
               disabled={isSaving || isSaved}
               className={clsx(
                 "btn btn-sm btn-ghost btn-square",
-                isSaved && "text-primary cursor-default hover:bg-transparent",
+                isSaved && "text-primary-600 dark:text-primary-400 cursor-default hover:bg-transparent",
               )}
               title={isSaved ? "已在生词本中" : "保存生词"}
             >
@@ -84,7 +84,7 @@ export function VocabularyModal({
         {/* Phonetics + audio */}
         {isLoadingDefinition ? (
           <div className="flex items-center gap-2 py-4">
-            <span className="loading loading-spinner loading-md text-primary" />
+            <span className="loading loading-spinner loading-md text-primary-600 dark:text-primary-400" />
             <span className="text-sm text-base-content/60">
               请耐心等待，正在查询词典…
             </span>

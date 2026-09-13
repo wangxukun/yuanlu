@@ -101,7 +101,7 @@ export default function ShowNotes({ episode }: { episode: Episode }) {
       <article className="text-lg text-ink-600 dark:text-ink-300 space-y-6 leading-relaxed font-serif relative">
         <div
           ref={contentRef}
-          className={`[&>p]:mb-6 [&>p]:leading-relaxed [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:py-2 [&>blockquote]:italic [&>blockquote]:bg-ink-50 [&>blockquote]:dark:bg-ink-900/50 [&>blockquote]:rounded-r-xl [&>blockquote]:my-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6 transition-all duration-300 ${
+          className={`[&>p]:mb-6 [&>p]:leading-relaxed [&>blockquote]:border-l-4 [&>blockquote]:border-primary-600 dark:border-primary-400 [&>blockquote]:pl-6 [&>blockquote]:py-2 [&>blockquote]:italic [&>blockquote]:bg-ink-50 [&>blockquote]:dark:bg-ink-900/50 [&>blockquote]:rounded-r-xl [&>blockquote]:my-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6 transition-all duration-300 ${
             !isExpanded ? "line-clamp-3 md:line-clamp-none overflow-hidden" : ""
           }`}
           dangerouslySetInnerHTML={{

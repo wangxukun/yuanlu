@@ -163,8 +163,8 @@ export default function SignUpForm() {
       {/* 用户信息展示区 */}
       <div className="flex flex-col items-center justify-center mb-6">
         <div className="avatar placeholder mb-2">
-          <div className="bg-base-200 text-primary rounded-full w-16 h-16 ring ring-primary ring-offset-base-100 ring-offset-2 grid place-items-center">
-            <UserIcon className="mt-4 block w-8 h-8 text-primary" />
+          <div className="bg-base-200 text-primary-600 dark:text-primary-400 rounded-full w-16 h-16 ring ring-primary-600 dark:ring-primary-400 ring-offset-base-100 ring-offset-2 grid place-items-center">
+            <UserIcon className="mt-4 block w-8 h-8 text-primary-600 dark:text-primary-400" />
           </div>
         </div>
         <div className="text-center">
@@ -180,13 +180,13 @@ export default function SignUpForm() {
         {/* 密码输入 - 包含动态反馈 */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
               suppressHydrationWarning
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 
                 ${password && !isPasswordValid ? "input-warning" : ""} 
                 ${isPasswordValid ? "input-success" : ""}`}
               placeholder="设置登录密码"
@@ -214,7 +214,7 @@ export default function SignUpForm() {
               <input
                 suppressHydrationWarning
                 type="text"
-                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
+                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12 ${verificationCodeError ? "input-error" : ""}`}
                 placeholder="6位验证码"
                 value={verificationCode}
                 onChange={(e) => {
@@ -241,7 +241,7 @@ export default function SignUpForm() {
           <div className="flex justify-between items-start mt-1 px-1 min-h-[20px]">
             <div className="flex-1">
               {verificationCodeError && (
-                <span className="text-error text-xs flex items-center gap-1">
+                <span className="text-error-500 dark:text-error-400 text-xs flex items-center gap-1">
                   <ExclamationCircleIcon className="w-3 h-3" />{" "}
                   {verificationCodeError}
                 </span>

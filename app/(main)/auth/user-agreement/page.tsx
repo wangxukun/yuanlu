@@ -18,7 +18,7 @@ export default function Page() {
       <div className="container mx-auto">
         <div className="card card-side bg-base-100 shadow-lg overflow-hidden">
           <div className="card-body p-8">
-            <h1 className="text-3xl font-extrabold mb-4 text-primary">
+            <h1 className="text-3xl font-extrabold mb-4 text-primary-600 dark:text-primary-400">
               用户协议
             </h1>
             <p className="text-sm text-base-content opacity-70 mb-6">
@@ -98,7 +98,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="hidden lg:block lg:w-100 bg-primary p-8">
+          <div className="hidden lg:block lg:w-100 bg-primary-600 dark:bg-primary-400 p-8">
             <div className="text-white">
               <h3 className="text-xl font-bold mb-2">关于远路播客</h3>
               <p className="text-sm opacity-90">

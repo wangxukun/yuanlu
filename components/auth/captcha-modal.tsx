@@ -56,7 +56,7 @@ export default function CaptchaModal({ onSuccess, onClose }: CaptchaModalProps) 
     const timeout = setTimeout(() => {
       clearInterval(checkSdk);
       if (!(window as any).initAlicom4 && containerRef.current) {
-        containerRef.current.innerHTML = '<div class="text-error text-sm text-center">图形验证码资源 (ct4.js) 加载失败。<br/><br/>请前往阿里云控制台下载专属的前端代码 (ct4.js) 并放置在项目的 <b>public</b> 目录下。</div>';
+        containerRef.current.innerHTML = '<div class="text-error-500 dark:text-error-400 text-sm text-center">图形验证码资源 (ct4.js) 加载失败。<br/><br/>请前往阿里云控制台下载专属的前端代码 (ct4.js) 并放置在项目的 <b>public</b> 目录下。</div>';
       }
     }, 5000);
 
@@ -83,7 +83,7 @@ export default function CaptchaModal({ onSuccess, onClose }: CaptchaModalProps) 
         
         {/* 阿里验证码容器 */}
         <div id="captcha-container" ref={containerRef} className="min-h-[200px] flex items-center justify-center">
-          <span className="loading loading-spinner text-primary"></span>
+          <span className="loading loading-spinner text-primary-600 dark:text-primary-400"></span>
         </div>
       </div>
     </div>

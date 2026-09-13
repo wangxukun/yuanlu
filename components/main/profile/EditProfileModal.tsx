@@ -287,7 +287,7 @@ export default function EditProfileModal({
               <div className={activeTab === "profile" ? "block" : "hidden"}>
                 <div className="flex justify-center mb-6">
                   <div className="relative group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden ring ring-primary ring-offset-base-100 ring-offset-2 bg-base-200">
+                    <div className="w-24 h-24 rounded-full overflow-hidden ring ring-primary-600 dark:ring-primary-400 ring-offset-base-100 ring-offset-2 bg-base-200">
                       {avatarPreview &&
                       avatarPreview !== "default_avatar_url" ? (
                         <Image

@@ -136,7 +136,7 @@ export default function VisitorLogsClient({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-base-content tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-primary text-primary-content rounded-xl">
+            <div className="p-2 bg-primary-600 dark:bg-primary-400 text-primary-content rounded-xl">
               <Activity size={24} />
             </div>
             全站访问日志
@@ -163,7 +163,7 @@ export default function VisitorLogsClient({
               </p>
               <p className="text-3xl font-black mt-1">{stats.totalCount}</p>
             </div>
-            <div className="p-4 bg-primary/10 text-primary rounded-2xl">
+            <div className="p-4 bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 rounded-2xl">
               <Globe size={24} />
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function VisitorLogsClient({
               </p>
               <p className="text-lg font-bold mt-1 truncate">{stats.topPath}</p>
             </div>
-            <div className="p-4 bg-accent/10 text-accent rounded-2xl">
+            <div className="p-4 bg-accent-300/10 dark:bg-accent-400/10 text-accent-300 dark:text-accent-400 rounded-2xl">
               <LinkIcon size={24} />
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function VisitorLogsClient({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <code className="text-xs font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 max-w-[350px] truncate block">
+                      <code className="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-600/5 dark:bg-primary-400/5 px-3 py-1 rounded-lg border border-primary-600/10 dark:border-primary-400/10 max-w-[350px] truncate block">
                         {log.path}
                       </code>
                     </td>
@@ -342,7 +342,7 @@ export default function VisitorLogsClient({
                             handleDelete(log.id);
                           }
                         }}
-                        className="btn btn-ghost btn-xs btn-circle text-error opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error/10"
+                        className="btn btn-ghost btn-xs btn-circle text-error-500 dark:text-error-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error-500/10 dark:hover:bg-error-400/10"
                       >
                         <Trash2 size={16} />
                       </button>

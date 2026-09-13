@@ -67,7 +67,7 @@ export default async function Page(props: PageProps) {
               label: "总单集数",
               value: "1,284",
               change: "+12%",
-              color: "text-primary",
+              color: "text-primary-600 dark:text-primary-400",
             },
             {
               label: "本周播放",

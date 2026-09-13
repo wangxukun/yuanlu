@@ -193,9 +193,9 @@ export default function AllEpisodesList({
         <div className="flex items-center gap-3 mb-6">
           <Link
             href={`/podcast/${podcastId}`}
-            className="flex items-center gap-2 text-base-content/60 hover:text-primary transition-colors font-medium group w-fit shrink-0"
+            className="flex items-center gap-2 text-base-content/60 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group w-fit shrink-0"
           >
-            <div className="p-1.5 rounded-full bg-ink-200 dark:bg-ink-800 group-hover:bg-primary/10 transition-colors">
+            <div className="p-1.5 rounded-full bg-ink-200 dark:bg-ink-800 group-hover:bg-primary-600/10 dark:group-hover:bg-primary-400/10 transition-colors">
               <ArrowLeftIcon className="w-4 h-4" />
             </div>
             <span className="hidden sm:inline">返回</span>
@@ -222,7 +222,7 @@ export default function AllEpisodesList({
                 placeholder="搜索剧集标题或描述..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input input-bordered w-full pl-10 pr-10 rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm"
+                className="input input-bordered w-full pl-10 pr-10 rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary-600 dark:focus:border-primary-400 focus:ring-1 focus:ring-primary-600/20 dark:focus:ring-primary-400/20 transition-all text-sm"
               />
               {searchQuery && (
                 <button
@@ -236,7 +236,7 @@ export default function AllEpisodesList({
 
             {/* Sort select */}
             <select
-              className="select select-bordered rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-base-content/70 w-full sm:w-36 text-sm"
+              className="select select-bordered rounded-xl bg-ink-50 dark:bg-ink-950 border-ink-200 dark:border-ink-800 focus:bg-white dark:focus:bg-black focus:border-primary-600 dark:focus:border-primary-400 focus:ring-1 focus:ring-primary-600/20 dark:focus:ring-primary-400/20 transition-all font-medium text-base-content/70 w-full sm:w-36 text-sm"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
             >
@@ -316,7 +316,7 @@ export default function AllEpisodesList({
             >
               {loading ? (
                 <div className="flex items-center gap-2 text-sm text-base-content/40 py-2">
-                  <span className="loading loading-spinner loading-sm text-primary"></span>
+                  <span className="loading loading-spinner loading-sm text-primary-600 dark:text-primary-400"></span>
                   <span>正在加载更多...</span>
                 </div>
               ) : (

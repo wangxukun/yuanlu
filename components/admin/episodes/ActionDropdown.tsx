@@ -38,7 +38,7 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
     >
       <button
         type="button"
-        className={`p-2 rounded-full transition-colors duration-200 ${isOpen ? "bg-primary-50 text-primary" : "text-ink-400 hover:text-ink-600 hover:bg-ink-100"}`}
+        className={`p-2 rounded-full transition-colors duration-200 ${isOpen ? "bg-primary-50 text-primary-600 dark:text-primary-400" : "text-ink-400 hover:text-ink-600 hover:bg-ink-100"}`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -52,25 +52,25 @@ const ActionDropdown: React.FC<ActionDropdownProps> = ({ episodeId }) => {
         <div className="py-1">
           <Link
             href={`/admin/episodes/${episodeId}/subtitles`}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <FileTextIcon size={16} className="mr-3" />
             <span>字幕管理</span>
           </Link>
-          <button className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors">
+          <button className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
             <MessageSquareIcon size={16} className="mr-3" />
             <span>评论管理</span>
           </button>
           <Link
             href={`/admin/episodes/${episodeId}/cover`}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <ImageResultIcon size={16} className="mr-3" />
             <span>封面管理</span>
           </Link>
           <Link
             href={`/admin/episodes/${episodeId}/audio`}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary transition-colors"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-ink-700 hover:bg-primary-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <MicIcon size={16} className="mr-3" />
             <span>音频管理</span>

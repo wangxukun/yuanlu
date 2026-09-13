@@ -19,7 +19,7 @@ export default function SoundControls() {
     <div className="flex flex-row items-center gap-3 group">
       <button
         onClick={toggleMute}
-        className="text-base-content/70 hover:text-primary transition-colors"
+        className="text-base-content/70 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
       >
         {volume === 0 ? (
           <SpeakerXMarkIcon className="h-5 w-5" />

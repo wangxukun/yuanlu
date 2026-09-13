@@ -47,7 +47,7 @@ export function CommentForm({
       className="flex gap-4 md:gap-6 items-start group"
     >
       <div className="avatar placeholder pt-1 shrink-0">
-        <div className="bg-primary/10 text-primary rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-white dark:ring-ink-900 shadow-sm">
+        <div className="bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 rounded-full w-10 h-10 md:w-12 md:h-12 ring-2 ring-white dark:ring-ink-900 shadow-sm">
           {session.user?.image ? (
             <img src={session.user.image} alt="me" />
           ) : (
@@ -61,7 +61,7 @@ export function CommentForm({
       <div className="flex-1 relative">
         <textarea
           style={{ direction: "ltr", textAlign: "left" }}
-          className="textarea w-full h-32 text-base p-4 bg-ink-50 dark:bg-ink-800/50 focus:bg-white dark:focus:bg-ink-900 border-[#D5EDE1] dark:border-ink-800 focus:border-primary transition-all rounded-2xl resize-none shadow-sm placeholder:text-ink-400 focus:outline-none text-left align-top"
+          className="textarea w-full h-32 text-base p-4 bg-ink-50 dark:bg-ink-800/50 focus:bg-white dark:focus:bg-ink-900 border-[#D5EDE1] dark:border-ink-800 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-2xl resize-none shadow-sm placeholder:text-ink-400 focus:outline-none text-left align-top"
           placeholder="分享你的见解或疑问..."
           value={commentContent}
           onChange={(e) => setCommentContent(e.target.value)}
@@ -79,7 +79,7 @@ export function CommentForm({
           </span>
           <button
             type="submit"
-            className="btn btn-primary rounded-xl shadow-lg shadow-primary/20 border-none"
+            className="btn btn-primary rounded-xl shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 border-none"
             disabled={!commentContent.trim() || isSubmitting}
           >
             {isSubmitting ? (

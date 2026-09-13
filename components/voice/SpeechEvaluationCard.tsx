@@ -419,7 +419,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       <div
         className={`bg-base-100 rounded-3xl border border-base-200 shadow-xl transition-all duration-500 overflow-hidden ${
           isActive
-            ? "scale-100 opacity-100 ring-2 ring-primary/30"
+            ? "scale-100 opacity-100 ring-2 ring-primary-600/30 dark:ring-primary-400/30"
             : "scale-[0.96] opacity-50 hover:opacity-80 cursor-pointer"
         }`}
         onClick={() => {
@@ -530,7 +530,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                       className="relative inline-block mr-2 group"
                     >
                       <span
-                        className={`cursor-pointer transition-colors hover:text-primary font-mono ${
+                        className={`cursor-pointer transition-colors hover:text-primary-600 dark:hover:text-primary-400 font-mono ${
                           isDifficult
                             ? "underline decoration-base-300 decoration-dotted underline-offset-8"
                             : ""
@@ -555,7 +555,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   <span key={idx} className="relative inline-block mr-2 group">
                     <span
                       data-wi={idx}
-                      className={`cursor-pointer transition-colors hover:text-primary ${
+                      className={`cursor-pointer transition-colors hover:text-primary-600 dark:hover:text-primary-400 ${
                         isDifficult
                           ? "underline decoration-base-300 decoration-dotted underline-offset-8"
                           : ""
@@ -861,7 +861,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-4">
                               <div className="text-sm font-bold text-base-content/80 flex items-center flex-wrap">
                                 单词{" "}
-                                <span className="text-primary-600 px-1.5 mx-1 bg-primary/10 rounded">
+                                <span className="text-primary-600 px-1.5 mx-1 bg-primary-600/10 dark:bg-primary-400/10 rounded">
                                   {result.words[activeWordIndex].word}
                                 </span>{" "}
                                 的音素诊断：
@@ -942,7 +942,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                                         className={`flex flex-col items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg border ${
                                           phScore >= 80
                                             ? "bg-success/10 border-success/20 text-success-700"
-                                            : "bg-error/10 border-error/30 text-error-600 font-bold"
+                                            : "bg-error-500/10 dark:bg-error-400/10 border-error-500/30 dark:border-error-400/30 text-error-600 font-bold"
                                         }`}
                                       >
                                         <span className="text-base font-mono tracking-wider">

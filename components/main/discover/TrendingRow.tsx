@@ -54,7 +54,7 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
       className="flex items-center p-3 xl:p-4 hover:bg-base-200/50 transition-colors border-b border-base-200 last:border-0 group cursor-pointer relative first:rounded-t-3xl last:rounded-b-3xl"
     >
       {/* 排名: Mobile w-6 / Desktop w-8 */}
-      <div className="w-6 xl:w-8 text-center font-bold text-base-content/40 group-hover:text-primary text-sm xl:text-base">
+      <div className="w-6 xl:w-8 text-center font-bold text-base-content/40 group-hover:text-primary-600 dark:group-hover:text-primary-400 text-sm xl:text-base">
         {rank}
       </div>
 
@@ -79,7 +79,7 @@ export default function TrendingRow({ podcast, rank }: TrendingRowProps) {
             {podcast.platform ? (
               <Link
                 href={`/channel/${encodeURIComponent(podcast.platform)}`}
-                className="hover:text-primary hover:underline transition-colors"
+                className="hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 {podcast.platform}

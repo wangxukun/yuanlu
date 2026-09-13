@@ -121,14 +121,14 @@ export default async function RecommendationsPage() {
                     </div>
                     {/* Play overlay on hover */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-                      <div className="w-14 h-14 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
+                      <div className="w-14 h-14 rounded-full bg-primary-600 dark:bg-primary-400 text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
                         <PlayIcon className="w-6 h-6 ml-1" />
                       </div>
                     </div>
                   </figure>
                   {/* Card body */}
                   <div className="p-4 xl:p-5 pointer-events-none">
-                    <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+                    <h3 className="text-base xl:text-lg font-bold text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                       {episode.title}
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-base-content/50 truncate w-full mt-1">

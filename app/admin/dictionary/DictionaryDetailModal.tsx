@@ -84,7 +84,7 @@ export default function DictionaryDetailModal({
               <ul className="space-y-3">
                 {dict.definitions.map((def: any, i: number) => (
                   <li key={i} className="bg-base-200/50 p-3 rounded-lg">
-                    <div className="font-bold text-primary mb-1">
+                    <div className="font-bold text-primary-600 dark:text-primary-400 mb-1">
                       {def.pos} {def.meaning_cn}
                       {def.cefr_level && (
                         <span className="badge badge-sm badge-info ml-2">

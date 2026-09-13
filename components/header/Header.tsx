@@ -9,6 +9,7 @@ import NotificationBell from "@/components/header/NotificationBell";
 import SearchBar from "@/components/header/SearchBar";
 import Image from "next/image";
 import Link from "next/link";
+import { Menu } from "lucide-react";
 
 export default function Header() {
   const { status } = useSession();
@@ -21,7 +22,7 @@ export default function Header() {
           className="w-10 h-10 flex items-center justify-center hover:bg-ink-100 dark:hover:bg-ink-800 rounded-full transition-colors text-ink-500 cursor-pointer"
           aria-label="Toggle Menu"
         >
-          <span className="material-symbols-outlined">menu</span>
+          <Menu className="w-5 h-5" strokeWidth={1.75} aria-hidden />
         </label>
         <Link href="/" className="flex items-center">
           <Image

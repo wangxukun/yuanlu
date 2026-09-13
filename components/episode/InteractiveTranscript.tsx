@@ -453,7 +453,7 @@ export default function InteractiveTranscript({
       {!session?.user && (
         <div className="mb-6 -mt-2 text-center animate-fade-in-down">
           <p className="text-xs font-medium text-base-content/60 bg-base-200/50 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-base-200 cursor-default hover:bg-base-200 transition-colors">
-            <InformationCircleIcon className="w-3.5 h-3.5 text-primary" />
+            <InformationCircleIcon className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
             <span>提示：登录后点击单词可一键加入生词本</span>
           </p>
         </div>

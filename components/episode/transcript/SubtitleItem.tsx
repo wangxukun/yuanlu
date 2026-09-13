@@ -129,7 +129,7 @@ export const SubtitleItem = memo(function SubtitleItem({
             "absolute bottom-2 right-0 transition-all duration-200 btn btn-xs btn-ghost gap-1 sm:hidden",
             isLooping
               ? "text-primary-600 opacity-100 scale-110"
-              : "text-ink-400 opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary-50",
+              : "text-ink-400 opacity-0 group-hover:opacity-100 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50",
           )}
           aria-label="单句循环"
           title="单句循环"
@@ -152,7 +152,7 @@ export const SubtitleItem = memo(function SubtitleItem({
             "mt-1.5 flex-shrink-0 transition-all duration-200 transform",
             isActive
               ? "text-primary-600 scale-110 opacity-100"
-              : "text-base-content text-opacity-20 opacity-0 group-hover:opacity-100 hover:text-primary hover:scale-110",
+              : "text-base-content text-opacity-20 opacity-0 group-hover:opacity-100 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-110",
           )}
           aria-label="Play segment"
         >

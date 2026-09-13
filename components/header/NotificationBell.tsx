@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { BellIcon } from "@heroicons/react/24/outline";
+import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useNotificationStore } from "@/store/notification-store";
@@ -71,14 +71,12 @@ export default function NotificationBell() {
         className="w-10 h-10 flex items-center justify-center hover:bg-ink-100 dark:hover:bg-ink-800 rounded-full transition-colors text-ink-400 relative"
         aria-label="通知"
       >
-        <span
-          className="material-symbols-outlined"
-          style={{
-            fontVariationSettings: unreadCount > 0 ? "'FILL' 1" : "'FILL' 0",
-          }}
-        >
-          notifications
-        </span>
+        <Bell
+          className="w-5 h-5"
+          strokeWidth={unreadCount > 0 ? 2.25 : 1.75}
+          fill={unreadCount > 0 ? "currentColor" : "none"}
+          aria-hidden
+        />
         {unreadCount > 0 && (
           <span className="absolute top-2 right-2 flex h-2 w-2 items-center justify-center rounded-full bg-error-500 ring-2 ring-white dark:ring-ink-900"></span>
         )}
@@ -116,7 +114,7 @@ export default function NotificationBell() {
           <div className="max-h-[360px] overflow-y-auto divide-y divide-base-200">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-base-content/40 gap-2">
-                <BellIcon className="w-10 h-10" />
+                <Bell className="w-10 h-10" strokeWidth={1.5} aria-hidden />
                 <p className="text-sm">暂无通知</p>
               </div>
             ) : (

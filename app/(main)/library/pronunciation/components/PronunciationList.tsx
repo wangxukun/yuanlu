@@ -42,7 +42,7 @@ export function PronunciationList({
       <div className="lg:col-span-5 space-y-6">
         <div className="bg-white dark:bg-ink-900 rounded-2xl p-6 border border-base-200/60 dark:border-ink-800 shadow-sm h-full flex flex-col transition-colors">
           <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+            <div className="p-2 bg-primary-600/10 dark:bg-primary-400/10 rounded-lg text-primary-600 dark:text-primary-400">
               <Target size={20} />
             </div>
             <h2 className="text-lg font-bold text-base-content">
@@ -122,7 +122,7 @@ export function PronunciationList({
                       `/episode/${record.episodeid}?practice=true&subtitleId=${record.subtitleId}`,
                     )
                   }
-                  className="p-4 rounded-2xl border border-base-200/80 dark:border-ink-800 hover:border-primary/30 dark:hover:border-primary/40 hover:shadow-md transition-all group flex items-center gap-4 bg-base-50/30 dark:bg-ink-950/30 cursor-pointer"
+                  className="p-4 rounded-2xl border border-base-200/80 dark:border-ink-800 hover:border-primary-600/30 dark:hover:border-primary-400/30 dark:hover:border-primary-400/40 hover:shadow-md transition-all group flex items-center gap-4 bg-base-50/30 dark:bg-ink-950/30 cursor-pointer"
                 >
                   {record.episode?.coverUrl && (
                     <div className="w-36 aspect-video rounded-lg overflow-hidden shrink-0 bg-base-200 hidden sm:block">
@@ -147,7 +147,7 @@ export function PronunciationList({
                             ? "bg-success/10 text-success-700"
                             : record.overallScore >= 60
                               ? "bg-warning/10 text-warning-700"
-                              : "bg-error/10 text-error-700"
+                              : "bg-error-500/10 dark:bg-error-400/10 text-error-700"
                         }`}
                       >
                         上次得分: {Math.round(record.overallScore)}
@@ -171,9 +171,9 @@ export function PronunciationList({
                       .getState()
                       .openPremiumModal("pronunciation_locked")
                   }
-                  className="p-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-4 cursor-pointer"
+                  className="p-4 rounded-2xl border border-dashed border-primary-600/30 dark:border-primary-400/30 bg-primary-600/5 dark:bg-primary-400/5 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 transition-colors flex items-center gap-4 cursor-pointer"
                 >
-                  <div className="p-3 bg-primary/10 text-primary rounded-xl shrink-0">
+                  <div className="p-3 bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 rounded-xl shrink-0">
                     <Lock size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -184,7 +184,7 @@ export function PronunciationList({
                       解锁 PRO 会员查看完整弱项本，开始针对性循环练习
                     </p>
                   </div>
-                  <span className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary/20 btn-sm rounded-full shrink-0 border-0">
+                  <span className="btn btn-primary bg-primary-600 text-white shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 btn-sm rounded-full shrink-0 border-0">
                     解锁
                   </span>
                 </div>

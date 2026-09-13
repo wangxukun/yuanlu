@@ -170,7 +170,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
             </div>
             <div className="flex-1 relative h-3.5 bg-base-200 rounded-full overflow-hidden">
               <div
-                className="absolute left-0 top-0 bottom-0 bg-primary transition-all duration-500 ease-out rounded-full"
+                className="absolute left-0 top-0 bottom-0 bg-primary-600 dark:bg-primary-400 transition-all duration-500 ease-out rounded-full"
                 style={{ width: `${stats.progress}%` }}
               />
             </div>
@@ -232,7 +232,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
 
         {/* Completion State */}
         {isTrialMode ? (
-          <div className="mt-16 text-center py-12 bg-base-100 rounded-3xl border border-primary/20 shadow-xl shadow-primary/5">
+          <div className="mt-16 text-center py-12 bg-base-100 rounded-3xl border border-primary-600/20 dark:border-primary-400/20 shadow-xl shadow-primary-600/5 dark:shadow-primary-400/5">
             <h2 className="text-2xl font-bold text-base-content mb-3">
               体验已结束
             </h2>
@@ -243,7 +243,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               onClick={() =>
                 useUIStore.getState().openPremiumModal("trial_complete")
               }
-              className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30"
+              className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary-600/30 dark:shadow-primary-400/30"
             >
               解锁全部
             </button>
@@ -263,7 +263,7 @@ const VoiceEvaluationClient: React.FC<VoiceEvaluationClientProps> = ({
               </p>
               <button
                 onClick={() => router.back()}
-                className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30"
+                className="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary-600/30 dark:shadow-primary-400/30"
               >
                 返回剧集
               </button>

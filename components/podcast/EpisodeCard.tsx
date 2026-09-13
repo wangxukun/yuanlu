@@ -146,7 +146,7 @@ export default function EpisodeCard({
         isMenuOpen ? "z-20" : "z-0"
       } ${
         isCurrentPlaying || isCurrentPaused
-          ? "bg-primary/5 border-primary/30"
+          ? "bg-primary-600/5 dark:bg-primary-400/5 border-primary-600/30 dark:border-primary-400/30"
           : "bg-base-100 border-base-200 hover:bg-base-200"
       }`}
       onClick={() => onRowClick(episode as Episode)}
@@ -199,7 +199,7 @@ export default function EpisodeCard({
         <div className="hidden sm:flex absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center z-20">
           <button
             onClick={(e) => onPlayClick(e, episode as Episode)}
-            className="w-12 h-12 bg-white/90 text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
+            className="w-12 h-12 bg-white/90 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
           >
             {isCurrentPlaying ? (
               <PauseIcon className="w-6 h-6" />
@@ -214,7 +214,7 @@ export default function EpisodeCard({
         <div className="sm:hidden absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <button
             onClick={(e) => onPlayClick(e, episode as Episode)}
-            className="w-10 h-10 bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform backdrop-blur-sm pointer-events-auto"
+            className="w-10 h-10 bg-primary-600/90 dark:bg-primary-400/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform backdrop-blur-sm pointer-events-auto"
           >
             {isCurrentPlaying ? (
               <PauseIcon className="w-5 h-5" />
@@ -229,7 +229,7 @@ export default function EpisodeCard({
         {progressPercentage > 0 && (
           <div className="sm:hidden absolute bottom-0 left-0 w-full h-1 bg-base-300/50 z-30">
             <div
-              className={`h-full ${isFinished ? "bg-success" : "bg-primary"}`}
+              className={`h-full ${isFinished ? "bg-success" : "bg-primary-600 dark:bg-primary-400"}`}
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -242,8 +242,8 @@ export default function EpisodeCard({
           <h3
             className={`text-base sm:text-lg font-bold break-words line-clamp-2 leading-tight transition-colors ${
               isCurrentPlaying
-                ? "text-primary"
-                : "text-base-content group-hover:text-primary"
+                ? "text-primary-600 dark:text-primary-400"
+                : "text-base-content group-hover:text-primary-600 dark:group-hover:text-primary-400"
             }`}
           >
             {episode.title}
@@ -251,14 +251,14 @@ export default function EpisodeCard({
           {/* 操作按钮组 (移动端常显，桌面端悬浮显示) */}
           <div className="flex items-center gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
-              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 rounded-full transition-colors"
               onClick={handleAdd}
               title="加入播放队列"
             >
               <QueueListIcon className="w-5 h-5" />
             </button>
             <button
-              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+              className="hidden sm:flex p-2 text-base-content/40 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 rounded-full transition-colors"
               onClick={handleShare}
             >
               <ShareIcon className="w-5 h-5" />
@@ -341,7 +341,7 @@ export default function EpisodeCard({
               <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
-                    isFinished ? "bg-success" : "bg-primary"
+                    isFinished ? "bg-success" : "bg-primary-600 dark:bg-primary-400"
                   }`}
                   style={{
                     width: `${progressPercentage}%`,

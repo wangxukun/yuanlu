@@ -40,7 +40,7 @@ function PodcastScrollCard({ podcast }: { podcast: ChannelPodcastItem }) {
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
-      <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+      <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
         {podcast.title}
       </h3>
       <div className="flex items-center gap-1.5 mt-1 text-xs text-base-content/50">
@@ -104,13 +104,13 @@ export default function ChannelPodcasts({
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-base-content flex items-center gap-2">
           {channelName}
-          <span className="bg-primary/10 text-primary text-xs px-2.5 py-0.5 rounded-full font-bold">
+          <span className="bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
             频道
           </span>
         </h3>
         {/* <Link
           href={`/channel/${encodeURIComponent(channelName)}`}
-          className="flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-primary transition-colors"
+          className="flex items-center gap-1 text-sm font-medium text-base-content/60 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           查看频道
           <ChevronRightIcon className="w-4 h-4" />
@@ -123,7 +123,7 @@ export default function ChannelPodcasts({
         {showArrows && (
           <button
             onClick={() => scroll("left")}
-            className={`absolute left-0 top-[72px] sm:top-[80px] lg:top-[88px] -translate-y-1/2 -translate-x-[calc(100%+4px)] z-10 w-7 h-14 rounded-xl bg-base-100 border border-base-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-primary hover:text-primary-content hover:border-primary hover:shadow-xl active:scale-90 ${
+            className={`absolute left-0 top-[72px] sm:top-[80px] lg:top-[88px] -translate-y-1/2 -translate-x-[calc(100%+4px)] z-10 w-7 h-14 rounded-xl bg-base-100 border border-base-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-primary-600 dark:hover:bg-primary-400 hover:text-primary-content hover:border-primary-600 dark:hover:border-primary-400 hover:shadow-xl active:scale-90 ${
               canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
             aria-label="向左滚动"
@@ -136,7 +136,7 @@ export default function ChannelPodcasts({
         {showArrows && (
           <button
             onClick={() => scroll("right")}
-            className={`absolute right-0 top-[72px] sm:top-[80px] lg:top-[88px] -translate-y-1/2 translate-x-[calc(100%+4px)] z-10 w-7 h-14 rounded-xl bg-base-100 border border-base-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-primary hover:text-primary-content hover:border-primary hover:shadow-xl active:scale-90 ${
+            className={`absolute right-0 top-[72px] sm:top-[80px] lg:top-[88px] -translate-y-1/2 translate-x-[calc(100%+4px)] z-10 w-7 h-14 rounded-xl bg-base-100 border border-base-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-primary-600 dark:hover:bg-primary-400 hover:text-primary-content hover:border-primary-600 dark:hover:border-primary-400 hover:shadow-xl active:scale-90 ${
               canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
             aria-label="向右滚动"

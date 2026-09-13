@@ -242,7 +242,7 @@ export default function UserManagementClient({
             管理用户账户、角色及权限设置。
           </p>
         </div>
-        <button className="btn btn-primary shadow-lg shadow-primary/20 gap-2">
+        <button className="btn btn-primary shadow-lg shadow-primary-600/20 dark:shadow-primary-400/20 gap-2">
           <Mail size={18} />
           邀请用户
         </button>
@@ -251,11 +251,11 @@ export default function UserManagementClient({
       {/* 统计卡片 (DaisyUI Stats) */}
       <div className="stats shadow w-full bg-base-100 grid-flow-row md:grid-flow-col">
         <div className="stat">
-          <div className="stat-figure text-primary bg-primary/10 p-3 rounded-xl">
+          <div className="stat-figure text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 p-3 rounded-xl">
             <Users size={24} />
           </div>
           <div className="stat-title">总用户数</div>
-          <div className="stat-value text-primary">{stats.total}</div>
+          <div className="stat-value text-primary-600 dark:text-primary-400">{stats.total}</div>
           <div className="stat-desc">注册用户总计</div>
         </div>
 
@@ -269,11 +269,11 @@ export default function UserManagementClient({
         </div>
 
         <div className="stat">
-          <div className="stat-figure text-error bg-error/10 p-3 rounded-xl">
+          <div className="stat-figure text-error-500 dark:text-error-400 bg-error-500/10 dark:bg-error-400/10 p-3 rounded-xl">
             <UserX size={24} />
           </div>
           <div className="stat-title">受限用户</div>
-          <div className="stat-value text-error">{stats.banned}</div>
+          <div className="stat-value text-error-500 dark:text-error-400">{stats.banned}</div>
           <div className="stat-desc">存在权限封禁记录</div>
         </div>
       </div>
@@ -444,7 +444,7 @@ export default function UserManagementClient({
                           className={`btn btn-square btn-sm join-item ${
                             user.isLoginAllowed === false
                               ? "btn-error btn-outline"
-                              : "btn-ghost text-error"
+                              : "btn-ghost text-error-500 dark:text-error-400"
                           }`}
                           onClick={() =>
                             handleToggleBan(
@@ -499,7 +499,7 @@ export default function UserManagementClient({
                           <LogOut size={16} />
                         </button>
                         <button
-                          className="btn btn-square btn-ghost btn-sm join-item hover:text-primary"
+                          className="btn btn-square btn-ghost btn-sm join-item hover:text-primary-600 dark:hover:text-primary-400"
                           title="权限设置"
                           onClick={() =>
                             router.push(`/admin/users/${user.userid}/setting`)
@@ -508,7 +508,7 @@ export default function UserManagementClient({
                           <Shield size={16} />
                         </button>
                         <button
-                          className="btn btn-square btn-ghost btn-sm join-item hover:text-error"
+                          className="btn btn-square btn-ghost btn-sm join-item hover:text-error-500 dark:hover:text-error-400"
                           title="删除用户"
                           onClick={() => handleDelete(user.userid)}
                         >

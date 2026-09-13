@@ -77,7 +77,7 @@ export default function RecentEpisodes({
               </div>
               {/* Play overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary-600 dark:bg-primary-400 text-primary-content flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
                   {isLocked ? (
                     <LockClosedIcon className="w-5 h-5" />
                   ) : (
@@ -88,7 +88,7 @@ export default function RecentEpisodes({
             </figure>
             {/* Card body */}
             <div className="p-3 xl:p-4 pointer-events-none">
-              <h3 className="text-sm xl:text-base font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+              <h3 className="text-sm xl:text-base font-bold text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 {episode.title}
               </h3>
               <div className="flex items-center gap-2 text-xs text-base-content/50 truncate w-full mt-1">

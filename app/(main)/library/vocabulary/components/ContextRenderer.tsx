@@ -20,13 +20,13 @@ export const renderContext = (
             ) : (
               <span
                 key={i}
-                className="inline-block w-20 border-b-2 border-primary mx-1 align-bottom bg-primary/10"
+                className="inline-block w-20 border-b-2 border-primary-600 dark:border-primary-400 mx-1 align-bottom bg-primary-600/10 dark:bg-primary-400/10"
               ></span>
             )
           ) : (
             <span
               key={i}
-              className="font-bold text-primary bg-primary/20 px-1 rounded"
+              className="font-bold text-primary-600 dark:text-primary-400 bg-primary-600/20 dark:bg-primary-400/20 px-1 rounded"
             >
               {part}
             </span>

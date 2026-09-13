@@ -38,7 +38,7 @@ export default function List({ title, items }: ListProps) {
           <a
             href={`/series/${encodeURIComponent(title)}`}
             onClick={handleMoreClick}
-            className="flex items-center space-x-2 text-base-content hover:text-primary transition-colors"
+            className="flex items-center space-x-2 text-base-content hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <span className="text-sm font-medium">更多</span>
             <svg

@@ -61,7 +61,7 @@ function ShowCard({ show, index }: { show: ChannelShow; index?: number }) {
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
-        <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
+        <h3 className="text-sm font-bold text-base-content line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
           {show.title}
         </h3>
         <div className="flex items-center gap-1.5 mt-1 text-xs text-base-content/50">
@@ -96,7 +96,7 @@ function EpisodeRow({
     <div
       className={`group flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
         isCurrentEpisode
-          ? "bg-primary/5 border-primary/30 shadow-md"
+          ? "bg-primary-600/5 dark:bg-primary-400/5 border-primary-600/30 dark:border-primary-400/30 shadow-md"
           : "bg-base-100 border-transparent hover:border-base-200 hover:bg-base-50 hover:shadow-sm"
       }`}
       onClick={() => router.push(`/episode/${episode.episodeid}`)}
@@ -118,7 +118,7 @@ function EpisodeRow({
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <button
             onClick={onPlayClick}
-            className="w-8 h-8 sm:w-10 sm:h-10 bg-white/90 text-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-transform"
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-white/90 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-transform"
           >
             {isCurrentEpisode && isPlaying ? (
               <PauseIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -135,7 +135,7 @@ function EpisodeRow({
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <div className="flex items-center gap-2 mb-0.5">
           {episode.podcast && (
-            <span className="text-xs text-primary/80 font-semibold truncate max-w-[140px] sm:max-w-none">
+            <span className="text-xs text-primary-600/80 dark:text-primary-400/80 font-semibold truncate max-w-[140px] sm:max-w-none">
               {episode.podcast.title}
             </span>
           )}
@@ -143,8 +143,8 @@ function EpisodeRow({
         <h3
           className={`text-sm sm:text-base font-bold line-clamp-1 leading-tight transition-colors ${
             isCurrentEpisode
-              ? "text-primary"
-              : "text-base-content group-hover:text-primary"
+              ? "text-primary-600 dark:text-primary-400"
+              : "text-base-content group-hover:text-primary-600 dark:group-hover:text-primary-400"
           }`}
         >
           {episode.title}
@@ -233,7 +233,7 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
             <h2 className="text-2xl font-bold text-base-content">热门节目</h2>
             <Link
               href={`/channel/${encodeURIComponent(data.platformName)}/trending`}
-              className="text-primary text-sm font-semibold hover:underline"
+              className="text-primary-600 dark:text-primary-400 text-sm font-semibold hover:underline"
             >
               查看更多
             </Link>

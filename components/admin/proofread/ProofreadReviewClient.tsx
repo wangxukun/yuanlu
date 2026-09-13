@@ -138,7 +138,7 @@ export default function ProofreadReviewClient() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <span className="loading loading-spinner loading-lg text-primary-600 dark:text-primary-400"></span>
       </div>
     );
   }

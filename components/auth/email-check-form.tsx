@@ -132,14 +132,14 @@ const EmailCheckForm = () => {
         <div className="form-control">
           {/* 输入框区域 */}
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <EnvelopeIcon className="h-5 w-5" />
             </div>
             <input
               suppressHydrationWarning
               ref={inputRef}
               type="email"
-              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm"
+              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm"
               placeholder="请输入邮箱地址"
               value={email}
               onChange={(e) => {
@@ -154,7 +154,7 @@ const EmailCheckForm = () => {
           {/* 错误提示区域 */}
           <div className="h-6 mt-1.5 flex items-center">
             {error && (
-              <div className="flex items-center gap-1.5 text-error text-sm animate-in slide-in-from-top-1 fade-in">
+              <div className="flex items-center gap-1.5 text-error-500 dark:text-error-400 text-sm animate-in slide-in-from-top-1 fade-in">
                 <ExclamationCircleIcon className="w-4 h-4" />
                 <span>{error}</span>
               </div>

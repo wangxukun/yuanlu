@@ -101,7 +101,7 @@ export default function TagManager({
           </div>
           <input
             type="text"
-            className="block w-full rounded-lg border-0 py-2 pl-10 text-ink-900 ring-1 ring-inset ring-ink-200 placeholder:text-ink-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+            className="block w-full rounded-lg border-0 py-2 pl-10 text-ink-900 ring-1 ring-inset ring-ink-200 placeholder:text-ink-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:focus:ring-primary-400 sm:text-sm sm:leading-6"
             placeholder="搜索标签..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -158,7 +158,7 @@ export default function TagManager({
             key={tag.id}
             className={`group relative bg-white p-4 rounded-xl border transition-all duration-200 ${
               editingId === tag.id
-                ? "border-primary ring-1 ring-primary shadow-md"
+                ? "border-primary-600 dark:border-primary-400 ring-1 ring-primary-600 dark:ring-primary-400 shadow-md"
                 : "border-ink-100 hover:border-ink-200 hover:shadow-sm"
             }`}
           >
@@ -190,7 +190,7 @@ export default function TagManager({
               // 展示模式
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3 overflow-hidden">
-                  <div className="mt-1 p-2 bg-ink-50 rounded-lg text-ink-400 group-hover:text-primary group-hover:bg-primary/5 transition-colors">
+                  <div className="mt-1 p-2 bg-ink-50 rounded-lg text-ink-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:bg-primary-600/5 dark:group-hover:bg-primary-400/5 transition-colors">
                     <TagIcon className="w-5 h-5" />
                   </div>
                   <div>

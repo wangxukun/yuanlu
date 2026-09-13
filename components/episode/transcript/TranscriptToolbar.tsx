@@ -30,7 +30,7 @@ export function TranscriptToolbar({
     <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-base-200 sticky top-0 bg-base-100/95 backdrop-blur z-20 py-2">
       <div className="flex items-center gap-2">
         {isPlayingThisEpisode ? (
-          <span className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full animate-pulse">
+          <span className="flex items-center gap-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-600/10 dark:bg-primary-400/10 px-2 py-1 rounded-full animate-pulse">
             <SpeakerWaveIcon className="w-3.5 h-3.5" /> 正在精听
           </span>
         ) : (

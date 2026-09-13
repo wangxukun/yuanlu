@@ -5,42 +5,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
-import { BookmarkSquareIcon as BookmarkSquareOutlineIcon } from "@heroicons/react/24/outline";
-import { BookmarkSquareIcon as BookmarkSquareSolidIcon } from "@heroicons/react/24/solid";
+import {
+  BookA,
+  Bookmark,
+  History,
+  Mic,
+  Route,
+  TextQuote,
+  type LucideIcon,
+} from "lucide-react";
 
 interface NavLinkItem {
   name: string;
   href: string;
-  iconName?: string;
+  icon: LucideIcon;
   mobileHide?: boolean;
-  isBookmarkSquare?: boolean;
 }
 
 const links: NavLinkItem[] = [
-  { name: "生词本", href: "/library/vocabulary", iconName: "translate" },
-  { name: "句子本", href: "/library/sentences", iconName: "format_quote" },
+  { name: "生词本", href: "/library/vocabulary", icon: BookA },
+  { name: "句子本", href: "/library/sentences", icon: TextQuote },
   {
     name: "发音弱项本",
     href: "/library/pronunciation",
-    iconName: "mic",
+    icon: Mic,
     mobileHide: true,
   },
   {
     name: "学习路径",
     href: "/library/learning-paths",
-    iconName: "school",
+    icon: Route,
     mobileHide: true,
   },
   {
     name: "收听历史",
     href: "/library/history",
-    iconName: "history",
+    icon: History,
     mobileHide: true,
   },
   {
     name: "我的收藏",
     href: "/library/favorites",
-    isBookmarkSquare: true,
+    icon: Bookmark,
     mobileHide: true,
   },
 ];
@@ -84,30 +90,16 @@ export default function NavLinksLogined() {
               },
             )}
           >
-            {link.isBookmarkSquare ? (
-              isActive ? (
-                <BookmarkSquareSolidIcon
-                  className="w-6 h-6"
-                  style={{ color: "#1A6349" }}
-                />
-              ) : (
-                <BookmarkSquareOutlineIcon
-                  className="w-6 h-6"
-                  style={{ color: "#A79E8A" }}
-                />
-              )
-            ) : (
-              <span
-                className="material-symbols-outlined"
-                translate="no"
-                style={{
-                  fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
-                  color: isActive ? "#1A6349" : "#A79E8A",
-                }}
-              >
-                {link.iconName}
-              </span>
-            )}
+            <link.icon
+              aria-hidden
+              strokeWidth={isActive ? 2.25 : 1.75}
+              className={clsx(
+                "w-5 h-5 shrink-0",
+                isActive
+                  ? "text-primary-700 dark:text-primary-300"
+                  : "text-ink-400 dark:text-ink-500",
+              )}
+            />
             <span className="">{link.name}</span>
           </Link>
         );

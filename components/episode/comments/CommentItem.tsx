@@ -112,8 +112,8 @@ export function CommentItem({
             className={clsx(
               "flex items-center gap-1.5 text-xs font-bold transition-colors group/btn",
               comment.isLiked
-                ? "text-primary"
-                : "text-ink-400 hover:text-primary",
+                ? "text-primary-600 dark:text-primary-400"
+                : "text-ink-400 hover:text-primary-600 dark:hover:text-primary-400",
             )}
           >
             {comment.isLiked ? (
@@ -136,7 +136,7 @@ export function CommentItem({
               }
               setReplyingToId(isReplying ? null : comment.commentid);
             }}
-            className="flex items-center gap-1.5 text-xs font-bold text-base-content/40 hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold text-base-content/40 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
             回复
@@ -164,7 +164,7 @@ export function CommentItem({
                 <li>
                   <button
                     onClick={() => handleDeleteComment(comment.commentid)}
-                    className="text-error hover:text-error hover:bg-error/10"
+                    className="text-error-500 dark:text-error-400 hover:text-error-500 dark:hover:text-error-400 hover:bg-error-500/10 dark:hover:bg-error-400/10"
                   >
                     <TrashIcon className="w-3.5 h-3.5" /> 删除
                   </button>
@@ -191,7 +191,7 @@ export function CommentItem({
                 autoFocus
                 ref={replyInputRef}
                 style={{ direction: "ltr", textAlign: "left" }}
-                className="textarea textarea-bordered textarea-sm w-full h-20 bg-base-100 focus:ring-1 focus:ring-primary/20 resize-none rounded-xl text-sm text-left align-top"
+                className="textarea textarea-bordered textarea-sm w-full h-20 bg-base-100 focus:ring-1 focus:ring-primary-600/20 dark:focus:ring-primary-400/20 resize-none rounded-xl text-sm text-left align-top"
                 placeholder={`回复 @${getDisplayName(comment.User)}...`}
               ></textarea>
               <div className="flex justify-end gap-2 mt-2">

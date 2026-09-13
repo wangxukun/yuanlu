@@ -25,7 +25,7 @@ export default function EpisodeDocument({
       {/* Header: 极简设计，类似文章标题栏 */}
       <div className="px-6 md:px-10 py-6 border-b border-base-300 flex justify-between items-center bg-base-100/80 backdrop-blur sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+          <div className="w-10 h-10 rounded-full bg-primary-600/5 dark:bg-primary-400/5 flex items-center justify-center text-primary-600 dark:text-primary-400">
             <BookOpenIcon className="w-5 h-5" />
           </div>
           <div>

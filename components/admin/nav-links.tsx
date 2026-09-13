@@ -128,9 +128,9 @@ export default function NavLinks() {
             href={link.href}
             onClick={(e) => handleNavClick(e, link.href)}
             className={clsx(
-              "flex h-[48px] items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary",
+              "flex h-[48px] items-center justify-start gap-3 rounded-lg px-4 text-sm font-medium transition-colors hover:bg-primary-600/10 dark:hover:bg-primary-400/10 hover:text-primary-600 dark:hover:text-primary-400",
               {
-                "bg-primary/10 text-primary":
+                "bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400":
                   extractPathSegment(pathname) === link.href,
                 "text-base-content/70":
                   extractPathSegment(pathname) !== link.href,

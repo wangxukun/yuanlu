@@ -50,12 +50,12 @@ export default function EpisodeList({
         <h2 className="text-base sm:text-xl lg:text-2xl font-bold text-base-content flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
           <span className="sm:hidden">剧集</span>
           <span className="hidden sm:inline text-2xl font-bold">剧集列表</span>
-          <span className="bg-primary/10 text-primary text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold">
+          <span className="bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold">
             {episodes?.length || 0}
           </span>
         </h2>
         <select
-          className="select select-sm select-bordered rounded-xl bg-base-100 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-base-content/70 w-32 min-w-0 text-xs sm:text-sm px-2 sm:px-3"
+          className="select select-sm select-bordered rounded-xl bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:ring-1 focus:ring-primary-600/20 dark:focus:ring-primary-400/20 transition-all font-medium text-base-content/70 w-32 min-w-0 text-xs sm:text-sm px-2 sm:px-3"
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
         >
@@ -99,7 +99,7 @@ export default function EpisodeList({
         <div className="mt-6 flex justify-center">
           <Link
             href={`/podcast/${podcastId}/episodes`}
-            className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group"
+            className="flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-600/80 dark:hover:text-primary-400/80 transition-colors group"
           >
             查看所有 {episodes?.length || 0} 集
             <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

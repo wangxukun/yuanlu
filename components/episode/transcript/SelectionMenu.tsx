@@ -47,7 +47,7 @@ export function SelectionMenu({
         </span>
 
         <button
-          className="hover:text-primary active:scale-95 transition-all flex items-center gap-1.5 font-bold whitespace-nowrap text-white"
+          className="hover:text-primary-600 dark:hover:text-primary-400 active:scale-95 transition-all flex items-center gap-1.5 font-bold whitespace-nowrap text-white"
           onTouchEnd={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -71,7 +71,7 @@ export function SelectionMenu({
             onClose();
           }}
         >
-          <PlusCircleIcon className="w-5 h-5 text-primary" />
+          <PlusCircleIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <span>查词/翻译</span>
         </button>
       </div>

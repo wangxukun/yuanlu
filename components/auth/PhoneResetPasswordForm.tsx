@@ -181,7 +181,7 @@ export default function PhoneResetPasswordForm() {
     <>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {error && (
-          <div className="flex items-center gap-2 text-error bg-error/10 p-3 rounded-lg text-sm animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2 text-error-500 dark:text-error-400 bg-error-500/10 dark:bg-error-400/10 p-3 rounded-lg text-sm animate-in fade-in slide-in-from-top-1">
             <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -195,14 +195,14 @@ export default function PhoneResetPasswordForm() {
         {/* Phone input */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <DevicePhoneMobileIcon className="h-5 w-5" />
             </div>
             <input
               type="tel"
               ref={inputRef}
               placeholder="请输入绑定的手机号码"
-              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12"
+              className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12"
               value={phone}
               onChange={(e) =>
                 setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))
@@ -223,7 +223,7 @@ export default function PhoneResetPasswordForm() {
               <input
                 type="text"
                 placeholder="输入6位验证码"
-                className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary focus:z-10 transition-all h-12"
+                className="input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12"
                 value={code}
                 onChange={(e) =>
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -250,12 +250,12 @@ export default function PhoneResetPasswordForm() {
         {/* New Password */}
         <div className="form-control space-y-2">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm ${
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm ${
                 password && !isPasswordValid ? "input-warning" : ""
               } ${isPasswordValid ? "input-success" : ""}`}
               placeholder="请设置新密码"
@@ -278,12 +278,12 @@ export default function PhoneResetPasswordForm() {
         {/* Confirm Password */}
         <div className="form-control">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10 text-base-content/40 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors">
               <LockClosedIcon className="h-5 w-5" />
             </div>
             <input
               type="password"
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary transition-all rounded-xl h-12 text-base shadow-sm ${
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 text-base shadow-sm ${
                 confirmPassword && !isConfirmPasswordMatch ? "input-error" : ""
               } ${isConfirmPasswordMatch ? "input-success" : ""}`}
               placeholder="请再次确认新密码"
@@ -297,7 +297,7 @@ export default function PhoneResetPasswordForm() {
             />
           </div>
           {confirmPassword && !isConfirmPasswordMatch && (
-            <span className="text-error text-xs mt-1.5 block ml-1 animate-in fade-in">
+            <span className="text-error-500 dark:text-error-400 text-xs mt-1.5 block ml-1 animate-in fade-in">
               两次输入的密码不一致
             </span>
           )}

@@ -176,7 +176,7 @@ export default function EpisodeTable({
                         >
                           <Headphones
                             size={14}
-                            className="group-hover/stat:text-primary transition-colors"
+                            className="group-hover/stat:text-primary-600 dark:stat:text-primary-400 transition-colors"
                           />
                           <span className="font-medium">
                             {formatNumber(episode.stats.plays)}
@@ -238,7 +238,7 @@ export default function EpisodeTable({
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/episodes/${episode.id}/edit`}
-                          className="p-2 text-ink-400 hover:text-primary hover:bg-primary-50 rounded-full transition-colors"
+                          className="p-2 text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 rounded-full transition-colors"
                           title="编辑"
                         >
                           <EditIcon size={18} />
@@ -298,7 +298,7 @@ export default function EpisodeTable({
                       onClick={() => handlePageChange(page)}
                       className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
                         currentPage === page
-                          ? "bg-primary text-white border border-primary shadow-sm"
+                          ? "bg-primary-600 dark:bg-primary-400 text-white border border-primary-600 dark:border-primary-400 shadow-sm"
                           : "bg-white text-ink-600 border border-ink-300 hover:bg-ink-50"
                       }`}
                     >

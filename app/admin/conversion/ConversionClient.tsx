@@ -113,7 +113,7 @@ export default function ConversionClient({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-base-content tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-primary text-primary-content rounded-xl">
+            <div className="p-2 bg-primary-600 dark:bg-primary-400 text-primary-content rounded-xl">
               <TrendingUp size={24} />
             </div>
             转化分析

@@ -84,7 +84,7 @@ export default function RegenerateConfirmModal({
         <div className="p-6 overflow-y-auto flex-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="loading loading-spinner loading-lg text-primary-600 dark:text-primary-400"></span>
               <p className="text-base-content/70">
                 正在调用 DeepSeek 生成最新释义...
               </p>
@@ -105,8 +105,8 @@ export default function RegenerateConfirmModal({
                   </pre>
                 </div>
               </div>
-              <div className="flex-1 border border-primary/30 rounded-lg flex flex-col">
-                <div className="bg-primary/10 text-primary p-2 font-bold text-center border-b border-primary/20">
+              <div className="flex-1 border border-primary-600/30 dark:border-primary-400/30 rounded-lg flex flex-col">
+                <div className="bg-primary-600/10 dark:bg-primary-400/10 text-primary-600 dark:text-primary-400 p-2 font-bold text-center border-b border-primary-600/20 dark:border-primary-400/20">
                   新生成数据 (待确认)
                 </div>
                 <div className="p-4 overflow-auto flex-1 bg-base-100">

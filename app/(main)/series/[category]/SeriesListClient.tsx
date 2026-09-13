@@ -173,7 +173,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
                 {/* Content */}
                 <div className="p-6 flex flex-col flex-1">
                   <div className="mb-auto">
-                    <h3 className="text-xl font-bold text-base-content mb-2 leading-tight group-hover:text-primary transition-colors">
+                    <h3 className="text-xl font-bold text-base-content mb-2 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                       {series.title}
                     </h3>
                     <p className="text-sm text-base-content/60 line-clamp-2 mb-4">
@@ -224,7 +224,7 @@ const SeriesListClient: React.FC<TagCollectionsProps> = ({
             </p>
             <button
               onClick={() => setFilterLevel("All")}
-              className="mt-6 text-primary font-bold hover:text-primary-focus cursor-pointer"
+              className="mt-6 text-primary-600 dark:text-primary-400 font-bold hover:text-primary-focus cursor-pointer"
             >
               清除过虑
             </button>

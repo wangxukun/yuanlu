@@ -3,13 +3,14 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BookA, Compass, Home, User, type LucideIcon } from "lucide-react";
 import { useNotificationStore } from "@/store/notification-store";
 
-const tabs = [
-  { name: "首页", href: "/home", icon: "home" },
-  { name: "发现", href: "/discover", icon: "explore" },
-  { name: "生词本", href: "/library/vocabulary", icon: "translate" },
-  { name: "我的", href: "/auth/mine", icon: "person" },
+const tabs: { name: string; href: string; icon: LucideIcon }[] = [
+  { name: "首页", href: "/home", icon: Home },
+  { name: "发现", href: "/discover", icon: Compass },
+  { name: "生词本", href: "/library/vocabulary", icon: BookA },
+  { name: "我的", href: "/auth/mine", icon: User },
 ];
 
 export default function MobileBottomNav() {
@@ -49,19 +50,14 @@ export default function MobileBottomNav() {
               }`}
             >
               <div className="relative">
-                <span
-                  className={`material-symbols-outlined text-[22px] transition-transform duration-200 ${
+                <tab.icon
+                  aria-hidden
+                  strokeWidth={isActive ? 2.25 : 1.75}
+                  className={`w-6 h-6 transition-transform duration-200 ${
                     isActive ? "scale-110" : "scale-100"
                   }`}
-                  style={{
-                    fontVariationSettings: isActive
-                      ? "'FILL' 1, 'wght' 600"
-                      : "'FILL' 0, 'wght' 400",
-                  }}
-                >
-                  {tab.icon}
-                </span>
-                {tab.icon === "person" && unreadCount > 0 && (
+                />
+                {tab.href === "/auth/mine" && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-error-500 ring-2 ring-white dark:ring-ink-900"></span>
                 )}
               </div>
