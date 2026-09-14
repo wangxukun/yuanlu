@@ -116,9 +116,6 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
             />
             我的收藏
           </h1>
-          <p className="text-base-content/60 mt-2 text-sm xl:text-base">
-            这里汇集了你精心挑选的播客系列和高价值单集。
-          </p>
         </div>
 
         <div className="flex bg-base-200 p-1 rounded-2xl w-full xl:w-auto transition-colors">

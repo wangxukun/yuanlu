@@ -142,136 +142,140 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
         tagCount={allTags.length}
       />
 
-      {/* Control / Search & Filter Panel */}
-      <div className="bg-white dark:bg-ink-900 rounded-3xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] space-y-4">
-        {/* Search Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-ink-300 z-10 pointer-events-none"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索英文原句、中文翻译、笔记或标签..."
-              className="input input-bordered w-full pl-11 rounded-2xl bg-gray-100 dark:bg-ink-800/60 focus:bg-white dark:focus:bg-ink-900 text-sm focus:border-indigo-500 focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-ink-300 p-1 z-10"
+      {/* Control / Search & Filter Panel（空状态隐藏：没有句子时无可检索内容，三端一致） */}
+      {sentences.length > 0 && (
+        <div className="bg-white dark:bg-ink-900 rounded-3xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] space-y-4">
+          {/* Search Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-ink-300 z-10 pointer-events-none"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索英文原句、中文翻译、笔记或标签..."
+                className="input input-bordered w-full pl-11 rounded-2xl bg-gray-100 dark:bg-ink-800/60 focus:bg-white dark:focus:bg-ink-900 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-ink-300 p-1 z-10"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Episode Selector Filter */}
+            <div className="sm:w-64">
+              <select
+                value={filterEpisode}
+                onChange={(e) => setFilterEpisode(e.target.value)}
+                className="select select-bordered w-full rounded-2xl bg-gray-100 dark:bg-ink-800/60 text-sm focus:outline-none"
               >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Episode Selector Filter */}
-          <div className="sm:w-64">
-            <select
-              value={filterEpisode}
-              onChange={(e) => setFilterEpisode(e.target.value)}
-              className="select select-bordered w-full rounded-2xl bg-gray-100 dark:bg-ink-800/60 text-sm focus:outline-none"
-            >
-              <option value="ALL">
-                全部播客来源 ({episodeOptions.length})
-              </option>
-              {episodeOptions.map((ep) => (
-                <option key={ep.value} value={ep.value}>
-                  {ep.label}
+                <option value="ALL">
+                  全部播客来源 ({episodeOptions.length})
                 </option>
-              ))}
-            </select>
-          </div>
+                {episodeOptions.map((ep) => (
+                  <option key={ep.value} value={ep.value}>
+                    {ep.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center bg-gray-100 dark:bg-ink-800 p-1 rounded-2xl shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "cards"
-                  ? "bg-white dark:bg-ink-900 text-gray-800 dark:text-ink-100 shadow-sm"
-                  : "text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100"
-              }`}
-              title="卡片详情视图"
-            >
-              <LayoutGrid size={14} />
-              <span>卡片详情</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("compact")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "compact"
-                  ? "bg-white dark:bg-ink-900 text-gray-800 dark:text-ink-100 shadow-sm"
-                  : "text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100"
-              }`}
-              title="简洁清单视图"
-            >
-              <List size={14} />
-              <span>简洁清单</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tag Pills Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 text-xs">
-          <span className="text-gray-400 dark:text-ink-400 flex items-center gap-1 shrink-0 font-semibold">
-            <Filter size={12} className="text-gray-400 dark:text-ink-400" />
-            <span className="hidden sm:inline">标签分类：</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("ALL");
-              setFilterTag("ALL");
-            }}
-            className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all ${
-              (filterTag === "ALL" || !filterTag) && activeTab === "ALL"
-                ? "bg-primary-600 text-white shadow-sm"
-                : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
-            }`}
-          >
-            全部 ({sentences.length})
-          </button>
-          {allTags.map((tag) => {
-            const count = sentences.filter((s) => s.tags?.includes(tag)).length;
-            const isSelected = filterTag === tag;
-            return (
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-ink-800 p-1 rounded-2xl shrink-0">
               <button
-                key={tag}
                 type="button"
-                onClick={() => {
-                  setActiveTab(tag);
-                  setFilterTag(tag);
-                }}
-              className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
-                isSelected
+                onClick={() => setViewMode("cards")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === "cards"
+                    ? "bg-white dark:bg-ink-900 text-gray-800 dark:text-ink-100 shadow-sm"
+                    : "text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100"
+                }`}
+                title="卡片详情视图"
+              >
+                <LayoutGrid size={14} />
+                <span>卡片详情</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("compact")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === "compact"
+                    ? "bg-white dark:bg-ink-900 text-gray-800 dark:text-ink-100 shadow-sm"
+                    : "text-gray-500 dark:text-ink-300 hover:text-gray-700 dark:hover:text-ink-100"
+                }`}
+                title="简洁清单视图"
+              >
+                <List size={14} />
+                <span>简洁清单</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tag Pills Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 text-xs">
+            <span className="text-gray-400 dark:text-ink-400 flex items-center gap-1 shrink-0 font-semibold">
+              <Filter size={12} className="text-gray-400 dark:text-ink-400" />
+              <span className="hidden sm:inline">标签分类：</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("ALL");
+                setFilterTag("ALL");
+              }}
+              className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all ${
+                (filterTag === "ALL" || !filterTag) && activeTab === "ALL"
                   ? "bg-primary-600 text-white shadow-sm"
                   : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
               }`}
-              >
-                <span>{tag}</span>
-                <span className="opacity-60 text-[10px]">({count})</span>
-              </button>
-            );
-          })}
-
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={resetFilter}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold ml-auto shrink-0"
             >
-              清除筛选
+              全部 ({sentences.length})
             </button>
-          )}
+            {allTags.map((tag) => {
+              const count = sentences.filter((s) =>
+                s.tags?.includes(tag),
+              ).length;
+              const isSelected = filterTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tag);
+                    setFilterTag(tag);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+                    isSelected
+                      ? "bg-primary-600 text-white shadow-sm"
+                      : "bg-gray-200/80 text-gray-600 dark:bg-ink-800 dark:text-ink-200 hover:bg-gray-200 dark:hover:bg-ink-700"
+                  }`}
+                >
+                  <span>{tag}</span>
+                  <span className="opacity-60 text-[10px]">({count})</span>
+                </button>
+              );
+            })}
+
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={resetFilter}
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold ml-auto shrink-0"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sentences List Area */}
       {sentences.length === 0 ? (

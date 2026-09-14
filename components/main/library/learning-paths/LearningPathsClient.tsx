@@ -69,10 +69,6 @@ export default function LearningPathsClient({
             />
             学习路径
           </h1>
-          {/* [Refactor] text-ink-500 -> text-base-content/60 */}
-          <p className="text-base-content/60 mt-2 font-medium">
-            精心策划的课程和您专属的个人学习播放列表
-          </p>
         </div>
 
         <button

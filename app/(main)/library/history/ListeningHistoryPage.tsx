@@ -182,9 +182,6 @@ const ListeningHistoryPage: React.FC<ListeningHistoryPageProps> = ({
             />
             收听历史
           </h1>
-          <p className="text-ink-500 dark:text-ink-400 mt-1 text-sm xl:text-base">
-            继续你的精听之旅，随时回顾学习进度。
-          </p>
         </div>
 
         <div className="flex items-center space-x-3 w-full xl:w-auto">

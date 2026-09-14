@@ -10,6 +10,7 @@ import {
   FileText,
   Trophy,
 } from "lucide-react";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 export function PronunciationStats({
   stats,
@@ -24,29 +25,32 @@ export function PronunciationStats({
   const weakSentencesCount = totalErrors ?? errors.length;
   const weakestPhoneme = stats.length > 0 ? `/${stats[0].phoneme}/` : "-";
   const masteredPhonemesCount = stats.filter((s) => s.avgScore >= 85).length;
+  // 子页面入口用绝对路径前缀（相对路径在 Segment Cache Link 下解析基准是 layout 段，会 404）
+  const base = useNotebookBase("pronunciation");
 
   return (
     <>
       {/* 1. 头部与统计面板 */}
       <header className="flex flex-col xl:flex-row justify-between xl:items-end pb-6 gap-6">
         <div>
-          <h1 className="text-2xl xl:text-3xl font-bold text-base-content flex items-center">
-            <Mic className="mr-3 text-info-600 dark:text-info-400" size={32} />
-            发音弱项本
-          </h1>
-          <p className="text-base-content/60 mt-2 text-sm xl:text-base">
-            针对性攻克发音短板，提升口语地道程度。
-          </p>
+          {/* 标题行：左侧 Mic 图标 + 发音弱项本标题，右侧发音达人榜入口（两端对齐） */}
+          <div className="flex justify-between items-center w-full gap-3">
+            <h1 className="text-2xl xl:text-3xl font-bold text-base-content flex items-center">
+              <Mic
+                className="mr-3 text-info-600 dark:text-info-400"
+                size={32}
+              />
+              发音弱项本
+            </h1>
+            <Link
+              href={`${base}/leaderboard`}
+              className="btn btn-sm rounded-full gap-1.5 border-warning/30 bg-warning/10 hover:bg-warning/20 text-warning-700 dark:text-warning-400 shrink-0"
+            >
+              <Trophy size={16} />
+              发音达人榜
+            </Link>
+          </div>
         </div>
-
-        {/* 发音达人榜入口（社区功能，对所有用户开放） */}
-        <Link
-          href="/library/pronunciation/leaderboard"
-          className="btn btn-sm rounded-full gap-1.5 border-warning/30 bg-warning/10 hover:bg-warning/20 text-warning-700 dark:text-warning-400 self-start xl:self-end"
-        >
-          <Trophy size={16} />
-          发音达人榜
-        </Link>
 
         {/* 统计卡片：Mobile (<xl) 使用 Grid，Desktop (>=xl) 使用 Flex 行 */}
         <div className="w-full xl:w-auto">
@@ -117,7 +121,7 @@ export function PronunciationStats({
               </p>
             </div>
             <Link
-              href="/library/pronunciation/practice"
+              href={`${base}/practice`}
               className="w-full sm:w-auto bg-white text-info-600 px-8 py-3 rounded-lg font-bold hover:bg-ink-50 transition-all flex items-center justify-center shrink-0"
             >
               <PlayCircle className="mr-2" size={20} />
