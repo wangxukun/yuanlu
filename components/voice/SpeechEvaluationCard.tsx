@@ -18,6 +18,9 @@ import {
   ChevronUp,
   ArrowLeft,
   Layers,
+  Bookmark,
+  Repeat,
+  Repeat1,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -30,6 +33,30 @@ import type { TextMode } from "@/store/practice-settings-store";
 import { VocabularyModal } from "@/components/episode/transcript/VocabularyModal";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
+import type { SavedSentenceItem } from "@/core/sentences/dto";
+
+/**
+ * 按集缓存的「句子本已收藏 subtitleId 集合」：
+ * 列表页（如语音评测主页）会渲染多张卡片，共享同一次 /api/sentences/keys 请求。
+ */
+const savedSentenceKeysCache = new Map<string, Promise<Set<number>>>();
+function fetchSavedSentenceKeys(episodeid: string): Promise<Set<number>> {
+  let cached = savedSentenceKeysCache.get(episodeid);
+  if (!cached) {
+    cached = fetch(`/api/sentences/keys?episodeid=${episodeid}`)
+      .then((r) => r.json())
+      .then((d) =>
+        d.success && d.data && Array.isArray(d.data.subtitleIds)
+          ? new Set<number>(d.data.subtitleIds)
+          : new Set<number>(),
+      )
+      .catch(() => new Set<number>());
+    savedSentenceKeysCache.set(episodeid, cached);
+  }
+  return cached;
+}
 
 /**
  * 清洗词典音标，供音标文本模式（textMode = "ipa"）句内逐词拼接展示：
@@ -98,6 +125,15 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   onBackToDeck,
 }) => {
   const { data: session } = useSession();
+
+  // ── 单句循环：句尾自然结束回调（ref 保持引用稳定，重播函数在 effect 中刷新） ──
+  const isLoopingRef = React.useRef(false);
+  const lastPlayRateRef = React.useRef(1.0); // 记住用户最近一次手动选择的原声/慢速率
+  const replayRef = React.useRef<() => void>(() => {});
+  const handleReferenceEnd = React.useCallback(() => {
+    if (isLoopingRef.current) replayRef.current();
+  }, []);
+
   const {
     isRecording,
     isProcessing,
@@ -123,6 +159,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       onPlayStart(id);
       onActivate();
     },
+    onReferenceEnd: handleReferenceEnd,
   });
 
   const [activeWordIndex, setActiveWordIndex] = React.useState<number | null>(
@@ -269,6 +306,104 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [playMode, setPlayMode] = React.useState<"normal" | "slow" | null>(
     null,
   );
+
+  // ── 单句循环 ──
+  const [isLooping, setIsLooping] = React.useState(false);
+  // 换句复位循环状态与播放速率记忆
+  React.useEffect(() => {
+    setIsLooping(false);
+    isLoopingRef.current = false;
+    lastPlayRateRef.current = 1.0;
+  }, [subtitle.id]);
+
+  // 句尾重播：按用户最近一次选择的速率（原声 1.0 / 慢速 0.75）循环当前句
+  React.useEffect(() => {
+    replayRef.current = () => {
+      const rate = lastPlayRateRef.current;
+      setPlayMode(rate < 1 ? "slow" : "normal");
+      playReferenceAudio(rate);
+    };
+  }, [playReferenceAudio]);
+
+  const handleToggleLoop = () => {
+    const next = !isLooping;
+    setIsLooping(next);
+    isLoopingRef.current = next;
+    if (next && refAudioProgress <= 0) {
+      // 开启循环时若当前无原声在播，直接开始播放当前句
+      lastPlayRateRef.current = 1.0;
+      setPlayMode("normal");
+      playReferenceAudio(1.0);
+    }
+  };
+
+  // ── 收藏句子（句子本）──
+  const [isSentenceSaved, setIsSentenceSaved] = React.useState(false);
+  const [tagDrawerSentence, setTagDrawerSentence] =
+    React.useState<SavedSentenceItem | null>(null);
+
+  // 登录且有所属集时，从缓存拉取本集已收藏的 subtitleId 标记初始书签态
+  React.useEffect(() => {
+    if (!episodeId || !session?.user) {
+      setIsSentenceSaved(false);
+      return;
+    }
+    let cancelled = false;
+    fetchSavedSentenceKeys(episodeId).then((keys) => {
+      if (!cancelled) setIsSentenceSaved(keys.has(subtitle.id));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [episodeId, session?.user, subtitle.id]);
+
+  const handleToggleSentenceSave = React.useCallback(() => {
+    if (!session?.user) {
+      toast("请先登录", { description: "登录后即可收藏句子到句子本" });
+      const loginModal = document.getElementById(
+        "email_check_modal_box",
+      ) as HTMLDialogElement | null;
+      if (loginModal) loginModal.showModal();
+      return;
+    }
+    if (!episodeId) return;
+
+    // 乐观翻转书签态，server action 落库后校正/回滚
+    setIsSentenceSaved((v) => !v);
+    React.startTransition(async () => {
+      try {
+        const res = await toggleSentenceSave({
+          episodeid: episodeId,
+          subtitleId: subtitle.id,
+          startTime: subtitle.startSeconds,
+          endTime: subtitle.endSeconds ?? subtitle.startSeconds + 3,
+          enText: subtitle.textEn,
+          zhText: (subtitle.textCn || "").replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+        });
+        if (res.success && res.data) {
+          setIsSentenceSaved(res.data.saved);
+          if (res.data.saved && res.data.sentence) {
+            const saved = res.data.sentence;
+            toast.success("已收藏至「句子本」", {
+              description: `"${subtitle.textEn.slice(0, 32)}..."`,
+              action: {
+                label: "添加标签/笔记",
+                onClick: () => setTagDrawerSentence(saved),
+              },
+            });
+          } else {
+            toast("已从「句子本」移除");
+          }
+        } else {
+          setIsSentenceSaved((v) => !v); // 回滚
+          toast.error(res.message || "收藏失败，请重试");
+        }
+      } catch {
+        setIsSentenceSaved((v) => !v); // 回滚
+        toast.error("网络错误，收藏失败");
+      }
+    });
+  }, [session, episodeId, subtitle]);
 
   // 文本模式相关
   // ipa: word -> 音标字符串（去标点后的词为 key）。用 ref 缓存，跨 subtitle 复用。
@@ -453,6 +588,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                lastPlayRateRef.current = 1.0;
                 setPlayMode("normal");
                 playReferenceAudio();
               }}
@@ -471,6 +607,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                lastPlayRateRef.current = 0.75;
                 setPlayMode("slow");
                 playReferenceAudio(0.75);
               }}
@@ -484,6 +621,54 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               )}
               <Volume1 size={16} className="relative z-10" />
               <span className="relative z-10 hidden md:inline">慢速播放</span>
+            </button>
+
+            {/* 收藏句子（句子本）— 已收藏呈暖金高亮实心书签 */}
+            {episodeId && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleSentenceSave();
+                }}
+                className={`btn btn-sm rounded-full border bg-transparent transition-colors ${
+                  isSentenceSaved
+                    ? "border-amber-300 bg-amber-50 text-amber-500 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
+                    : "border-ink-200 text-ink-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-500 dark:border-ink-600 dark:text-ink-300 dark:hover:text-amber-400"
+                }`}
+                aria-pressed={isSentenceSaved}
+                aria-label={
+                  isSentenceSaved ? "取消收藏该句" : "收藏该句到句子本"
+                }
+                title={isSentenceSaved ? "取消收藏" : "收藏句子"}
+              >
+                <Bookmark
+                  size={16}
+                  fill={isSentenceSaved ? "currentColor" : "none"}
+                />
+                <span className="hidden md:inline">
+                  {isSentenceSaved ? "已收藏" : "收藏句子"}
+                </span>
+              </button>
+            )}
+
+            {/* 单句循环 — 开启后原声播至句尾自动重播（沿用最近一次的播放速率） */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleLoop();
+              }}
+              className={`btn btn-sm rounded-full border bg-transparent transition-colors ${
+                isLooping
+                  ? "border-primary-400 text-primary-600 bg-primary-50 shadow-inner"
+                  : "border-ink-200 text-ink-500 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600 dark:border-ink-600 dark:text-ink-300 dark:hover:text-primary-400"
+              }`}
+              aria-pressed={isLooping}
+              title={isLooping ? "取消单句循环" : "单句循环"}
+            >
+              {isLooping ? <Repeat1 size={16} /> : <Repeat size={16} />}
+              <span className="hidden md:inline">
+                {isLooping ? "循环中" : "单句循环"}
+              </span>
             </button>
           </div>
 
@@ -1107,6 +1292,13 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         isSaved={globalVocabWords.has(selectedWord.toLowerCase())}
         episodeTitle={episodeTitle}
         onSave={handleSaveVocabulary}
+      />
+
+      {/* 收藏成功后的快捷标签抽屉（toast「添加标签/笔记」action 打开） */}
+      <QuickTagDrawer
+        sentence={tagDrawerSentence}
+        onClose={() => setTagDrawerSentence(null)}
+        onUpdated={() => {}}
       />
     </>
   );

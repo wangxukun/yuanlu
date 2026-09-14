@@ -194,6 +194,7 @@ export default function PronunciationPracticePage() {
             onPlayStart={() => {}}
             isActive={true}
             onActivate={() => {}}
+            episodeId={currentRecord.episodeid}
           />
         </div>
 

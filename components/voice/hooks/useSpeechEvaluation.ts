@@ -104,6 +104,7 @@ export function useSpeechEvaluation({
   onEvaluate,
   currentPlayingId,
   onPlayStart,
+  onReferenceEnd,
 }: {
   subtitle: Subtitle;
   audioUrl: string;
@@ -118,6 +119,8 @@ export function useSpeechEvaluation({
   ) => void;
   currentPlayingId: number | null;
   onPlayStart: (id: number) => void;
+  /** 原声自然播放至句尾时触发（单句循环重播等场景）；手动停止/切换音频不触发 */
+  onReferenceEnd?: () => void;
 }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -157,6 +160,11 @@ export function useSpeechEvaluation({
     audio: HTMLAudioElement;
     handler: () => void;
   } | null>(null);
+  // 句尾回调 ref：避免闭包过期，同时保持 playReferenceAudio 引用稳定
+  const onReferenceEndRef = useRef(onReferenceEnd);
+  useEffect(() => {
+    onReferenceEndRef.current = onReferenceEnd;
+  });
 
   // Reset everything when navigating to a different subtitle
   const prevSubtitleIdRef = useRef(subtitle.id);
@@ -637,6 +645,7 @@ export function useSpeechEvaluation({
 
         if (current >= endTime) {
           stopAllAudio();
+          onReferenceEndRef.current?.();
           return;
         }
 
@@ -659,6 +668,7 @@ export function useSpeechEvaluation({
       if (!a) return;
       if (a.currentTime >= endTime) {
         stopAllAudio();
+        onReferenceEndRef.current?.();
       }
     };
     audio.addEventListener("timeupdate", onTimeUpdate);
