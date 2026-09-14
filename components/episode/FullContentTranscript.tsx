@@ -154,10 +154,11 @@ const SubtitleRow = React.memo(function SubtitleRow({
         }
       }}
     >
-      {/* ── Time Rail ── */}
+      {/* ── Play Rail ── */}
+      {/* 移动端：保留时间戳；桌面端：替换为句首“播放此句”按钮（hover 显示 / 当前句常显） */}
       <span
         className={cn(
-          "w-9 shrink-0 pt-[3px] text-[12px] tabular-nums font-medium select-none transition-colors",
+          "w-9 shrink-0 pt-[3px] text-[12px] tabular-nums font-medium select-none transition-colors md:hidden",
           isActive
             ? "text-primary-600 dark:text-primary-400 font-bold"
             : "text-ink-300 dark:text-ink-600 group-hover:text-primary-500 dark:group-hover:text-primary-400",
@@ -165,6 +166,35 @@ const SubtitleRow = React.memo(function SubtitleRow({
       >
         {formatSec(sub.start)}
       </span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          const exactStart =
+            sub.words && sub.words.length > 0 ? sub.words[0].start : sub.start;
+          onJump(exactStart);
+        }}
+        className={cn(
+          "hidden md:flex w-9 h-7 shrink-0 items-center justify-center self-start mt-0.5 rounded-full transition-all duration-200",
+          "hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30",
+          isActive
+            ? cn(
+                "text-primary-600 dark:text-primary-400",
+                isPlaying ? "animate-pulse" : "opacity-100",
+              )
+            : "text-ink-300 dark:text-ink-600 opacity-0 group-hover:opacity-100",
+        )}
+        title={isActive && isPlaying ? "正在播放此句" : "播放此句"}
+        aria-label="播放此句"
+      >
+        <span
+          className="material-symbols-outlined text-xl"
+          style={{
+            fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+          }}
+        >
+          {isActive && isPlaying ? "graphic_eq" : "play_arrow"}
+        </span>
+      </button>
 
       {/* ── Text ── */}
       <div ref={textRef} className="flex-1 min-w-0 space-y-2">
@@ -294,7 +324,10 @@ const SubtitleRow = React.memo(function SubtitleRow({
                     ? "text-warning md:opacity-100"
                     : cn(
                         "text-ink-300 dark:text-ink-600 hover:text-warning md:hover:bg-warning/10",
-                        "opacity-60 md:opacity-0 md:group-hover:opacity-100",
+                        // 活动句与单句循环图标一致恒定显示；非活动句保持 hover 淡入
+                        isActive
+                          ? "opacity-60 md:opacity-100"
+                          : "opacity-60 md:opacity-0 md:group-hover:opacity-100",
                       ),
                 )}
                 aria-label={
@@ -315,20 +348,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                 </span>
               </button>
             )}
-            {/* Play this sentence */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onJump(sub.start);
-              }}
-              className="p-1.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 text-ink-300 dark:text-ink-600 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
-              title="播放此句"
-            >
-              <span className="material-symbols-outlined text-lg">
-                play_arrow
-              </span>
-            </button>
-            {/* Loop Toggle */}
+            {/* Loop Toggle — 播放入口已统一至句首 Play Rail */}
             <button
               onClick={(e) => {
                 e.stopPropagation();

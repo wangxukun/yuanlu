@@ -168,7 +168,8 @@ export default function MobilePlayerSheet({
           </header>
 
           {/* ── Transcript Section ── */}
-          <div className="flex-1 overflow-y-auto bg-ink-50/50 dark:bg-ink-950">
+          {/* 纯白底色：扁平透明字幕行与之融为一体，杂志式沉浸阅读 */}
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-ink-950">
             <div className="px-2 pt-3 pb-32">
               {isLoadingSubtitles ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">

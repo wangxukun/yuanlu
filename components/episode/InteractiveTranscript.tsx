@@ -460,7 +460,8 @@ export default function InteractiveTranscript({
       )}
 
       {/* --- 字幕内容区 --- */}
-      <div className="space-y-1 pb-32" ref={containerRef}>
+      {/* 扁平无缝排版：字幕行零外间距，靠行内 padding + border-b 分割线划分句段 */}
+      <div className="pb-32" ref={containerRef}>
         {processedSubtitles.map((sub, index) => {
           const isActive = index === activeIndex;
           if (transcriptMode === "dictate" && isActive) {
