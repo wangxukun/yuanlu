@@ -92,7 +92,7 @@ interface SpeechEvaluationCardProps {
   historicalRecords?: SpeechPracticeRecord[];
   // ── 设置中心透传（全部 optional，向后兼容） ──
   fontSizeLevel?: number; // 0-2
-  showTranslation?: boolean; // 默认显示中文翻译
+  showTranslation?: boolean; // 是否显示中文翻译（默认 false：收起，点翻译图标展开）
   showIpa?: boolean; // 结果区显示音素诊断
   textMode?: TextMode; // 原文 / 音标 / 盲读遮罩
   passThreshold?: number; // 过关分数线（结果区达标标记/文案）
@@ -165,15 +165,20 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [activeWordIndex, setActiveWordIndex] = React.useState<number | null>(
     null,
   );
-  // 移动端语言按钮的本地覆盖；初值与设置面板的 showTranslation 一致。
+  // 翻译按钮（移动端句尾 / 桌面端英文句尾内联，两处共用）的本地覆盖；
+  // 初值与设置面板的 showTranslation 一致（默认不显示中文）。
   // 当设置面板改变 showTranslation 时（如切换开关），清除此覆盖，
   // 使「显示中文翻译」开关即时生效；换句时也清除以回归设置默认。
-  const [mobileCnOverride, setMobileCnOverride] = React.useState<
+  const [translationOverride, setTranslationOverride] = React.useState<
     boolean | null
   >(null);
-  const showCn = mobileCnOverride ?? showTranslation;
+  const showCn = translationOverride ?? showTranslation;
+  const handleToggleTranslation = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setTranslationOverride(!showCn);
+  };
   React.useEffect(() => {
-    setMobileCnOverride(null);
+    setTranslationOverride(null);
   }, [showTranslation, subtitle]);
   const [showDetails, setShowDetails] = React.useState(false);
 
@@ -760,13 +765,29 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   </span>
                 );
               })}
+              {/* 翻译开关：移动端与桌面端各一个按钮，均内联跟排在英文原句正末尾。
+                  showCn 激活时高亮，与设置面板「显示中文翻译」开关联动。 */}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMobileCnOverride(!showCn);
-                }}
-                className="inline-flex md:hidden items-center justify-center p-1.5 ml-1 rounded-lg text-ink-400 hover:text-primary-600 hover:bg-primary-50 transition-colors align-middle"
-                title="显示/隐藏翻译"
+                onClick={handleToggleTranslation}
+                aria-pressed={showCn}
+                title={showCn ? "隐藏中文翻译" : "显示中文翻译"}
+                className={`inline-flex md:hidden items-center justify-center p-1.5 ml-1 rounded-lg transition-colors align-middle ${
+                  showCn
+                    ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/30"
+                    : "text-ink-400 hover:text-primary-600 hover:bg-primary-50"
+                }`}
+              >
+                <Languages size={20} />
+              </button>
+              <button
+                onClick={handleToggleTranslation}
+                aria-pressed={showCn}
+                title={showCn ? "隐藏中文翻译" : "显示中文翻译"}
+                className={`hidden md:inline-flex items-center justify-center p-1.5 ml-2 rounded-lg transition-colors align-middle ${
+                  showCn
+                    ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/30"
+                    : "text-ink-400 hover:text-primary-600 hover:bg-primary-50"
+                }`}
               >
                 <Languages size={20} />
               </button>

@@ -16,7 +16,7 @@ export interface PracticeSettingsState {
   // ── 界面与显示 ──
   /** 字幕字号档位（0=小 1=中 2=大） */
   fontSizeLevel: number;
-  /** 默认显示中文翻译 */
+  /** 默认显示中文翻译（初始 false：默认收起，需点击卡片上的翻译图标展开） */
   showTranslation: boolean;
   /** 结果区显示音素 /IPA 诊断块 */
   showIpa: boolean;
@@ -71,7 +71,7 @@ export const usePracticeSettingsStore = create<PracticeSettingsState>()(
   persist(
     (set) => ({
       fontSizeLevel: 1,
-      showTranslation: true,
+      showTranslation: false,
       showIpa: true,
       textMode: "normal",
 
