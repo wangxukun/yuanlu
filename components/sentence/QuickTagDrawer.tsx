@@ -107,8 +107,9 @@ export function QuickTagDrawer({
     }
   };
 
+  // z-[210]：高于底部导航 z-[190]、迷你播放条 z-[195] 与沉浸层 z-[200]，避免移动端被遮挡
   return (
-    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
@@ -156,7 +157,10 @@ export function QuickTagDrawer({
           {/* Tags Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-base-content/80 flex items-center gap-1.5">
-              <Tag size={13} className="text-primary-600 dark:text-primary-400" />
+              <Tag
+                size={13}
+                className="text-primary-600 dark:text-primary-400"
+              />
               选择分类标签
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -186,7 +190,7 @@ export function QuickTagDrawer({
                     key={tag}
                     type="button"
                     onClick={() => toggleTag(tag)}
-                        className="px-3 py-1 rounded-full text-xs font-medium bg-accent-500/10 text-accent-700 dark:text-accent-300 border border-accent-400/30 shadow-xs"
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-accent-500/10 text-accent-700 dark:text-accent-300 border border-accent-400/30 shadow-xs"
                   >
                     {tag} ✕
                   </button>
@@ -230,7 +234,10 @@ export function QuickTagDrawer({
           {/* Personal Note */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-base-content/80 flex items-center gap-1.5">
-              <FileText size={13} className="text-primary-600 dark:text-primary-400" />
+              <FileText
+                size={13}
+                className="text-primary-600 dark:text-primary-400"
+              />
               个人学习笔记（语法解析、运用场景、生词搭配等）
             </label>
             <textarea
