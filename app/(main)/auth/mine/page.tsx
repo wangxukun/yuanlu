@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Bell,
   Bookmark,
   ChevronRight,
   CircleHelp,
@@ -14,19 +13,42 @@ import {
   CreditCard,
   History,
   LayoutDashboard,
-  Mic,
   Palette,
   Route,
-  TextQuote,
-  User,
 } from "lucide-react";
 import ThemeSwitcher from "@/components/theme-switcher";
-import { useNotificationStore } from "@/store/notification-store";
+
+/** 高频学习数据入口：图标 + 目标路由（纯彩色图标，瓦片无背景色） */
+const GRID_ENTRIES = [
+  {
+    name: "学习路径",
+    href: "/library/learning-paths",
+    icon: Route,
+    iconClass: "text-primary-600 dark:text-primary-400",
+  },
+  {
+    name: "收听历史",
+    href: "/library/history",
+    icon: History,
+    iconClass: "text-secondary-500",
+  },
+  {
+    name: "我的收藏",
+    href: "/library/favorites",
+    icon: Bookmark,
+    iconClass: "text-accent-500",
+  },
+  {
+    name: "我的订阅",
+    href: "/auth/subscribe",
+    icon: CreditCard,
+    iconClass: "text-warning",
+  },
+];
 
 export default function MinePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   // 避免在客户端渲染前闪烁
   const [mounted, setMounted] = useState(false);
@@ -49,19 +71,23 @@ export default function MinePage() {
     user?.avatarUrl !== "default_avatar_url" &&
     user?.avatarUrl.startsWith("http");
 
+  const openLoginModal = () => {
+    const modal = document.getElementById(
+      "email_check_modal_box",
+    ) as HTMLDialogElement;
+    if (modal) modal.showModal();
+  };
+
   return (
     <div className="min-h-[calc(100vh-var(--mobile-bottom-total))] bg-base-200 text-base-content pb-24 px-4 pt-6">
-      {/* 头部：用户信息区 */}
-      <div className="bg-base-100 rounded-3xl p-6 shadow-sm mb-6 flex items-center justify-between">
+      {/* 头部身份区：点击进入个人中心编辑页；未登录点击拉起登录。
+          按压态放在圆角卡片容器上（:active 会沿祖先链传播），
+          避免在 Link 内部出现不随圆角的方形色块 */}
+      <div className="bg-base-100 rounded-3xl p-6 shadow-sm mb-6 active:bg-base-200/60 active:scale-[0.99] transition-all duration-200 ease-in-out">
         {!session ? (
           <div
             className="flex items-center gap-4 w-full cursor-pointer"
-            onClick={() => {
-              const modal = document.getElementById(
-                "email_check_modal_box",
-              ) as HTMLDialogElement;
-              if (modal) modal.showModal();
-            }}
+            onClick={openLoginModal}
           >
             <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0 text-base-content/30">
               <CircleUser className="w-10 h-10" strokeWidth={1.5} aria-hidden />
@@ -79,7 +105,10 @@ export default function MinePage() {
             />
           </div>
         ) : (
-          <div className="flex items-center gap-4 w-full">
+          <Link
+            href="/auth/personal-center"
+            className="flex items-center gap-4 w-full"
+          >
             <div className="w-16 h-16 relative rounded-full overflow-hidden border border-base-300 bg-base-200 flex-shrink-0">
               {hasAvatar ? (
                 <Image
@@ -99,7 +128,7 @@ export default function MinePage() {
                 </div>
               )}
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <h2 className="text-xl font-bold truncate">{displayName}</h2>
               <div className="flex items-center gap-2 mt-1">
                 {user?.role === "ADMIN" ? (
@@ -120,139 +149,45 @@ export default function MinePage() {
                 {user?.email}
               </p>
             </div>
-          </div>
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30 flex-shrink-0"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </Link>
         )}
       </div>
 
-      {/* 学习与记录 (登录可见) */}
+      {/* 数据轨迹宫格：高频学习数据入口（登录可见） */}
       {session && (
-        <div className="bg-base-100 rounded-3xl overflow-hidden shadow-sm mb-6">
-          <Link
-            href="/library/sentences"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-          >
-            <TextQuote
-              className="w-5 h-5 text-warning mr-4"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <span className="flex-1 font-semibold">句子本</span>
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
-          <Link
-            href="/library/pronunciation"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-          >
-            <Mic
-              className="w-5 h-5 text-info-500 mr-4"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <span className="flex-1 font-semibold">发音弱项本</span>
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
-          <Link
-            href="/library/learning-paths"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-          >
-            <Route
-              className="w-5 h-5 text-primary-500 mr-4"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <span className="flex-1 font-semibold">学习路径</span>
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
-          <Link
-            href="/library/history"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-          >
-            <History
-              className="w-5 h-5 text-secondary-500 mr-4"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <span className="flex-1 font-semibold">收听历史</span>
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
-          <Link
-            href="/library/favorites"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors"
-          >
-            <Bookmark
-              className="w-5 h-5 text-accent-500 mr-4"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <span className="flex-1 font-semibold">我的收藏</span>
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
+        <div className="bg-base-100 rounded-3xl shadow-sm mb-6">
+          <div className="grid grid-cols-4">
+            {GRID_ENTRIES.map(({ name, href, icon: Icon, iconClass }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-2xl bg-base-100 md:hover:bg-base-200/60 active:scale-95 active:bg-base-300 transition-all duration-200 ease-in-out"
+              >
+                <span
+                  className={`flex items-center justify-center w-11 h-11 rounded-2xl ${iconClass}`}
+                >
+                  <Icon className="w-5 h-5" strokeWidth={1.75} aria-hidden />
+                </span>
+                <span className="text-xs font-semibold text-base-content/70">
+                  {name}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* 账户与系统设置 */}
+      {/* 系统管理列表：低频管理操作 */}
       <div className="bg-base-100 rounded-3xl overflow-hidden shadow-sm mb-6">
-        {session && (
-          <>
-            <Link
-              href="/auth/personal-center"
-              className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-            >
-              <User
-                className="w-5 h-5 text-base-content/60 mr-4"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <span className="flex-1 font-semibold">个人中心</span>
-              <ChevronRight
-                className="w-5 h-5 text-base-content/30"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-            </Link>
-            <Link
-              href="/auth/subscribe"
-              className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-            >
-              <CreditCard
-                className="w-5 h-5 text-base-content/60 mr-4"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <span className="flex-1 font-semibold">我的订阅</span>
-              <ChevronRight
-                className="w-5 h-5 text-base-content/30"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-            </Link>
-          </>
-        )}
-
         {session?.user?.role === "ADMIN" && (
           <Link
             href="/admin"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
+            className="flex items-center px-5 py-4 md:hover:bg-base-200 active:bg-base-300 active:scale-[0.98] transition-all duration-200 ease-in-out border-b border-base-200/50"
           >
             <LayoutDashboard
               className="w-5 h-5 text-error-500 dark:text-error-400 mr-4"
@@ -270,8 +205,11 @@ export default function MinePage() {
           </Link>
         )}
 
+        {/* 外观设置：原地切换主题（不导航）。移动端必须禁用 hover 反馈——
+            触屏 tap 会触发 :hover 且点击后粘住不释放，主题切回浅色后
+            该行会残留 hover:bg-base-200 的灰底（md: 断点以上才启用悬停效果） */}
         <ThemeSwitcher
-          className="w-full flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50 text-base-content"
+          className="w-full flex items-center px-5 py-4 md:hover:bg-base-200 active:bg-base-300 active:scale-[0.98] transition-all duration-200 ease-in-out border-b border-base-200/50 text-base-content"
           icon={
             <Palette
               className="w-5 h-5 text-base-content/60 mr-4"
@@ -288,38 +226,9 @@ export default function MinePage() {
           />
         </ThemeSwitcher>
 
-        {session && (
-          <Link
-            href="/notifications"
-            className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
-          >
-            <div className="relative mr-4 w-6 h-6">
-              <Bell
-                className="w-5 h-5 text-base-content/60"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-error-500 ring-2 ring-base-100 z-10"></span>
-              )}
-            </div>
-            <span className="flex-1 font-semibold">消息通知</span>
-            {unreadCount > 0 && (
-              <span className="mr-3 px-2 py-0.5 bg-error-500/10 dark:bg-error-400/10 text-error-500 dark:text-error-400 rounded-full text-xs font-bold">
-                {unreadCount} 条新通知
-              </span>
-            )}
-            <ChevronRight
-              className="w-5 h-5 text-base-content/30"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </Link>
-        )}
-
         <Link
           href="/contact"
-          className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors"
+          className="flex items-center px-5 py-4 md:hover:bg-base-200 active:bg-base-300 active:scale-[0.98] transition-all duration-200 ease-in-out"
         >
           <CircleHelp
             className="w-5 h-5 text-base-content/60 mr-4"
@@ -342,7 +251,7 @@ export default function MinePage() {
             await signOut({ redirect: false });
             router.push("/home");
           }}
-          className="w-full bg-base-100 text-error-500 dark:text-error-400 font-bold text-lg py-4 rounded-3xl shadow-sm hover:bg-error-500/10 dark:hover:bg-error-400/10 active:scale-[0.98] transition-all"
+          className="w-full bg-base-100 text-error-500 dark:text-error-400 font-bold text-lg py-4 rounded-3xl shadow-sm md:hover:bg-error-500/10 dark:md:hover:bg-error-400/10 active:scale-[0.98] active:bg-error-500/15 dark:active:bg-error-400/15 transition-all duration-200 ease-in-out"
         >
           退出登录
         </button>

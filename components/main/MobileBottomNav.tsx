@@ -3,19 +3,36 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookA, Compass, Home, User, type LucideIcon } from "lucide-react";
+import { BookOpen, Compass, Home, User, type LucideIcon } from "lucide-react";
 import { useNotificationStore } from "@/store/notification-store";
 
-const tabs: { name: string; href: string; icon: LucideIcon }[] = [
-  { name: "首页", href: "/home", icon: Home },
+interface TabConfig {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  /** 额外视为激活态的路径前缀（复习中心同时覆盖旧的 library 三本入口） */
+  activePrefixes?: string[];
+}
+
+const tabs: TabConfig[] = [
+  { name: "主页", href: "/home", icon: Home },
   { name: "发现", href: "/discover", icon: Compass },
-  { name: "生词本", href: "/library/vocabulary", icon: BookA },
+  {
+    name: "复习",
+    href: "/review/vocabulary",
+    icon: BookOpen,
+    activePrefixes: [
+      "/review",
+      "/library/vocabulary",
+      "/library/sentences",
+      "/library/pronunciation",
+    ],
+  },
   { name: "我的", href: "/auth/mine", icon: User },
 ];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const initPolling = useNotificationStore((s) => s.initPolling);
 
   useEffect(() => {
@@ -36,8 +53,10 @@ export default function MobileBottomNav() {
 
       <div className="flex items-center justify-around h-[var(--bottom-nav-height)]">
         {tabs.map((tab) => {
-          const isActive =
-            pathname === tab.href || pathname.startsWith(tab.href + "/");
+          const isActive = [tab.href, ...(tab.activePrefixes ?? [])].some(
+            (prefix) =>
+              pathname === prefix || pathname.startsWith(prefix + "/"),
+          );
 
           return (
             <Link
@@ -57,9 +76,6 @@ export default function MobileBottomNav() {
                     isActive ? "scale-110" : "scale-100"
                   }`}
                 />
-                {tab.href === "/auth/mine" && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-error-500 ring-2 ring-white dark:ring-ink-900"></span>
-                )}
               </div>
               <span
                 className={`text-[10px] leading-none font-semibold transition-all duration-200 ${

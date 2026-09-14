@@ -202,3 +202,10 @@ html[data-theme="dark"] {
   );
   background-size: 200% 100%;
 }
+
+/* 复习中心：移动端顶部 Tab 栏高度（h-12 = 48px），
+   供子页面内 sticky 控件（生词本筛选栏等）吸附在 Tab 栏下方而非被遮挡。
+   桌面端 Tab 栏为 static，子页面控件沿用 md:top-20 吸附在全局 Header 下。 */
+.review-hub {
+  --review-offset: 3rem;
+}

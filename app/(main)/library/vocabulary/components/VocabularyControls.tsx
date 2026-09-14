@@ -10,7 +10,7 @@ export function VocabularyControls({
     hookOptions;
 
   return (
-    <div className="flex flex-col gap-4 bg-white/95 dark:bg-ink-900/95 backdrop-blur-xl p-3 rounded-xl transition-colors sticky top-0 md:top-20 z-30 xl:static shadow-sm border border-base-200 dark:border-ink-800">
+    <div className="flex flex-col gap-4 bg-white/95 dark:bg-ink-900/95 backdrop-blur-xl p-3 rounded-xl transition-colors sticky top-[var(--review-offset,0px)] md:top-20 z-30 xl:static shadow-sm border border-base-200 dark:border-ink-800">
       {/* 状态切换 Tab */}
       <div className="flex items-center space-x-1 border-b border-base-200/50 pb-2">
         <button

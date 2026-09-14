@@ -12,6 +12,7 @@ import JourneyStrip, { JourneyDay } from "@/components/main/home/JourneyStrip";
 import ContinueListening from "@/components/main/home/ContinueListening";
 import RecommendedPodcasts from "@/components/main/home/RecommendedPodcasts";
 import RecentEpisodes from "@/components/main/home/RecentEpisodes";
+import HomeNotificationBell from "@/components/main/home/HomeNotificationBell";
 import { UserHomeStatsDto, WeeklyActivityItemDto } from "@/core/stats/dto";
 import { RecentHistoryItemDto } from "@/core/listening-history/dto";
 import { User } from "next-auth";
@@ -100,12 +101,14 @@ export default function HomeClient({
 
   return (
     <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20">
+      {/* 消息通知入口：移动端右上角悬浮铃铛（未读红点） */}
+      {user && <HomeNotificationBell />}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-10">
         {/* 问候区：标题独占一行，签名与连胜徽章同行。
             三端共用同一骨架，避免移动端徽章与标题争抢水平空间 */}
         <div className="min-w-0">
           <h1
-            className="font-display text-2xl md:text-3xl font-bold leading-tight text-ink-900 dark:text-ink-50"
+            className="font-display text-2xl md:text-3xl font-bold leading-tight text-ink-900 dark:text-ink-50 pr-14 md:pr-0"
             suppressHydrationWarning
           >
             {greeting}，{displayName}。
