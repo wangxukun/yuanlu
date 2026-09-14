@@ -72,7 +72,11 @@ export default function MinePage() {
                 点击登录或注册，开启学习之旅
               </p>
             </div>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </div>
         ) : (
           <div className="flex items-center gap-4 w-full">
@@ -87,7 +91,11 @@ export default function MinePage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-base-content/50">
-                  <CircleUser className="w-10 h-10" strokeWidth={1.5} aria-hidden />
+                  <CircleUser
+                    className="w-10 h-10"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
                 </div>
               )}
             </div>
@@ -123,41 +131,81 @@ export default function MinePage() {
             href="/library/sentences"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <TextQuote className="w-5 h-5 text-warning mr-4" strokeWidth={1.75} aria-hidden />
+            <TextQuote
+              className="w-5 h-5 text-warning mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className="flex-1 font-semibold">句子本</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
           <Link
             href="/library/pronunciation"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <Mic className="w-5 h-5 text-info-500 mr-4" strokeWidth={1.75} aria-hidden />
+            <Mic
+              className="w-5 h-5 text-info-500 mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className="flex-1 font-semibold">发音弱项本</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
           <Link
             href="/library/learning-paths"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <Route className="w-5 h-5 text-primary-500 mr-4" strokeWidth={1.75} aria-hidden />
+            <Route
+              className="w-5 h-5 text-primary-500 mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className="flex-1 font-semibold">学习路径</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
           <Link
             href="/library/history"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <History className="w-5 h-5 text-secondary-500 mr-4" strokeWidth={1.75} aria-hidden />
+            <History
+              className="w-5 h-5 text-secondary-500 mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className="flex-1 font-semibold">收听历史</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
           <Link
             href="/library/favorites"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors"
           >
-            <Bookmark className="w-5 h-5 text-accent-500 mr-4" strokeWidth={1.75} aria-hidden />
+            <Bookmark
+              className="w-5 h-5 text-accent-500 mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className="flex-1 font-semibold">我的收藏</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
         </div>
       )}
@@ -170,17 +218,33 @@ export default function MinePage() {
               href="/auth/personal-center"
               className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
             >
-              <User className="w-5 h-5 text-base-content/60 mr-4" strokeWidth={1.75} aria-hidden />
+              <User
+                className="w-5 h-5 text-base-content/60 mr-4"
+                strokeWidth={1.75}
+                aria-hidden
+              />
               <span className="flex-1 font-semibold">个人中心</span>
-              <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+              <ChevronRight
+                className="w-5 h-5 text-base-content/30"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             </Link>
             <Link
               href="/auth/subscribe"
               className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
             >
-              <CreditCard className="w-5 h-5 text-base-content/60 mr-4" strokeWidth={1.75} aria-hidden />
+              <CreditCard
+                className="w-5 h-5 text-base-content/60 mr-4"
+                strokeWidth={1.75}
+                aria-hidden
+              />
               <span className="flex-1 font-semibold">我的订阅</span>
-              <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+              <ChevronRight
+                className="w-5 h-5 text-base-content/30"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             </Link>
           </>
         )}
@@ -190,9 +254,19 @@ export default function MinePage() {
             href="/admin"
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
-            <LayoutDashboard className="w-5 h-5 text-error-500 dark:text-error-400 mr-4" strokeWidth={1.75} aria-hidden />
-            <span className="flex-1 font-semibold text-error-500 dark:text-error-400">控制台</span>
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <LayoutDashboard
+              className="w-5 h-5 text-error-500 dark:text-error-400 mr-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <span className="flex-1 font-semibold text-error-500 dark:text-error-400">
+              控制台
+            </span>
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
         )}
 
@@ -206,8 +280,12 @@ export default function MinePage() {
             />
           }
         >
-          <span className="ml-4 flex-1 text-left font-semibold">外观设置</span>
-          <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+          <span className="flex-1 text-left font-semibold">外观设置</span>
+          <ChevronRight
+            className="w-5 h-5 text-base-content/30"
+            strokeWidth={1.75}
+            aria-hidden
+          />
         </ThemeSwitcher>
 
         {session && (
@@ -216,7 +294,11 @@ export default function MinePage() {
             className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors border-b border-base-200/50"
           >
             <div className="relative mr-4 w-6 h-6">
-              <Bell className="w-5 h-5 text-base-content/60" strokeWidth={1.75} aria-hidden />
+              <Bell
+                className="w-5 h-5 text-base-content/60"
+                strokeWidth={1.75}
+                aria-hidden
+              />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-error-500 ring-2 ring-base-100 z-10"></span>
               )}
@@ -227,7 +309,11 @@ export default function MinePage() {
                 {unreadCount} 条新通知
               </span>
             )}
-            <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+            <ChevronRight
+              className="w-5 h-5 text-base-content/30"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </Link>
         )}
 
@@ -235,9 +321,17 @@ export default function MinePage() {
           href="/contact"
           className="flex items-center px-5 py-4 hover:bg-base-200 active:bg-base-200 transition-colors"
         >
-          <CircleHelp className="w-5 h-5 text-base-content/60 mr-4" strokeWidth={1.75} aria-hidden />
+          <CircleHelp
+            className="w-5 h-5 text-base-content/60 mr-4"
+            strokeWidth={1.75}
+            aria-hidden
+          />
           <span className="flex-1 font-semibold">帮助与支持</span>
-          <ChevronRight className="w-5 h-5 text-base-content/30" strokeWidth={1.75} aria-hidden />
+          <ChevronRight
+            className="w-5 h-5 text-base-content/30"
+            strokeWidth={1.75}
+            aria-hidden
+          />
         </Link>
       </div>
 
