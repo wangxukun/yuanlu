@@ -33,6 +33,11 @@ export function useSaveProgress({
   // 核心保存函数
   const saveToBackend = useCallback(
     async (time: number, finished: boolean, force: boolean = false) => {
+      // episodeId 为空（无在播剧集/剧集数据缺 id）时 URL 会退化为
+      // /api/episode//progress，被服务端规范化后命中 GET-only 的剧集详情
+      // 路由返回 405，必须直接跳过
+      if (!episodeId) return;
+
       // 如果是强制保存(force=true)，则无视锁；否则才检查锁
       if (!force && isSavingRef.current && !finished) return;
 
@@ -140,8 +145,8 @@ export function useSaveProgress({
   // 4. 页面关闭前保存
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // 如果已经完成了，就不需要在关闭页面时再发请求了（避免覆盖）
-      if (lastSaveWasFinishedRef.current) return;
+      // 无在播剧集时没有可保存的进度；已完成时也无需在关闭页面时再发请求（避免覆盖）
+      if (!episodeId || lastSaveWasFinishedRef.current) return;
 
       const payload = JSON.stringify({
         progressSeconds: currentTimeRef.current,

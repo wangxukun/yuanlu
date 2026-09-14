@@ -6,6 +6,7 @@ import { Mic, Edit2, Trash2, FileText, Radio } from "lucide-react";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import SentenceMicroPlayer from "@/components/sentence/SentenceMicroPlayer";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 interface SentenceCompactListProps {
   sentences: SavedSentenceItem[];
@@ -27,6 +28,9 @@ export function SentenceCompactList({
   onEdit,
   onDelete,
 }: SentenceCompactListProps) {
+  // 影子跟读入口用绝对路径前缀（相对路径在 Segment Cache Link 下解析基准是 layout 段，会 404）
+  const base = useNotebookBase("sentences");
+
   return (
     <div className="bg-white dark:bg-ink-900 rounded-2xl border border-gray-200 dark:border-ink-800 overflow-hidden shadow-sm divide-y divide-gray-200 dark:divide-ink-800">
       {sentences.map((item, index) => (
@@ -92,7 +96,7 @@ export function SentenceCompactList({
             />
             {item.subtitleId != null ? (
               <Link
-                href={`/library/sentences/review/practice?id=${item.id}`}
+                href={`${base}/review/practice?id=${item.id}`}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95 md:text-indigo-600 md:dark:text-indigo-400 md:hover:bg-indigo-500/10"
                 title="AI 影子跟读"
               >

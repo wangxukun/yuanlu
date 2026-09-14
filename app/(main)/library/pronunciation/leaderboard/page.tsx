@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Trophy, Loader2, Medal, ArrowLeft, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 interface LeaderboardEntry {
   userid: string;
@@ -31,6 +32,8 @@ const RANK_STYLES = ["text-yellow-500", "text-gray-400", "text-amber-600"];
  */
 export default function LeaderboardPage() {
   const router = useRouter();
+  // 返回发音弱项本的绝对路径前缀：从 /review 分支进入则回到复习中心（Top Tabs 常驻）
+  const base = useNotebookBase("pronunciation");
   const [period, setPeriod] = useState<Period>("weekly");
   const [metric, setMetric] = useState<Metric>("score");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -74,7 +77,7 @@ export default function LeaderboardPage() {
         {/* 头部 */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/library/pronunciation")}
+            onClick={() => router.push(base)}
             className="btn btn-circle btn-ghost"
           >
             <ArrowLeft size={20} />
@@ -207,7 +210,9 @@ export default function LeaderboardPage() {
         {/* 我的排名 */}
         {me && (
           <div className="bg-primary-600/5 dark:bg-primary-400/5 border border-primary-600/20 dark:border-primary-400/20 rounded-2xl px-5 py-4 flex items-center gap-4">
-            <span className="text-2xl font-black text-primary-600 dark:text-primary-400">#{me.rank}</span>
+            <span className="text-2xl font-black text-primary-600 dark:text-primary-400">
+              #{me.rank}
+            </span>
             <div>
               <p className="font-bold text-sm text-base-content">我的排名</p>
               <p className="text-xs text-base-content/60">

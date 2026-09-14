@@ -11,6 +11,7 @@ import {
   getEpisodeSubtitlesData,
   type EpisodeSubtitleItem,
 } from "@/lib/client/episode-audio";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 interface SentenceShadowingPracticeProps {
   sentences: SavedSentenceItem[];
@@ -27,6 +28,9 @@ export default function SentenceShadowingPractice({
 }: SentenceShadowingPracticeProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // 返回链接的绝对路径前缀：从 /review 分支进入则回到复习中心（Top Tabs 常驻），
+  // 从 /library 分支进入则回到独立句子本页
+  const base = useNotebookBase("sentences");
 
   // 初始句定位：?id=（收藏句 id，句子本列表入口，最精准）优先，
   // ?subtitleId=（刷句复习卡入口）兜底；均未命中时从第一句开始
@@ -153,7 +157,7 @@ export default function SentenceShadowingPractice({
   };
 
   const handleExit = () => {
-    router.push("/library/sentences");
+    router.push(base);
     router.refresh();
   };
 
@@ -161,8 +165,8 @@ export default function SentenceShadowingPractice({
   const handleBackToDeck = () => {
     router.push(
       current?.subtitleId != null
-        ? `/library/sentences/review?subtitleId=${current.subtitleId}`
-        : "/library/sentences/review",
+        ? `${base}/review?subtitleId=${current.subtitleId}`
+        : `${base}/review`,
     );
   };
 
@@ -185,7 +189,9 @@ export default function SentenceShadowingPractice({
           📝
         </div>
         <h2 className="text-2xl font-bold">没有可跟读的句子</h2>
-        <p className="text-base-content/60">先去句子本收藏几个句子再来练习吧。</p>
+        <p className="text-base-content/60">
+          先去句子本收藏几个句子再来练习吧。
+        </p>
         <button onClick={handleExit} className="btn mt-4">
           返回句子本
         </button>

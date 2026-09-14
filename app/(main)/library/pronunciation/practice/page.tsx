@@ -15,9 +15,12 @@ import SpeechEvaluationCard from "@/components/voice/SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
 import { useUIStore } from "@/store/ui-store";
 import { toast } from "sonner";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 export default function PronunciationPracticePage() {
   const router = useRouter();
+  // 返回发音弱项本的绝对路径前缀：从 /review 分支进入则回到复习中心（Top Tabs 常驻）
+  const base = useNotebookBase("pronunciation");
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
@@ -98,7 +101,7 @@ export default function PronunciationPracticePage() {
   };
 
   const handleExit = () => {
-    router.push("/library/pronunciation");
+    router.push(base);
     router.refresh();
   };
 

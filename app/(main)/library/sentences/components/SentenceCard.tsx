@@ -14,6 +14,7 @@ import {
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import SentenceMicroPlayer from "@/components/sentence/SentenceMicroPlayer";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 interface SentenceCardProps {
   sentence: SavedSentenceItem;
@@ -37,6 +38,8 @@ export function SentenceCard({
   onEdit,
   onDelete,
 }: SentenceCardProps) {
+  // 影子跟读入口用绝对路径前缀（相对路径在 Segment Cache Link 下解析基准是 layout 段，会 404）
+  const base = useNotebookBase("sentences");
   // 操作坞（影子跟读/编辑/删除）：桌面端渲染于卡片右上角（btn-soft/ghost 形态），
   // 移动端渲染于播放条行居右，统一为无背景裸图标风格（与播放/循环图标一致）
   const renderActionDock = (mobile: boolean) => (
@@ -44,7 +47,7 @@ export function SentenceCard({
       {/* Shadowing AI Pronunciation Evaluation Entry：跳独立影子跟读评测页，携带句子 id 精准定位初始卡 */}
       {item.subtitleId != null ? (
         <Link
-          href={`/library/sentences/review/practice?id=${item.id}`}
+          href={`${base}/review/practice?id=${item.id}`}
           className={
             mobile
               ? "w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-ink-300 hover:text-gray-800 dark:hover:text-ink-100 transition-colors active:scale-95"

@@ -28,6 +28,7 @@ import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { useVocabHighlightStore } from "@/store/vocab-highlight-store";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import { getEpisodeAudioUrl } from "@/lib/client/episode-audio";
+import { useNotebookBase } from "@/lib/notebook-base";
 
 interface ReviewDeckProps {
   sentences: SavedSentenceItem[];
@@ -47,6 +48,9 @@ export default function ReviewDeck({
   vocabWords,
   initialSubtitleId,
 }: ReviewDeckProps) {
+  // 返回/跟读入口用绝对路径前缀：从 /review 分支进入回到复习中心（Top Tabs 常驻），
+  // 从 /library 分支进入回到独立句子本页
+  const base = useNotebookBase("sentences");
   const [currentIndex, setCurrentIndex] = useState(() => {
     if (!initialSubtitleId) return 0;
     const idx = sentences.findIndex(
@@ -180,7 +184,7 @@ export default function ReviewDeck({
           请先在播客单集逐字稿中收藏一些句子，再进入卡片复习模式。
         </p>
         <Link
-          href="/library/sentences"
+          href={base}
           className="btn rounded-xl px-6 border-none bg-primary-600 hover:bg-primary-500 text-white"
         >
           返回句子本
@@ -193,8 +197,9 @@ export default function ReviewDeck({
     <div className="min-h-[90vh] flex flex-col justify-between max-w-md mx-auto px-4 py-3 select-none">
       {/* Top App Bar */}
       <div className="flex items-center justify-between py-2">
+        {/* 返回句子本（上下文感知的绝对路径前缀） */}
         <Link
-          href="/library/sentences"
+          href={base}
           className="btn btn-ghost btn-circle btn-sm text-base-content/70"
           title="退出复习模式"
         >
@@ -378,7 +383,7 @@ export default function ReviewDeck({
         {/* AI Shadowing Evaluation entry：路由到独立的影子跟读评测页（对齐发音弱项本闯关入口） */}
         {currentSentence.subtitleId != null && (
           <Link
-            href={`/library/sentences/review/practice?subtitleId=${currentSentence.subtitleId}`}
+            href={`${base}/review/practice?subtitleId=${currentSentence.subtitleId}`}
             className="btn btn-outline border-primary-500/30 text-primary-600 dark:text-primary-400 dark:border-primary-400/30 hover:bg-primary-600 hover:text-white hover:border-primary-600 dark:hover:bg-primary-500 dark:hover:text-white dark:hover:border-primary-500 rounded-2xl h-12 px-4 font-bold text-xs flex items-center gap-1.5"
             title="AI 影子跟读评测"
           >
@@ -425,7 +430,9 @@ export default function ReviewDeck({
                 <MoveLeft size={16} />
               </span>
               <span>
-                <strong className="font-bold text-base-content">左滑卡片</strong>
+                <strong className="font-bold text-base-content">
+                  左滑卡片
+                </strong>
                 ：切换到下一句
               </span>
             </li>
@@ -434,7 +441,9 @@ export default function ReviewDeck({
                 <MoveRight size={16} />
               </span>
               <span>
-                <strong className="font-bold text-base-content">右滑卡片</strong>
+                <strong className="font-bold text-base-content">
+                  右滑卡片
+                </strong>
                 ：重听原声音频
               </span>
             </li>
