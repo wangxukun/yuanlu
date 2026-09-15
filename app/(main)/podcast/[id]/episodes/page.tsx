@@ -40,7 +40,13 @@ export default async function EpisodesPage(props: {
   // 并行请求：获取播客详情和第一页剧集数据（默认 20 条，按发布时间倒序）
   const [podcast, episodesData] = await Promise.all([
     getPodcastDetail(id),
-    episodeService.getPodcastEpisodes(id, { page: 1, limit: 20, userId }),
+    // [P1-4] 传入访问者会话，专享剧集媒体字段按访问权剥离
+    episodeService.getPodcastEpisodes(id, {
+      page: 1,
+      limit: 20,
+      userId,
+      viewer: session?.user ?? null,
+    }),
   ]);
 
   if (!podcast) {

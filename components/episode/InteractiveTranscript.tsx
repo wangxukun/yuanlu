@@ -15,6 +15,7 @@ import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import { handleVocabularyQuotaBlock } from "@/lib/client/vocabulary-quota";
 import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 
@@ -425,6 +426,8 @@ export default function InteractiveTranscript({
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
+        // [P1-1] 生词配额拦截走会员弹窗承接（含埋点），不再只弹错误 toast
+        if (handleVocabularyQuotaBlock(errorData)) return;
         toast.error(errorData.message || "保存失败");
       }
     } catch (error) {

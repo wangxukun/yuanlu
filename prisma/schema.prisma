@@ -402,6 +402,26 @@ model subscriptions {
   User             User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 爱发电订单流水（P0-2）：out_trade_no 唯一索引是 Webhook 幂等闸门，
+/// 重试/重放在此被拦截（重复加时不可能发生）；同时为 P2-3
+/// 「未匹配订单暂存 + 管理员认领」预先落好数据基础。
+/// status: ACTIVATED / NO_REMARK / UNMATCHED_USER / NON_PLAN_SPONSOR / AMOUNT_MISMATCH
+model AfdianOrder {
+  orderid     Int      @id @default(autoincrement())
+  outTradeNo  String   @unique @db.VarChar(64)
+  userid      String?
+  planId      String?  @db.VarChar(64)
+  amount      Decimal  @db.Decimal(10, 2)
+  daysGranted Int      @default(0)
+  status      String   @db.VarChar(30)
+  remark      String?
+  createAt    DateTime @default(now()) @db.Timestamptz(6)
+  updateAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([userid, createAt(sort: Desc)])
+  @@index([status, createAt(sort: Desc)])
+}
+
 /// 词汇模型，用于存储用户词汇信息
 model vocabulary {
   vocabularyid    Int       @id @default(autoincrement())

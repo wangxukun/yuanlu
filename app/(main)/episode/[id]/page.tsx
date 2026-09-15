@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: episode.description || "",
       images: episode.coverUrl ? [episode.coverUrl] : [],
       type: "article",
-      audio: episode.audioUrl,
+      // [P1-4] 专享剧集对无权限用户已剥离直链，空值不再写入元信息
+      ...(episode.audioUrl ? { audio: episode.audioUrl } : {}),
     },
   };
 }
@@ -45,10 +46,15 @@ export default async function EpisodePage({
     image: episode.coverUrl,
     datePublished: episode.publishAt,
     timeRequired: `PT${Math.floor(episode.duration / 60)}M`,
-    associatedMedia: {
-      "@type": "MediaObject",
-      contentUrl: episode.audioUrl,
-    },
+    // [P1-4] 专享剧集无权限时直链已剥离，不输出 associatedMedia，避免空直链入库搜索引擎
+    ...(episode.audioUrl
+      ? {
+          associatedMedia: {
+            "@type": "MediaObject",
+            contentUrl: episode.audioUrl,
+          },
+        }
+      : {}),
     partOfSeries: {
       "@type": "PodcastSeries",
       name: episode.podcast?.title,

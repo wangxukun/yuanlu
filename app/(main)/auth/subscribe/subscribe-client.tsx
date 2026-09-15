@@ -183,8 +183,10 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
               sessionStorage.setItem("subscription_flash_message", message);
               setIsPolling(false);
 
-              // Update the NextAuth session token with the new role
-              await updateSession({ user: { role: data.role } });
+              // [P1-2] 强制服务端刷新会话：update() 会触发 jwt 回调立即按订阅
+              // 状态重新派生 role（客户端传入的 role 一律被忽略，防伪造设计不变），
+              // 付费后前端锁定态（锁图标/专享墙）即时消失，无需等 5 分钟节流。
+              await updateSession();
 
               router.refresh();
               clearInterval(interval);

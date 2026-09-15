@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
       search,
       sort,
       userId,
+      // [P1-4] 传入访问者会话，专享剧集媒体字段按访问权剥离
+      viewer: session?.user ?? null,
     });
 
     return NextResponse.json({

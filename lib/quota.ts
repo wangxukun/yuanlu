@@ -31,5 +31,9 @@ export const SPEECH_QUOTA_EXCEEDED = "EVALUATION_QUOTA_EXCEEDED";
 /** 生词配额超限的错误码（/api/vocabulary/add 返回），语义同上 */
 export const VOCABULARY_QUOTA_EXCEEDED = "VOCABULARY_QUOTA_EXCEEDED";
 
+/** 生词每日新增配额超限的错误码（/api/vocabulary/add 返回），语义同上 */
+export const VOCABULARY_DAILY_QUOTA_EXCEEDED =
+  "VOCABULARY_DAILY_QUOTA_EXCEEDED";
+
 /** 词典查询配额超限的错误码（有道词典 / LLM 词典接口返回），语义同上 */
 export const DICTIONARY_QUOTA_EXCEEDED = "DICTIONARY_QUOTA_EXCEEDED";

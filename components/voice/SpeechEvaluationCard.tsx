@@ -33,6 +33,7 @@ import type { TextMode } from "@/store/practice-settings-store";
 import { VocabularyModal } from "@/components/episode/transcript/VocabularyModal";
 import type { DictEntryDTO } from "@/core/dictionary/dto";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import { handleVocabularyQuotaBlock } from "@/lib/client/vocabulary-quota";
 import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
 import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
@@ -290,6 +291,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         setIsDictModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
+        // [P1-1] 生词配额拦截走会员弹窗承接（含埋点），不再只弹错误 toast
+        if (handleVocabularyQuotaBlock(errorData)) return;
         toast.error(errorData.message || "保存失败");
       }
     } catch (error) {

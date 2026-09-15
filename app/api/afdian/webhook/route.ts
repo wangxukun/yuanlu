@@ -1,15 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
 import { formatChineseDate } from "@/lib/tools";
+import { resolvePlanGrant } from "@/lib/afdian-plans";
 
-const AFDIAN_WEBHOOK_SECRET =
-  process.env.AFDIAN_WEBHOOK_SECRET || "YuanluSecret_2026_Prod";
+// [P0-2/W2] 密钥只认环境变量：源码中不再存在任何默认值。
+// env 漏配时直接拒绝处理（fail-closed），而不是带着公开默认密钥静默放行伪造回调。
+const AFDIAN_WEBHOOK_SECRET = process.env.AFDIAN_WEBHOOK_SECRET;
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || "Unknown";
   console.log(`[Webhook] Received request from IP: ${ip}`);
+
+  if (!AFDIAN_WEBHOOK_SECRET) {
+    console.error(
+      "[Webhook] AFDIAN_WEBHOOK_SECRET 未配置，拒绝处理回调（fail-closed）",
+    );
+    return NextResponse.json(
+      { ec: 500, em: "服务器未配置回调密钥，拒绝处理" },
+      { status: 500 },
+    );
+  }
 
   try {
     const rawBody = await req.json();
@@ -60,20 +73,14 @@ export async function POST(req: NextRequest) {
         isAuthenticated = true;
         authReason = "MD5签名验证成功";
       } else {
-        // 开发环境宽限放行
-        if (process.env.NODE_ENV !== "production") {
-          isAuthenticated = true;
-          authReason = "签名不匹配 (开发环境宽限放行)";
-        }
+        authReason = "签名不匹配";
       }
     } else {
-      // 本地环境无鉴权宽限放行
-      if (process.env.NODE_ENV !== "production") {
-        isAuthenticated = true;
-        authReason = "未包含鉴权 Token (开发环境宽限放行)";
-      }
+      authReason = "未包含鉴权 Token";
     }
 
+    // [P0-2/W3] 所有环境强制鉴权：移除"非 production 宽限放行"分支。
+    // NODE_ENV 误配不再等价于免费充值入口。
     if (!isAuthenticated) {
       console.error("[Webhook] Auth failed:", authReason);
       return NextResponse.json(
@@ -96,6 +103,7 @@ export async function POST(req: NextRequest) {
     const out_trade_no = order.out_trade_no;
     const remark = order.remark || "";
     const total_amount = order.total_amount;
+    const planId = order.plan_id ? String(order.plan_id) : null;
 
     if (!out_trade_no) {
       return NextResponse.json(
@@ -105,148 +113,68 @@ export async function POST(req: NextRequest) {
     }
 
     const remarkStr = String(remark).trim();
+    const parsedAmt = parseFloat(total_amount.toString());
+    const amount = Number.isFinite(parsedAmt) ? parsedAmt : 0;
 
-    if (!remarkStr) {
-      console.warn(`[Webhook] 无效的空留言`);
+    // [P0-2/W1+W4] 幂等 + 匹配 + 白名单计费 + 激活 收敛进同一个事务：
+    // 1. 订单先落库（outTradeNo 唯一索引）——create 成功即独占该笔交易的处理权，
+    //    爱发电重试/重放触发唯一冲突（P2002），按已处理直接返回，重复加时不可能发生；
+    // 2. 任一中间步骤抛错则整体回滚，订单不会残留在半处理状态；
+    // 3. 无留言/未匹配/非套餐赞助同样入账（status 区分），为 P2-3 认领面板留好数据。
+    let result: Awaited<ReturnType<typeof processOrder>>;
+    try {
+      result = await prisma.$transaction(async (tx) =>
+        processOrder(tx, {
+          outTradeNo: out_trade_no,
+          remarkStr,
+          planId,
+          amount,
+        }),
+      );
+    } catch (txError) {
+      if (
+        txError instanceof Prisma.PrismaClientKnownRequestError &&
+        txError.code === "P2002"
+      ) {
+        console.warn(`[Webhook] 重复回调（幂等拦截）: ${out_trade_no}`);
+        return NextResponse.json({
+          ec: 200,
+          em: "ok",
+          detail: "重复回调，已按幂等忽略",
+        });
+      }
+      throw txError;
+    }
+
+    if (result.status !== "ACTIVATED") {
+      console.warn(
+        `[Webhook] 订单 ${out_trade_no} 已入账但未激活 (${result.status})`,
+      );
       return NextResponse.json({
         ec: 200,
         em: "ok",
-        detail: "订单处理完成但未激活 (无有效留言凭证)",
+        detail: `订单已入账，未激活 (${result.status})`,
       });
     }
-
-    let matched = null;
-
-    // 1. 优先尝试使用完整留言作为 userid 匹配
-    matched = await prisma.user.findUnique({
-      where: { userid: remarkStr },
-    });
-
-    // 2. 如果未匹配，尝试作为邮箱提取匹配（向下兼容历史老用户的预填邮箱）
-    if (!matched) {
-      const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-      const matchedEmails = remarkStr.match(emailRegex);
-      let targetEmail = "";
-      if (matchedEmails && matchedEmails.length > 0) {
-        targetEmail = matchedEmails[0].toLowerCase();
-      } else if (remarkStr.includes("@")) {
-        targetEmail = remarkStr.toLowerCase();
-      }
-      
-      if (targetEmail) {
-        matched = await prisma.user.findUnique({
-          where: { email: targetEmail },
-        });
-      }
-    }
-
-    // 3. 如果还是未匹配，尝试将整个留言作为手机号匹配
-    if (!matched) {
-      matched = await prisma.user.findUnique({
-        where: { phone: remarkStr },
-      });
-    }
-
-    if (!matched) {
-      console.warn(`[Webhook] 未找到匹配的用户: ${remarkStr}`);
-      return NextResponse.json({
-        ec: 200,
-        em: "ok",
-        detail: "订单处理完成但未激活 (未找到匹配的用户)",
-      });
-    }
-
-    // 计算开通天数
-    let daysAdded = 0;
-    const amt = parseFloat(total_amount.toString());
-
-    if (Math.abs(amt - 5) < 0.1) {
-      daysAdded = 7;
-    } else if (Math.abs(amt - 18) < 0.1) {
-      daysAdded = 30;
-    } else if (Math.abs(amt - 48) < 0.1) {
-      daysAdded = 90;
-    } else if (Math.abs(amt - 168) < 0.1) {
-      daysAdded = 365;
-    } else {
-      if (amt >= 168) {
-        daysAdded = Math.floor(amt * (365 / 168));
-      } else if (amt >= 48) {
-        daysAdded = Math.floor(amt * (90 / 48));
-      } else if (amt >= 18) {
-        daysAdded = Math.floor(amt * (30 / 18));
-      } else if (amt >= 5) {
-        daysAdded = Math.floor(amt * (7 / 5));
-      } else {
-        daysAdded = Math.floor(amt * 1);
-      }
-    }
-
-    // 更新或创建订阅
-    let currentExpiryTimestamp = Date.now();
-    const activeSub = await prisma.subscriptions.findFirst({
-      where: {
-        userid: matched.userid,
-        subscriptionType: "PREMIUM",
-        endDate: { gt: new Date() },
-      },
-      orderBy: { endDate: "desc" },
-    });
-
-    if (activeSub?.endDate) {
-      const existing = activeSub.endDate.getTime();
-      if (existing > Date.now()) {
-        currentExpiryTimestamp = existing;
-      }
-    }
-
-    const newExpiryDate = new Date(
-      currentExpiryTimestamp + daysAdded * 24 * 60 * 60 * 1000,
-    );
-
-    await prisma.$transaction(async (tx) => {
-      // 1. 新增订阅记录（这里我们为了保留历史，直接新增一条或延期现有订阅。为了简化，我们像 YuanluVIP 一样创建一条新记录，或者采用 setting 的逻辑：更新现有）
-      if (activeSub) {
-        await tx.subscriptions.update({
-          where: { subscriptionid: activeSub.subscriptionid },
-          data: { endDate: newExpiryDate },
-        });
-      } else {
-        await tx.subscriptions.create({
-          data: {
-            userid: matched.userid,
-            subscriptionType: "PREMIUM",
-            startDate: new Date(),
-            endDate: newExpiryDate,
-          },
-        });
-      }
-
-      // 2. 更新用户角色
-      await tx.user.update({
-        where: { userid: matched.userid },
-        data: { role: "PREMIUM" },
-      });
-    });
 
     console.log(
-      `[Webhook] 成功激活用户 ${matched.userid} 的 ${daysAdded} 天 VIP 权益。新到期时间: ${newExpiryDate.toISOString()}`,
+      `[Webhook] 成功激活用户 ${result.userid} 的 ${result.daysAdded} 天 VIP 权益。新到期时间: ${result.newExpiryDate.toISOString()}`,
     );
 
     // Send in-app system notification to the user
-    const formattedExpiry = formatChineseDate(newExpiryDate);
-    const notificationMessage = activeSub
+    const formattedExpiry = formatChineseDate(result.newExpiryDate);
+    const notificationMessage = result.isRenewal
       ? `【系统恭喜】您的付款已被爱发电成功捕获！会员资格已延长至${formattedExpiry}！`
       : "【系统恭喜】您的付款已被爱发电成功捕获！会员资格已秒级自动充值并生效激活！";
 
     try {
       await notificationService.createNotification({
-        userid: matched.userid,
+        userid: result.userid,
         notificationText: notificationMessage,
         type: "SYSTEM",
         targetUrl: "/auth/subscribe",
       });
-      console.log(`[Webhook] 已向用户 ${matched.userid} 发送充值成功系统通知`);
+      console.log(`[Webhook] 已向用户 ${result.userid} 发送充值成功系统通知`);
     } catch (notifyError) {
       // Notification failure should not block the webhook response
       console.error("[Webhook] 发送系统通知失败:", notifyError);
@@ -257,9 +185,9 @@ export async function POST(req: NextRequest) {
       em: "ok",
       data: {
         activated: true,
-        userid: matched.userid,
-        daysAdded,
-        newExpiry: newExpiryDate.toISOString(),
+        userid: result.userid,
+        daysAdded: result.daysAdded,
+        newExpiry: result.newExpiryDate.toISOString(),
       },
     });
   } catch (error) {
@@ -269,4 +197,164 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+type OrderTx = Pick<
+  typeof prisma,
+  "$transaction" | "afdianOrder" | "user" | "subscriptions"
+>;
+type OrderTxClient = Parameters<Parameters<OrderTx["$transaction"]>[0]>[0];
+
+/**
+ * 单笔订单的事务化处理：入账 → 匹配用户 → 白名单计费 → 订阅激活。
+ * 每个非激活分支都会把订单状态写清后正常返回（提交事务），
+ * 保证任何一笔进来的订单在 AfdianOrder 表里都有可追溯的终态。
+ */
+async function processOrder(
+  tx: OrderTxClient,
+  input: {
+    outTradeNo: string;
+    remarkStr: string;
+    planId: string | null;
+    amount: number;
+  },
+): Promise<
+  | {
+      status:
+        | "NO_REMARK"
+        | "UNMATCHED_USER"
+        | "NON_PLAN_SPONSOR"
+        | "AMOUNT_MISMATCH";
+    }
+  | {
+      status: "ACTIVATED";
+      userid: string;
+      daysAdded: number;
+      newExpiryDate: Date;
+      isRenewal: boolean;
+    }
+> {
+  // 幂等闸门：唯一索引冲突（P2002）由调用方捕获并按重放处理
+  await tx.afdianOrder.create({
+    data: {
+      outTradeNo: input.outTradeNo,
+      planId: input.planId,
+      amount: input.amount,
+      remark: input.remarkStr || null,
+      status: "RECEIVED",
+    },
+  });
+
+  // 无留言凭证：入账待认领（P2-3 管理员面板 / 自助找回的数据基础）
+  if (!input.remarkStr) {
+    console.warn(`[Webhook] 无效的空留言: ${input.outTradeNo}`);
+    await tx.afdianOrder.update({
+      where: { outTradeNo: input.outTradeNo },
+      data: { status: "NO_REMARK" },
+    });
+    return { status: "NO_REMARK" };
+  }
+
+  // 留言三步匹配：完整 userid → 邮箱（向下兼容历史预填）→ 手机号
+  let matched = await tx.user.findUnique({
+    where: { userid: input.remarkStr },
+  });
+
+  if (!matched) {
+    const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+    const matchedEmails = input.remarkStr.match(emailRegex);
+    let targetEmail = "";
+    if (matchedEmails && matchedEmails.length > 0) {
+      targetEmail = matchedEmails[0].toLowerCase();
+    } else if (input.remarkStr.includes("@")) {
+      targetEmail = input.remarkStr.toLowerCase();
+    }
+
+    if (targetEmail) {
+      matched = await tx.user.findUnique({
+        where: { email: targetEmail },
+      });
+    }
+  }
+
+  if (!matched) {
+    matched = await tx.user.findUnique({
+      where: { phone: input.remarkStr },
+    });
+  }
+
+  if (!matched) {
+    console.warn(`[Webhook] 未找到匹配的用户: ${input.remarkStr}`);
+    await tx.afdianOrder.update({
+      where: { outTradeNo: input.outTradeNo },
+      data: { status: "UNMATCHED_USER" },
+    });
+    return { status: "UNMATCHED_USER" };
+  }
+
+  // [P0-2/W4] 套餐白名单计费：时长只按 plan_id 发放，
+  // 金额必须是单价的整数倍（多份购买）；白名单外赞助 0 天入账
+  const grant = resolvePlanGrant(input.planId, input.amount);
+  if (grant.status !== "ACTIVATED") {
+    await tx.afdianOrder.update({
+      where: { outTradeNo: input.outTradeNo },
+      data: { userid: matched.userid, status: grant.status },
+    });
+    return { status: grant.status };
+  }
+
+  // 订阅续期：在剩余时长上累加而非覆盖（保留原有正确行为）
+  const now = Date.now();
+  const activeSub = await tx.subscriptions.findFirst({
+    where: {
+      userid: matched.userid,
+      subscriptionType: "PREMIUM",
+      endDate: { gt: new Date() },
+    },
+    orderBy: { endDate: "desc" },
+  });
+
+  const currentExpiryTimestamp = activeSub?.endDate
+    ? Math.max(activeSub.endDate.getTime(), now)
+    : now;
+  const newExpiryDate = new Date(
+    currentExpiryTimestamp + grant.days * 24 * 60 * 60 * 1000,
+  );
+
+  if (activeSub) {
+    await tx.subscriptions.update({
+      where: { subscriptionid: activeSub.subscriptionid },
+      data: { endDate: newExpiryDate },
+    });
+  } else {
+    await tx.subscriptions.create({
+      data: {
+        userid: matched.userid,
+        subscriptionType: "PREMIUM",
+        startDate: new Date(),
+        endDate: newExpiryDate,
+      },
+    });
+  }
+
+  // 注意：只写订阅记录，不再永久打标 role="PREMIUM"（P0-1）——
+  // 执行口径统一走 isPremiumUser 的"有效订阅"判定，展示层 role 缓存
+  // 由 auth.ts 会话同步从订阅状态派生回写。
+
+  await tx.afdianOrder.update({
+    where: { outTradeNo: input.outTradeNo },
+    data: {
+      userid: matched.userid,
+      daysGranted: grant.days,
+      status: "ACTIVATED",
+    },
+  });
+
+  return {
+    status: "ACTIVATED",
+    userid: matched.userid,
+    daysAdded: grant.days,
+    newExpiryDate,
+    isRenewal: !!activeSub,
+  };
 }

@@ -8,6 +8,7 @@ import {
   MobileTokenVerifyResult,
 } from "@/core/auth/mobile-token.service";
 import { generateSignatureUrl } from "@/lib/oss";
+import { deriveDisplayRole } from "@/lib/premium-role";
 
 // Valid user roles in the system
 const VALID_ROLES = ["USER", "ADMIN", "PREMIUM"] as const;
@@ -50,6 +51,15 @@ async function getMobileSession(): Promise<Session | null> {
         // 因此永不累计。填入 DB 当前值后与其他 requireAuth 接口口径一致：
         // 禁登仍由上方 isLoginAllowed 拦截，"踢下线"不再误伤移动端心跳。
         sessionVersion: true,
+        // [P1-2] 附带最新订阅到期时间：移动端没有 Web 端的 5 分钟会话同步，
+        // DB 的 role 缓存对纯移动用户可能滞后（如刚付费/刚过期），
+        // 故在此按订阅事实实时派生展示角色，与 Web 端口径一致
+        subscriptions: {
+          where: { subscriptionType: "PREMIUM" },
+          orderBy: { endDate: "desc" },
+          take: 1,
+          select: { endDate: true },
+        },
         user_profile: {
           select: { avatarFileName: true, avatarUrl: true, nickname: true },
         },
@@ -77,7 +87,11 @@ async function getMobileSession(): Promise<Session | null> {
         userid: payload.userid,
         email: payload.email,
         phone: payload.phone,
-        role: userInDb.role || "USER",
+        // [P1-2] 展示角色按订阅事实派生，不直接用 DB 缓存值（口径同 auth.ts 会话同步）
+        role: deriveDisplayRole(
+          userInDb.role,
+          userInDb.subscriptions?.[0]?.endDate ?? null,
+        ),
         nickname: userInDb.user_profile?.nickname || payload.nickname,
         avatarUrl,
         emailVerified: null,
@@ -167,13 +181,16 @@ async function hasActivePremiumSubscription(userid: string): Promise<boolean> {
 }
 
 /**
- * Check if a user has PREMIUM or ADMIN role (including active subscription).
+ * 会员资格的唯一执行口径：ADMIN 直通，其余只认"有效订阅"（endDate > now）。
+ * role="PREMIUM" 不参与判定——它已退化为展示标签（由 auth.ts 的会话同步
+ * 从订阅状态派生回写）。若在此对 role 短路放行，"一次付费、终身会员"
+ * 的收入级 Bug 会立即复现（P0-1）。
  */
 export async function isPremiumUser(
   user?: { role?: string | null; userid?: string } | null,
 ): Promise<boolean> {
   if (!user) return false;
-  if (user.role === "PREMIUM" || user.role === "ADMIN") return true;
+  if (user.role === "ADMIN") return true;
   if (user.userid && (await hasActivePremiumSubscription(user.userid)))
     return true;
   return false;
@@ -182,7 +199,7 @@ export async function isPremiumUser(
 /**
  * 会员专享剧集墙的唯一服务端入口。
  * 校验用户能否访问（播放/下载/练习）指定剧集：
- * 非专享剧集人人可访问；专享剧集需会员资格（静态 role 或有效订阅任一命中）。
+ * 非专享剧集人人可访问；专享剧集需会员资格（ADMIN 或有效订阅，见 isPremiumUser）。
  *
  * 各路由（episode/detail 的字段剥离、episode/audio-proxy 的 403、
  * speech/practice-data 与 speech/errors 的拦截）统一调用本函数，
@@ -199,8 +216,59 @@ export async function canAccessEpisode(
 }
 
 /**
- * Require the user to have PREMIUM or ADMIN role.
- * Uses a hybrid check: static role field OR active subscription in the database.
+ * 会员专享剧集对无权限用户可暴露的媒体字段集合。
+ * 这些字段在 canAccessEpisode 不通过时必须清空（isExclusive 保留——
+ * 前端锁图标/置灰态依赖它渲染）。
+ */
+const EXCLUSIVE_MEDIA_FIELDS = [
+  "audioUrl",
+  "audioFileName",
+  "subtitleEnUrl",
+  "subtitleEnFileName",
+  "subtitleZhUrl",
+  "subtitleZhFileName",
+  "subtitleBilingualUrl",
+  "subtitleBilingualFileName",
+] as const;
+
+/**
+ * [P1-4] 剥离单条剧集的媒体字段（原地修改）。
+ * 所有剧集数据出口（detail / list / [episodeid] / episodeService 列表）
+ * 统一调用本函数，杜绝 OSS 直链与文件名绕过专享墙。
+ * 调用方须先用 canAccessEpisode 判定无权限后再剥离。
+ */
+export function stripExclusiveEpisodeMedia<
+  T extends { isExclusive?: boolean | null } & Record<string, unknown>,
+>(episode: T): T {
+  const writable = episode as Record<string, unknown>;
+  for (const field of EXCLUSIVE_MEDIA_FIELDS) {
+    if (writable[field] !== undefined) writable[field] = "";
+  }
+  return episode;
+}
+
+/**
+ * [P1-4] 列表场景的批量剥离：仅当列表中存在专享剧集时才做一次会员判定
+ * （非专享列表零开销），无权限用户的所有专享项媒体字段清空、元信息保留。
+ */
+export async function stripExclusiveMediaForEpisodeList<
+  T extends { isExclusive?: boolean | null } & Record<string, unknown>,
+>(
+  episodes: T[],
+  user?: { role?: string | null; userid?: string } | null,
+): Promise<T[]> {
+  if (!episodes.some((ep) => ep?.isExclusive)) return episodes;
+  const allowed = await isPremiumUser(user);
+  if (allowed) return episodes;
+  for (const ep of episodes) {
+    if (ep?.isExclusive) stripExclusiveEpisodeMedia(ep);
+  }
+  return episodes;
+}
+
+/**
+ * Require the user to have premium access (ADMIN or active subscription).
+ * Enforcement follows isPremiumUser — the PREMIUM role label alone never grants access.
  * Returns 401 if not authenticated, 403 if not premium/admin.
  */
 export async function requirePremium(): Promise<AuthGuardResult> {
@@ -266,8 +334,8 @@ export async function requireAdminAction(): Promise<Session> {
 }
 
 /**
- * Require PREMIUM or ADMIN role in Server Actions.
- * Uses a hybrid check: static role field OR active subscription in the database.
+ * Require premium access (ADMIN or active subscription) in Server Actions.
+ * Enforcement follows isPremiumUser — the PREMIUM role label alone never grants access.
  * Throws an error if not authenticated or not premium/admin.
  */
 export async function requirePremiumAction(): Promise<Session> {

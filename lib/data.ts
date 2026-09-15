@@ -205,7 +205,11 @@ export async function fetchEpisodeById(id: string): Promise<Episode> {
   }
   const data = await res.json();
   data.coverUrl = await generateSignatureUrl(data.coverFileName, 3600 * 3);
-  data.audioUrl = await generateSignatureUrl(data.audioFileName, 3600 * 3);
+  // [P1-4] 专享剧集对无权限用户已被 detail 接口剥离（audioFileName 为空串），
+  // 此处不再对空文件名签名——保持剥离态透传，而非签出无效 OSS URL
+  data.audioUrl = data.audioFileName
+    ? await generateSignatureUrl(data.audioFileName, 3600 * 3)
+    : "";
   if (data.subtitleEnUrl && data.subtitleEnUrl.length > 0) {
     data.subtitleEnUrl = await generateSignatureUrl(
       data.subtitleEnFileName,

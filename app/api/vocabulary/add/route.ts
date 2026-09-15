@@ -5,6 +5,7 @@ import {
   FREE_VOCABULARY_LIMIT,
   FREE_VOCABULARY_DAILY_LIMIT,
   VOCABULARY_QUOTA_EXCEEDED,
+  VOCABULARY_DAILY_QUOTA_EXCEEDED,
 } from "@/lib/quota";
 import { recordConversionEvent } from "@/lib/track";
 
@@ -85,6 +86,8 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
+            // [P1-1] 补齐错误码：与总量分支对齐，前端据此弹会员窗而非仅 toast
+            code: VOCABULARY_DAILY_QUOTA_EXCEEDED,
             message: `普通用户每天最多保存 ${FREE_VOCABULARY_DAILY_LIMIT} 个生词。升级高级会员解锁无限制生词本！`,
           },
           { status: 403 },

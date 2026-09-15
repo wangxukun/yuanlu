@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma"; // 假设你的 prisma 实例在这里
-import { auth } from "@/auth"; // 你的 auth 配置
+import prisma from "@/lib/prisma";
+import {
+  authWithMobile,
+  canAccessEpisode,
+  stripExclusiveEpisodeMedia,
+} from "@/core/auth/guard";
 
 export async function GET(
   request: Request,
@@ -12,8 +16,9 @@ export async function GET(
 
     // 1. 获取当前登录用户 (如果未登录，user 为 null)
     // 这一点对“精听工具”很重要：未登录用户只能看基本信息，登录用户能看到进度
-    const session = await auth();
-    const userId = session?.user?.userid; // 假设 session 里存了 userid
+    // [P1-3/P1-4] Cookie 优先、移动端 Bearer 兜底（Android 契约接口）
+    const session = await authWithMobile();
+    const userId = session?.user?.userid;
 
     // 2. 使用 Prisma 进行一次性查询
     // 这里使用了 Prisma 强大的 include 和 where 组合技巧
@@ -77,6 +82,15 @@ export async function GET(
     const { listening_history, episode_favorites, ...baseEpisodeData } =
       episode;
     console.log("clear date: ", listening_history, episode_favorites);
+
+    // [P1-4] 本接口此前返回全部原始列（含 DB 直链 audioUrl），且无专享剥离——
+    // 统一走 canAccessEpisode + 共享剥离助手，与 detail 接口同口径
+    if (
+      baseEpisodeData.isExclusive &&
+      !(await canAccessEpisode(session?.user, baseEpisodeData))
+    ) {
+      stripExclusiveEpisodeMedia(baseEpisodeData);
+    }
 
     return NextResponse.json({
       ...baseEpisodeData,

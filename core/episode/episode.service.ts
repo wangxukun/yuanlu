@@ -23,6 +23,7 @@ import { EditEpisodeResponse } from "@/app/types/podcast";
 import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dto";
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
+import { isPremiumUser } from "@/core/auth/guard";
 import {
   speechProfileService,
   CEFR_EPISODE_MAPPING,
@@ -493,6 +494,8 @@ export const episodeService = {
       search?: string;
       sort?: "asc" | "desc";
       userId?: string;
+      /** [P1-4] 访问者会话（用于专享剧集媒体剥离判定），不传视为匿名 */
+      viewer?: { role?: string | null; userid?: string } | null;
     } = {},
   ) {
     const {
@@ -501,6 +504,7 @@ export const episodeService = {
       search = "",
       sort = "desc",
       userId,
+      viewer = null,
     } = options;
     const skip = (page - 1) * limit;
 
@@ -568,6 +572,12 @@ export const episodeService = {
       }),
       prisma.episode.count({ where }),
     ]);
+
+    // [P1-4] 列表内含专享剧集时做一次会员判定（非专享列表零开销）：
+    // 无权限用户的专享项不签发媒体/字幕直链，也不外泄 OSS 文件名
+    const canPlayExclusive = episodes.some((ep) => ep.isExclusive)
+      ? await isPremiumUser(viewer)
+      : false;
 
     // 并行对 OSS 文件进行签名并扁平化数据
     const processedEpisodes = await Promise.all(
@@ -649,6 +659,14 @@ export const episodeService = {
         }
 
         const history = ep.listening_history && ep.listening_history[0];
+        // [P1-4] 无权限访问的专享剧集：签好的直链也不出站
+        const lockedExclusive = !!ep.isExclusive && !canPlayExclusive;
+        if (lockedExclusive) {
+          signedAudio = "";
+          signedSubEn = "";
+          signedSubZh = "";
+          signedSubBilingual = "";
+        }
 
         return {
           episodeid: ep.episodeid,
@@ -659,13 +677,15 @@ export const episodeService = {
           duration: ep.duration,
           playCount: ep.playCount || 0,
           audioUrl: signedAudio,
-          audioFileName: ep.audioFileName,
+          audioFileName: lockedExclusive ? "" : ep.audioFileName,
           subtitleEnUrl: signedSubEn,
-          subtitleEnFileName: ep.subtitleEnFileName,
+          subtitleEnFileName: lockedExclusive ? "" : ep.subtitleEnFileName,
           subtitleZhUrl: signedSubZh,
-          subtitleZhFileName: ep.subtitleZhFileName,
+          subtitleZhFileName: lockedExclusive ? "" : ep.subtitleZhFileName,
           subtitleBilingualUrl: signedSubBilingual,
-          subtitleBilingualFileName: ep.subtitleBilingualFileName,
+          subtitleBilingualFileName: lockedExclusive
+            ? ""
+            : ep.subtitleBilingualFileName,
           publishAt: ep.publishAt,
           createAt: ep.createAt,
           status: ep.status,

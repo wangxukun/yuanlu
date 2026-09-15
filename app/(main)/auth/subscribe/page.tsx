@@ -24,10 +24,9 @@ export default async function SubscribePage() {
       orderBy: { endDate: "desc" },
     });
 
-    const isPremium =
-      session.user.role === "PREMIUM" ||
-      session.user.role === "ADMIN" ||
-      !!activeSubscription;
+    // [P0-1] 与 isPremiumUser 同口径：ADMIN 直通，其余只认有效订阅。
+    // 不再看 role === "PREMIUM"（展示缓存可能滞后于订阅事实）。
+    const isPremium = session.user.role === "ADMIN" || !!activeSubscription;
     const expiryDate = activeSubscription?.endDate
       ? formatChineseDate(activeSubscription.endDate)
       : null;

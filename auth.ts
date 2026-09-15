@@ -10,6 +10,7 @@ import { AdapterSession } from "@auth/core/adapters";
 import { generateSignatureUrl } from "@/lib/oss";
 import { authConfig } from "@/auth.config";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
+import { deriveDisplayRole } from "@/lib/premium-role";
 
 // CustomAuthError has been removed as NextAuth strictly strips custom error properties.
 // We now use cookies as a side-channel for custom error messages.
@@ -132,24 +133,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (!isValid) return null;
           }
 
-          // 检测会员是否过期并降级
-          if (user.role === "PREMIUM") {
-            const activeSub = user.subscriptions?.[0];
-            const now = new Date();
-            // 如果没有订阅记录，或者最新的订阅已经过期
-            if (!activeSub || (activeSub.endDate && activeSub.endDate < now)) {
-              await prisma.$transaction([
-                prisma.user.update({
-                  where: { userid: user.userid },
-                  data: { role: "USER" },
-                }),
-                prisma.subscriptions.deleteMany({
-                  where: { userid: user.userid, subscriptionType: "PREMIUM" },
-                }),
-              ]);
-              user.role = "USER"; // 更新当前对象状态
-            }
-          }
+          // 会员角色的升降级统一由下方 jwt 回调的"订阅状态派生同步"处理
+          // （登录即触发首次同步），登录路径不再单独实现一份降级逻辑，
+          // 也不再删除过期订阅记录——订阅流水是账目与漏斗分析的事实数据。
 
           // [新增] 检查登录权限限制功能
           if (user.isLoginAllowed === false) {
@@ -238,7 +224,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (session.user.avatarFileName)
           token.avatarFileName = session.user.avatarFileName;
         // [安全] role 不允许通过客户端 update() 传入，否则已登录用户可伪造会员身份。
-        // role 仅由下方 5 分钟一次的 DB 同步（含订阅过期降级）和登录时的校验决定。
+        // role 仅由下方"订阅状态派生同步"决定（5 分钟节流 + update() 触发时
+        // 立即强制），客户端传入的 role 一律忽略。
         // Support binding updates
         if (session.user.phone !== undefined) token.phone = session.user.phone;
         if (session.user.phoneVerified !== undefined)
@@ -248,11 +235,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       const now = Date.now();
 
-      // 3. [修复] 定期（5分钟）同步用户角色状态（双向：升级 + 降级）
-      // - 降级：PREMIUM 用户关闭浏览器后再次打开时，Token 中的角色需降级
-      // - 升级：USER 用户通过爱发电 Webhook 激活后，Token 中的角色需升级为 PREMIUM
+      // 3. [P0-1/P1-2] 将 role 对齐为订阅状态的派生展示缓存（单一口径）
+      //    执行层（isPremiumUser）只认 ADMIN + 有效订阅，role 不再是权利来源；
+      //    本段仅维护"展示标签"并保证它与订阅状态一致：
+      //    - ADMIN 保持不变；
+      //    - 有有效订阅（endDate > now，与 guard.ts 的 gt 判定同口径）→ PREMIUM，
+      //      覆盖 Webhook 激活后的升级（Webhook 已停写 role）；
+      //    - 无有效订阅 → USER（到期自然降级）。
+      //    派生结果回写 DB：移动端与站内统计看到的缓存与订阅状态一致。
+      //    节流：常规请求 5 分钟校准一次；客户端 update() 触发时立即强制校准
+      //    （P1-2：付费激活轮询命中后调用 updateSession()，前端锁定态即时消失，
+      //    不必等 5 分钟边界）。注意：不再删除过期订阅记录（保留账目历史）。
       const lastRoleCheck = (token.lastRoleCheck as number) || 0;
-      if (token.userid && now - lastRoleCheck > 5 * 60 * 1000) {
+      const forceRoleCheck = trigger === "update";
+      if (
+        token.userid &&
+        (forceRoleCheck || now - lastRoleCheck > 5 * 60 * 1000)
+      ) {
         try {
           const userInDb = await prisma.user.findUnique({
             where: { userid: token.userid as string },
@@ -260,37 +259,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               subscriptions: {
                 where: { subscriptionType: "PREMIUM" },
                 orderBy: { endDate: "desc" },
+                take: 1,
               },
             },
           });
 
           if (userInDb) {
-            let currentRole = userInDb.role;
+            const effectiveRole = deriveDisplayRole(
+              userInDb.role,
+              userInDb.subscriptions?.[0]?.endDate ?? null,
+            );
 
-            // PREMIUM 降级检测：订阅已过期则降为 USER
-            if (currentRole === "PREMIUM") {
-              const activeSub = userInDb.subscriptions?.[0];
-              if (
-                !activeSub ||
-                (activeSub.endDate && activeSub.endDate < new Date(now))
-              ) {
-                await prisma.$transaction([
-                  prisma.user.update({
-                    where: { userid: userInDb.userid },
-                    data: { role: "USER" },
-                  }),
-                  prisma.subscriptions.deleteMany({
-                    where: {
-                      userid: userInDb.userid,
-                      subscriptionType: "PREMIUM",
-                    },
-                  }),
-                ]);
-                currentRole = "USER";
-              }
+            if ((userInDb.role || "USER") !== effectiveRole) {
+              await prisma.user.update({
+                where: { userid: userInDb.userid },
+                data: { role: effectiveRole },
+              });
             }
 
-            token.role = currentRole || "USER";
+            token.role = effectiveRole;
 
             // [新增] 检查用户是否被管理员踢出（判断 sessionVersion 是否变化）
             if (userInDb.sessionVersion !== token.sessionVersion) {

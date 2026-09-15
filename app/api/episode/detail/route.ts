@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { authWithMobile, canAccessEpisode } from "@/core/auth/guard";
+import {
+  authWithMobile,
+  canAccessEpisode,
+  stripExclusiveEpisodeMedia,
+} from "@/core/auth/guard";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -64,18 +68,12 @@ export async function GET(req: NextRequest) {
     });
 
     // 会员专享剧集：无权限用户剥离媒体与字幕地址，仅保留元信息
-    // （统一入口 canAccessEpisode；非专享剧集短路返回，不产生 auth() 开销）
-    if (episode?.isExclusive) {
-      if (!(await canAccessEpisode(session?.user, episode))) {
-        episode.audioUrl = "";
-        episode.audioFileName = "";
-        episode.subtitleEnUrl = "";
-        episode.subtitleEnFileName = "";
-        episode.subtitleZhUrl = "";
-        episode.subtitleZhFileName = "";
-        episode.subtitleBilingualUrl = "";
-        episode.subtitleBilingualFileName = "";
-      }
+    // （统一入口 canAccessEpisode + 共享剥离助手；非专享剧集短路返回，不产生 auth() 开销）
+    if (
+      episode?.isExclusive &&
+      !(await canAccessEpisode(session?.user, episode))
+    ) {
+      stripExclusiveEpisodeMedia(episode);
     }
 
     // 用户收听态（登录时）：断点续播进度 + 收藏态，驱动客户端续播与进度条

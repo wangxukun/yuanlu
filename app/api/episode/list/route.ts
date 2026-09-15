@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import {
+  authWithMobile,
+  stripExclusiveMediaForEpisodeList,
+} from "@/core/auth/guard";
 
 /**
  * GET /api/episode/list
@@ -60,7 +64,14 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-    return NextResponse.json(episodes);
+    // [P1-4] 专享剧集媒体字段按访问权剥离（列表内含专享项时才查一次会员态）。
+    // Android 契约不变：仍是裸数组、字段形状不变，无权限时媒体字段为空串。
+    const session = await authWithMobile();
+    const stripped = await stripExclusiveMediaForEpisodeList(
+      episodes,
+      session?.user,
+    );
+    return NextResponse.json(stripped);
   } catch (error) {
     // 确保异常时也释放连接
     await prisma.$disconnect();
