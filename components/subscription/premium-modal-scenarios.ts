@@ -295,3 +295,33 @@ export function getPremiumScenario(
       description ?? scenario.descriptionFallback ?? scenario.description,
   };
 }
+
+/**
+ * [P2-6] 社会认同营销钩子（报告 F8 / 5.3 营销层）——单一数据源。
+ * PremiumModal 底部与订阅页条带共用；数据来自 statsService.getSocialProofStats
+ * （SSR 直连）或 /api/stats/social-proof（客户端），禁止硬编码数字。
+ * 会员数低于门槛或数据缺失时返回空串（前端不渲染，宁缺毋假——
+ * "已有 0 位学习者"的反效果比不展示更糟）。
+ */
+export interface SocialProofStats {
+  memberCount: number;
+  totalLearningHours: number;
+}
+
+/** 社会认同展示的最低会员数门槛（低于此值不渲染） */
+export const SOCIAL_PROOF_MIN_MEMBERS = 5;
+
+export function renderSocialProof(stats: SocialProofStats | null): string {
+  if (!stats || stats.memberCount < SOCIAL_PROOF_MIN_MEMBERS) return "";
+
+  const hoursPart =
+    stats.totalLearningHours > 0
+      ? ` · 累计陪伴学习 ${
+          stats.totalLearningHours >= 10000
+            ? `${(stats.totalLearningHours / 10000).toFixed(1)} 万小时`
+            : `${stats.totalLearningHours} 小时`
+        }`
+      : "";
+
+  return `已有 ${stats.memberCount} 位学习者加入 PRO${hoursPart}`;
+}

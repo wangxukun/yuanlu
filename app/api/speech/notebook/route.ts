@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
 import { requireAuth, isPremiumUser } from "@/core/auth/guard";
 import { speechProfileService } from "@/core/speech-profile/speech-profile.service";
+import { getWeakSentences } from "@/core/speech/weak-sentences.service";
+import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
 
 /**
  * GET /api/speech/notebook
@@ -47,44 +49,16 @@ export async function GET() {
       })
       .sort((a, b) => a.avgScore - b.avgScore);
 
-    // 3. 弱项句子（Step A/B/C：曾低于分数线 → 取最新一次 → 仍低于才收录）
-    const potentialWeakRecords = await prisma.speech_recognition.findMany({
-      where: {
-        userid: userId,
-        overallScore: { lt: weakThreshold },
+    // 3. 弱项句子（[P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service，
+    //    与 errors / pronunciation 页同源；threshold 复用本次已查的 profile）
+    const { records: uniqueRecords } = await getWeakSentences(userId, {
+      threshold: weakThreshold,
+      episodeSelect: {
+        title: true,
+        coverUrl: true,
+        coverFileName: true,
       },
-      orderBy: { recognitionDate: "desc" },
-      distinct: ["targetText"],
-      take: 100,
     });
-
-    const potentialTexts = potentialWeakRecords
-      .map((r) => r.targetText)
-      .filter(Boolean) as string[];
-
-    let uniqueRecords: any[] = [];
-    if (potentialTexts.length > 0) {
-      const latestAttempts = await prisma.speech_recognition.findMany({
-        where: {
-          userid: userId,
-          targetText: { in: potentialTexts },
-        },
-        orderBy: { recognitionDate: "desc" },
-        distinct: ["targetText"],
-        include: {
-          episode: {
-            select: {
-              title: true,
-              coverUrl: true,
-              coverFileName: true,
-            },
-          },
-        },
-      });
-      uniqueRecords = latestAttempts.filter(
-        (r) => r.overallScore !== null && r.overallScore < weakThreshold,
-      );
-    }
 
     // 封面签名（列表页仅需封面；audioUrl/字幕补齐由 errors 接口负责）
     const episodeCoverCache = new Map<string, string>();
@@ -108,7 +82,7 @@ export async function GET() {
     }
 
     // 试用切片：非会员可看前 3 条，totalErrors 供锁定提示
-    const FREE_VISIBLE_ERRORS = 3;
+    // [P3-a] 常量已收编 lib/quota.ts（FREE_VISIBLE_ERRORS）
     const totalErrors = uniqueRecords.length;
     const errors = isPremium
       ? uniqueRecords

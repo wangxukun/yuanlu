@@ -26,6 +26,9 @@ export default function PronunciationPracticePage() {
   const [locked, setLocked] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
+  // [P2-4/N1] "已达标"判定与弱项列表生成共用同一分数线（user_profile.weakScoreThreshold）。
+  // 80 仅为接口返回前的初始值（与 service 默认一致），加载后立即被 weakThreshold 覆盖
+  const [threshold, setThreshold] = useState(80);
 
   useEffect(() => {
     fetch("/api/speech/errors")
@@ -41,6 +44,10 @@ export default function PronunciationPracticePage() {
       .then((data) => {
         if (data.success && data.data.length > 0) {
           setRecords(data.data);
+          // [P2-4/N1] 接口回传实际生效的分数线，消除硬编码 80 的口径分叉
+          if (typeof data.weakThreshold === "number") {
+            setThreshold(data.weakThreshold);
+          }
         }
         setLoading(false);
       })
@@ -58,8 +65,8 @@ export default function PronunciationPracticePage() {
     rawDetails?: any,
     audioBase64?: string,
   ) => {
-    // If they score high enough (e.g. >= 80), mark as completed
-    if (score >= 80) {
+    // [P2-4/N1] 达标 = 达到用户自己的弱项分数线（与列表生成口径对齐），不再硬编码 80
+    if (score >= threshold) {
       setCompleted((prev) => ({ ...prev, [currentIndex]: true }));
     }
 

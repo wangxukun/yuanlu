@@ -253,6 +253,32 @@ export const statsService = {
   },
 
   /**
+   * [P2-6] 社会认同统计（订阅页条带 / 会员弹窗营销钩子的真实数据源）。
+   * 会员数与 isPremiumUser 同口径：有效订阅（endDate > now）按 userid 去重——
+   * P0-1 之后 role 只是展示缓存，不再作为会员判定依据；
+   * 学习时长为全站 user_daily_activity 累计收听秒数折算小时。
+   */
+  async getSocialProofStats() {
+    const [memberRows, activityAggregate] = await Promise.all([
+      prisma.subscriptions.findMany({
+        where: { subscriptionType: "PREMIUM", endDate: { gt: new Date() } },
+        distinct: ["userid"],
+        select: { userid: true },
+      }),
+      prisma.user_daily_activity.aggregate({
+        _sum: { listeningSeconds: true },
+      }),
+    ]);
+
+    return {
+      memberCount: memberRows.length,
+      totalLearningHours: Math.round(
+        (activityAggregate._sum.listeningSeconds ?? 0) / 3600,
+      ),
+    };
+  },
+
+  /**
    * 获取用户一周每日活动数据（用于个人中心活动图表）
    * @param userId 用户ID
    * @param weekOffset 0=本周, 1=上周

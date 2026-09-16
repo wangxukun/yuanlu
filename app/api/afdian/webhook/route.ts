@@ -4,7 +4,10 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
 import { formatChineseDate } from "@/lib/tools";
-import { resolvePlanGrant } from "@/lib/afdian-plans";
+import {
+  applyOrderGrant,
+  type OrderActivationResult,
+} from "@/core/afdian/order-claim.service";
 
 // [P0-2/W2] 密钥只认环境变量：源码中不再存在任何默认值。
 // env 漏配时直接拒绝处理（fail-closed），而不是带着公开默认密钥静默放行伪造回调。
@@ -199,14 +202,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-type OrderTx = Pick<
-  typeof prisma,
-  "$transaction" | "afdianOrder" | "user" | "subscriptions"
->;
-type OrderTxClient = Parameters<Parameters<OrderTx["$transaction"]>[0]>[0];
+type OrderTxClient = Prisma.TransactionClient;
 
 /**
- * 单笔订单的事务化处理：入账 → 匹配用户 → 白名单计费 → 订阅激活。
+ * 单笔订单的事务化处理：入账 → 匹配用户 → 激活。
  * 每个非激活分支都会把订单状态写清后正常返回（提交事务），
  * 保证任何一笔进来的订单在 AfdianOrder 表里都有可追溯的终态。
  */
@@ -218,22 +217,7 @@ async function processOrder(
     planId: string | null;
     amount: number;
   },
-): Promise<
-  | {
-      status:
-        | "NO_REMARK"
-        | "UNMATCHED_USER"
-        | "NON_PLAN_SPONSOR"
-        | "AMOUNT_MISMATCH";
-    }
-  | {
-      status: "ACTIVATED";
-      userid: string;
-      daysAdded: number;
-      newExpiryDate: Date;
-      isRenewal: boolean;
-    }
-> {
+): Promise<OrderActivationResult | { status: "NO_REMARK" | "UNMATCHED_USER" }> {
   // 幂等闸门：唯一索引冲突（P2002）由调用方捕获并按重放处理
   await tx.afdianOrder.create({
     data: {
@@ -292,69 +276,12 @@ async function processOrder(
     return { status: "UNMATCHED_USER" };
   }
 
-  // [P0-2/W4] 套餐白名单计费：时长只按 plan_id 发放，
-  // 金额必须是单价的整数倍（多份购买）；白名单外赞助 0 天入账
-  const grant = resolvePlanGrant(input.planId, input.amount);
-  if (grant.status !== "ACTIVATED") {
-    await tx.afdianOrder.update({
-      where: { outTradeNo: input.outTradeNo },
-      data: { userid: matched.userid, status: grant.status },
-    });
-    return { status: grant.status };
-  }
-
-  // 订阅续期：在剩余时长上累加而非覆盖（保留原有正确行为）
-  const now = Date.now();
-  const activeSub = await tx.subscriptions.findFirst({
-    where: {
-      userid: matched.userid,
-      subscriptionType: "PREMIUM",
-      endDate: { gt: new Date() },
-    },
-    orderBy: { endDate: "desc" },
-  });
-
-  const currentExpiryTimestamp = activeSub?.endDate
-    ? Math.max(activeSub.endDate.getTime(), now)
-    : now;
-  const newExpiryDate = new Date(
-    currentExpiryTimestamp + grant.days * 24 * 60 * 60 * 1000,
-  );
-
-  if (activeSub) {
-    await tx.subscriptions.update({
-      where: { subscriptionid: activeSub.subscriptionid },
-      data: { endDate: newExpiryDate },
-    });
-  } else {
-    await tx.subscriptions.create({
-      data: {
-        userid: matched.userid,
-        subscriptionType: "PREMIUM",
-        startDate: new Date(),
-        endDate: newExpiryDate,
-      },
-    });
-  }
-
-  // 注意：只写订阅记录，不再永久打标 role="PREMIUM"（P0-1）——
-  // 执行口径统一走 isPremiumUser 的"有效订阅"判定，展示层 role 缓存
-  // 由 auth.ts 会话同步从订阅状态派生回写。
-
-  await tx.afdianOrder.update({
-    where: { outTradeNo: input.outTradeNo },
-    data: {
-      userid: matched.userid,
-      daysGranted: grant.days,
-      status: "ACTIVATED",
-    },
-  });
-
-  return {
-    status: "ACTIVATED",
+  // [P2-3] 白名单计费 + 订阅激活统一走共享 service：Webhook 自动匹配与
+  // 管理员认领/用户自助找回共用同一管道（applyOrderGrant），口径永不分叉
+  return applyOrderGrant(tx, {
+    outTradeNo: input.outTradeNo,
+    planId: input.planId,
+    amount: input.amount,
     userid: matched.userid,
-    daysAdded: grant.days,
-    newExpiryDate,
-    isRenewal: !!activeSub,
-  };
+  });
 }

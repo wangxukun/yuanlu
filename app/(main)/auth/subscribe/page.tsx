@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { formatChineseDate } from "@/lib/tools";
 import prisma from "@/lib/prisma";
+import { statsService } from "@/core/stats/stats.service";
+import { renderSocialProof } from "@/components/subscription/premium-modal-scenarios";
 import { SubscribeClient } from "./subscribe-client";
 
 export const metadata = {
@@ -41,5 +43,11 @@ export default async function SubscribePage() {
     };
   }
 
-  return <SubscribeClient user={user} />;
+  // [P2-6/F8] 社会认同条带：SSR 直连统计服务（会员数与有效订阅同口径），
+  // 文案渲染与 PremiumModal 钩子同源（premium-modal-scenarios.ts 单一数据源）
+  const socialProof = renderSocialProof(
+    await statsService.getSocialProofStats(),
+  );
+
+  return <SubscribeClient user={user} socialProof={socialProof} />;
 }

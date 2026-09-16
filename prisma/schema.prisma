@@ -8,47 +8,48 @@ datasource db {
 }
 
 model User {
-  userid                String                @id @default(cuid())
-  password              String?               @db.VarChar(255)
-  phone                 String?               @unique @db.VarChar(20)
-  phoneVerified         Boolean               @default(false)
-  role                  String?               @default("USER") @db.VarChar(50)
-  languagePreference    String?               @default("zh-CN") @db.VarChar(50)
-  createAt              DateTime              @default(now()) @db.Timestamptz(6)
-  updateAt              DateTime              @updatedAt @db.Timestamptz(6)
-  isOnline              Boolean               @default(false)
-  lastActiveAt          DateTime?             @db.Timestamptz(6)
-  isCommentAllowed      Boolean               @default(true)
-  isLoginAllowed        Boolean               @default(true)
-  email                 String                @unique @db.VarChar(255)
-  emailVerified         DateTime?             @db.Timestamptz(6)
-  loginCount            Int                   @default(0)
-  sessionVersion        Int                   @default(0)
-  registerIp            String?               @db.VarChar(45)
-  VisitorLog            VisitorLog[]
-  conversionEvents      conversion_events[]
-  dictionary_lookups    dictionary_lookups[]
-  achievements          achievements[]
-  comment_likes         comment_likes[]
-  comments              comments[]
-  discussion_threads    discussion_threads[]
-  episode               episode[]
-  episode_favorites     episode_favorites[]
-  group_members         group_members[]
-  learning_paths        learning_paths[]
-  listening_history     listening_history[]
-  notifications         notifications[]
-  podcast_favorites     podcast_favorites[]
-  ratings               ratings[]
-  speech_recognition    speech_recognition[]
-  study_groups          study_groups[]
-  subscriptions         subscriptions[]
-  daily_activities      user_daily_activity[]
-  user_profile          user_profile?
-  vocabulary            vocabulary[]
-  proofread_submissions subtitle_proofread[]  @relation("ProofreadSubmitter")
-  proofread_reviews     subtitle_proofread[]  @relation("ProofreadReviewer")
-  savedSentences        SavedSentence[]
+  userid                  String                    @id @default(cuid())
+  password                String?                   @db.VarChar(255)
+  phone                   String?                   @unique @db.VarChar(20)
+  phoneVerified           Boolean                   @default(false)
+  role                    String?                   @default("USER") @db.VarChar(50)
+  languagePreference      String?                   @default("zh-CN") @db.VarChar(50)
+  createAt                DateTime                  @default(now()) @db.Timestamptz(6)
+  updateAt                DateTime                  @updatedAt @db.Timestamptz(6)
+  isOnline                Boolean                   @default(false)
+  lastActiveAt            DateTime?                 @db.Timestamptz(6)
+  isCommentAllowed        Boolean                   @default(true)
+  isLoginAllowed          Boolean                   @default(true)
+  email                   String                    @unique @db.VarChar(255)
+  emailVerified           DateTime?                 @db.Timestamptz(6)
+  loginCount              Int                       @default(0)
+  sessionVersion          Int                       @default(0)
+  registerIp              String?                   @db.VarChar(45)
+  VisitorLog              VisitorLog[]
+  conversionEvents        conversion_events[]
+  dictionary_lookups      dictionary_lookups[]
+  achievements            achievements[]
+  comment_likes           comment_likes[]
+  comments                comments[]
+  discussion_threads      discussion_threads[]
+  episode                 episode[]
+  episode_favorites       episode_favorites[]
+  group_members           group_members[]
+  learning_paths          learning_paths[]
+  listening_history       listening_history[]
+  notifications           notifications[]
+  podcast_favorites       podcast_favorites[]
+  ratings                 ratings[]
+  speech_recognition      speech_recognition[]
+  study_groups            study_groups[]
+  subscriptions           subscriptions[]
+  daily_activities        user_daily_activity[]
+  user_profile            user_profile?
+  vocabulary              vocabulary[]
+  proofread_submissions   subtitle_proofread[]      @relation("ProofreadSubmitter")
+  proofread_reviews       subtitle_proofread[]      @relation("ProofreadReviewer")
+  savedSentences          SavedSentence[]
+  dismissed_pronunciation dismissed_pronunciation[]
 }
 
 /// 用户资料模型，存储用户的个人信息
@@ -162,44 +163,44 @@ model discussion_threads {
 
 /// 播客剧集模型，存储用户订阅的播客信息
 model episode {
-  episodeid           String                @id @default(cuid())
-  title               String                @db.VarChar(255)
-  coverUrl            String                @default("default_cover_url") @db.VarChar(255)
-  description         String?
-  audioUrl            String                @db.VarChar(255)
-  uploaderid          String?
-  createAt            DateTime?             @default(now()) @db.Timestamptz(6)
-  updateAt            DateTime?             @db.Timestamptz(6)
-  status              String?               @default("unpublished") @db.VarChar(50)
-  isExclusive         Boolean?              @default(false)
-  subtitleEnUrl       String?               @db.VarChar(255)
-  subtitleZhUrl       String?               @db.VarChar(255)
-  subtitleBilingualUrl String?              @db.VarChar(255)
-  audioFileName       String?               @db.VarChar(255)
-  coverFileName       String?               @db.VarChar(255)
-  subtitleEnFileName  String?               @db.VarChar(255)
-  subtitleZhFileName  String?               @db.VarChar(255)
-  subtitleBilingualFileName String?         @db.VarChar(255)
-  duration            Int                   @default(0)
-  publishAt           DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
-  isCommentEnabled    Boolean?              @default(true)
-  podcastid           String?
-  playCount           Int                   @default(0)
-  difficulty          String?               @default("General") @db.VarChar(50)
-  comments            comments[]
-  discussion_threads  discussion_threads[]
-  podcast             podcast?              @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
-  User                User?                 @relation(fields: [uploaderid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
-  episode_favorites   episode_favorites[]
-  learning_path_items learning_path_items[]
-  listening_history   listening_history[]
-  quizzes             quizzes[]
-  ratings             ratings[]
-  speech_recognition  speech_recognition[]
-  vocabulary          vocabulary[]
-  tags                tag[]                 @relation("episodeTotag")
-  subtitle_proofreads subtitle_proofread[]
-  savedSentences      SavedSentence[]
+  episodeid                 String                @id @default(cuid())
+  title                     String                @db.VarChar(255)
+  coverUrl                  String                @default("default_cover_url") @db.VarChar(255)
+  description               String?
+  audioUrl                  String                @db.VarChar(255)
+  uploaderid                String?
+  createAt                  DateTime?             @default(now()) @db.Timestamptz(6)
+  updateAt                  DateTime?             @db.Timestamptz(6)
+  status                    String?               @default("unpublished") @db.VarChar(50)
+  isExclusive               Boolean?              @default(false)
+  subtitleEnUrl             String?               @db.VarChar(255)
+  subtitleZhUrl             String?               @db.VarChar(255)
+  subtitleBilingualUrl      String?               @db.VarChar(255)
+  audioFileName             String?               @db.VarChar(255)
+  coverFileName             String?               @db.VarChar(255)
+  subtitleEnFileName        String?               @db.VarChar(255)
+  subtitleZhFileName        String?               @db.VarChar(255)
+  subtitleBilingualFileName String?               @db.VarChar(255)
+  duration                  Int                   @default(0)
+  publishAt                 DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
+  isCommentEnabled          Boolean?              @default(true)
+  podcastid                 String?
+  playCount                 Int                   @default(0)
+  difficulty                String?               @default("General") @db.VarChar(50)
+  comments                  comments[]
+  discussion_threads        discussion_threads[]
+  podcast                   podcast?              @relation(fields: [podcastid], references: [podcastid], onUpdate: NoAction)
+  User                      User?                 @relation(fields: [uploaderid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
+  episode_favorites         episode_favorites[]
+  learning_path_items       learning_path_items[]
+  listening_history         listening_history[]
+  quizzes                   quizzes[]
+  ratings                   ratings[]
+  speech_recognition        speech_recognition[]
+  vocabulary                vocabulary[]
+  tags                      tag[]                 @relation("episodeTotag")
+  subtitle_proofreads       subtitle_proofread[]
+  savedSentences            SavedSentence[]
 }
 
 /// 播客剧集收藏模型，存储用户收藏的剧集信息
@@ -403,20 +404,28 @@ model subscriptions {
 }
 
 /// 爱发电订单流水（P0-2）：out_trade_no 唯一索引是 Webhook 幂等闸门，
-/// 重试/重放在此被拦截（重复加时不可能发生）；同时为 P2-3
-/// 「未匹配订单暂存 + 管理员认领」预先落好数据基础。
+/// 重试/重放在此被拦截（重复加时不可能发生）；同时充当 P2-3
+/// 「未匹配订单暂存 + 管理员认领」的暂存账本——status 为
+/// NO_REMARK / UNMATCHED_USER 的行即待认领池，认领激活复用本表与同一
+/// 激活 service（core/afdian/order-claim.service.ts），两条路径口径不分叉。
 /// status: ACTIVATED / NO_REMARK / UNMATCHED_USER / NON_PLAN_SPONSOR / AMOUNT_MISMATCH
 model AfdianOrder {
-  orderid     Int      @id @default(autoincrement())
-  outTradeNo  String   @unique @db.VarChar(64)
-  userid      String?
-  planId      String?  @db.VarChar(64)
-  amount      Decimal  @db.Decimal(10, 2)
-  daysGranted Int      @default(0)
-  status      String   @db.VarChar(30)
-  remark      String?
-  createAt    DateTime @default(now()) @db.Timestamptz(6)
-  updateAt    DateTime @updatedAt @db.Timestamptz(6)
+  orderid          Int       @id @default(autoincrement())
+  outTradeNo       String    @unique @db.VarChar(64)
+  userid           String?
+  planId           String?   @db.VarChar(64)
+  amount           Decimal   @db.Decimal(10, 2)
+  daysGranted      Int       @default(0)
+  status           String    @db.VarChar(30)
+  remark           String?
+  createAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updateAt         DateTime  @updatedAt @db.Timestamptz(6)
+  /// [P2-3] 执行认领的管理员 userid（自助找回路径为 null）
+  claimedBy        String?
+  claimedAt        DateTime? @db.Timestamptz(6)
+  /// [P2-3] 自助找回无法自动归属时登记的申请用户，管理端据此优先处理
+  claimRequestedBy String?
+  claimRequestedAt DateTime? @db.Timestamptz(6)
 
   @@index([userid, createAt(sort: Desc)])
   @@index([status, createAt(sort: Desc)])
@@ -510,6 +519,7 @@ model VisitorLog {
 /// - PREMIUM_MODAL_OPEN 会员弹窗被打开（source 标注触发来源）
 /// - QUOTA_BLOCKED 免费配额用尽被拦截（生词/评测）
 /// - TRIAL_REACHED 语音练习试用触墙（免费用户首次在本集练习且内容被截断）
+/// - SUBSCRIPTION_RECOVERED 未匹配付款经认领激活（admin_claim / self_service）
 model conversion_events {
   id        String   @id @default(cuid())
   eventType String   @db.VarChar(50)
@@ -571,6 +581,21 @@ model Dictionary {
   @@index([word])
 }
 
+/// 发音弱项"已攻克"标记（P2-4）：用户手动将某句从弱项本移除（免费、不限次数）。
+/// 采用打标而非软删评测流水——speech_recognition 是音素统计的原始账本不可破坏。
+/// 语义：标记时间晚于该句最新一次评测时视为已攻克；标记之后再次出现低于
+/// 分数线的新评测则自动重回弱项本（弱项查询统一经 weak-sentences.service 过滤）。
+model dismissed_pronunciation {
+  id          Int      @id @default(autoincrement())
+  userid      String
+  targetText  String
+  dismissedAt DateTime @default(now()) @db.Timestamptz(6)
+  User        User     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, targetText])
+  @@index([userid, dismissedAt(sort: Desc)])
+}
+
 /// 收藏句子模型（句子本）：精读时收藏的双语句子，保留音频时间轴上下文，
 /// 用于原音重现（episodeid + startTime/endTime 精准截取）、影子跟读
 /// （practice=true&subtitleId= 定位评测句）与移动端滑动卡片复习。
@@ -596,8 +621,8 @@ model SavedSentence {
   createAt   DateTime @default(now()) @db.Timestamptz(6)
   updateAt   DateTime @updatedAt @db.Timestamptz(6)
 
-  episode    episode  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
-  User       User     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  episode episode @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+  User    User    @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userid, episodeid, subtitleId])
   @@index([userid, createAt(sort: Desc)])

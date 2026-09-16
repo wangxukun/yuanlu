@@ -17,6 +17,16 @@ import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 import { handleVocabularyQuotaBlock } from "@/lib/client/vocabulary-quota";
 import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import { shouldPreviewSentenceQuota } from "@/lib/quota";
+import {
+  isSentenceQuotaBlocked,
+  handleSentenceQuotaBlock,
+} from "@/lib/client/sentence-quota";
+import {
+  getStagedSentences,
+  removeStagedSentence,
+  subscribeStaging,
+} from "@/lib/client/sentence-staging";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 
 // Import new decoupled components
@@ -158,6 +168,10 @@ export default function InteractiveTranscript({
   const [savedSentenceKeys, setSavedSentenceKeys] = useState<Set<number>>(
     new Set(),
   );
+  // [P3-a] 本集暂存句（免费容量满时"半亮 PRO 徽记态"渲染）
+  const [stagedKeys, setStagedKeys] = useState<Set<number>>(new Set());
+  // [P3-a] 80% 预告单集会话只提示一次（第 24 条起提示剩余位置）
+  const quotaPreviewShownRef = useRef(false);
   // 待编辑的句子（toast 的“添加标签/笔记”action 打开，非 null 时弹出抽屉）
   const [tagDrawerSentence, setTagDrawerSentence] =
     useState<SavedSentenceItem | null>(null);
@@ -187,6 +201,27 @@ export default function InteractiveTranscript({
     };
   }, [isLoggedIn, episode?.episodeid]);
 
+  // [P3-a] 暂存集合与本集书签态合并渲染；订阅暂存区变更（含跨标签页）
+  React.useEffect(() => {
+    if (!episode?.episodeid) {
+      setStagedKeys(new Set());
+      return;
+    }
+    const refresh = () => {
+      setStagedKeys(
+        new Set(
+          getStagedSentences()
+            .filter(
+              (s) => s.episodeid === episode.episodeid && s.subtitleId != null,
+            )
+            .map((s) => s.subtitleId as number),
+        ),
+      );
+    };
+    refresh();
+    return subscribeStaging(refresh);
+  }, [episode?.episodeid]);
+
   // 乐观更新：transition 内先翻转书签态，server action 完成后回落到真实状态
   const [optimisticSavedKeys, addOptimisticSaveKey] = useOptimistic(
     savedSentenceKeys,
@@ -206,6 +241,16 @@ export default function InteractiveTranscript({
           "email_check_modal_box",
         ) as HTMLDialogElement | null;
         if (loginModal) loginModal.showModal();
+        return;
+      }
+      // [P3-a] 已暂存的句子再点书签 = 取消暂存（不落库）
+      if (stagedKeys.has(sub.id)) {
+        removeStagedSentence({
+          episodeid: episode.episodeid,
+          subtitleId: sub.id,
+          startTime: sub.start,
+        });
+        toast("已取消暂存该句");
         return;
       }
       const subId = sub.id;
@@ -229,8 +274,31 @@ export default function InteractiveTranscript({
           if (res.data.saved && res.data.sentence) {
             // 对齐源项目：toast 携带「添加标签/笔记」action，点击才打开抽屉
             const saved = res.data.sentence;
+            // [P3-a] 80% 预告：第 24 条起在成功 toast 内单独一行醒目提示（单集
+            // 会话只提示一次；不另起 toast——堆叠会遮挡"添加标签/笔记"操作）
+            const total = res.data.totalCount;
+            const limit = res.data.limit;
+            let previewLine: React.ReactNode = null;
+            if (
+              total != null &&
+              limit != null &&
+              shouldPreviewSentenceQuota(total, limit) &&
+              !quotaPreviewShownRef.current
+            ) {
+              quotaPreviewShownRef.current = true;
+              previewLine = (
+                <span className="mt-1.5 block rounded-md bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                  句子本还剩 {limit - total} 个位置
+                </span>
+              );
+            }
             toast.success("已收藏至「句子本」", {
-              description: `"${sub.textEn.slice(0, 32)}..."`,
+              description: (
+                <>
+                  {`"${sub.textEn.slice(0, 32)}..."`}
+                  {previewLine}
+                </>
+              ),
               action: {
                 label: "添加标签/笔记",
                 onClick: () => setTagDrawerSentence(saved),
@@ -239,12 +307,29 @@ export default function InteractiveTranscript({
           } else {
             toast("已从「句子本」移除");
           }
+        } else if (isSentenceQuotaBlocked(res)) {
+          // [P3-a] 免费容量触墙：不报错不回滚——入暂存 + 浮卡承接
+          //（乐观态随 transition 结束回落，stagedKeys 生效渲染半亮徽记态）
+          handleSentenceQuotaBlock(
+            {
+              episodeid: episode.episodeid,
+              subtitleId: sub.id,
+              startTime: sub.start,
+              endTime: sub.end,
+              enText: sub.textEn,
+              zhText: sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+            },
+            {
+              totalCount: res.data?.totalCount ?? 0,
+              limit: res.data?.limit ?? 0,
+            },
+          );
         } else {
           toast.error(res.message || "收藏失败，请重试");
         }
       });
     },
-    [session, episode, addOptimisticSaveKey],
+    [session, episode, addOptimisticSaveKey, stagedKeys],
   );
 
   // 4. Process Subtitles
@@ -497,6 +582,7 @@ export default function InteractiveTranscript({
               onWordClick={handleWordClick}
               onProofread={handleProofread}
               isSaved={optimisticSavedKeys.has(sub.id)}
+              isStaged={stagedKeys.has(sub.id)}
               onToggleSave={handleToggleSaveSentence}
             />
           );

@@ -35,6 +35,16 @@ import type { DictEntryDTO } from "@/core/dictionary/dto";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 import { handleVocabularyQuotaBlock } from "@/lib/client/vocabulary-quota";
 import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import { shouldPreviewSentenceQuota } from "@/lib/quota";
+import {
+  isSentenceQuotaBlocked,
+  handleSentenceQuotaBlock,
+} from "@/lib/client/sentence-quota";
+import {
+  isSentenceStaged,
+  removeStagedSentence,
+  subscribeStaging,
+} from "@/lib/client/sentence-staging";
 import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 
@@ -347,6 +357,10 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 
   // ── 收藏句子（句子本）──
   const [isSentenceSaved, setIsSentenceSaved] = React.useState(false);
+  // [P3-a] 已暂存（免费容量满：半亮 PRO 徽记态，再点取消暂存）
+  const [isStagedSent, setIsStagedSent] = React.useState(false);
+  // [P3-a] 80% 预告单集会话只提示一次
+  const quotaPreviewShownRef = React.useRef(false);
   const [tagDrawerSentence, setTagDrawerSentence] =
     React.useState<SavedSentenceItem | null>(null);
 
@@ -354,16 +368,35 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   React.useEffect(() => {
     if (!episodeId || !session?.user) {
       setIsSentenceSaved(false);
+      setIsStagedSent(false);
       return;
     }
     let cancelled = false;
     fetchSavedSentenceKeys(episodeId).then((keys) => {
       if (!cancelled) setIsSentenceSaved(keys.has(subtitle.id));
     });
+    setIsStagedSent(
+      isSentenceStaged({
+        episodeid: episodeId,
+        subtitleId: subtitle.id,
+        startTime: subtitle.startSeconds,
+      }),
+    );
+    // [P3-a] 订阅暂存区变更（本句被浮卡/管理器补提交或取消时同步三态）
+    const unsubscribe = subscribeStaging(() => {
+      setIsStagedSent(
+        isSentenceStaged({
+          episodeid: episodeId,
+          subtitleId: subtitle.id,
+          startTime: subtitle.startSeconds,
+        }),
+      );
+    });
     return () => {
       cancelled = true;
+      unsubscribe();
     };
-  }, [episodeId, session?.user, subtitle.id]);
+  }, [episodeId, session?.user, subtitle.id, subtitle.startSeconds]);
 
   const handleToggleSentenceSave = React.useCallback(() => {
     if (!session?.user) {
@@ -375,6 +408,18 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       return;
     }
     if (!episodeId) return;
+
+    // [P3-a] 已暂存的句子再点书签 = 取消暂存（不落库）
+    if (isStagedSent) {
+      removeStagedSentence({
+        episodeid: episodeId,
+        subtitleId: subtitle.id,
+        startTime: subtitle.startSeconds,
+      });
+      setIsStagedSent(false);
+      toast("已取消暂存该句");
+      return;
+    }
 
     // 乐观翻转书签态，server action 落库后校正/回滚
     setIsSentenceSaved((v) => !v);
@@ -392,8 +437,31 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           setIsSentenceSaved(res.data.saved);
           if (res.data.saved && res.data.sentence) {
             const saved = res.data.sentence;
+            // [P3-a] 80% 预告：第 24 条起在成功 toast 内单独一行醒目提示（单集
+            // 会话只提示一次；不另起 toast——堆叠会遮挡"添加标签/笔记"操作）
+            const total = res.data.totalCount;
+            const limit = res.data.limit;
+            let previewLine: React.ReactNode = null;
+            if (
+              total != null &&
+              limit != null &&
+              shouldPreviewSentenceQuota(total, limit) &&
+              !quotaPreviewShownRef.current
+            ) {
+              quotaPreviewShownRef.current = true;
+              previewLine = (
+                <span className="mt-1.5 block rounded-md bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                  句子本还剩 {limit - total} 个位置
+                </span>
+              );
+            }
             toast.success("已收藏至「句子本」", {
-              description: `"${subtitle.textEn.slice(0, 32)}..."`,
+              description: (
+                <>
+                  {`"${subtitle.textEn.slice(0, 32)}..."`}
+                  {previewLine}
+                </>
+              ),
               action: {
                 label: "添加标签/笔记",
                 onClick: () => setTagDrawerSentence(saved),
@@ -402,6 +470,28 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
           } else {
             toast("已从「句子本」移除");
           }
+        } else if (isSentenceQuotaBlocked(res)) {
+          // [P3-a] 免费容量触墙：入暂存 + 浮卡承接。
+          // 暂存浮卡由用户点收藏触发，天然不会先于评测成绩展示（公理 3）
+          setIsSentenceSaved(false);
+          handleSentenceQuotaBlock(
+            {
+              episodeid: episodeId,
+              subtitleId: subtitle.id,
+              startTime: subtitle.startSeconds,
+              endTime: subtitle.endSeconds ?? subtitle.startSeconds + 3,
+              enText: subtitle.textEn,
+              zhText: (subtitle.textCn || "").replace(
+                /\[SPEAKER_\d+\]:\s*/g,
+                "",
+              ),
+            },
+            {
+              totalCount: res.data?.totalCount ?? 0,
+              limit: res.data?.limit ?? 0,
+            },
+          );
+          setIsStagedSent(true);
         } else {
           setIsSentenceSaved((v) => !v); // 回滚
           toast.error(res.message || "收藏失败，请重试");
@@ -411,7 +501,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         toast.error("网络错误，收藏失败");
       }
     });
-  }, [session, episodeId, subtitle]);
+  }, [session, episodeId, subtitle, isStagedSent]);
 
   // 文本模式相关
   // ipa: word -> 音标字符串（去标点后的词为 key）。用 ref 缓存，跨 subtitle 复用。
@@ -631,7 +721,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
               <span className="relative z-10 hidden md:inline">慢速播放</span>
             </button>
 
-            {/* 收藏句子（句子本）— 已收藏呈暖金高亮实心书签 */}
+            {/* 收藏句子（句子本）— 已收藏呈暖金高亮实心书签；[P3-a] 暂存半亮态 */}
             {episodeId && (
               <button
                 onClick={(e) => {
@@ -641,20 +731,37 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                 className={`btn btn-sm rounded-full border bg-transparent transition-colors ${
                   isSentenceSaved
                     ? "border-amber-300 bg-amber-50 text-amber-500 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
-                    : "border-ink-200 text-ink-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-500 dark:border-ink-600 dark:text-ink-300 dark:hover:text-amber-400"
+                    : isStagedSent
+                      ? // [P3-a] 半亮 PRO 徽记态：视觉"已记下"而非失败
+                        "border-amber-300/60 bg-amber-50/50 text-amber-500/70 hover:bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-400/70"
+                      : "border-ink-200 text-ink-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-500 dark:border-ink-600 dark:text-ink-300 dark:hover:text-amber-400"
                 }`}
-                aria-pressed={isSentenceSaved}
+                aria-pressed={isSentenceSaved || isStagedSent}
                 aria-label={
-                  isSentenceSaved ? "取消收藏该句" : "收藏该句到句子本"
+                  isSentenceSaved
+                    ? "取消收藏该句"
+                    : isStagedSent
+                      ? "取消暂存该句"
+                      : "收藏该句到句子本"
                 }
-                title={isSentenceSaved ? "取消收藏" : "收藏句子"}
+                title={
+                  isSentenceSaved
+                    ? "取消收藏"
+                    : isStagedSent
+                      ? "已暂存（升级后自动入库）· 点击取消暂存"
+                      : "收藏句子"
+                }
               >
                 <Bookmark
                   size={16}
                   fill={isSentenceSaved ? "currentColor" : "none"}
                 />
                 <span className="hidden md:inline">
-                  {isSentenceSaved ? "已收藏" : "收藏句子"}
+                  {isSentenceSaved
+                    ? "已收藏"
+                    : isStagedSent
+                      ? "暂存·PRO"
+                      : "收藏句子"}
                 </span>
               </button>
             )}

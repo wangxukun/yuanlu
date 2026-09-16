@@ -15,7 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useLeaveConfirm } from "@/components/LeaveConfirmProvider";
 import { useEffect, useRef, useState } from "react";
-import { ClipboardList, TrendingUp } from "lucide-react";
+import { ClipboardList, TrendingUp, ReceiptText } from "lucide-react";
 
 const links = [
   { name: "信息概况", href: "/admin", icon: Squares2X2Icon },
@@ -32,6 +32,7 @@ const links = [
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
   { name: "系统通知", href: "/admin/notifications", icon: BellAlertIcon },
+  { name: "订单认领", href: "/admin/afdian", icon: ReceiptText },
   {
     name: "审核中心",
     href: "/admin/proofread",

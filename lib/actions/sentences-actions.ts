@@ -8,16 +8,21 @@ import {
   toggleSentenceSaveSchema,
   updateSentenceMetaSchema,
 } from "@/core/sentences/dto";
+import { SENTENCE_QUOTA_EXCEEDED } from "@/lib/quota";
+import { recordConversionEvent } from "@/lib/track";
 
 export interface SentenceActionResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
+  /** [P3-a] 配额触墙错误码（如 SENTENCE_QUOTA_EXCEEDED），前端据此走暂存承接 */
+  code?: string;
 }
 
 /**
  * Server Action: 切换句子收藏状态
  * 已收藏 → 取消收藏；未收藏 → 收藏（返回新记录，供前端补标签/笔记）
+ * [P3-a] 免费容量触墙：success:false + code，前端暂存 + 浮卡承接
  */
 export async function toggleSentenceSave(input: {
   episodeid: string;
@@ -43,6 +48,31 @@ export async function toggleSentenceSave(input: {
       session.user.userid,
       parsed.data,
     );
+
+    if (result.quotaExceeded) {
+      // 服务端埋点：句子收藏触墙（与 REST 路由同口径）
+      await recordConversionEvent({
+        eventType: "QUOTA_BLOCKED",
+        source: "sentence_total",
+        userid: session.user.userid,
+        metadata: {
+          totalCount: result.totalCount,
+          limit: result.limit,
+        },
+      });
+      return {
+        success: false,
+        code: SENTENCE_QUOTA_EXCEEDED,
+        message: `句子本免费容量已满（${result.totalCount}/${result.limit}），这句先帮你暂存了`,
+        data: {
+          saved: false,
+          sentence: null,
+          quotaExceeded: true,
+          totalCount: result.totalCount,
+          limit: result.limit,
+        },
+      };
+    }
 
     revalidatePath("/library/sentences");
     return {

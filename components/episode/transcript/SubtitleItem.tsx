@@ -33,6 +33,8 @@ interface SubtitleItemProps {
   onToggleLoop?: () => void;
   /** 句子收藏（句子本）状态，由 InteractiveTranscript 维护（含乐观更新） */
   isSaved?: boolean;
+  /** [P3-a] 已暂存（免费容量满，半亮 PRO 徽记态：视觉"已记下"而非失败） */
+  isStaged?: boolean;
   onToggleSave?: (sub: ProcessedSubtitle) => void;
 }
 
@@ -56,6 +58,7 @@ export const SubtitleItem = memo(function SubtitleItem({
   isLooping,
   onToggleLoop,
   isSaved,
+  isStaged,
   onToggleSave,
 }: SubtitleItemProps) {
   const textRef = useRef<HTMLDivElement>(null);
@@ -257,17 +260,29 @@ export const SubtitleItem = memo(function SubtitleItem({
                   "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all active:scale-95",
                   isSaved
                     ? "bg-accent-50 dark:bg-accent-900/30 text-accent-600 dark:text-accent-300"
-                    : "text-ink-400 dark:text-ink-500",
+                    : isStaged
+                      ? // [P3-a] 半亮 PRO 徽记态：暂存句视觉"已记下"而非失败
+                        "bg-accent-50/60 dark:bg-accent-900/20 text-accent-600/70 dark:text-accent-300/70"
+                      : "text-ink-400 dark:text-ink-500",
                 )}
-                aria-label={isSaved ? "取消收藏该句" : "收藏该句到句子本"}
-                aria-pressed={isSaved}
+                aria-label={
+                  isSaved
+                    ? "取消收藏该句"
+                    : isStaged
+                      ? "取消暂存该句"
+                      : "收藏该句到句子本"
+                }
+                aria-pressed={isSaved || isStaged}
               >
                 {isSaved ? (
                   <BookmarkSolidIcon className="w-3.5 h-3.5" aria-hidden />
                 ) : (
+                  // 暂存态用描边图标 + 半亮色调（与已收藏的实心区分）
                   <BookmarkIcon className="w-3.5 h-3.5" aria-hidden />
                 )}
-                <span>{isSaved ? "已收藏" : "收藏"}</span>
+                <span>
+                  {isSaved ? "已收藏" : isStaged ? "暂存·PRO" : "收藏"}
+                </span>
               </button>
             )}
 

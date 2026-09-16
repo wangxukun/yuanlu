@@ -19,6 +19,16 @@ import { checkExclusivePlay } from "@/lib/client/auth-utils";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
 import { handleVocabularyQuotaBlock } from "@/lib/client/vocabulary-quota";
 import { toggleSentenceSave } from "@/lib/actions/sentences-actions";
+import { shouldPreviewSentenceQuota } from "@/lib/quota";
+import {
+  isSentenceQuotaBlocked,
+  handleSentenceQuotaBlock,
+} from "@/lib/client/sentence-quota";
+import {
+  getStagedSentences,
+  removeStagedSentence,
+  subscribeStaging,
+} from "@/lib/client/sentence-staging";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { MergedSubtitleItem, ProcessedSubtitle } from "./transcript/types";
 import { ProofreadModal } from "./transcript/ProofreadModal";
@@ -98,6 +108,8 @@ interface SubtitleRowProps {
   onProofread: (sub: ProcessedSubtitle) => void;
   /** 句子收藏（句子本）书签态，由父组件维护（含乐观更新） */
   isSentenceSaved?: boolean;
+  /** [P3-a] 已暂存（免费容量满，半亮 PRO 徽记态） */
+  isSentenceStaged?: boolean;
   onToggleSentenceSave?: (sub: ProcessedSubtitle) => void;
 }
 
@@ -118,6 +130,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
   onToggleLoop,
   onProofread,
   isSentenceSaved,
+  isSentenceStaged,
   onToggleSentenceSave,
 }: SubtitleRowProps) {
   const fontSize = FONT_SIZE_LEVELS[fontSizeLevel] ?? FONT_SIZE_LEVELS[1];
@@ -323,19 +336,32 @@ const SubtitleRow = React.memo(function SubtitleRow({
                   "w-11 h-11 -ml-2.5 md:ml-0 md:w-8 md:h-8",
                   isSentenceSaved
                     ? "text-warning md:opacity-100"
-                    : cn(
-                        "text-ink-300 dark:text-ink-600 hover:text-warning md:hover:bg-warning/10",
-                        // 活动句与单句循环图标一致恒定显示；非活动句保持 hover 淡入
-                        isActive
-                          ? "opacity-60 md:opacity-100"
-                          : "opacity-60 md:opacity-0 md:group-hover:opacity-100",
-                      ),
+                    : isSentenceStaged
+                      ? // [P3-a] 半亮 PRO 徽记态：暂存句常显（视觉"已记下"而非失败）
+                        "text-warning/60 md:opacity-100"
+                      : cn(
+                          "text-ink-300 dark:text-ink-600 hover:text-warning md:hover:bg-warning/10",
+                          // 活动句与单句循环图标一致恒定显示；非活动句保持 hover 淡入
+                          isActive
+                            ? "opacity-60 md:opacity-100"
+                            : "opacity-60 md:opacity-0 md:group-hover:opacity-100",
+                        ),
                 )}
                 aria-label={
-                  isSentenceSaved ? "取消收藏该句" : "收藏该句到句子本"
+                  isSentenceSaved
+                    ? "取消收藏该句"
+                    : isSentenceStaged
+                      ? "取消暂存该句"
+                      : "收藏该句到句子本"
                 }
-                aria-pressed={isSentenceSaved}
-                title={isSentenceSaved ? "取消收藏" : "收藏句子"}
+                aria-pressed={isSentenceSaved || isSentenceStaged}
+                title={
+                  isSentenceSaved
+                    ? "取消收藏"
+                    : isSentenceStaged
+                      ? "已暂存（升级后自动入库）· 点击取消暂存"
+                      : "收藏句子"
+                }
               >
                 <span
                   className="material-symbols-outlined text-lg"
@@ -597,8 +623,33 @@ export default function FullContentTranscript({
   const [savedSentenceKeys, setSavedSentenceKeys] = useState<Set<number>>(
     new Set(),
   );
+  // [P3-a] 本集暂存句（免费容量满时"半亮 PRO 徽记态"渲染）
+  const [stagedKeys, setStagedKeys] = useState<Set<number>>(new Set());
+  // [P3-a] 80% 预告单集会话只提示一次
+  const quotaPreviewShownRef = useRef(false);
   const [tagDrawerSentence, setTagDrawerSentence] =
     useState<SavedSentenceItem | null>(null);
+
+  // [P3-a] 暂存集合订阅（含跨标签页），与书签态合并渲染
+  useEffect(() => {
+    if (!episode?.episodeid) {
+      setStagedKeys(new Set());
+      return;
+    }
+    const refresh = () => {
+      setStagedKeys(
+        new Set(
+          getStagedSentences()
+            .filter(
+              (s) => s.episodeid === episode.episodeid && s.subtitleId != null,
+            )
+            .map((s) => s.subtitleId as number),
+        ),
+      );
+    };
+    refresh();
+    return subscribeStaging(refresh);
+  }, [episode?.episodeid]);
 
   useEffect(() => {
     if (!isOpen || !isLoggedIn || !episode?.episodeid) {
@@ -645,6 +696,16 @@ export default function FullContentTranscript({
         if (loginModal) loginModal.showModal();
         return;
       }
+      // [P3-a] 已暂存的句子再点书签 = 取消暂存（不落库）
+      if (stagedKeys.has(sub.id)) {
+        removeStagedSentence({
+          episodeid: episode.episodeid,
+          subtitleId: sub.id,
+          startTime: sub.start,
+        });
+        toast("已取消暂存该句");
+        return;
+      }
       const subId = sub.id;
       startTransition(async () => {
         addOptimisticSaveKey(subId);
@@ -666,8 +727,31 @@ export default function FullContentTranscript({
           if (res.data.saved && res.data.sentence) {
             // 对齐源项目：toast 携带「添加标签/笔记」action，点击才打开抽屉
             const saved = res.data.sentence;
+            // [P3-a] 80% 预告：第 24 条起在成功 toast 内单独一行醒目提示（单集
+            // 会话只提示一次；不另起 toast——堆叠会遮挡"添加标签/笔记"操作）
+            const total = res.data.totalCount;
+            const limit = res.data.limit;
+            let previewLine: React.ReactNode = null;
+            if (
+              total != null &&
+              limit != null &&
+              shouldPreviewSentenceQuota(total, limit) &&
+              !quotaPreviewShownRef.current
+            ) {
+              quotaPreviewShownRef.current = true;
+              previewLine = (
+                <span className="mt-1.5 block rounded-md bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                  句子本还剩 {limit - total} 个位置
+                </span>
+              );
+            }
             toast.success("已收藏至「句子本」", {
-              description: `"${sub.textEn.slice(0, 32)}..."`,
+              description: (
+                <>
+                  {`"${sub.textEn.slice(0, 32)}..."`}
+                  {previewLine}
+                </>
+              ),
               action: {
                 label: "添加标签/笔记",
                 onClick: () => setTagDrawerSentence(saved),
@@ -676,12 +760,28 @@ export default function FullContentTranscript({
           } else {
             toast("已从「句子本」移除");
           }
+        } else if (isSentenceQuotaBlocked(res)) {
+          // [P3-a] 免费容量触墙：入暂存 + 浮卡承接（书签"不死"）
+          handleSentenceQuotaBlock(
+            {
+              episodeid: episode.episodeid,
+              subtitleId: sub.id,
+              startTime: sub.start,
+              endTime: sub.end,
+              enText: sub.textEn,
+              zhText: sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, ""),
+            },
+            {
+              totalCount: res.data?.totalCount ?? 0,
+              limit: res.data?.limit ?? 0,
+            },
+          );
         } else {
           toast.error(res.message || "收藏失败，请重试");
         }
       });
     },
-    [session, episode, addOptimisticSaveKey],
+    [session, episode, addOptimisticSaveKey, stagedKeys],
   );
 
   // ── Fetch episode vocabulary & global vocabulary words ──
@@ -1400,6 +1500,7 @@ export default function FullContentTranscript({
                         )
                       }
                       isSentenceSaved={optimisticSavedKeys.has(sub.id)}
+                      isSentenceStaged={stagedKeys.has(sub.id)}
                       onToggleSentenceSave={handleToggleSentenceSave}
                       onProofread={(sub) => {
                         if (!session?.user) {

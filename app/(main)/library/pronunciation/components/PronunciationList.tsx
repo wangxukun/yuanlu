@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
 import {
   Radar,
   RadarChart,
@@ -9,8 +10,16 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts";
 import { useRouter } from "next/navigation";
-import { Target, Trophy, Activity, Lock } from "lucide-react";
+import {
+  Target,
+  Trophy,
+  Activity,
+  Lock,
+  CheckCheck,
+  Loader2,
+} from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
+import { toast } from "sonner";
 
 export function PronunciationList({
   stats,
@@ -25,10 +34,41 @@ export function PronunciationList({
   totalErrors?: number;
 }) {
   const router = useRouter();
+  const [dismissing, setDismissing] = useState<Set<number>>(new Set());
   const lockedCount =
     !isPremium && totalErrors !== undefined
       ? Math.max(0, totalErrors - errors.length)
       : 0;
+
+  // [P2-4] 标记已攻克：打标移出弱项本（免费不限）；
+  // 该句再次出现低于分数线的新评测时自动重回弱项本
+  const handleDismiss = async (e: React.MouseEvent, record: any) => {
+    e.stopPropagation();
+    if (!record.targetText || dismissing.has(record.recognitionid)) return;
+    setDismissing((prev) => new Set(prev).add(record.recognitionid));
+    try {
+      const res = await fetch("/api/speech/errors/dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetText: record.targetText }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "标记失败，请稍后重试");
+        return;
+      }
+      toast.success("已标记为攻克，该句已移出弱项本");
+      router.refresh();
+    } catch {
+      toast.error("网络错误，请稍后重试");
+    } finally {
+      setDismissing((prev) => {
+        const next = new Set(prev);
+        next.delete(record.recognitionid);
+        return next;
+      });
+    }
+  };
 
   const chartData = stats.slice(0, 6).map((s) => ({
     phoneme: `/${s.phoneme}/`,
@@ -160,6 +200,21 @@ export function PronunciationList({
                       </span>
                     </div>
                   </div>
+
+                  {/* [P2-4] 标记已攻克：移出弱项本（免费不限），新低分评测会自动召回 */}
+                  <button
+                    onClick={(e) => void handleDismiss(e, record)}
+                    disabled={dismissing.has(record.recognitionid)}
+                    title="标记已攻克，移出弱项本"
+                    className="shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-base-content/40 hover:text-success hover:bg-success/10 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {dismissing.has(record.recognitionid) ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <CheckCheck size={18} />
+                    )}
+                    <span className="text-[10px] font-bold">已攻克</span>
+                  </button>
                 </div>
               ))}
 

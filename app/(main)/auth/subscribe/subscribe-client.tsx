@@ -12,6 +12,7 @@ import {
   Crown,
   Loader2,
   RefreshCw,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import {
   fetchSubscriptionStatus,
   detectActivation,
 } from "@/lib/client/subscription-activation";
+import PaymentRecovery from "@/components/subscription/PaymentRecovery";
 
 const AFDIAN_PLANS = [
   {
@@ -143,9 +145,11 @@ interface SubscribeClientProps {
     isPremium: boolean;
     expiryDate: string | null;
   } | null;
+  /** [P2-6] 社会认同条带文案（SSR 已渲染，空串不展示；与弹窗钩子同源） */
+  socialProof?: string;
 }
 
-export function SubscribeClient({ user }: SubscribeClientProps) {
+export function SubscribeClient({ user, socialProof }: SubscribeClientProps) {
   const [copied, setCopied] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   // [P2-2/F5] 轮询超时不再静默停止：明示用户并给出手动刷新入口
@@ -310,6 +314,14 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                 : user.expiryDate
                   ? `您的高级会员有效期至：${user.expiryDate}`
                   : "您的高级会员已激活（长期有效）"}
+            </div>
+          )}
+
+          {/* [P2-6/F8] 社会认同条带：真实统计（与弹窗钩子同源），数据不足时不渲染 */}
+          {socialProof && (
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-ink-500 dark:text-ink-400">
+              <Users className="w-3.5 h-3.5 text-accent-500" />
+              {socialProof}
             </div>
           )}
         </div>
@@ -577,6 +589,9 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             ，感谢您的善意支持。
           </p>
         </div>
+
+        {/* [P2-3] 自助找回入口：留言 UID 被改动/删除导致未到账时凭订单号认领 */}
+        {user && <PaymentRecovery onRecovered={finalizeActivation} />}
       </div>
     </div>
   );

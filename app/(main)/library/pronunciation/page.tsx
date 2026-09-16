@@ -5,6 +5,8 @@ import { generateSignatureUrl } from "@/lib/oss";
 import { isPremiumUser } from "@/core/auth/guard";
 import { recordConversionEvent } from "@/lib/track";
 import { speechProfileService } from "@/core/speech-profile/speech-profile.service";
+import { getWeakSentences } from "@/core/speech/weak-sentences.service";
+import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
 import { redirect } from "next/navigation";
 import PronunciationNotebook from "./PronunciationNotebook";
 import { SpeechProfileCard } from "./components/SpeechProfileCard";
@@ -13,8 +15,7 @@ export const metadata = {
   title: "发音弱项本 | 远路播客",
 };
 
-/** 非会员可查看的弱项句子数量（完整列表与针对性练习为会员功能） */
-const FREE_VISIBLE_ERRORS = 3;
+/** [P3-a] 非会员可查看的弱项句子数量已收编 lib/quota.ts（FREE_VISIBLE_ERRORS） */
 
 export default async function PronunciationPage() {
   const session = await auth();
@@ -46,48 +47,17 @@ export default async function PronunciationPage() {
   formattedStats.sort((a, b) => a.avgScore - b.avgScore);
 
   // 2. Fetch Errors (Weak Sentences)
-  // Step A: Find sentences that have a weak attempt (score < weakThreshold)
-  const potentialWeakRecords = await prisma.speech_recognition.findMany({
-    where: {
-      userid: userId,
-      overallScore: { lt: weakThreshold },
+  // [P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service（三处同源），
+  // threshold 复用本次已查的 profile，避免重复查库
+  const { records: uniqueRecords } = await getWeakSentences(userId, {
+    threshold: weakThreshold,
+    episodeSelect: {
+      title: true,
+      coverUrl: true,
+      coverFileName: true,
+      audioUrl: true,
     },
-    orderBy: { recognitionDate: "desc" },
-    distinct: ["targetText"],
-    take: 100,
   });
-
-  const potentialTexts = potentialWeakRecords
-    .map((r) => r.targetText)
-    .filter(Boolean) as string[];
-
-  // Step B: Get the absolute latest attempt for these sentences
-  let uniqueRecords: any[] = [];
-  if (potentialTexts.length > 0) {
-    const latestAttempts = await prisma.speech_recognition.findMany({
-      where: {
-        userid: userId,
-        targetText: { in: potentialTexts },
-      },
-      orderBy: { recognitionDate: "desc" },
-      distinct: ["targetText"],
-      include: {
-        episode: {
-          select: {
-            title: true,
-            coverUrl: true,
-            coverFileName: true,
-            audioUrl: true,
-          },
-        },
-      },
-    });
-
-    // Step C: Only keep them if the latest attempt is STILL < weakThreshold
-    uniqueRecords = latestAttempts.filter(
-      (r) => r.overallScore !== null && r.overallScore < weakThreshold,
-    );
-  }
 
   const episodeCoverCache = new Map<string, string>();
   for (const record of uniqueRecords) {

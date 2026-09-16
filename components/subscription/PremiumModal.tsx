@@ -1,10 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { Users, X } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
-import { getPremiumScenario } from "./premium-modal-scenarios";
+import {
+  getPremiumScenario,
+  renderSocialProof,
+  type SocialProofStats,
+} from "./premium-modal-scenarios";
+
+// [P2-6] 社会认同文案模块级缓存：同一会话内多次开弹窗不重复请求
+let socialProofCache: { text: string; fetchedAt: number } | null = null;
+const SOCIAL_PROOF_CACHE_TTL = 10 * 60 * 1000;
 
 export default function PremiumModal() {
   const {
@@ -14,6 +22,38 @@ export default function PremiumModal() {
     premiumModalVars,
   } = useUIStore();
   const router = useRouter();
+  const [socialProof, setSocialProof] = useState(
+    socialProofCache &&
+      Date.now() - socialProofCache.fetchedAt < SOCIAL_PROOF_CACHE_TTL
+      ? socialProofCache.text
+      : "",
+  );
+
+  // [P2-6/F8] 社会认同钩子：真实数据源 /api/stats/social-proof（ISR 10 分钟），
+  // 门槛不足或取数失败时 renderSocialProof 返回空串、整行不渲染
+  useEffect(() => {
+    if (
+      socialProofCache &&
+      Date.now() - socialProofCache.fetchedAt < SOCIAL_PROOF_CACHE_TTL
+    ) {
+      setSocialProof(socialProofCache.text);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/stats/social-proof")
+      .then((r) => r.json())
+      .then((data: SocialProofStats) => {
+        const text = renderSocialProof(data);
+        socialProofCache = { text, fetchedAt: Date.now() };
+        if (!cancelled) setSocialProof(text);
+      })
+      .catch(() => {
+        // 营销钩子静默降级，绝不影响弹窗主流程
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!isPremiumModalOpen) return null;
 
@@ -97,6 +137,14 @@ export default function PremiumModal() {
             暂不加入
           </button>
         </div>
+
+        {/* [P2-6] 社会认同钩子：文案与订阅页条带同源（premium-modal-scenarios.ts） */}
+        {socialProof && (
+          <p className="mt-5 text-[11px] font-semibold text-base-content/50 flex items-center justify-center gap-1.5">
+            <Users size={12} className="text-primary-500" />
+            {socialProof}
+          </p>
+        )}
       </div>
     </div>
   );

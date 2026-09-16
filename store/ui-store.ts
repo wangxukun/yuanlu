@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import type { PremiumModalVars } from "@/components/subscription/premium-modal-scenarios";
 
+/** [P3-a] 句子配额浮卡状态（非阻断，全局挂载于 ModalProvider） */
+interface SentenceQuotaCardState {
+  totalCount: number;
+  limit: number;
+}
+
 interface UIState {
   isPremiumModalOpen: boolean;
   /** 当前弹窗的触发场景（PremiumModal 按 source 渲染场景化文案，P2-1） */
@@ -9,6 +15,10 @@ interface UIState {
   premiumModalVars: PremiumModalVars | null;
   openPremiumModal: (source?: string, vars?: PremiumModalVars) => void;
   closePremiumModal: () => void;
+  /** [P3-a] 句子配额触墙浮卡（"这句先帮你记下了"） */
+  sentenceQuotaCard: SentenceQuotaCardState | null;
+  openSentenceQuotaCard: (totalCount: number, limit: number) => void;
+  closeSentenceQuotaCard: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -40,4 +50,8 @@ export const useUIStore = create<UIState>((set) => ({
       premiumModalSource: null,
       premiumModalVars: null,
     }),
+  sentenceQuotaCard: null,
+  openSentenceQuotaCard: (totalCount: number, limit: number) =>
+    set({ sentenceQuotaCard: { totalCount, limit } }),
+  closeSentenceQuotaCard: () => set({ sentenceQuotaCard: null }),
 }));

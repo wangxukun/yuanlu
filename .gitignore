@@ -55,6 +55,8 @@ scripts/outro-template/*
 ANDROID.md
 ANDROID_APP.md
 yuanlu-membership-audit-final.md
+yuanlu-membership-audit-report.md
+报告审阅与优化补充意见.md
 会员系统重构开发任务清单.md
 
 /public/BingSiteAuth.xml

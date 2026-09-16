@@ -7,6 +7,8 @@ import prisma from "@/lib/prisma";
  * - PREMIUM_MODAL_OPEN  会员弹窗被打开，source 标注触发来源
  * - QUOTA_BLOCKED       免费配额用尽被拦截（生词/语音评测）
  * - TRIAL_REACHED       语音练习试用触墙（内容被截断且用户首次在本集练习）
+ * - SUBSCRIPTION_RECOVERED  无法自动匹配的付款经认领找回并激活
+ *   （source: admin_claim 管理员认领 / self_service 用户自助找回）
  *
  * 记录失败只打日志、绝不抛错，埋点不能影响主业务流程。
  */
@@ -15,6 +17,7 @@ export const CONVERSION_EVENT_TYPES = [
   "PREMIUM_MODAL_OPEN",
   "QUOTA_BLOCKED",
   "TRIAL_REACHED",
+  "SUBSCRIPTION_RECOVERED",
 ] as const;
 
 export type ConversionEventType = (typeof CONVERSION_EVENT_TYPES)[number];

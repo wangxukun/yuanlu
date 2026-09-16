@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
 import { mergeSubtitles } from "@/lib/data";
 import { requireAuth, isPremiumUser } from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
+import { getWeakSentences } from "@/core/speech/weak-sentences.service";
 
 export async function GET() {
   // requireAuth：Web Cookie 与移动端 Bearer 双口径（与 evaluate 一致）
@@ -21,64 +21,25 @@ export async function GET() {
   }
 
   try {
-    // 弱项本分数线（用户可在语音评测设置中调整，默认 80）
-    const profile = await prisma.user_profile.findUnique({
-      where: { userid: session.user.userid },
-      select: { weakScoreThreshold: true },
-    });
-    const weakThreshold = profile?.weakScoreThreshold ?? 80;
-
-    // Step A: Find sentences that have a weak attempt (score < weakThreshold)
-    const potentialWeakRecords = await prisma.speech_recognition.findMany({
-      where: {
-        userid: session.user.userid,
-        overallScore: { lt: weakThreshold },
-      },
-      orderBy: { recognitionDate: "desc" },
-      distinct: ["targetText"],
-      take: 100,
-    });
-
-    const potentialTexts = potentialWeakRecords
-      .map((r) => r.targetText)
-      .filter(Boolean) as string[];
-
-    // Step B: Get the absolute latest attempt for these sentences
-    let uniqueRecords: any[] = [];
-    if (potentialTexts.length > 0) {
-      const latestAttempts = await prisma.speech_recognition.findMany({
-        where: {
-          userid: session.user.userid,
-          targetText: { in: potentialTexts },
-        },
-        orderBy: { recognitionDate: "desc" },
-        distinct: ["targetText"],
-        include: {
-          episode: {
-            select: {
-              title: true,
-              coverUrl: true,
-              coverFileName: true,
-              audioUrl: true,
-              audioFileName: true,
-              isExclusive: true,
-              // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
-              subtitleEnUrl: true,
-              subtitleEnFileName: true,
-              subtitleZhUrl: true,
-              subtitleZhFileName: true,
-              subtitleBilingualUrl: true,
-              subtitleBilingualFileName: true,
-            },
-          },
+    // [P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service（三处同源）
+    const { records: uniqueRecords, threshold: weakThreshold } =
+      await getWeakSentences(session.user.userid, {
+        episodeSelect: {
+          title: true,
+          coverUrl: true,
+          coverFileName: true,
+          audioUrl: true,
+          audioFileName: true,
+          isExclusive: true,
+          // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
+          subtitleEnUrl: true,
+          subtitleEnFileName: true,
+          subtitleZhUrl: true,
+          subtitleZhFileName: true,
+          subtitleBilingualUrl: true,
+          subtitleBilingualFileName: true,
         },
       });
-
-      // Step C: Only keep them if the latest attempt is STILL < weakThreshold
-      uniqueRecords = latestAttempts.filter(
-        (r) => r.overallScore !== null && r.overallScore < weakThreshold,
-      );
-    }
 
     // Generate signed URLs for covers and audio
     const episodeCoverCache = new Map<string, string>();
@@ -194,7 +155,12 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ success: true, data: uniqueRecords });
+    // weakThreshold 一并回传：闯关页"已达标"判定与弱项列表生成共用同一口径（修 N1/N2）
+    return NextResponse.json({
+      success: true,
+      data: uniqueRecords,
+      weakThreshold,
+    });
   } catch (error) {
     console.error("Speech Errors API Error:", error);
     return NextResponse.json(
