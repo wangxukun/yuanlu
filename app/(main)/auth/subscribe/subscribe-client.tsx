@@ -348,103 +348,129 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
 
         {/* Plans Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {AFDIAN_PLANS.map((plan) => {
-            const badge = getLevelBadge(plan.level);
-            const isMonthly = plan.level === "MONTHLY";
-            const planId = getAfdianPlanId(plan.planKey);
-            const remark = user ? user.userid : "";
-            const paymentUrl =
-              planId && user
-                ? buildAfdianPaymentUrl({ planId, months: plan.months, remark })
-                : null;
+          {/* [P2-1/F7] 日均价对比基准：周卡日单价（年卡展示"较周卡省 N%"锚点） */}
+          {(() => {
+            const weeklyPlan = AFDIAN_PLANS.find((p) => p.level === "WEEKLY")!;
+            const weeklyDaily = weeklyPlan.price / weeklyPlan.days;
+            return AFDIAN_PLANS.map((plan) => {
+              const badge = getLevelBadge(plan.level);
+              // [P2-1/F7] 低价锚不放中位档：推荐徽章与高亮从月卡移至年卡（利润最优档）
+              const isPopular = plan.level === "YEARLY";
+              const dailyPrice = (plan.price / plan.days).toFixed(2);
+              const savingsVsWeekly = Math.floor(
+                (1 - plan.price / plan.days / weeklyDaily) * 100,
+              );
+              const planId = getAfdianPlanId(plan.planKey);
+              const remark = user ? user.userid : "";
+              const paymentUrl =
+                planId && user
+                  ? buildAfdianPaymentUrl({
+                      planId,
+                      months: plan.months,
+                      remark,
+                    })
+                  : null;
 
-            return (
-              <div
-                key={plan.level}
-                className={`rounded-2xl p-6 flex flex-col relative transition-all duration-300 group justify-between ${
-                  isMonthly
-                    ? "bg-accent-50 dark:bg-accent-950/10 border-2 border-accent-500 shadow-sm"
-                    : "bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800 hover:border-accent-200 dark:hover:border-accent-900/50 shadow-sm"
-                }`}
-              >
-                {isMonthly && (
-                  <div className="absolute top-0 right-6 -translate-y-1/2 bg-accent-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                    MOST POPULAR
-                  </div>
-                )}
+              return (
+                <div
+                  key={plan.level}
+                  className={`rounded-2xl p-6 flex flex-col relative transition-all duration-300 group justify-between ${
+                    isPopular
+                      ? "bg-accent-50 dark:bg-accent-950/10 border-2 border-accent-500 shadow-sm"
+                      : "bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800 hover:border-accent-200 dark:hover:border-accent-900/50 shadow-sm"
+                  }`}
+                >
+                  {isPopular && (
+                    <div className="absolute top-0 right-6 -translate-y-1/2 bg-accent-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                      MOST POPULAR
+                    </div>
+                  )}
 
-                <div className="space-y-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-6">
-                      <span
-                        className={`px-2 py-1 text-[10px] font-bold rounded ${badge.color}`}
-                      >
-                        {badge.text}
-                      </span>
-                      <div className="text-2xl font-black text-ink-900 dark:text-white">
-                        ¥{plan.price}
+                  <div className="space-y-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-6">
+                        <span
+                          className={`px-2 py-1 text-[10px] font-bold rounded ${badge.color}`}
+                        >
+                          {badge.text}
+                        </span>
+                        <div className="text-right">
+                          <div className="text-2xl font-black text-ink-900 dark:text-white">
+                            ¥{plan.price}
+                          </div>
+                          {/* [P2-1/F7] 日均价对比：让"买更贵"的理由可计算 */}
+                          <div className="text-[10px] font-bold text-ink-400 dark:text-ink-500 mt-0.5">
+                            ≈¥{dailyPrice}/天
+                            {isPopular && savingsVsWeekly > 0 && (
+                              <span className="text-accent-500">
+                                {" "}
+                                · 较周卡省 {savingsVsWeekly}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
+
+                      <h4 className="text-xl font-bold mb-2 text-ink-900 dark:text-white">
+                        {plan.name}
+                      </h4>
+                      <ul className="text-sm text-ink-500 dark:text-ink-400 space-y-2 mb-auto">
+                        {plan.features.map((feat, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <span className="text-accent-500">•</span> {feat}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
-                    <h4 className="text-xl font-bold mb-2 text-ink-900 dark:text-white">
-                      {plan.name}
-                    </h4>
-                    <ul className="text-sm text-ink-500 dark:text-ink-400 space-y-2 mb-auto">
-                      {plan.features.map((feat, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <span className="text-accent-500">•</span> {feat}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="pt-4 mt-6 border-t border-ink-100 dark:border-ink-800">
-                    {!user ? (
-                      <button
-                        onClick={() => router.push("/auth/login")}
-                        className={`w-full py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
-                          isMonthly
-                            ? "bg-accent-500 text-white hover:bg-accent-600"
-                            : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
-                        }`}
-                      >
-                        登录后订阅
-                      </button>
-                    ) : !planId ? (
-                      <div className="flex items-center justify-center gap-1 text-accent-600 text-xs py-3">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        请先配置 Plan ID
-                      </div>
-                    ) : (
-                      <a
-                        href={paymentUrl!}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setIsPolling(true)}
-                        className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
-                          isMonthly
-                            ? "bg-accent-500 text-white hover:bg-accent-600 shadow-md shadow-accent-200 dark:shadow-none"
-                            : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
-                        }`}
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        一键订阅
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                    {user && planId && (
-                      <p className="text-[10px] text-ink-400 text-center mt-2 break-all px-2">
-                        点击跳转至爱发电完成支付，留言已预填专属 UID{" "}
-                        <code className="text-accent-500 bg-accent-50 dark:bg-accent-950/30 px-1 py-0.5 rounded">
-                          {user.userid}
-                        </code>
-                      </p>
-                    )}
+                    <div className="pt-4 mt-6 border-t border-ink-100 dark:border-ink-800">
+                      {!user ? (
+                        <button
+                          onClick={() => router.push("/auth/login")}
+                          className={`w-full py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                            isPopular
+                              ? "bg-accent-500 text-white hover:bg-accent-600"
+                              : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
+                          }`}
+                        >
+                          登录后订阅
+                        </button>
+                      ) : !planId ? (
+                        <div className="flex items-center justify-center gap-1 text-accent-600 text-xs py-3">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          请先配置 Plan ID
+                        </div>
+                      ) : (
+                        <a
+                          href={paymentUrl!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setIsPolling(true)}
+                          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
+                            isPopular
+                              ? "bg-accent-500 text-white hover:bg-accent-600 shadow-md shadow-accent-200 dark:shadow-none"
+                              : "bg-ink-100 dark:bg-ink-800 text-ink-800 dark:text-ink-200 hover:bg-accent-500 dark:hover:bg-accent-500 hover:text-white dark:hover:text-white"
+                          }`}
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          一键订阅
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      {user && planId && (
+                        <p className="text-[10px] text-ink-400 text-center mt-2 break-all px-2">
+                          点击跳转至爱发电完成支付，留言已预填专属 UID{" "}
+                          <code className="text-accent-500 bg-accent-50 dark:bg-accent-950/30 px-1 py-0.5 rounded">
+                            {user.userid}
+                          </code>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
         <div className="mt-6 flex items-center justify-center">
           <p className="text-[10px] text-base-content opacity-60 font-bold tracking-wider">

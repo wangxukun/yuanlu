@@ -169,7 +169,10 @@ export function PronunciationList({
                   onClick={() =>
                     useUIStore
                       .getState()
-                      .openPremiumModal("pronunciation_locked")
+                      // [P2-1] 带上真实弱项数，弹窗标题渲染"你已发现 N 个发音弱点"
+                      .openPremiumModal("pronunciation_locked", {
+                        totalErrors: lockedCount,
+                      })
                   }
                   className="p-4 rounded-2xl border border-dashed border-primary-600/30 dark:border-primary-400/30 bg-primary-600/5 dark:bg-primary-400/5 hover:bg-primary-600/10 dark:hover:bg-primary-400/10 transition-colors flex items-center gap-4 cursor-pointer"
                 >

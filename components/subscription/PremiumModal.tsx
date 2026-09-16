@@ -2,14 +2,24 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { X, Crown } from "lucide-react";
+import { X } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
+import { getPremiumScenario } from "./premium-modal-scenarios";
 
 export default function PremiumModal() {
-  const { isPremiumModalOpen, closePremiumModal } = useUIStore();
+  const {
+    isPremiumModalOpen,
+    closePremiumModal,
+    premiumModalSource,
+    premiumModalVars,
+  } = useUIStore();
   const router = useRouter();
 
   if (!isPremiumModalOpen) return null;
+
+  // [P2-1/F1] 按触发 source 渲染场景化权益文案；未知 source 走通用兜底
+  const scenario = getPremiumScenario(premiumModalSource, premiumModalVars);
+  const HeaderIcon = scenario.icon;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-350">
@@ -32,17 +42,40 @@ export default function PremiumModal() {
 
         {/* Glowing Icon Block */}
         <div className="w-16 h-16 bg-primary-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary-500/20">
-          <Crown size={28} className="animate-pulse" />
+          <HeaderIcon size={28} className="animate-pulse" />
         </div>
 
-        {/* Title */}
+        {/* Scenario Title */}
         <h3 className="text-2xl font-black text-base-content mb-3 tracking-tight">
-          这里是会员专享内容
+          {scenario.title}
         </h3>
 
-        {/* Content description based on Scheme 3 (resonance) */}
-        <p className="text-sm text-base-content opacity-75 leading-relaxed font-semibold mb-8 px-1">
-          为了支持网站长期高质量运转，此内容仅向赞助会员开放。如果您喜欢这里的内容，欢迎加入我们的会员社区，享受专属权益。
+        {/* Scenario description */}
+        <p className="text-sm text-base-content opacity-75 leading-relaxed font-semibold mb-6 px-1">
+          {scenario.description}
+        </p>
+
+        {/* Scenario benefits */}
+        <ul className="w-full space-y-2.5 mb-6">
+          {scenario.benefits.map((benefit) => {
+            const BenefitIcon = benefit.icon;
+            return (
+              <li
+                key={benefit.text}
+                className="flex items-center gap-3 text-sm font-semibold text-base-content"
+              >
+                <span className="w-8 h-8 shrink-0 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                  <BenefitIcon size={16} />
+                </span>
+                {benefit.text}
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Price anchor */}
+        <p className="text-xs font-bold text-primary-600 dark:text-primary-400 tracking-wide mb-6">
+          {scenario.priceAnchor}
         </p>
 
         {/* Action buttons */}
@@ -54,7 +87,7 @@ export default function PremiumModal() {
             }}
             className="w-full btn bg-primary-600 hover:bg-primary-700 border-none text-white h-12 rounded-2xl text-sm font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            去看看赞助方案
+            {scenario.cta}
           </button>
 
           <button
