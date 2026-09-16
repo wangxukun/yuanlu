@@ -48,6 +48,10 @@ export async function GET() {
     return NextResponse.json({
       role,
       expiryDate: expiryDate,
+      // [P2-2/F5] 原始到期时间戳：续费判定改用时间比较，不再比对格式化中文日期串
+      expiryAt: activeSubscription?.endDate
+        ? activeSubscription.endDate.toISOString()
+        : null,
     });
   } catch (error) {
     console.error("[Subscription Status API Error]", error);

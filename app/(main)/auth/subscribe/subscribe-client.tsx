@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   ClipboardCopy,
@@ -10,8 +10,18 @@ import {
   UserCheck,
   AlertTriangle,
   Crown,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  recordPendingPayment,
+  readPendingPayment,
+  clearPendingPayment,
+  fetchSubscriptionStatus,
+  detectActivation,
+} from "@/lib/client/subscription-activation";
 
 const AFDIAN_PLANS = [
   {
@@ -138,72 +148,109 @@ interface SubscribeClientProps {
 export function SubscribeClient({ user }: SubscribeClientProps) {
   const [copied, setCopied] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  // [P2-2/F5] 轮询超时不再静默停止：明示用户并给出手动刷新入口
+  const [pollTimedOut, setPollTimedOut] = useState(false);
+  const [manualChecking, setManualChecking] = useState(false);
   const { update: updateSession } = useSession();
   const router = useRouter();
+
+  // [P2-2] 命中激活后的统一收尾：闪示消息 + 清待确认记录 + 强刷会话（P1-2 链路）
+  const finalizeActivation = useCallback(
+    async (message: string) => {
+      sessionStorage.setItem("subscription_flash_message", message);
+      clearPendingPayment();
+      setIsPolling(false);
+      setPollTimedOut(false);
+      await updateSession();
+      router.refresh();
+    },
+    [updateSession, router],
+  );
+
+  // [P2-2/F5] 点击支付即记录基线快照（role + 原始到期时间戳）到 localStorage：
+  // 页签被关掉后，任意页面回站时 SubscriptionFlashToast 据此补查补播祝贺
+  const handlePaymentClick = () => {
+    setIsPolling(true);
+    setPollTimedOut(false);
+    if (!user) return;
+    recordPendingPayment(user.userid, {
+      role: user.isPremium ? user.role : "USER",
+      expiryAt: null,
+    });
+    // 立即用接口的精确到期时间刷新基线（首激活判定不受影响，续费判定获得时间戳）
+    void fetchSubscriptionStatus().then((snap) => {
+      if (snap) recordPendingPayment(user.userid, snap);
+    });
+  };
 
   // Polling: detect subscription activation, persist flash message to
   // sessionStorage so the global SubscriptionFlashToast can display it
   // after the inevitable page redirect.
   useEffect(() => {
-    if (user && isPolling) {
-      // 设定 5 分钟超时时间，超过后自动停止轮询以节省资源
-      const timeout = setTimeout(() => setIsPolling(false), 300000);
+    if (!(user && isPolling)) return;
 
-      const interval = setInterval(async () => {
-        try {
-          const res = await fetch("/api/user/subscription/status");
-          if (res.ok) {
-            const data = await res.json();
-
-            let activated = false;
-            let message = "";
-
-            // 1. 初次激活：原非 PREMIUM，现变为 PREMIUM 或 ADMIN
-            if (
-              !user.isPremium &&
-              (data.role === "PREMIUM" || data.role === "ADMIN")
-            ) {
-              activated = true;
-              message =
-                "【系统恭喜】您的付款已被爱发电成功捕获！会员资格已秒级自动充值并生效激活！";
-            }
-            // 2. 续费延长：已经是 PREMIUM，且到期时间发生变化
-            else if (
-              user.isPremium &&
-              data.expiryDate &&
-              data.expiryDate !== user.expiryDate
-            ) {
-              activated = true;
-              message = `【系统恭喜】您的付款已被爱发电成功捕获！会员资格已延长至${data.expiryDate}！`;
-            }
-
-            if (activated) {
-              // Persist the congratulations message to sessionStorage so the
-              // global toast component can display it after page redirect.
-              sessionStorage.setItem("subscription_flash_message", message);
-              setIsPolling(false);
-
-              // [P1-2] 强制服务端刷新会话：update() 会触发 jwt 回调立即按订阅
-              // 状态重新派生 role（客户端传入的 role 一律被忽略，防伪造设计不变），
-              // 付费后前端锁定态（锁图标/专享墙）即时消失，无需等 5 分钟节流。
-              await updateSession();
-
-              router.refresh();
-              clearInterval(interval);
-              clearTimeout(timeout);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to poll subscription stats:", e);
-        }
-      }, 3000);
-
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
+    const pollOnce = async () => {
+      const snap = await fetchSubscriptionStatus();
+      if (!snap) return;
+      // 基线优先取点击支付时记录的快照；记录缺失时回退页面 props
+      const baseline = readPendingPayment() ?? {
+        role: user.isPremium ? user.role : "USER",
+        expiryAt: null,
       };
+      const detected = detectActivation(baseline, snap);
+      if (detected) {
+        await finalizeActivation(detected.message);
+      }
+    };
+
+    const interval = setInterval(() => {
+      pollOnce().catch((e) => console.error("Failed to poll:", e));
+    }, 3000);
+
+    // [P2-2/F5] 切回标签页立即补查：用户在爱发电付完款切回来的第一时间命中
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        pollOnce().catch((e) => console.error("Failed to poll:", e));
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // [P2-2/F5] 5 分钟超时改为明示 + 手动刷新，不再静默停止
+    const timeout = setTimeout(() => {
+      setIsPolling(false);
+      setPollTimedOut(true);
+    }, 300000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [user, isPolling, finalizeActivation]);
+
+  // [P2-2/F5] 超时后的手动刷新：立即补查一次，命中走同一激活收尾
+  const handleManualRecheck = async () => {
+    setManualChecking(true);
+    try {
+      const snap = await fetchSubscriptionStatus();
+      const baseline =
+        (user && readPendingPayment()) ||
+        (user
+          ? { role: user.isPremium ? user.role : "USER", expiryAt: null }
+          : null);
+      const detected =
+        snap && baseline ? detectActivation(baseline, snap) : null;
+      if (detected) {
+        await finalizeActivation(detected.message);
+      } else {
+        toast.error(
+          "仍未检测到新支付。若您刚完成付款，请稍等片刻后再刷新；若留言 UID 被改动，请联系客服找回。",
+        );
+      }
+    } finally {
+      setManualChecking(false);
     }
-  }, [user, isPolling, router, updateSession]);
+  };
 
   const handleCopyUID = () => {
     if (!user) return;
@@ -266,6 +313,51 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
             </div>
           )}
         </div>
+
+        {/* [P2-2/F5] 支付检测状态横幅：进行中可见、超时明示 + 手动刷新 */}
+        {(isPolling || pollTimedOut) && (
+          <div
+            className={`rounded-xl border p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm ${
+              pollTimedOut
+                ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40"
+                : "bg-accent-50 dark:bg-accent-950/20 border-accent-200 dark:border-accent-900/30"
+            }`}
+          >
+            <div className="flex items-start gap-3 text-center sm:text-left">
+              {pollTimedOut ? (
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              ) : (
+                <Loader2 className="w-5 h-5 text-accent-500 animate-spin shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-sm font-bold text-ink-900 dark:text-ink-100">
+                  {pollTimedOut
+                    ? "自动检测超时（5 分钟）"
+                    : "正在后台检测您的支付…"}
+                </p>
+                <p className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                  {pollTimedOut
+                    ? "检测已暂停，但您的支付可能已经成功。点击右侧按钮手动刷新确认；完成支付后回到本站也会自动补查。"
+                    : "完成支付后回到本页/本标签页，系统会立即确认并自动激活，无需手动操作。"}
+                </p>
+              </div>
+            </div>
+            {pollTimedOut && (
+              <button
+                onClick={handleManualRecheck}
+                disabled={manualChecking}
+                className="shrink-0 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition active:scale-95 shadow cursor-pointer flex items-center gap-1.5"
+              >
+                {manualChecking ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+                {manualChecking ? "正在检测…" : "手动刷新支付状态"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* UID copy banner */}
         {user ? (
@@ -445,7 +537,7 @@ export function SubscribeClient({ user }: SubscribeClientProps) {
                           href={paymentUrl!}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => setIsPolling(true)}
+                          onClick={handlePaymentClick}
                           className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
                             isPopular
                               ? "bg-accent-500 text-white hover:bg-accent-600 shadow-md shadow-accent-200 dark:shadow-none"
