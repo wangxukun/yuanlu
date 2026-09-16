@@ -152,10 +152,11 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
         data.episode[i].coverFileName,
         3600 * 3,
       );
-      data.episode[i].audioUrl = await generateSignatureUrl(
-        data.episode[i].audioFileName,
-        3600 * 3,
-      );
+      // [P1-4] 专享剧集对无权限用户已被 podcast/detail 剥离（audioFileName 为空串），
+      // 空文件名不再签名，避免签出指向 bucket 根的无效直链
+      data.episode[i].audioUrl = data.episode[i].audioFileName
+        ? await generateSignatureUrl(data.episode[i].audioFileName, 3600 * 3)
+        : "";
       if (
         data.episode[i].subtitleEnUrl &&
         data.episode[i].subtitleEnUrl.length > 0

@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss"; // 引入签名方法
+import { isPremiumUser } from "@/core/auth/guard";
 import { cache } from "react";
 
 // 由于 getPodcastDetail 是直接调用数据库（Prisma），为了避免在一个请求中重复查询数据库（一次在 Metadata，一次在 Page），
@@ -97,6 +98,13 @@ export const getPodcastDetail = cache(async (id: string) => {
     return null;
   }
 
+  // [P1-4] 列表内含专享剧集时做一次会员判定（非专享列表零开销）：
+  // 无权限用户的专享项不签发媒体/字幕直链，也不外泄 OSS 文件名
+  // （口径与 episode.service.getPodcastEpisodes 一致，播放走 audio-proxy）
+  const canPlayExclusive = podcastRaw.episode.some((ep) => ep.isExclusive)
+    ? await isPremiumUser(session?.user)
+    : false;
+
   // 3. 处理 OSS 签名 (逻辑参考 lib/data.ts)
   // 为播客封面生成签名
   if (podcastRaw.coverFileName) {
@@ -172,8 +180,24 @@ export const getPodcastDetail = cache(async (id: string) => {
       // --- 数据扁平化逻辑 ---
       const history = ep.listening_history && ep.listening_history[0];
 
+      // [P1-4] 无权限访问的专享剧集：签好的直链也不出站（isExclusive 保留供前端锁态渲染）
+      const lockedExclusive = !!ep.isExclusive && !canPlayExclusive;
+      if (lockedExclusive) {
+        ep.audioUrl = "";
+        ep.subtitleEnUrl = "";
+        ep.subtitleZhUrl = "";
+        ep.subtitleBilingualUrl = "";
+      }
+
       return {
         ...ep,
+        // [P1-4] 文件名一并清空，防止二次签名绕过专享墙
+        audioFileName: lockedExclusive ? "" : ep.audioFileName,
+        subtitleEnFileName: lockedExclusive ? "" : ep.subtitleEnFileName,
+        subtitleZhFileName: lockedExclusive ? "" : ep.subtitleZhFileName,
+        subtitleBilingualFileName: lockedExclusive
+          ? ""
+          : ep.subtitleBilingualFileName,
         // 转换收藏状态
         isFavorited: ep.episode_favorites
           ? ep.episode_favorites.length > 0
