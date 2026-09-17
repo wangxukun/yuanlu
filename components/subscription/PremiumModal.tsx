@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, X } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
+import { usePlayerStore } from "@/store/player-store";
 import {
   getPremiumScenario,
   renderSocialProof,
@@ -123,6 +124,13 @@ export default function PremiumModal() {
           <button
             onClick={() => {
               closePremiumModal();
+              // 关闭挂在 (main) 布局上的全屏覆盖层（桌面端精听字幕 FullContentTranscript /
+              // 移动端全屏面板 MobilePlayerSheet）。它们由全局 player-store 控制且随布局
+              // 跨路由持久，不主动关闭会在 router.push 后继续遮挡订阅页
+              // （语音评测无此问题是因其覆盖层挂在 episode 页面树内、路由切换即卸载）。
+              const player = usePlayerStore.getState();
+              player.setIsLyricsOpen(false);
+              player.setIsMobileSheetOpen(false);
               router.push("/auth/subscribe");
             }}
             className="w-full btn bg-primary-600 hover:bg-primary-700 border-none text-white h-12 rounded-2xl text-sm font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
