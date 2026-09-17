@@ -5,7 +5,6 @@ import { generateSignatureUrl } from "@/lib/oss";
 import { requireAuth, isPremiumUser } from "@/core/auth/guard";
 import { speechProfileService } from "@/core/speech-profile/speech-profile.service";
 import { getWeakSentences } from "@/core/speech/weak-sentences.service";
-import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
 
 /**
  * GET /api/speech/notebook
@@ -14,7 +13,8 @@ import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
  * 复刻 app/(main)/library/pronunciation/page.tsx 的服务端数据组装——
  * - 发音能力画像（五维雷达 + CEFR，所有用户免费）
  * - 薄弱音素统计（user_profile.phonemeStats，所有用户免费）
- * - 弱项句子列表（会员全量 / 非会员前 3 条试用切片 + totalErrors）
+ * - 弱项句子列表（会员全量 / 非会员前 3 条试用切片 + totalErrors + isTrialMode，
+ *   [P3-c] 切片执行收编 weak-sentences service 按 isPremium 统一）
  */
 export async function GET() {
   // requireAuth：Web Cookie 与移动端 Bearer 双口径（与 errors 一致）
@@ -50,8 +50,14 @@ export async function GET() {
       .sort((a, b) => a.avgScore - b.avgScore);
 
     // 3. 弱项句子（[P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service，
-    //    与 errors / pronunciation 页同源；threshold 复用本次已查的 profile）
-    const { records: uniqueRecords } = await getWeakSentences(userId, {
+    //    与 errors / pronunciation 页同源；threshold 复用本次已查的 profile；
+    //    [P3-c] 试用切片也收编 service：isPremium=false 自动截前 3 条）
+    const {
+      records: errors,
+      totalErrors,
+      isTrialMode,
+    } = await getWeakSentences(userId, {
+      isPremium,
       threshold: weakThreshold,
       episodeSelect: {
         title: true,
@@ -62,7 +68,7 @@ export async function GET() {
 
     // 封面签名（列表页仅需封面；audioUrl/字幕补齐由 errors 接口负责）
     const episodeCoverCache = new Map<string, string>();
-    for (const record of uniqueRecords) {
+    for (const record of errors) {
       if (record.episode) {
         const episodeId = record.episodeid;
         if (!episodeCoverCache.has(episodeId)) {
@@ -81,13 +87,8 @@ export async function GET() {
       }
     }
 
-    // 试用切片：非会员可看前 3 条，totalErrors 供锁定提示
-    // [P3-a] 常量已收编 lib/quota.ts（FREE_VISIBLE_ERRORS）
-    const totalErrors = uniqueRecords.length;
-    const errors = isPremium
-      ? uniqueRecords
-      : uniqueRecords.slice(0, FREE_VISIBLE_ERRORS);
-
+    // [P3-a] 试用切片常量 FREE_VISIBLE_ERRORS 已收编 lib/quota.ts，
+    // [P3-c] 切片执行再收编 weak-sentences service（此处仅透传结果）
     return NextResponse.json({
       success: true,
       data: {
@@ -96,6 +97,7 @@ export async function GET() {
         profile,
         phonemeStats,
         totalErrors,
+        isTrialMode,
         errors,
       },
     });

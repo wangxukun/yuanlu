@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import prisma from "@/lib/prisma";
+import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
 
 /**
  * 发音弱项句子查询单一数据源（P2-4 / 报告 4.2-C 架构项）。
@@ -12,6 +13,12 @@ import prisma from "@/lib/prisma";
  *   Step C  仅保留最新一次仍低于分数线的句子
  *   Step D  [P2-4] 过滤"已攻克"标记：标记时间晚于最新一次评测则隐藏；
  *           标记之后又出现新的低分评测则自动重回弱项本
+ *
+ * [P3-c] 前 3 条试用切片也收编到本 service 按 isPremium 参数统一执行
+ * （此前散在 notebook/route 与 pronunciation/page 两处调用方，闭合审阅
+ * 意见 3.2/R5 的剩余建议）：isPremium=false 时 records 截为前
+ * FREE_VISIBLE_ERRORS 条，同时回传 totalErrors（切片前全量数）与
+ * isTrialMode（免费且存在被锁定弱项），供锁定卡/结算页/埋点消费。
  *
  * 分数线默认读 user_profile.weakScoreThreshold（默认 80），与弱项列表生成、
  * 闯关页"已达标"判定共用同一口径。
@@ -26,12 +33,22 @@ export interface WeakSentenceQueryOptions {
   threshold?: number;
   /** episode 关联字段的 select（各调用方所需不同：闯关要音频/字幕、列表只要封面） */
   episodeSelect?: any;
+  /**
+   * [P3-c] 会员态：true/缺省返回全量；false 返回前 FREE_VISIBLE_ERRORS 条
+   * 试用切片（totalErrors/isTrialMode 始终按全量口径回传）
+   */
+  isPremium?: boolean;
 }
 
 export interface WeakSentenceResult {
+  /** isPremium=false 时为试用切片（前 FREE_VISIBLE_ERRORS 条），否则全量 */
   records: any[];
   /** 实际生效的分数线（供响应回传，闯关页"已达标"判定与此对齐） */
   threshold: number;
+  /** [P3-c] 全量弱项总数（切片前），供锁定卡与结算页"还有 N 条"提示 */
+  totalErrors: number;
+  /** [P3-c] 试用模式：非会员且 totalErrors > FREE_VISIBLE_ERRORS（存在被锁定弱项） */
+  isTrialMode: boolean;
 }
 
 export async function getWeakSentences(
@@ -64,7 +81,7 @@ export async function getWeakSentences(
     .filter(Boolean) as string[];
 
   if (potentialTexts.length === 0) {
-    return { records: [], threshold };
+    return { records: [], threshold, totalErrors: 0, isTrialMode: false };
   }
 
   // Step B: Get the absolute latest attempt for these sentences
@@ -92,28 +109,37 @@ export async function getWeakSentences(
     where: { userid },
     select: { targetText: true, dismissedAt: true },
   });
+  let weakAfterDismiss = stillWeak;
   if (dismissals.length > 0) {
     const dismissedAtMap = new Map<string, number>(
       dismissals.map(
         (d) => [d.targetText, d.dismissedAt.getTime()] as [string, number],
       ),
     );
-    return {
-      records: stillWeak.filter((r) => {
-        // Step B 以非空 targetText 集合查询，此处仅做类型收窄兜底
-        if (!r.targetText) return true;
-        const dismissedAt = dismissedAtMap.get(r.targetText);
-        if (dismissedAt === undefined) return true;
-        // 最新评测晚于标记时间 → 标记后又有新低分，重新回到弱项本
-        return r.recognitionDate
-          ? r.recognitionDate.getTime() >= dismissedAt
-          : true;
-      }),
-      threshold,
-    };
+    weakAfterDismiss = stillWeak.filter((r) => {
+      // Step B 以非空 targetText 集合查询，此处仅做类型收窄兜底
+      if (!r.targetText) return true;
+      const dismissedAt = dismissedAtMap.get(r.targetText);
+      if (dismissedAt === undefined) return true;
+      // 最新评测晚于标记时间 → 标记后又有新低分，重新回到弱项本
+      return r.recognitionDate
+        ? r.recognitionDate.getTime() >= dismissedAt
+        : true;
+    });
   }
 
-  return { records: stillWeak, threshold };
+  // [P3-c] 试用切片收编：非会员截为前 FREE_VISIBLE_ERRORS 条，
+  // totalErrors/isTrialMode 始终按全量口径回传（弱项总数 ≤ 3 时无锁定层，
+  // 配额自然未生效，属可接受新手边界）
+  const totalErrors = weakAfterDismiss.length;
+  const isTrialMode =
+    options.isPremium === false && totalErrors > FREE_VISIBLE_ERRORS;
+  const records =
+    options.isPremium === false
+      ? weakAfterDismiss.slice(0, FREE_VISIBLE_ERRORS)
+      : weakAfterDismiss;
+
+  return { records, threshold, totalErrors, isTrialMode };
 }
 
 /**

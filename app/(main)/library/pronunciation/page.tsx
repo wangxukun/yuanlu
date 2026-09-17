@@ -6,7 +6,6 @@ import { isPremiumUser } from "@/core/auth/guard";
 import { recordConversionEvent } from "@/lib/track";
 import { speechProfileService } from "@/core/speech-profile/speech-profile.service";
 import { getWeakSentences } from "@/core/speech/weak-sentences.service";
-import { FREE_VISIBLE_ERRORS } from "@/lib/quota";
 import { redirect } from "next/navigation";
 import PronunciationNotebook from "./PronunciationNotebook";
 import { SpeechProfileCard } from "./components/SpeechProfileCard";
@@ -15,7 +14,7 @@ export const metadata = {
   title: "发音弱项本 | 远路播客",
 };
 
-/** [P3-a] 非会员可查看的弱项句子数量已收编 lib/quota.ts（FREE_VISIBLE_ERRORS） */
+/** [P3-c] 非会员试用切片（前 FREE_VISIBLE_ERRORS 条）由 weak-sentences service 统一执行 */
 
 export default async function PronunciationPage() {
   const session = await auth();
@@ -48,8 +47,14 @@ export default async function PronunciationPage() {
 
   // 2. Fetch Errors (Weak Sentences)
   // [P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service（三处同源），
-  // threshold 复用本次已查的 profile，避免重复查库
-  const { records: uniqueRecords } = await getWeakSentences(userId, {
+  // threshold 复用本次已查的 profile，避免重复查库；
+  // [P3-c] 试用切片也收编 service：isPremium=false 自动截前 3 条
+  const {
+    records: visibleErrors,
+    totalErrors,
+    isTrialMode,
+  } = await getWeakSentences(userId, {
+    isPremium,
     threshold: weakThreshold,
     episodeSelect: {
       title: true,
@@ -60,7 +65,7 @@ export default async function PronunciationPage() {
   });
 
   const episodeCoverCache = new Map<string, string>();
-  for (const record of uniqueRecords) {
+  for (const record of visibleErrors) {
     if (record.episode) {
       const episodeId = record.episodeid;
       if (!episodeCoverCache.has(episodeId)) {
@@ -81,13 +86,10 @@ export default async function PronunciationPage() {
 
   // 试用模式：非会员可看诊断统计与前 3 条弱项，完整列表与练习为会员功能。
   // 音素数据由免费评测额度沉淀，让用户先看到"数据已积累"的价值感。
-  const totalErrors = uniqueRecords.length;
-  const visibleErrors = isPremium
-    ? uniqueRecords
-    : uniqueRecords.slice(0, FREE_VISIBLE_ERRORS);
+  // [P3-c] 切片执行收编 weak-sentences service（visibleErrors 已是切片结果）
 
   // 非会员存在被锁定的弱项句子时记录触墙事件（转化漏斗分析）
-  if (!isPremium && totalErrors > FREE_VISIBLE_ERRORS) {
+  if (isTrialMode) {
     await recordConversionEvent({
       eventType: "TRIAL_REACHED",
       source: "pronunciation_trial",

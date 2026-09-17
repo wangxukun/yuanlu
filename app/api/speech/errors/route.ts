@@ -12,41 +12,44 @@ export async function GET() {
   if (!authResult.ok) return authResult.response;
   const session = authResult.session;
 
-  // 弱项本为 PRO 会员功能，与 /library/pronunciation 页面的锁定态一致
-  if (!(await isPremiumUser(session.user))) {
-    return NextResponse.json(
-      { error: "Premium membership required" },
-      { status: 403 },
-    );
-  }
+  // [P3-c] 整接口 403 会员门禁退役：非会员返回前 3 条试用切片 + isTrialMode +
+  // totalErrors（照抄 speech/notebook 切片范本），免费用户每日免费闯约 1 关
+  // （题源即免费可见 3 条弱项，评测额度随 P3-b 复习日池）
+  const isPremium = await isPremiumUser(session.user);
 
   try {
-    // [P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service（三处同源）
-    const { records: uniqueRecords, threshold: weakThreshold } =
-      await getWeakSentences(session.user.userid, {
-        episodeSelect: {
-          title: true,
-          coverUrl: true,
-          coverFileName: true,
-          audioUrl: true,
-          audioFileName: true,
-          isExclusive: true,
-          // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
-          subtitleEnUrl: true,
-          subtitleEnFileName: true,
-          subtitleZhUrl: true,
-          subtitleZhFileName: true,
-          subtitleBilingualUrl: true,
-          subtitleBilingualFileName: true,
-        },
-      });
+    // [P2-4] Step A/B/C + 已攻克标记过滤统一走共享 service（三处同源）；
+    // [P3-c] 试用切片收编 service，按 isPremium 参数统一执行
+    const {
+      records: uniqueRecords,
+      threshold: weakThreshold,
+      totalErrors,
+      isTrialMode,
+    } = await getWeakSentences(session.user.userid, {
+      isPremium,
+      episodeSelect: {
+        title: true,
+        coverUrl: true,
+        coverFileName: true,
+        audioUrl: true,
+        audioFileName: true,
+        isExclusive: true,
+        // 字幕数据：用于为复习卡片补齐 textCn / 词级时间戳 / 精确结束时间
+        subtitleEnUrl: true,
+        subtitleEnFileName: true,
+        subtitleZhUrl: true,
+        subtitleZhFileName: true,
+        subtitleBilingualUrl: true,
+        subtitleBilingualFileName: true,
+      },
+    });
 
     // Generate signed URLs for covers and audio
     const episodeCoverCache = new Map<string, string>();
     const episodeAudioCache = new Map<string, string>();
     // 独家剧集仅会员/管理员可播放音频（与 practice-data / audio-proxy 鉴权一致，
     // 统一走 isPremiumUser：role 或有效订阅任一命中）
-    const canPlayExclusive = await isPremiumUser(session.user);
+    const canPlayExclusive = isPremium;
     for (const record of uniqueRecords) {
       if (record.episode) {
         const episodeId = record.episodeid;
@@ -156,10 +159,13 @@ export async function GET() {
     }
 
     // weakThreshold 一并回传：闯关页"已达标"判定与弱项列表生成共用同一口径（修 N1/N2）
+    // [P3-c] totalErrors/isTrialMode：闯关页结算"成就先行 + 下一关转 PRO"据此判定
     return NextResponse.json({
       success: true,
       data: uniqueRecords,
       weakThreshold,
+      totalErrors,
+      isTrialMode,
     });
   } catch (error) {
     console.error("Speech Errors API Error:", error);
