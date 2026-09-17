@@ -6,7 +6,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/core/auth/guard";
-import { evaluateAndSave } from "@/core/speech/speech-evaluate.service";
+import {
+  evaluateAndSave,
+  normalizeScenario,
+} from "@/core/speech/speech-evaluate.service";
 
 interface EvaluateRequest {
   episodeId: string;
@@ -14,6 +17,7 @@ interface EvaluateRequest {
   targetText: string;
   audioBase64: string;
   rate?: number; // default 16000
+  scenario?: string; // [P3-b] learn=学新月池（默认）/ review=复习日池
 }
 
 export async function POST(request: NextRequest) {
@@ -46,12 +50,17 @@ export async function POST(request: NextRequest) {
         targetText: body.targetText,
         audioBase64: body.audioBase64,
         rate: body.rate || 16000,
+        scenario: normalizeScenario(body.scenario),
       },
     );
 
     if (result.error && !result.success) {
-      // Quota exceeded or evaluation error
-      const status = result.error === "EVALUATION_QUOTA_EXCEEDED" ? 403 : 500;
+      // Quota exceeded (月池/日池共用 403 口径) or evaluation error
+      const status =
+        result.error === "EVALUATION_QUOTA_EXCEEDED" ||
+        result.error === "REVIEW_EVAL_QUOTA_EXCEEDED"
+          ? 403
+          : 500;
       return NextResponse.json(
         { success: false, error: result.error, message: result.message },
         { status },

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import SpeechEvaluationCard from "@/components/voice/SpeechEvaluationCard";
 import { saveSpeechResult } from "@/lib/actions/speech";
+import { SPEECH_QUOTA_EXCEEDED, REVIEW_EVAL_QUOTA_EXCEEDED } from "@/lib/quota";
+import { useUIStore } from "@/store/ui-store";
 import {
   getEpisodeSubtitlesData,
   type EpisodeSubtitleItem,
@@ -54,6 +56,19 @@ export default function SentenceShadowingPractice({
     EpisodeSubtitleItem[]
   >([]);
   const [audioLoading, setAudioLoading] = useState(true);
+  // [P3-b] 复习日池预检：触墙则置锁评分按钮（避免半路触墙，报告 4.2-B）
+  const [quotaLocked, setQuotaLocked] = useState(false);
+  const refreshQuota = useCallback(() => {
+    fetch("/api/speech/quota?scenario=review")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success && d.data) setQuotaLocked(!!d.data.exhausted);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    refreshQuota();
+  }, [refreshQuota]);
 
   const current = sentences[currentIndex];
 
@@ -147,9 +162,33 @@ export default function SentenceShadowingPractice({
       speed: fullRecord?.speed,
       audioBase64: audioBase64,
       detailJson: rawDetails as never,
+      // [P3-b] 句子本跟读属复习场景：计入复习日池（5 次/日）而非学新月池
+      scenario: "review",
     });
 
+    // 保存成功后刷新日池余量（used+1 可能触墙 → 置锁下一句评分按钮）
+    refreshQuota();
+
     if (result.error) {
+      // [P3-b] 保存兜底触墙（并发/绕过评测接口）：同样走弹窗承接，不再只弹错误 toast
+      if (
+        result.error === SPEECH_QUOTA_EXCEEDED ||
+        result.error === REVIEW_EVAL_QUOTA_EXCEEDED
+      ) {
+        const quotaMessage =
+          "message" in result && result.message
+            ? result.message
+            : "今日免费跟读评测已用完";
+        toast.error(quotaMessage);
+        useUIStore
+          .getState()
+          .openPremiumModal(
+            result.error === REVIEW_EVAL_QUOTA_EXCEEDED
+              ? "review_eval_quota"
+              : "speech_quota",
+          );
+        return;
+      }
       toast.error(
         "message" in result && result.message ? result.message : "保存进度失败",
       );
@@ -239,6 +278,8 @@ export default function SentenceShadowingPractice({
           episodeTitle={current.episodeTitle}
           onExit={handleExit}
           onBackToDeck={handleBackToDeck}
+          evalScenario="review"
+          quotaLocked={quotaLocked}
         />
       )}
 

@@ -352,6 +352,9 @@ model speech_recognition {
   recognitionid   Int       @id @default(autoincrement())
   userid          String?
   recognitionDate DateTime? @default(now()) @db.Timestamptz(6)
+  /// [P3-b] 评测场景双池拆分：learn=学新（月池 20 次）/ review=复习（日池 5 次）。
+  /// 存量行经 migration 默认值回填为 learn，月池口径对学新场景保持不变
+  scenario        String    @default("learn")
   accuracyScore   Float?
   fluencyScore    Float?
   integrityScore  Float?
@@ -366,6 +369,8 @@ model speech_recognition {
   targetText      String?
   episode         episode?  @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
   User            User?     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid, scenario, recognitionDate(sort: Desc)])
 }
 
 /// 学习组模型，用于存储用户学习组信息

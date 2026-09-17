@@ -18,15 +18,34 @@ export const FREE_VOCABULARY_DAILY_LIMIT = 5;
  */
 export const FREE_DICTIONARY_DAILY_LIMIT = 30;
 
-/** 免费用户每个自然月可使用的语音评测次数 */
+/** 免费用户每个自然月可使用的语音评测次数（学新场景：剧集页沉浸跟读） */
 export const FREE_SPEECH_EVALUATIONS_PER_MONTH = 20;
 
 /**
- * 语音评测配额超限的错误码。
+ * [P3-b] 免费用户每日复习场景语音评测次数（发音弱项闯关 / 句子本影子跟读）。
+ * 复习是闭环留存动作，与学新月池独立计数（评测双池拆分，报告 4.2-B）。
+ */
+export const FREE_REVIEW_EVALUATIONS_PER_DAY = 5;
+
+/**
+ * [P3-b] 复习日池触墙缓冲（5+1，报告建议值）：对外承诺 5 次/日，
+ * 实际放行 6 次后才拦截，缓冲"第 5 次刚好卡在兴头上"的断崖感；
+ * remaining 展示含缓冲（真实可评次数），触墙文案仍按承诺口径 5 次。
+ */
+export const REVIEW_EVAL_DAILY_BUFFER = 1;
+
+/**
+ * 语音评测配额超限的错误码（学新月池触墙）。
  * 服务端在配额用尽时返回 { error: 该常量, message: 提示文案 }，
  * 客户端据此弹出会员升级弹窗而不是普通错误提示。
  */
 export const SPEECH_QUOTA_EXCEEDED = "EVALUATION_QUOTA_EXCEEDED";
+
+/**
+ * [P3-b] 复习日池配额超限的错误码（evaluateSpeech / saveSpeechResult 返回），
+ * 客户端据此弹 review_eval_quota 场景会员窗（与月池的 speech_quota 区分）。
+ */
+export const REVIEW_EVAL_QUOTA_EXCEEDED = "REVIEW_EVAL_QUOTA_EXCEEDED";
 
 /** 生词配额超限的错误码（/api/vocabulary/add 返回），语义同上 */
 export const VOCABULARY_QUOTA_EXCEEDED = "VOCABULARY_QUOTA_EXCEEDED";

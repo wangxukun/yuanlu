@@ -21,12 +21,16 @@ import {
   Bookmark,
   Repeat,
   Repeat1,
+  Lock,
+  Crown,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import WordScoreBadge from "./WordScoreBadge";
 import { useSpeechEvaluation } from "./hooks/useSpeechEvaluation";
+import { useUIStore } from "@/store/ui-store";
+import type { EvalScenario } from "@/core/speech/speech-evaluate.service";
 import { useWordHighlight } from "@/components/transcript/useWordHighlight";
 import { PRACTICE_FONT_SIZE_LEVELS } from "@/store/practice-settings-store";
 import type { TextMode } from "@/store/practice-settings-store";
@@ -113,6 +117,10 @@ interface SpeechEvaluationCardProps {
   onExit?: () => void;
   // ── 返回滑动卡片复习插槽：传入时在「返回句子本」左侧追加该按钮 ──
   onBackToDeck?: () => void;
+  // ── [P3-b] 评测场景双池：learn=月池 speech_quota / review=日池 review_eval_quota ──
+  evalScenario?: EvalScenario;
+  // ── [P3-b] 配额触墙置锁（父层 /api/speech/quota 预检传入；卡内触墙自动追加）──
+  quotaLocked?: boolean;
 }
 
 const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
@@ -134,8 +142,18 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   episodeTitle,
   onExit,
   onBackToDeck,
+  evalScenario = "learn",
+  quotaLocked = false,
 }) => {
   const { data: session } = useSession();
+
+  // [P3-b] 配额置锁：父层预检（quotaLocked）或本卡评测触墙后锁定评分入口
+  const [quotaWallHit, setQuotaWallHit] = React.useState(false);
+  const isEvalLocked = quotaLocked || quotaWallHit;
+  const quotaModalSource =
+    evalScenario === "review" ? "review_eval_quota" : "speech_quota";
+  const quotaLockedLabel =
+    evalScenario === "review" ? "今日免费跟读评测已用完" : "本月免费评测已用完";
 
   // ── 单句循环：句尾自然结束回调（ref 保持引用稳定，重播函数在 effect 中刷新） ──
   const isLoopingRef = React.useRef(false);
@@ -171,6 +189,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
       onActivate();
     },
     onReferenceEnd: handleReferenceEnd,
+    scenario: evalScenario,
+    onQuotaBlocked: () => setQuotaWallHit(true),
   });
 
   const [activeWordIndex, setActiveWordIndex] = React.useState<number | null>(
@@ -604,6 +624,11 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   }, [textMode, subtitle]);
 
   const handleStartRecording = () => {
+    // [P3-b] 配额触墙后评分入口置锁：点击/Space 统一改开会员弹窗，不再起录音
+    if (isEvalLocked) {
+      useUIStore.getState().openPremiumModal(quotaModalSource);
+      return;
+    }
     onActivate();
     startRecording();
   };
@@ -931,7 +956,37 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         {/* 2. 中央：录音交互核心区 */}
         {(!result || isRecording || isProcessing) && (
           <div className="bg-base-200/50 border-y border-base-200 p-8 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
-            {!isRecording && !isProcessing && (
+            {/* [P3-b] 配额触墙置锁：评分按钮改开会员弹窗（review_eval_quota / speech_quota） */}
+            {!isRecording && !isProcessing && isEvalLocked && (
+              <div className="flex flex-col items-center gap-3 animate-in zoom-in duration-300">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useUIStore.getState().openPremiumModal(quotaModalSource);
+                  }}
+                  className="w-20 h-20 rounded-full bg-base-100 border-2 border-dashed border-amber-400 dark:border-amber-500/60 text-amber-500 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-300"
+                  aria-label="评测次数已用完，升级 PRO 解锁"
+                  title={quotaLockedLabel}
+                >
+                  <Lock size={30} />
+                </button>
+                <span className="text-sm font-bold text-base-content/60">
+                  {quotaLockedLabel}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useUIStore.getState().openPremiumModal(quotaModalSource);
+                  }}
+                  className="btn btn-sm rounded-full border-0 bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
+                >
+                  <Crown size={14} />
+                  解锁无限评测
+                </button>
+              </div>
+            )}
+
+            {!isRecording && !isProcessing && !isEvalLocked && (
               <div className="flex flex-col items-center gap-3 animate-in zoom-in duration-300">
                 <button
                   onClick={(e) => {

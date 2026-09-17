@@ -316,6 +316,8 @@ export default function ImmersiveSpeechPractice({
       speed: fullRecord?.speed,
       audioBase64: audioBase64,
       detailJson: rawDetails,
+      // [P3-b] 剧集页沉浸跟读属学新场景：计入月池（20 次/月），口径不变
+      scenario: "learn",
     });
 
     if (result.error) {
@@ -593,6 +595,7 @@ export default function ImmersiveSpeechPractice({
                     passThreshold={effectivePassThreshold}
                     episodeId={episode.episodeid}
                     episodeTitle={episode.title}
+                    evalScenario="learn"
                   />
                 </div>
               ) : (

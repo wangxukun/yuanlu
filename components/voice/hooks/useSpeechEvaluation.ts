@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { evaluateSpeech } from "@/lib/actions/speech";
 import { SpeechPracticeRecord, Subtitle } from "@/lib/types";
 import { useUIStore } from "@/store/ui-store";
-import { SPEECH_QUOTA_EXCEEDED } from "@/lib/quota";
+import { SPEECH_QUOTA_EXCEEDED, REVIEW_EVAL_QUOTA_EXCEEDED } from "@/lib/quota";
 import { handleDictionaryQuotaBlock } from "@/lib/client/dictionary-quota";
+import type { EvalScenario } from "@/core/speech/speech-evaluate.service";
 
 // --- 类型定义 ---
 export interface YoudaoWord {
@@ -105,6 +106,8 @@ export function useSpeechEvaluation({
   currentPlayingId,
   onPlayStart,
   onReferenceEnd,
+  scenario = "learn",
+  onQuotaBlocked,
 }: {
   subtitle: Subtitle;
   audioUrl: string;
@@ -121,6 +124,10 @@ export function useSpeechEvaluation({
   onPlayStart: (id: number) => void;
   /** 原声自然播放至句尾时触发（单句循环重播等场景）；手动停止/切换音频不触发 */
   onReferenceEnd?: () => void;
+  /** [P3-b] 评测场景：learn=学新月池 / review=复习日池，决定配额口径与弹窗 source */
+  scenario?: EvalScenario;
+  /** [P3-b] 配额触墙回调（toast + 会员弹窗之后）——调用方据此锁定后续评分入口 */
+  onQuotaBlocked?: () => void;
 }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -164,6 +171,11 @@ export function useSpeechEvaluation({
   const onReferenceEndRef = useRef(onReferenceEnd);
   useEffect(() => {
     onReferenceEndRef.current = onReferenceEnd;
+  });
+  // [P3-b] 触墙回调 ref：同款防闭包过期处理
+  const onQuotaBlockedRef = useRef(onQuotaBlocked);
+  useEffect(() => {
+    onQuotaBlockedRef.current = onQuotaBlocked;
   });
 
   // Reset everything when navigating to a different subtitle
@@ -492,18 +504,31 @@ export function useSpeechEvaluation({
           base64String,
           subtitle.textEn,
           16000,
+          scenario,
         );
 
         setIsProcessing(false);
 
         if (response.error) {
-          if (response.error === SPEECH_QUOTA_EXCEEDED) {
+          if (
+            response.error === SPEECH_QUOTA_EXCEEDED ||
+            response.error === REVIEW_EVAL_QUOTA_EXCEEDED
+          ) {
+            // [P3-b] 双池触墙承接：learn 月池→speech_quota / review 日池→review_eval_quota，
+            // 弹窗 + PREMIUM_MODAL_OPEN 埋点由 openPremiumModal 内置（验收红线）
             const quotaMessage =
               "message" in response && response.message
                 ? response.message
                 : "本月免费评测次数已用完";
             toast.error(quotaMessage);
-            useUIStore.getState().openPremiumModal("speech_quota");
+            useUIStore
+              .getState()
+              .openPremiumModal(
+                response.error === REVIEW_EVAL_QUOTA_EXCEEDED
+                  ? "review_eval_quota"
+                  : "speech_quota",
+              );
+            onQuotaBlockedRef.current?.();
             return;
           }
           toast.error(response.error);

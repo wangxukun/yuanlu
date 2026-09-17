@@ -10,7 +10,10 @@ import { uploadFile } from "@/lib/oss";
 import { isPremiumUser } from "@/core/auth/guard";
 import {
   FREE_SPEECH_EVALUATIONS_PER_MONTH,
+  FREE_REVIEW_EVALUATIONS_PER_DAY,
+  REVIEW_EVAL_DAILY_BUFFER,
   SPEECH_QUOTA_EXCEEDED,
+  REVIEW_EVAL_QUOTA_EXCEEDED,
 } from "@/lib/quota";
 import { recordConversionEvent } from "@/lib/track";
 import crypto from "crypto";
@@ -21,6 +24,18 @@ const APP_SECRET = process.env.YOUDAO_APP_SECRET || "";
 const YOUDAO_URL = "https://openapi.youdao.com/iseapi";
 
 // ── DTOs ──
+
+/**
+ * [P3-b] 评测场景双池拆分（报告 4.2-B）：
+ * - learn   学新：剧集页沉浸跟读，共享月池（FREE_SPEECH_EVALUATIONS_PER_MONTH）
+ * - review  复习：发音弱项闯关 / 句子本影子跟读，独立日池（FREE_REVIEW_EVALUATIONS_PER_DAY）
+ */
+export type EvalScenario = "learn" | "review";
+
+/** 外部输入（server action 参数 / REST body）的 scenario 归一化，非法值一律按 learn */
+export function normalizeScenario(input: unknown): EvalScenario {
+  return input === "review" ? "review" : "learn";
+}
 
 export interface EvaluateSpeechInput {
   audioBase64: string;
@@ -41,6 +56,7 @@ export interface SaveSpeechResultInput {
   speed?: number;
   audioBase64?: string;
   detailJson?: any;
+  scenario?: EvalScenario;
 }
 
 export interface EvaluateSpeechResult {
@@ -56,6 +72,25 @@ export interface SaveSpeechResultOutput {
   data?: any;
   error?: string;
   message?: string;
+}
+
+/** 配额拦截结果：code 供前端区分弹窗场景（speech_quota / review_eval_quota） */
+export interface EvaluationQuotaBlock {
+  code: string;
+  message: string;
+  scenario: EvalScenario;
+}
+
+/** 配额状态查询结果（/api/speech/quota 预检，供评分按钮置锁） */
+export interface EvaluationQuotaStatus {
+  scenario: EvalScenario;
+  used: number;
+  /** 对外承诺额度（不含复习日池缓冲） */
+  limit: number;
+  /** 实际还可评测次数（复习日池含 +1 缓冲）；会员为 null（无限） */
+  remaining: number | null;
+  exhausted: boolean;
+  isPremium: boolean;
 }
 
 // ── Internal helpers ──
@@ -75,30 +110,96 @@ function getMonthStart(): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
+function getDayStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+/** 学新月池计数：本自然月的 learn 场景落库行数（存量行经 migration 回填为 learn） */
 async function getMonthlyEvaluationCount(userid: string): Promise<number> {
   return prisma.speech_recognition.count({
     where: {
       userid,
+      scenario: "learn",
       recognitionDate: { gte: getMonthStart() },
     },
   });
 }
 
+/** 复习日池计数：当日的 review 场景落库行数 */
+async function getDailyReviewCount(userid: string): Promise<number> {
+  return prisma.speech_recognition.count({
+    where: {
+      userid,
+      scenario: "review",
+      recognitionDate: { gte: getDayStart() },
+    },
+  });
+}
+
 /**
- * Check evaluation quota for a user.
- * Returns null if allowed, or a message string if quota exceeded.
+ * [P3-b] 评测配额检查（唯一规则维护点，server action 前置检查与保存兜底同源）。
+ * 会员/管理员直接放行；按 scenario 分流：learn 查月池、review 查日池（5+1 buffer）。
+ * 返回 null 表示放行，否则返回拦截 code 与文案。
  */
-export async function checkEvaluationQuota(user: {
-  role?: string | null;
-  userid?: string;
-}): Promise<string | null> {
+export async function checkEvaluationQuota(
+  user: { role?: string | null; userid?: string },
+  scenario: EvalScenario = "learn",
+): Promise<EvaluationQuotaBlock | null> {
   const hasPremium = await isPremiumUser(user);
   if (hasPremium) return null;
+
+  if (scenario === "review") {
+    // 日池天然按自然日重置，检查与写入间的并发轻微越限无害（次日自动归零），
+    // 不引入 sentences.toggleSave 级别的咨询锁
+    const used = await getDailyReviewCount(user.userid!);
+    if (used < FREE_REVIEW_EVALUATIONS_PER_DAY + REVIEW_EVAL_DAILY_BUFFER) {
+      return null;
+    }
+    return {
+      code: REVIEW_EVAL_QUOTA_EXCEEDED,
+      message: `今日 ${FREE_REVIEW_EVALUATIONS_PER_DAY} 次免费跟读评测已用完，明日额度自动就位。升级 PRO 解锁无限评测！`,
+      scenario,
+    };
+  }
 
   const used = await getMonthlyEvaluationCount(user.userid!);
   if (used < FREE_SPEECH_EVALUATIONS_PER_MONTH) return null;
 
-  return `本月 ${FREE_SPEECH_EVALUATIONS_PER_MONTH} 次免费语音评测已用完，升级会员解锁无限次评测！`;
+  return {
+    code: SPEECH_QUOTA_EXCEEDED,
+    message: `本月 ${FREE_SPEECH_EVALUATIONS_PER_MONTH} 次免费语音评测已用完，升级会员解锁无限次评测！`,
+    scenario,
+  };
+}
+
+/**
+ * [P3-b] 配额状态查询（/api/speech/quota）：供复习练习页预检置锁评分按钮。
+ */
+export async function getEvaluationQuotaStatus(
+  user: { role?: string | null; userid?: string },
+  scenario: EvalScenario = "learn",
+): Promise<EvaluationQuotaStatus> {
+  const hasPremium = await isPremiumUser(user);
+  const limit =
+    scenario === "review"
+      ? FREE_REVIEW_EVALUATIONS_PER_DAY
+      : FREE_SPEECH_EVALUATIONS_PER_MONTH;
+  const buffer = scenario === "review" ? REVIEW_EVAL_DAILY_BUFFER : 0;
+  const used =
+    scenario === "review"
+      ? await getDailyReviewCount(user.userid!)
+      : await getMonthlyEvaluationCount(user.userid!);
+  const remaining = Math.max(0, limit + buffer - used);
+
+  return {
+    scenario,
+    used,
+    limit,
+    remaining: hasPremium ? null : remaining,
+    exhausted: !hasPremium && remaining <= 0,
+    isPremium: hasPremium,
+  };
 }
 
 // ── Core service functions ──
@@ -220,6 +321,8 @@ export async function saveSpeechResultCore(
         speed: params.speed,
         userAudioUrl,
         detailUrl,
+        // [P3-b] 评测场景落库：月池/日池按此字段分流计数
+        scenario: params.scenario ?? "learn",
       },
     });
 
@@ -288,6 +391,7 @@ export async function evaluateAndSave(
     targetText: string;
     audioBase64: string;
     rate?: number;
+    scenario?: EvalScenario;
   },
 ): Promise<{
   success?: boolean;
@@ -297,18 +401,21 @@ export async function evaluateAndSave(
   error?: string;
   message?: string;
 }> {
+  const scenario = params.scenario ?? "learn";
+
   // 1. Check quota
-  const quotaMessage = await checkEvaluationQuota({
-    role: userRole,
-    userid,
-  });
-  if (quotaMessage) {
+  const quotaBlock = await checkEvaluationQuota(
+    { role: userRole, userid },
+    scenario,
+  );
+  if (quotaBlock) {
     await recordConversionEvent({
       eventType: "QUOTA_BLOCKED",
       source: "speech_evaluation",
       userid,
+      metadata: { scenario },
     });
-    return { error: SPEECH_QUOTA_EXCEEDED, message: quotaMessage };
+    return { error: quotaBlock.code, message: quotaBlock.message };
   }
 
   // 2. Call Youdao ISE
@@ -335,6 +442,7 @@ export async function evaluateAndSave(
     speed: evalResult.details?.speed,
     audioBase64: params.audioBase64,
     detailJson: evalResult.details,
+    scenario,
   });
 
   if (saveResult.error) {

@@ -86,6 +86,8 @@ export default function PronunciationPracticePage() {
       speed: fullRecord?.speed,
       audioBase64: audioBase64,
       detailJson: rawDetails,
+      // [P3-b] 弱项闯关属复习场景：计入复习日池（5 次/日）而非学新月池
+      scenario: "review",
     });
 
     if (result.error) {
@@ -205,6 +207,7 @@ export default function PronunciationPracticePage() {
             isActive={true}
             onActivate={() => {}}
             episodeId={currentRecord.episodeid}
+            evalScenario="review"
           />
         </div>
 
