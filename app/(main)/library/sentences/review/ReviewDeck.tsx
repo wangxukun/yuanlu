@@ -21,11 +21,16 @@ import {
   MoveLeft,
   MoveRight,
   TextQuote,
+  ListOrdered,
+  Layers,
+  Lock,
+  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { useVocabHighlightStore } from "@/store/vocab-highlight-store";
+import { useUIStore } from "@/store/ui-store";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import { getEpisodeAudioUrl } from "@/lib/client/episode-audio";
 import { useNotebookBase } from "@/lib/notebook-base";
@@ -36,17 +41,27 @@ interface ReviewDeckProps {
   vocabWords: { word: string; definition: string | null }[];
   /** 深链定位：来自影子跟读评测页「返回卡片」，按 subtitleId 定位初始卡 */
   initialSubtitleId?: string;
+  /** [P3-d] 会员态：基础刷句永久免费（公理 1），高级模式与翻卡成就为 PRO 专属 */
+  isPremium?: boolean;
 }
+
+/** [P3-d] 刷句模式：sequential 基础免费；tag 组卷 / srs 调度为 PRO 高级模式 */
+type ReviewMode = "sequential" | "tag" | "srs";
 
 /**
  * 移动端刷句复习卡（复刻自 yuanlu-podcast pages/MobileReview.tsx）：
  * 顺序遍历、到末尾回环；点击卡片翻面（译文/笔记），左滑下一句、右滑重听原音；
  * 背景堆叠卡 + 手势角标 + 底部单手操作坞；顶部进度条。
+ *
+ * [P3-d] 模式选择器：基础刷句（滑动/翻面/重听/原音）永久免费；
+ * 标签组卷、SRS 智能调度（最久收藏优先）与连续翻卡成就为 PRO 专属增量——
+ * 非会员点击置锁项弹 sentence_review_advanced 场景会员窗（埋点由 openPremiumModal 内置）。
  */
 export default function ReviewDeck({
   sentences,
   vocabWords,
   initialSubtitleId,
+  isPremium = false,
 }: ReviewDeckProps) {
   // 返回/跟读入口用绝对路径前缀：从 /review 分支进入回到复习中心（Top Tabs 常驻），
   // 从 /library 分支进入回到独立句子本页
@@ -61,11 +76,59 @@ export default function ReviewDeck({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
+  // ── [P3-d] 模式选择器：顺序刷（免费）/ 标签组卷 / SRS 调度（PRO）──
+  const [mode, setMode] = useState<ReviewMode>("sequential");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  // 连续翻卡成就计数（PRO 解锁成就提示；免费仅展示锁定徽章）
+  const [flipCount, setFlipCount] = useState(0);
+
+  const openAdvancedModal = () =>
+    useUIStore.getState().openPremiumModal("sentence_review_advanced");
+
+  const switchMode = (next: ReviewMode) => {
+    if (next !== "sequential" && !isPremium) {
+      openAdvancedModal();
+      return;
+    }
+    setMode(next);
+    if (next !== "tag") setSelectedTag(null);
+  };
+
+  // 标签组卷候选：句库中实际出现的标签（附计数）
+  const tagOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    sentences.forEach((s) =>
+      (s.tags || []).forEach((t) => map.set(t, (map.get(t) ?? 0) + 1)),
+    );
+    return Array.from(map, ([tag, count]) => ({ tag, count })).sort(
+      (a, b) => b.count - a.count,
+    );
+  }, [sentences]);
+
+  // 当前模式的卡组：
+  // - sequential：收藏序（最新在前，service 默认口径）
+  // - tag：选中标签的子集组卷
+  // - srs：最久收藏优先（无独立复习记录字段，以收藏时间为代理调度）
+  const deck = useMemo(() => {
+    if (mode === "tag" && selectedTag)
+      return sentences.filter((s) => (s.tags || []).includes(selectedTag));
+    if (mode === "srs")
+      return [...sentences].sort((a, b) =>
+        a.createAt.localeCompare(b.createAt),
+      );
+    return sentences;
+  }, [mode, selectedTag, sentences]);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // 操作说明 DaisyUI 弹窗（原生 dialog，showModal 驱动）
   const helpModalRef = useRef<HTMLDialogElement>(null);
 
-  const currentSentence = sentences[currentIndex] || null;
+  // 切换模式/标签后越界复位
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [mode, selectedTag]);
+
+  const currentSentence = deck[currentIndex] || null;
 
   // 真实联动词汇：只喂实际出现在复习句中的生词（与句子本同一口径）
   const linkedVocabWords = useMemo(
@@ -142,11 +205,19 @@ export default function ReviewDeck({
   };
 
   const handleNext = () => {
-    if (currentIndex < sentences.length - 1) {
+    if (currentIndex < deck.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
       setCurrentIndex(0); // Loop back
     }
+    // [P3-d] 连续翻卡成就：每翻 10 张达成一级（PRO 专属提示）
+    setFlipCount((prev) => {
+      const next = prev + 1;
+      if (isPremium && next % 10 === 0) {
+        toast.success(`🔥 连续翻卡 ${next} 张，复习节奏稳住了！`);
+      }
+      return next;
+    });
   };
 
   const handleDragEnd = (
@@ -212,7 +283,7 @@ export default function ReviewDeck({
           </span>
           <span className="text-sm font-black text-base-content">
             {currentIndex + 1}{" "}
-            <span className="text-base-content/40">/ {sentences.length}</span>
+            <span className="text-base-content/40">/ {deck.length}</span>
           </span>
         </div>
 
@@ -226,12 +297,121 @@ export default function ReviewDeck({
         </button>
       </div>
 
+      {/* [P3-d] 模式选择器：基础刷句永久免费；标签组卷 / SRS 调度为 PRO 置锁 */}
+      <div className="flex items-center justify-between gap-2 py-1.5">
+        <div className="flex items-center gap-1.5 bg-base-200/70 dark:bg-ink-800/60 p-1 rounded-2xl">
+          {(
+            [
+              {
+                key: "sequential",
+                label: "顺序刷",
+                icon: ListOrdered,
+                pro: false,
+              },
+              { key: "tag", label: "标签组卷", icon: Layers, pro: true },
+              { key: "srs", label: "SRS 调度", icon: Sparkles, pro: true },
+            ] as {
+              key: ReviewMode;
+              label: string;
+              icon: typeof Layers;
+              pro: boolean;
+            }[]
+          ).map((m) => {
+            const active = mode === m.key;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => switchMode(m.key)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                  active
+                    ? "bg-base-100 dark:bg-ink-900 text-primary-600 dark:text-primary-400 shadow-sm"
+                    : "text-base-content/50 hover:text-base-content/80"
+                }`}
+                title={
+                  m.pro && !isPremium
+                    ? "PRO 专属模式，点击升级解锁"
+                    : m.key === "tag"
+                      ? "按标签筛选组卷集中刷"
+                      : m.key === "srs"
+                        ? "最久收藏优先，智能调度复习顺序"
+                        : "按收藏顺序复习"
+                }
+              >
+                <m.icon size={13} />
+                <span>{m.label}</span>
+                {m.pro && !isPremium && (
+                  <Lock size={10} className="opacity-60" />
+                )}
+                {m.pro && isPremium && (
+                  <span className="text-[9px] text-amber-500 font-black">
+                    PRO
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 连续翻卡成就：PRO 实时计数，免费锁定引导 */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!isPremium) {
+              openAdvancedModal();
+              return;
+            }
+            toast(`本会话已连翻 ${flipCount} 张`, {
+              description: "每 10 张达成一级成就，坚持就是复利 🔥",
+            });
+          }}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-2xl text-[11px] font-bold shrink-0 transition-colors ${
+            isPremium
+              ? "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20"
+              : "bg-base-200/70 dark:bg-ink-800/60 text-base-content/50"
+          }`}
+          title={isPremium ? "连续翻卡成就" : "翻卡成就是 PRO 专属，点击解锁"}
+        >
+          {isPremium ? <Flame size={13} /> : <Lock size={11} />}
+          {isPremium ? flipCount : "成就"}
+        </button>
+      </div>
+
+      {/* 标签组卷模式：标签 pills（会员可用；无标签句时引导回句子本打标签） */}
+      {mode === "tag" && (
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+          {tagOptions.length === 0 ? (
+            <span className="text-[11px] text-base-content/50 py-1">
+              句库还没有标签——先在句子本为句子添加标签，再来组卷刷句
+            </span>
+          ) : (
+            tagOptions.map(({ tag, count }) => {
+              const active = selectedTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSelectedTag(active ? null : tag)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                    active
+                      ? "bg-primary-600 text-white shadow-sm"
+                      : "bg-base-200/80 dark:bg-ink-800 text-base-content/60 hover:bg-base-200"
+                  }`}
+                >
+                  {tag} <span className="opacity-60 text-[9px]">({count})</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
       {/* Progress Line */}
       <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden my-2">
         <div
           className="bg-primary-600 dark:bg-primary-400 h-full rounded-full transition-all duration-300"
           style={{
-            width: `${((currentIndex + 1) / sentences.length) * 100}%`,
+            width: `${deck.length > 0 ? ((currentIndex + 1) / deck.length) * 100 : 0}%`,
           }}
         />
       </div>

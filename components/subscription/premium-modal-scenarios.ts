@@ -170,6 +170,19 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     priceAnchor: `PRO ${YEARLY_ANCHOR}`,
     cta: "解锁高级复习",
   },
+  sentence_export: {
+    icon: Download,
+    title: "句子本导出是 PRO 专属",
+    description:
+      "把攒下的好句子带去任何地方——CSV 表格备份，或一键导入 Anki 开始间隔重复。",
+    benefits: [
+      { icon: Download, text: "CSV 全字段导出" },
+      { icon: BookOpen, text: "Anki 卡组一键导入" },
+      { icon: Layers, text: "标签整理与组卷" },
+    ],
+    priceAnchor: `PRO ${WEEKLY_ANCHOR}`,
+    cta: "解锁导出",
+  },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */
   episode_audio_download: {

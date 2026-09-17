@@ -384,6 +384,18 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
   const [tagDrawerSentence, setTagDrawerSentence] =
     React.useState<SavedSentenceItem | null>(null);
 
+  // [P3-d] 智能收藏推荐（报告 4.6）：60-79 分 = 会了但不稳，
+  // 高亮书签引导把有限收藏配额投向最值得反复练的句子
+  const latestScore = result
+    ? (result.overallScore ?? result.accuracyScore ?? 0)
+    : 0;
+  const recommendSave =
+    !!result &&
+    latestScore >= 60 &&
+    latestScore < 80 &&
+    !isSentenceSaved &&
+    !isStagedSent;
+
   // 登录且有所属集时，从缓存拉取本集已收藏的 subtitleId 标记初始书签态
   React.useEffect(() => {
     if (!episodeId || !session?.user) {
@@ -753,13 +765,16 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                   e.stopPropagation();
                   handleToggleSentenceSave();
                 }}
-                className={`btn btn-sm rounded-full border bg-transparent transition-colors ${
+                className={`btn btn-sm rounded-full border bg-transparent transition-all ${
                   isSentenceSaved
                     ? "border-amber-300 bg-amber-50 text-amber-500 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
                     : isStagedSent
                       ? // [P3-a] 半亮 PRO 徽记态：视觉"已记下"而非失败
                         "border-amber-300/60 bg-amber-50/50 text-amber-500/70 hover:bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-400/70"
-                      : "border-ink-200 text-ink-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-500 dark:border-ink-600 dark:text-ink-300 dark:hover:text-amber-400"
+                      : recommendSave
+                        ? // [P3-d] 智能收藏推荐：60-79 分高亮书签（点击即收）
+                          "border-amber-400 bg-amber-50 text-amber-600 ring-2 ring-amber-400/60 shadow-md shadow-amber-400/20 hover:bg-amber-100 dark:border-amber-500/60 dark:bg-amber-500/10 dark:text-amber-400"
+                        : "border-ink-200 text-ink-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-500 dark:border-ink-600 dark:text-ink-300 dark:hover:text-amber-400"
                 }`}
                 aria-pressed={isSentenceSaved || isStagedSent}
                 aria-label={
@@ -774,7 +789,9 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                     ? "取消收藏"
                     : isStagedSent
                       ? "已暂存（升级后自动入库）· 点击取消暂存"
-                      : "收藏句子"
+                      : recommendSave
+                        ? "这句值得收进句子本反复练 · 点击收藏"
+                        : "收藏句子"
                 }
               >
                 <Bookmark
@@ -1057,6 +1074,25 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         {/* 3. 下方：评测结果与反馈区 */}
         {!isRecording && !isProcessing && result && (
           <div className="p-4 md:p-6 lg:p-8 bg-base-100 animate-in slide-in-from-bottom-4 duration-500">
+            {/* [P3-d] 智能收藏推荐：60-79 分区间提示（书签同步高亮） */}
+            {recommendSave && episodeId && (
+              <div className="mb-5 flex items-center gap-2.5 rounded-2xl border border-amber-300/60 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 px-4 py-3">
+                <Bookmark size={16} className="text-amber-500 shrink-0" />
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                  得分 {Math.round(latestScore)}
+                  ——会了还不稳，这句值得收进句子本反复练
+                </p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleSentenceSave();
+                  }}
+                  className="ml-auto btn btn-xs rounded-full border-0 bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                >
+                  收藏
+                </button>
+              </div>
+            )}
             {(() => {
               const pastRecords =
                 historicalRecords?.filter(

@@ -10,11 +10,22 @@ import {
   LayoutGrid,
   List,
   Trash2,
+  Download,
+  FileSpreadsheet,
+  Layers,
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { deleteSavedSentence } from "@/lib/actions/sentences-actions";
+import { FREE_SENTENCE_LIMIT, shouldPreviewSentenceQuota } from "@/lib/quota";
+import { useUIStore } from "@/store/ui-store";
+import {
+  buildSentenceCsv,
+  buildAnkiDeck,
+  downloadTextFile,
+} from "@/lib/client/sentence-export";
 import { useVocabHighlightStore } from "@/store/vocab-highlight-store";
 import { QuickTagDrawer } from "@/components/sentence/QuickTagDrawer";
 import { SentenceStats } from "./components/SentenceStats";
@@ -25,6 +36,8 @@ interface SentenceNotebookProps {
   sentences: SavedSentenceItem[];
   /** 生词本（word + 释义），英文原句中生词高亮联动 */
   vocabWords: { word: string; definition: string | null }[];
+  /** [P3-d] 会员态：容量条口径（免费 30 上限 / PRO 无限）与导出 PRO 化判定 */
+  isPremium?: boolean;
 }
 
 /**
@@ -32,10 +45,14 @@ interface SentenceNotebookProps {
  * 渐变 Banner + 统计行 + 卡片复习入口；搜索/剧集/标签 pills 筛选；
  * 常显英文原句的卡片列表（微播放器 + 折叠译文与笔记）+ 快捷标签抽屉。
  * 数据来自服务端渲染，删除/编辑后本地同步（乐观交互与源项目一致）。
+ *
+ * [P3-d] 配额倒计时可视化（报告 4.6）：容量进度条（80% 起琥珀预警，
+ * 把"限制"感知转成"进度"感知）+ 复习日池今日余量；CSV/Anki 导出为 PRO 专属。
  */
 const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   sentences: initialList,
   vocabWords,
+  isPremium = false,
 }) => {
   const [sentences, setSentences] = useState<SavedSentenceItem[]>(initialList);
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,6 +64,52 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   const [viewMode, setViewMode] = useState<"cards" | "compact">("cards");
   const [activeQuickEditSentence, setActiveQuickEditSentence] =
     useState<SavedSentenceItem | null>(null);
+
+  // [P3-d] 复习日池今日余量（容量条右侧指标；含 buffer 的真实可评次数）
+  const [evalRemaining, setEvalRemaining] = useState<number | null>(null);
+  const [evalLimit, setEvalLimit] = useState<number>(5);
+  useEffect(() => {
+    fetch("/api/speech/quota?scenario=review")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success && d.data && typeof d.data.remaining === "number") {
+          setEvalRemaining(d.data.remaining);
+          setEvalLimit(d.data.limit ?? 5);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // [P3-d] 导出（PRO 专属）：免费用户弹 sentence_export 场景会员窗（内置埋点）
+  const exportRef = useRef<HTMLDetailsElement>(null);
+  const handleExport = (format: "csv" | "anki") => {
+    exportRef.current?.removeAttribute("open");
+    if (!isPremium) {
+      useUIStore.getState().openPremiumModal("sentence_export");
+      return;
+    }
+    if (sentences.length === 0) {
+      toast("句子本还是空的，先收藏几句再来导出");
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      downloadTextFile(
+        buildSentenceCsv(sentences),
+        `远路句子本_${stamp}.csv`,
+        "text/csv;charset=utf-8",
+      );
+      toast.success(`已导出 ${sentences.length} 句（CSV）`);
+    } else {
+      downloadTextFile(
+        buildAnkiDeck(sentences),
+        `远路句子本_Anki_${stamp}.txt`,
+      );
+      toast.success(`已导出 ${sentences.length} 句（Anki 卡组）`, {
+        description: "在 Anki 中选择「文件 → 导入」，Tab 分隔、允许 HTML",
+      });
+    }
+  };
 
   // 真实联动词汇：生词本中实际出现在收藏句子里的词（统计与高亮共用同一口径）
   const linkedVocabWords = useMemo(
@@ -142,6 +205,95 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
         tagCount={allTags.length}
       />
 
+      {/* [P3-d] 配额倒计时可视化（报告 4.6）：句子本容量条 + 复习日池余量，
+          把"限制"感知转为"进度"感知；PRO 显示无限态 */}
+      <div className="bg-white dark:bg-ink-900 rounded-3xl px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8">
+        {isPremium ? (
+          <div className="flex items-center gap-2.5 flex-1">
+            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
+              <InfinityIcon size={16} />
+            </span>
+            <div className="text-xs">
+              <p className="font-bold text-base-content">
+                PRO 无限收藏 · 已收 {sentences.length} 句
+              </p>
+              <p className="text-base-content/50 mt-0.5">
+                容量不设限，复习评测也不限次
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-bold text-base-content">
+                  句子本容量
+                </span>
+                <span
+                  className={`text-[11px] font-black ${
+                    sentences.length >= FREE_SENTENCE_LIMIT
+                      ? "text-red-500"
+                      : shouldPreviewSentenceQuota(sentences.length)
+                        ? "text-amber-500"
+                        : "text-base-content/50"
+                  }`}
+                >
+                  {sentences.length}/{FREE_SENTENCE_LIMIT}
+                  {sentences.length < FREE_SENTENCE_LIMIT
+                    ? ` · 还能收藏 ${FREE_SENTENCE_LIMIT - sentences.length} 句`
+                    : " · 已满（删除腾位或升级无限）"}
+                </span>
+              </div>
+              <div className="w-full bg-base-200 h-2 rounded-full overflow-hidden mt-2">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    sentences.length >= FREE_SENTENCE_LIMIT
+                      ? "bg-red-500"
+                      : shouldPreviewSentenceQuota(sentences.length)
+                        ? "bg-amber-500"
+                        : "bg-primary-600 dark:bg-primary-400"
+                  }`}
+                  style={{
+                    width: `${Math.min(100, (sentences.length / FREE_SENTENCE_LIMIT) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="sm:w-44 shrink-0 sm:border-l sm:border-base-200 sm:pl-6">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-bold text-base-content">
+                  今日复习评测
+                </span>
+                <span
+                  className={`text-[11px] font-black ${
+                    evalRemaining !== null && evalRemaining === 0
+                      ? "text-red-500"
+                      : "text-base-content/50"
+                  }`}
+                >
+                  {evalRemaining !== null
+                    ? evalRemaining === 0
+                      ? "已用完"
+                      : `剩 ${evalRemaining} 次`
+                    : "…"}
+                </span>
+              </div>
+              <div className="w-full bg-base-200 h-2 rounded-full overflow-hidden mt-2">
+                <div
+                  className="bg-primary-600 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
+                  style={{
+                    width:
+                      evalRemaining !== null
+                        ? `${Math.min(100, (evalRemaining / (evalLimit + 1)) * 100)}%`
+                        : "0%",
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Control / Search & Filter Panel（空状态隐藏：没有句子时无可检索内容，三端一致） */}
       {sentences.length > 0 && (
         <div className="bg-white dark:bg-ink-900 rounded-3xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] space-y-4">
@@ -217,6 +369,44 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
                 <span>简洁清单</span>
               </button>
             </div>
+
+            {/* [P3-d] 导出（PRO 专属）：CSV 全字段 / Anki 卡组；免费点击弹会员窗 */}
+            <details ref={exportRef} className="dropdown dropdown-end shrink-0">
+              <summary
+                className="btn btn-sm rounded-2xl border-base-300 bg-transparent hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 gap-1.5 font-bold text-xs normal-case"
+                title={isPremium ? "导出句子本" : "导出是 PRO 专属功能"}
+              >
+                <Download size={14} />
+                <span>导出</span>
+                {!isPremium && (
+                  <span className="text-[9px] font-black text-amber-500">
+                    PRO
+                  </span>
+                )}
+              </summary>
+              <ul className="dropdown-content menu bg-base-100 dark:bg-ink-900 rounded-2xl shadow-lg border border-base-200 dark:border-ink-700 w-52 p-2 mt-1 z-20">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleExport("csv")}
+                    className="text-xs font-bold gap-2"
+                  >
+                    <FileSpreadsheet size={14} className="text-emerald-500" />
+                    CSV 表格（全字段备份）
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleExport("anki")}
+                    className="text-xs font-bold gap-2"
+                  >
+                    <Layers size={14} className="text-sky-500" />
+                    Anki 卡组（间隔重复）
+                  </button>
+                </li>
+              </ul>
+            </details>
           </div>
 
           {/* Tag Pills Filter */}

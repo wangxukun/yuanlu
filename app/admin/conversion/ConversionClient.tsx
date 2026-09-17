@@ -42,6 +42,13 @@ const SOURCE_LABELS: Record<string, string> = {
   dictionary_quota: "词典配额弹窗",
   pronunciation_locked: "弱项本锁定提示",
   pronunciation_trial: "弱项本试用（前3条）",
+  sentence_total: "句子收藏配额拦截",
+  sentence_quota: "句子本容量已满",
+  review_eval_quota: "复习评测日池用尽",
+  sentence_review_advanced: "高级复习模式锁定",
+  sentence_export: "句子本导出锁定",
+  admin_claim: "管理员认领找回",
+  self_service: "用户自助找回",
   episode_audio_download: "音频下载",
   episode_practice: "剧集练习",
   exclusive_play: "专享播放（已停用）",
@@ -71,6 +78,35 @@ export default function ConversionClient({
     modal && modal.users > 0
       ? ((stats.newSubscriptions / modal.users) * 100).toFixed(1)
       : "—";
+
+  // [P3-d] 复习闭环子漏斗：按 source 维度取数，为 30 条/5 次两个参数的
+  // A/B 调参提供数据闭环（报告 4.5/4.6）
+  const srcRow = (eventType: string, source: string) =>
+    stats.sources.find((s) => s.eventType === eventType && s.source === source);
+  const subFunnels = [
+    {
+      name: "句子收藏触墙",
+      wall: srcRow("QUOTA_BLOCKED", "sentence_total"),
+      modal: srcRow("PREMIUM_MODAL_OPEN", "sentence_quota"),
+      note: "容量 30 条（暂存承接后弹窗）",
+    },
+    {
+      name: "复习评测触墙",
+      wall: srcRow("QUOTA_BLOCKED", "speech_evaluation"),
+      modal: (() => {
+        const review = srcRow("PREMIUM_MODAL_OPEN", "review_eval_quota");
+        const learn = srcRow("PREMIUM_MODAL_OPEN", "speech_quota");
+        if (!review && !learn) return undefined;
+        return {
+          eventType: "PREMIUM_MODAL_OPEN",
+          source: "review_eval_quota+speech_quota",
+          times: (review?.times ?? 0) + (learn?.times ?? 0),
+          users: -1, // 两 source 独立用户可能重叠，合并用户数无意义，显示次数口径
+        };
+      })(),
+      note: "日池 5 次 + 月池 20 次（拦截含双场景）",
+    },
+  ];
 
   const cards = [
     {
@@ -206,6 +242,75 @@ export default function ConversionClient({
           </div>
           <p className="text-xs opacity-40 mt-2">
             注：触墙用户数为试用触墙与配额拦截独立用户之和（个别用户可能同时命中两类，为近似上界）
+          </p>
+        </div>
+      </div>
+
+      {/* [P3-d] 复习闭环子漏斗：句子收藏墙 / 复习评测墙 两条转化链，
+          为 30 条、5 次两个配额参数的 A/B 调参提供数据闭环 */}
+      <div className="card bg-base-100 border border-base-200 shadow-sm">
+        <div className="card-body p-6">
+          <h2 className="card-title text-base font-black">
+            复习闭环子漏斗（近 {stats.days} 天）
+          </h2>
+          <p className="text-xs opacity-50 -mt-2">
+            配额触墙 → 会员弹窗承接的按 source
+            转化；订阅归因用上方全局口径（弹窗→订阅 {modalToSub}%）
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+            {subFunnels.map((f) => {
+              const wallTimes = f.wall?.times ?? 0;
+              const modalTimes = f.modal?.times ?? 0;
+              const guide =
+                wallTimes > 0
+                  ? ((modalTimes / wallTimes) * 100).toFixed(1)
+                  : "—";
+              return (
+                <div
+                  key={f.name}
+                  className="rounded-2xl border border-base-200 bg-base-200/30 p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-black">{f.name}</p>
+                    <span className="text-[10px] opacity-50 font-bold">
+                      {f.note}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="flex-1 text-center">
+                      <p className="text-2xl font-black">{wallTimes}</p>
+                      <p className="text-[10px] opacity-50 font-bold mt-0.5">
+                        配额拦截次数
+                      </p>
+                    </div>
+                    <ArrowRight size={16} className="opacity-30 shrink-0" />
+                    <div className="flex-1 text-center">
+                      <p className="text-2xl font-black text-violet-500">
+                        {modalTimes}
+                      </p>
+                      <p className="text-[10px] opacity-50 font-bold mt-0.5">
+                        弹窗承接次数
+                      </p>
+                    </div>
+                    <ArrowRight size={16} className="opacity-30 shrink-0" />
+                    <div className="flex-1 text-center">
+                      <p className="text-2xl font-black text-emerald-500">
+                        {guide}%
+                      </p>
+                      <p className="text-[10px] opacity-50 font-bold mt-0.5">
+                        承接率
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs opacity-40 mt-2">
+            承接率 = 弹窗打开次数 /
+            配额拦截次数（同一用户多次触墙计多次）；调参对照： 调整
+            FREE_SENTENCE_LIMIT（30）或
+            FREE_REVIEW_EVALUATIONS_PER_DAY（5）后按时间窗对比承接与订阅
           </p>
         </div>
       </div>
