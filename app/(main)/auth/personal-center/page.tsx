@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/tools";
@@ -239,6 +240,35 @@ export default function PersonalCenterPage() {
           <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <StatsOverview />
             <ActivityChart />
+            {/* [P3-f] 学习报表入口：7 天简报免费 / 全年报表与热力图 PRO */}
+            <Link
+              href="/library/learning-report"
+              className="flex items-center gap-4 rounded-2xl border border-primary-200 dark:border-primary-500/30 bg-primary-50/60 dark:bg-primary-900/20 hover:bg-primary-50 dark:hover:bg-primary-900/30 px-5 py-4 transition-colors group"
+            >
+              <span className="p-2.5 rounded-xl bg-primary-600/10 text-primary-600 dark:text-primary-400 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="w-5 h-5"
+                >
+                  <path d="M3 3v18h18" strokeLinecap="round" />
+                  <path d="M7 15v-4M12 15V7M17 15v-7" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-bold text-base-content">
+                  学习报表
+                </span>
+                <span className="block text-xs text-base-content/60 mt-0.5">
+                  近 7 天简报 · PRO 解锁全年趋势、热力图与智能建议
+                </span>
+              </span>
+              <span className="text-base-content/40 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors shrink-0">
+                →
+              </span>
+            </Link>
           </div>
         )}
         {activeTab === "achievements" && (

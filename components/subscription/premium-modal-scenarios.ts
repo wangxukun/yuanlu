@@ -196,6 +196,19 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     priceAnchor: `PRO ${YEARLY_ANCHOR}`,
     cta: "解锁完整诊断",
   },
+  stats_report: {
+    icon: Sparkles,
+    title: "学习报表是 PRO 会员专属",
+    description:
+      "免费层可见近 7 天学习简报。PRO：月/季/年趋势报表 + 全年学习热力图 + 智能学习建议，看清每一步积累。",
+    benefits: [
+      { icon: Sparkles, text: "月/季/年趋势报表" },
+      { icon: BookOpen, text: "全年学习热力图" },
+      { icon: Target, text: "智能学习建议" },
+    ],
+    priceAnchor: `PRO ${YEARLY_ANCHOR}`,
+    cta: "解锁学习报表",
+  },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */
   episode_audio_download: {
