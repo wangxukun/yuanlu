@@ -183,6 +183,19 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     priceAnchor: `PRO ${WEEKLY_ANCHOR}`,
     cta: "解锁导出",
   },
+  diagnostic_report: {
+    icon: Target,
+    title: "你的发音数据已经就位",
+    description:
+      "免费层可见五维雷达与薄弱音素概览。PRO：薄弱音素 Top10 逐个击破方案 + 逐月进步曲线，把弱音一个一个磨掉。",
+    benefits: [
+      { icon: Target, text: "薄弱音素 Top10 + 专项建议" },
+      { icon: Sparkles, text: "逐月进步趋势月报" },
+      { icon: Mic, text: "针对弱音的闯关练习" },
+    ],
+    priceAnchor: `PRO ${YEARLY_ANCHOR}`,
+    cta: "解锁完整诊断",
+  },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */
   episode_audio_download: {

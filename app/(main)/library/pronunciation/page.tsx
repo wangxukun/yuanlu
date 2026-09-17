@@ -9,6 +9,7 @@ import { getWeakSentences } from "@/core/speech/weak-sentences.service";
 import { redirect } from "next/navigation";
 import PronunciationNotebook from "./PronunciationNotebook";
 import { SpeechProfileCard } from "./components/SpeechProfileCard";
+import { DiagnosticReportCard } from "./components/DiagnosticReportCard";
 
 export const metadata = {
   title: "发音弱项本 | 远路播客",
@@ -106,6 +107,9 @@ export default async function PronunciationPage() {
     <div className="bg-ink-50 dark:bg-ink-950 min-h-screen pb-20 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 font-sans">
         <SpeechProfileCard profile={speechProfile} radar={speechRadar} />
+        {/* [P3-e] AI 发音诊断报告（激活休眠墙）：免费 Top3 音素 + 模糊锁定，
+            PRO Top10 专项建议 + 进步曲线；stats 与音素雷达同源（均分升序） */}
+        <DiagnosticReportCard stats={formattedStats} isPremium={isPremium} />
         <PronunciationNotebook
           stats={formattedStats}
           errors={visibleErrors}

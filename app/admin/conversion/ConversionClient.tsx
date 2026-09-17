@@ -47,6 +47,7 @@ const SOURCE_LABELS: Record<string, string> = {
   review_eval_quota: "复习评测日池用尽",
   sentence_review_advanced: "高级复习模式锁定",
   sentence_export: "句子本导出锁定",
+  diagnostic_report: "发音诊断报告锁定",
   admin_claim: "管理员认领找回",
   self_service: "用户自助找回",
   episode_audio_download: "音频下载",
