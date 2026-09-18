@@ -13,13 +13,21 @@ import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import PracticeSettingsButton from "./PracticeSettingsButton";
+import EvaluationHistoryPanel from "./EvaluationHistoryPanel";
 import {
   usePracticeSettingsStore,
   selectEffectivePassThreshold,
 } from "@/store/practice-settings-store";
 import { toast } from "sonner";
 import { saveSpeechResult } from "@/lib/actions/speech";
-import { CheckCircle2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { FREE_VISIBLE_HISTORY_RECORDS } from "@/lib/quota";
+import {
+  CheckCircle2,
+  History,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface ImmersiveSpeechPracticeProps {
   isOpen: boolean;
@@ -40,6 +48,13 @@ export default function ImmersiveSpeechPractice({
   // 句子浏览不再受限——前 5 句切片已废止，墙只拦录音评测动作）
   const [quotaExhausted, setQuotaExhausted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // [P3-g] 历史回放墙元数据（practice-data 随响应下发）+ 历史面板开关
+  const [historyMeta, setHistoryMeta] = useState<{
+    isPremium: boolean;
+    historyTotal: number;
+  }>({ isPremium: false, historyTotal: 0 });
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // UI State
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -104,6 +119,10 @@ export default function ImmersiveSpeechPractice({
           const loadedSubtitles = json.data.subtitles || [];
           setSubtitles(loadedSubtitles);
           setRecords(json.data.previousRecords || []);
+          setHistoryMeta({
+            isPremium: !!json.data.isPremium,
+            historyTotal: Number(json.data.historyTotal) || 0,
+          });
 
           // 解析 URL 中的 subtitleId（发音弱项本跳转），记录下来；
           // 真正的定位在 filteredSubtitles 就绪后由专门 effect 处理，
@@ -371,252 +390,299 @@ export default function ImmersiveSpeechPractice({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-          className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row overflow-hidden font-sans"
-        >
-          {/* ── Left Panel (Tablet & Desktop) ── */}
-          <div className="hidden md:flex flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0 w-[35%] max-w-[400px] xl:max-w-[480px] h-full border-r">
-            {/* Top Bar */}
-            <div className="flex items-center justify-between px-6 h-14 shrink-0">
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1 px-2 py-1.5 -ml-2 rounded-xl text-ink-500 hover:text-primary-600 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
-                title="收起 (Esc)"
-              >
-                <span className="material-symbols-outlined text-xl">
-                  expand_more
-                </span>
-                <span className="text-sm font-bold">返回</span>
-              </button>
-              <PracticeSettingsButton variant="drawer" />
-            </div>
-
-            {/* Cover & Title */}
-            <div className="px-6 pb-6 flex flex-col gap-4 border-b border-ink-100 dark:border-ink-800/50">
-              <div className="w-full aspect-video rounded-xl shadow-lg border border-ink-200 dark:border-ink-700 overflow-hidden shrink-0 relative">
-                <img
-                  src={episode.coverUrl}
-                  alt={episode.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md">
-                  <span className="text-white text-xs font-bold tracking-widest uppercase">
-                    语音评测
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+            className="fixed inset-0 z-[200] bg-white/95 dark:bg-ink-950/95 backdrop-blur-xl flex flex-col md:flex-row overflow-hidden font-sans"
+          >
+            {/* ── Left Panel (Tablet & Desktop) ── */}
+            <div className="hidden md:flex flex-col bg-white/90 dark:bg-ink-900/90 backdrop-blur-xl border-ink-200 dark:border-ink-800 shrink-0 w-[35%] max-w-[400px] xl:max-w-[480px] h-full border-r">
+              {/* Top Bar */}
+              <div className="flex items-center justify-between px-6 h-14 shrink-0">
+                <button
+                  onClick={onClose}
+                  className="flex items-center gap-1 px-2 py-1.5 -ml-2 rounded-xl text-ink-500 hover:text-primary-600 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                  title="收起 (Esc)"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    expand_more
                   </span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-ink-900 dark:text-ink-100 line-clamp-2 leading-tight">
-                  {episode.title}
-                </h1>
-                <p className="text-sm font-medium text-ink-500 dark:text-ink-400 mt-1 line-clamp-1">
-                  {episode.podcast?.title || "Unknown Podcast"}
-                </p>
+                  <span className="text-sm font-bold">返回</span>
+                </button>
+                <PracticeSettingsButton variant="drawer" />
               </div>
 
-              {/* Progress Bar */}
-              <div className="mt-2">
-                <div className="flex items-center justify-between text-xs font-bold text-ink-500 dark:text-ink-400 mb-1.5">
-                  <span>已练 {practicedInFilter} 句</span>
-                  <span>共 {filteredSubtitles.length} 句</span>
-                </div>
-                <div className="w-full h-2 bg-ink-100 dark:bg-ink-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary-500 transition-all duration-500 rounded-full"
-                    style={{ width: `${progressPercent}%` }}
+              {/* Cover & Title */}
+              <div className="px-6 pb-6 flex flex-col gap-4 border-b border-ink-100 dark:border-ink-800/50">
+                <div className="w-full aspect-video rounded-xl shadow-lg border border-ink-200 dark:border-ink-700 overflow-hidden shrink-0 relative">
+                  <img
+                    src={episode.coverUrl}
+                    alt={episode.title}
+                    className="w-full h-full object-cover"
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Sentence List Navigation */}
-            <div
-              className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1"
-              ref={cardListRef}
-            >
-              <h3 className="text-xs font-bold text-ink-400 dark:text-ink-500 uppercase tracking-widest px-2 mb-3">
-                所有句子
-              </h3>
-
-              {isLoading ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-ink-300" />
-                </div>
-              ) : filteredSubtitles.length > 0 ? (
-                filteredSubtitles.map((sub, index) => {
-                  const latestResult = getLatestResult(sub.id);
-                  const isActive = index === activeCardIndex;
-                  const hasPracticed = !!latestResult;
-                  const score = latestResult?.accuracyScore || 0;
-
-                  return (
-                    <button
-                      key={sub.id}
-                      onClick={() => setActiveCardIndex(index)}
-                      className={`w-full text-left p-3 rounded-xl transition-colors flex items-start gap-3 ${
-                        isActive
-                          ? "bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800"
-                          : "hover:bg-ink-50 dark:hover:bg-ink-800/50"
-                      }`}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {hasPracticed ? (
-                          score >= 85 ? (
-                            <span className="text-primary-500">✅</span>
-                          ) : score >= 60 ? (
-                            <span className="text-accent-500">🎯</span>
-                          ) : (
-                            <span className="text-error-500">⭕</span>
-                          )
-                        ) : (
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-primary-400" : "border-ink-300 dark:border-ink-600"}`}
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className={`text-sm line-clamp-2 leading-relaxed ${isActive ? "font-semibold text-primary-700 dark:text-primary-300" : "font-medium text-ink-700 dark:text-ink-300"}`}
-                        >
-                          {sub.textEn}
-                        </div>
-                        {isActive && sub.textCn && (
-                          <div className="text-xs text-primary-600/70 dark:text-primary-400/70 mt-1 line-clamp-1">
-                            {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "")}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8 text-ink-400 text-sm">
-                  没有找到练习句子
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Right Panel / Main Area ── */}
-          <div className="flex-1 flex flex-col relative h-full bg-ink-50/50 dark:bg-ink-950/50 overflow-hidden">
-            {/* Mobile Top Bar */}
-            <div className="md:hidden flex items-center justify-between px-4 h-14 bg-white/80 dark:bg-ink-900/80 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 shrink-0 relative z-10">
-              <button onClick={onClose} className="p-2 -ml-2 text-ink-500">
-                <span className="material-symbols-outlined">expand_more</span>
-              </button>
-              <div className="text-sm font-bold text-ink-800 dark:text-ink-200">
-                语音评测
-              </div>
-              <PracticeSettingsButton variant="mobile" />
-            </div>
-
-            {/* Main Content */}
-            <div className="flex-1 overflow-y-auto px-3 py-4 md:px-6 md:py-8 lg:p-12 flex flex-col items-center relative">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center text-ink-400 my-auto">
-                  <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                  <p className="font-medium">加载评测数据中...</p>
-                </div>
-              ) : error ? (
-                <div className="bg-error-50 dark:bg-error-900/20 text-error-600 p-6 rounded-2xl max-w-sm text-center border border-error-100 dark:border-error-800 my-auto">
-                  <span className="material-symbols-outlined text-4xl mb-2">
-                    error
-                  </span>
-                  <p className="font-bold">{error}</p>
-                </div>
-              ) : filteredSubtitles.length > 0 && activeSubtitle ? (
-                <div className="w-full max-w-2xl mx-auto my-auto pb-24 md:pb-0 shrink-0">
-                  {isCompleted && (
-                    <div className="mb-8 p-6 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-2xl text-center shadow-lg animate-in slide-in-from-top-4">
-                      <CheckCircle2 className="w-12 h-12 text-success-500 mx-auto mb-3" />
-                      <h2 className="text-xl font-bold text-success-700 dark:text-success-400 mb-1">
-                        会话已完成！
-                      </h2>
-                      <p className="text-sm text-success-600 dark:text-success-500">
-                        你已经练习了所有的句子。
-                      </p>
-                    </div>
-                  )}
-
-                  <SpeechEvaluationCard
-                    subtitle={activeSubtitle}
-                    audioUrl={episode.audioUrl || ""}
-                    previousResult={getLatestResult(activeSubtitle.id)}
-                    historicalRecords={getHistoricalRecords(activeSubtitle.id)}
-                    onEvaluate={handleEvaluate}
-                    currentPlayingId={playingSubtitleId}
-                    onPlayStart={(id) => setPlayingSubtitleId(id)}
-                    isActive={true}
-                    onActivate={() => {}}
-                    fontSizeLevel={settings.fontSizeLevel}
-                    showTranslation={settings.showTranslation}
-                    showIpa={settings.showIpa}
-                    textMode={settings.textMode}
-                    passThreshold={effectivePassThreshold}
-                    episodeId={episode.episodeid}
-                    episodeTitle={episode.title}
-                    evalScenario="learn"
-                    quotaLocked={quotaExhausted}
-                  />
-                </div>
-              ) : (
-                <div className="text-center text-ink-400">
-                  <p>没有字幕可供练习</p>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Navigation Bar */}
-            {!isLoading && filteredSubtitles.length > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-6 md:pb-6 pointer-events-none">
-                <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-xl md:rounded-2xl flex items-center p-1.5 md:p-2 gap-3 md:gap-4 pointer-events-auto w-full max-w-sm mx-auto">
-                  <button
-                    onClick={handlePrev}
-                    disabled={activeCardIndex === 0}
-                    className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-
-                  <div className="flex-1 flex flex-col items-center">
-                    <div className="text-sm font-bold text-ink-700 dark:text-ink-300">
-                      {activeCardIndex + 1}{" "}
-                      <span className="text-ink-400 mx-1">/</span>{" "}
-                      {filteredSubtitles.length}
-                    </div>
-                    <div className="w-full max-w-[120px] h-1.5 bg-ink-100 dark:bg-ink-700 rounded-full mt-1.5 overflow-hidden">
-                      <div
-                        className="h-full bg-primary-500 rounded-full transition-all duration-300"
-                        style={{
-                          width: `${((activeCardIndex + 1) / filteredSubtitles.length) * 100}%`,
-                        }}
-                      />
-                    </div>
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md">
+                    <span className="text-white text-xs font-bold tracking-widest uppercase">
+                      语音评测
+                    </span>
                   </div>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-ink-900 dark:text-ink-100 line-clamp-2 leading-tight">
+                    {episode.title}
+                  </h1>
+                  <p className="text-sm font-medium text-ink-500 dark:text-ink-400 mt-1 line-clamp-1">
+                    {episode.podcast?.title || "Unknown Podcast"}
+                  </p>
+                </div>
 
+                {/* Progress Bar */}
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-ink-500 dark:text-ink-400 mb-1.5">
+                    <span>已练 {practicedInFilter} 句</span>
+                    <span>共 {filteredSubtitles.length} 句</span>
+                  </div>
+                  <div className="w-full h-2 bg-ink-100 dark:bg-ink-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary-500 transition-all duration-500 rounded-full"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* [P3-g] 跟读历史入口：进步曲线 + 历史回放（免费最近 5 条 / PRO 全量+回放） */}
+                <button
+                  onClick={() => setIsHistoryOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-ink-200 dark:border-ink-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 px-4 py-2.5 text-sm font-bold text-ink-600 dark:text-ink-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  <History size={16} />
+                  跟读历史 · 进步曲线
+                  {historyMeta.historyTotal > 0 && (
+                    <span className="text-xs font-medium text-ink-400">
+                      {historyMeta.historyTotal} 条
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Sentence List Navigation */}
+              <div
+                className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1"
+                ref={cardListRef}
+              >
+                <h3 className="text-xs font-bold text-ink-400 dark:text-ink-500 uppercase tracking-widest px-2 mb-3">
+                  所有句子
+                </h3>
+
+                {isLoading ? (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-ink-300" />
+                  </div>
+                ) : filteredSubtitles.length > 0 ? (
+                  filteredSubtitles.map((sub, index) => {
+                    const latestResult = getLatestResult(sub.id);
+                    const isActive = index === activeCardIndex;
+                    const hasPracticed = !!latestResult;
+                    const score = latestResult?.accuracyScore || 0;
+
+                    return (
+                      <button
+                        key={sub.id}
+                        onClick={() => setActiveCardIndex(index)}
+                        className={`w-full text-left p-3 rounded-xl transition-colors flex items-start gap-3 ${
+                          isActive
+                            ? "bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800"
+                            : "hover:bg-ink-50 dark:hover:bg-ink-800/50"
+                        }`}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {hasPracticed ? (
+                            score >= 85 ? (
+                              <span className="text-primary-500">✅</span>
+                            ) : score >= 60 ? (
+                              <span className="text-accent-500">🎯</span>
+                            ) : (
+                              <span className="text-error-500">⭕</span>
+                            )
+                          ) : (
+                            <div
+                              className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-primary-400" : "border-ink-300 dark:border-ink-600"}`}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className={`text-sm line-clamp-2 leading-relaxed ${isActive ? "font-semibold text-primary-700 dark:text-primary-300" : "font-medium text-ink-700 dark:text-ink-300"}`}
+                          >
+                            {sub.textEn}
+                          </div>
+                          {isActive && sub.textCn && (
+                            <div className="text-xs text-primary-600/70 dark:text-primary-400/70 mt-1 line-clamp-1">
+                              {sub.textCn.replace(/\[SPEAKER_\d+\]:\s*/g, "")}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-ink-400 text-sm">
+                    没有找到练习句子
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Right Panel / Main Area ── */}
+            <div className="flex-1 flex flex-col relative h-full bg-ink-50/50 dark:bg-ink-950/50 overflow-hidden">
+              {/* Mobile Top Bar */}
+              <div className="md:hidden flex items-center justify-between px-4 h-14 bg-white/80 dark:bg-ink-900/80 backdrop-blur-md border-b border-ink-200 dark:border-ink-800 shrink-0 relative z-10">
+                <button onClick={onClose} className="p-2 -ml-2 text-ink-500">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </button>
+                <div className="text-sm font-bold text-ink-800 dark:text-ink-200">
+                  语音评测
+                </div>
+                <div className="flex items-center gap-1">
+                  {/* [P3-g] 跟读历史入口（移动端） */}
                   <button
-                    onClick={handleNext}
-                    disabled={activeCardIndex === filteredSubtitles.length - 1}
-                    className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                    onClick={() => setIsHistoryOpen(true)}
+                    className="p-2 rounded-xl text-ink-500 hover:text-primary-600 hover:bg-ink-100 dark:hover:bg-ink-800 transition-colors"
+                    aria-label="跟读历史与进步曲线"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <History size={20} />
                   </button>
+                  <PracticeSettingsButton variant="mobile" />
                 </div>
               </div>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+              {/* Main Content */}
+              <div className="flex-1 overflow-y-auto px-3 py-4 md:px-6 md:py-8 lg:p-12 flex flex-col items-center relative">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center text-ink-400 my-auto">
+                    <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                    <p className="font-medium">加载评测数据中...</p>
+                  </div>
+                ) : error ? (
+                  <div className="bg-error-50 dark:bg-error-900/20 text-error-600 p-6 rounded-2xl max-w-sm text-center border border-error-100 dark:border-error-800 my-auto">
+                    <span className="material-symbols-outlined text-4xl mb-2">
+                      error
+                    </span>
+                    <p className="font-bold">{error}</p>
+                  </div>
+                ) : filteredSubtitles.length > 0 && activeSubtitle ? (
+                  <div className="w-full max-w-2xl mx-auto my-auto pb-24 md:pb-0 shrink-0">
+                    {isCompleted && (
+                      <div className="mb-8 p-6 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-2xl text-center shadow-lg animate-in slide-in-from-top-4">
+                        <CheckCircle2 className="w-12 h-12 text-success-500 mx-auto mb-3" />
+                        <h2 className="text-xl font-bold text-success-700 dark:text-success-400 mb-1">
+                          会话已完成！
+                        </h2>
+                        <p className="text-sm text-success-600 dark:text-success-500">
+                          你已经练习了所有的句子。
+                        </p>
+                      </div>
+                    )}
+
+                    <SpeechEvaluationCard
+                      subtitle={activeSubtitle}
+                      audioUrl={episode.audioUrl || ""}
+                      previousResult={getLatestResult(activeSubtitle.id)}
+                      historicalRecords={getHistoricalRecords(
+                        activeSubtitle.id,
+                      )}
+                      onEvaluate={handleEvaluate}
+                      currentPlayingId={playingSubtitleId}
+                      onPlayStart={(id) => setPlayingSubtitleId(id)}
+                      isActive={true}
+                      onActivate={() => {}}
+                      fontSizeLevel={settings.fontSizeLevel}
+                      showTranslation={settings.showTranslation}
+                      showIpa={settings.showIpa}
+                      textMode={settings.textMode}
+                      passThreshold={effectivePassThreshold}
+                      episodeId={episode.episodeid}
+                      episodeTitle={episode.title}
+                      evalScenario="learn"
+                      quotaLocked={quotaExhausted}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center text-ink-400">
+                    <p>没有字幕可供练习</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Navigation Bar */}
+              {!isLoading && filteredSubtitles.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-white via-white/90 dark:from-ink-950 dark:via-ink-950/90 to-transparent flex justify-center pb-6 md:pb-6 pointer-events-none">
+                  <div className="bg-white dark:bg-ink-800 shadow-xl border border-ink-100 dark:border-ink-700 rounded-xl md:rounded-2xl flex items-center p-1.5 md:p-2 gap-3 md:gap-4 pointer-events-auto w-full max-w-sm mx-auto">
+                    <button
+                      onClick={handlePrev}
+                      disabled={activeCardIndex === 0}
+                      className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className="text-sm font-bold text-ink-700 dark:text-ink-300">
+                        {activeCardIndex + 1}{" "}
+                        <span className="text-ink-400 mx-1">/</span>{" "}
+                        {filteredSubtitles.length}
+                      </div>
+                      <div className="w-full max-w-[120px] h-1.5 bg-ink-100 dark:bg-ink-700 rounded-full mt-1.5 overflow-hidden">
+                        <div
+                          className="h-full bg-primary-500 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${((activeCardIndex + 1) / filteredSubtitles.length) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleNext}
+                      disabled={
+                        activeCardIndex === filteredSubtitles.length - 1
+                      }
+                      className="p-2 md:p-3 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-ink-600 dark:text-ink-300"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* [P3-g] 跟读历史面板：进步曲线 + 历史列表 + 录音回放（免费最近 5 条，PRO 全量+回放） */}
+      <EvaluationHistoryPanel
+        open={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        records={records}
+        isPremium={historyMeta.isPremium}
+        historyTotal={historyMeta.historyTotal}
+        hiddenCount={
+          historyMeta.isPremium
+            ? 0
+            : Math.max(
+                0,
+                historyMeta.historyTotal - FREE_VISIBLE_HISTORY_RECORDS,
+              )
+        }
+      />
+    </>
   );
 }

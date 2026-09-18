@@ -5,10 +5,12 @@ import {
   Crown,
   Download,
   Headphones,
+  History,
   Layers,
   Mic,
   Sparkles,
   Target,
+  TrendingUp,
 } from "lucide-react";
 import { AFDIAN_PLANS } from "@/lib/afdian-plans";
 
@@ -209,6 +211,21 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     ],
     priceAnchor: `PRO ${YEARLY_ANCHOR}`,
     cta: "解锁学习报表",
+  },
+  history_playback: {
+    icon: History,
+    title: "你的跟读历史已经就位",
+    description:
+      "免费层可查看最近 5 条评测记录。PRO：全量历史 + 录音回放 + 词级评测细节 + 前后对比，听见自己一天天的进步。",
+    descriptionFallback:
+      "免费层可查看最近 5 条评测记录。PRO：全量跟读历史 + 录音回放 + 前后对比分析，听见自己的进步。",
+    benefits: [
+      { icon: History, text: "全量跟读历史" },
+      { icon: Headphones, text: "录音随时回放" },
+      { icon: TrendingUp, text: "进步曲线与前后对比" },
+    ],
+    priceAnchor: `PRO ${YEARLY_ANCHOR}`,
+    cta: "解锁历史回放",
   },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */

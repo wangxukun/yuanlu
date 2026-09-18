@@ -71,6 +71,14 @@ export const SENTENCE_QUOTA_EXCEEDED = "SENTENCE_QUOTA_EXCEEDED";
 export const FREE_VISIBLE_ERRORS = 3;
 
 /**
+ * [P3-g] 跟读历史免费可见条数：practice-data 对免费用户只下发最近
+ * N 条评测记录（分数/日期/句子可见），且整条剥离 userAudioUrl/detailUrl
+ * （录音回放与评测细节为 PRO 专属，OSS 直链不得进免费用户 payload）。
+ * 会员全量 + 回放/细节走服务端签发的签名 URL。
+ */
+export const FREE_VISIBLE_HISTORY_RECORDS = 5;
+
+/**
  * [P3-a] 80% 预告判定：达到容量 80%（第 24 条起）且未满时，
  * 收藏成功 toast 附带"还剩 {n} 个位置"（单集会话只提示一次）。
  */

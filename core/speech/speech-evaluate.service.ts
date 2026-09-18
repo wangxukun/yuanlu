@@ -339,7 +339,14 @@ export async function saveSpeechResultCore(
       }
     }
 
-    return { success: true, data: record };
+    // [P3-g] 返回载荷剥离 OSS 直链：record.userAudioUrl/detailUrl 是未签名的
+    // OSS 直链，落库需要它们，但任何客户端 payload 都不需要（Web 端即时回放
+    // 走本地 blob URL，历史回放/评测细节由 practice-data 按会员态签名下发）。
+    // 全部调用方（server action / REST evaluateAndSave）均不消费这两个字段。
+    const safeRecord: Record<string, unknown> = { ...record };
+    delete safeRecord.userAudioUrl;
+    delete safeRecord.detailUrl;
+    return { success: true, data: safeRecord };
   } catch (error) {
     console.error("Failed to save speech recognition result:", error);
     return { error: "Failed to save result" };

@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
-import { requireAuth, canAccessEpisode } from "@/core/auth/guard";
+import {
+  requireAuth,
+  canAccessEpisode,
+  isPremiumUser,
+} from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
+import { FREE_VISIBLE_HISTORY_RECORDS } from "@/lib/quota";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -125,11 +130,23 @@ export async function GET(req: NextRequest) {
         : new Date().toISOString(),
     } as unknown as Episode;
 
-    // 5. 转换历史记录类型
+    // 5. [P3-g] 历史按会员态切片：
+    //    - 免费用户：仅下发最近 N 条（分数/日期/句子文本可见），
+    //      且 userAudioUrl / detailUrl 整条剥离——录音回放与评测细节为 PRO
+    //      专属，OSS 直链（签名与否）不得出现在免费用户 payload 中
+    //      （口径与 P1-4 stripExclusiveEpisodeMedia 一致：剥离而非降级）；
+    //    - 会员：全量历史，回放/细节走服务端签发的短时签名 URL。
+    const historyTotal = historyRecords.length;
+    const isPremium = await isPremiumUser(session.user);
+    const visibleRecords = isPremium
+      ? historyRecords
+      : historyRecords.slice(-FREE_VISIBLE_HISTORY_RECORDS);
+
+    // 6. 转换历史记录类型（免费用户不进入签名分支，URL 字段不回传）
     const formattedRecords: SpeechPracticeRecord[] = await Promise.all(
-      historyRecords.map(async (record) => {
+      visibleRecords.map(async (record) => {
         let signedAudioUrl = record.userAudioUrl ?? undefined;
-        if (signedAudioUrl && signedAudioUrl.includes("aliyuncs.com/")) {
+        if (isPremium && signedAudioUrl?.includes("aliyuncs.com/")) {
           const fileName = decodeURIComponent(
             signedAudioUrl.split("aliyuncs.com/")[1] || "",
           );
@@ -146,7 +163,7 @@ export async function GET(req: NextRequest) {
         }
 
         let signedDetailUrl = record.detailUrl ?? undefined;
-        if (signedDetailUrl && signedDetailUrl.includes("aliyuncs.com/")) {
+        if (isPremium && signedDetailUrl?.includes("aliyuncs.com/")) {
           const fileName = decodeURIComponent(
             signedDetailUrl.split("aliyuncs.com/")[1] || "",
           );
@@ -174,14 +191,14 @@ export async function GET(req: NextRequest) {
           integrityScore: record.integrityScore ?? undefined,
           overallScore: record.overallScore ?? undefined,
           speed: record.speed ?? undefined,
-          detailUrl: signedDetailUrl ?? undefined,
-          userAudioUrl: signedAudioUrl,
+          detailUrl: isPremium ? (signedDetailUrl ?? undefined) : undefined,
+          userAudioUrl: isPremium ? signedAudioUrl : undefined,
           subtitleId: record.subtitleId ?? undefined,
         };
       }),
     );
 
-    // 6. [全局日池统一] 免费用户可完整浏览本集全部句子（原"前 5 句试用切片"
+    // 7. [全局日池统一] 免费用户可完整浏览本集全部句子（原"前 5 句试用切片"
     //    已废止，转化墙收敛到录音评测动作本身——每日 5 次全局跟读配额，
     //    由 speech-evaluate.service 统一执法）。isTrialMode 恒为 false，
     //    字段保留仅为旧客户端（Android 已发版包）响应结构兼容。
@@ -192,6 +209,10 @@ export async function GET(req: NextRequest) {
         subtitles,
         previousRecords: formattedRecords,
         isTrialMode: false,
+        // [P3-g] 历史回放墙：isPremium + historyTotal（切片前总数）供前端
+        // 渲染锁定层与"还有 N 条"提示（additive，旧客户端向后兼容）
+        isPremium,
+        historyTotal,
       },
     });
   } catch (error) {
