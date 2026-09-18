@@ -254,6 +254,19 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     priceAnchor: `PRO ${WEEKLY_ANCHOR}`,
     cta: "解锁 AI 生成",
   },
+  episode_deep_dive: {
+    icon: BookOpen,
+    title: "AI 精讲这集播客",
+    description:
+      "难点词汇预扫、长难句逐层拆解、跟读句推荐、理解测验——AI 把每一集变成一节精听课。PRO 专属。",
+    benefits: [
+      { icon: BookOpen, text: "难点词汇预扫 + 长难句拆解" },
+      { icon: Headphones, text: "本集跟读句推荐" },
+      { icon: Target, text: "理解测验即时检验" },
+    ],
+    priceAnchor: `PRO ${YEARLY_ANCHOR}`,
+    cta: "解锁 AI 精讲",
+  },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */
   episode_audio_download: {

@@ -193,6 +193,7 @@ model episode {
   User                      User?                 @relation(fields: [uploaderid], references: [userid], onDelete: SetNull, onUpdate: NoAction)
   episode_favorites         episode_favorites[]
   learning_path_items       learning_path_items[]
+  episode_deep_dives        episode_deep_dives[]
   listening_history         listening_history[]
   quizzes                   quizzes[]
   ratings                   ratings[]
@@ -632,4 +633,16 @@ model SavedSentence {
   @@unique([userid, episodeid, subtitleId])
   @@index([userid, createAt(sort: Desc)])
   @@index([userid, episodeid])
+}
+
+/// [P3-i②] AI 剧集深度精讲缓存（PRO 专属）。
+/// 每集只生成一次（episodeid 唯一），全部 PRO 用户共享——LLM 边际成本
+/// 按剧集数封顶；内容为静态 JSON（难点词汇预扫/长难句拆解/跟读句推荐/测验）。
+model episode_deep_dives {
+  id         Int      @id @default(autoincrement())
+  episodeid  String   @unique
+  content    Json
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  episode episode @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }

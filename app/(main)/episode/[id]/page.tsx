@@ -3,6 +3,7 @@ import EpisodeSummarize from "@/components/episode/EpisodeSummarize";
 import EpisodeComments from "@/components/episode/EpisodeComments";
 import ShowNotes from "@/components/episode/ShowNotes";
 import RelatedEpisodes from "@/components/episode/RelatedEpisodes";
+import EpisodeDeepDive from "@/components/episode/EpisodeDeepDive";
 import { Metadata } from "next";
 
 type Props = {
@@ -78,6 +79,9 @@ export default async function EpisodePage({
 
             {/* Show Notes */}
             <ShowNotes episode={episode} />
+
+            {/* [P3-i②] AI 深度精讲（PRO 专属，免费锁定承接） */}
+            <EpisodeDeepDive episodeid={episode.episodeid} />
 
             {/* Discussion Module */}
             <section className="rounded-2xl flex flex-col gap-8">

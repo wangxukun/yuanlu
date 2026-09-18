@@ -52,6 +52,7 @@ const SOURCE_LABELS: Record<string, string> = {
   history_playback: "跟读历史回放锁定",
   path_quota: "学习路径容量已满",
   path_ai_generate: "AI 路径生成锁定",
+  episode_deep_dive: "AI 剧集精讲锁定",
   admin_claim: "管理员认领找回",
   self_service: "用户自助找回",
   episode_audio_download: "音频下载",
