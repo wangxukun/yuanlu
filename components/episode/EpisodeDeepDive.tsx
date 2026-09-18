@@ -10,13 +10,14 @@
  * 时同样弹窗承接）。LLM 生成失败 toast 提示，不阻断剧集页。
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronUp,
   Headphones,
   ListChecks,
   Loader2,
@@ -54,6 +55,8 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
   const { data: session } = useSession();
   const [content, setContent] = useState<DeepDiveContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const isPremiumClient =
     session?.user?.role === "PREMIUM" || session?.user?.role === "ADMIN";
@@ -68,6 +71,7 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
       const json = await res.json().catch(() => null);
       if (res.ok && json?.success) {
         setContent(json.data.content as DeepDiveContent);
+        setIsOpen(true);
         return;
       }
       if (res.status === 403 || json?.code === "PREMIUM_REQUIRED") {
@@ -92,117 +96,186 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
       useUIStore.getState().openPremiumModal("episode_deep_dive");
       return;
     }
+    // Content already loaded — toggle open/close
+    if (content) {
+      setIsOpen((prev) => !prev);
+      return;
+    }
     void load();
   };
 
-  // ── 已加载：渲染精讲内容 ──
+  /** Collapse and scroll back to the card top */
+  const handleCollapse = () => {
+    setIsOpen(false);
+    // Scroll the card header into viewport after collapse
+    requestAnimationFrame(() => {
+      sectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  // ── 已加载：渲染精讲内容（可折叠） ──
   if (content) {
     return (
-      <section className="rounded-2xl bg-white dark:bg-ink-900 border border-ink-100 dark:border-ink-800 p-6 md:p-8 flex flex-col gap-8">
-        <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50 flex items-center gap-2">
-          <Sparkles size={24} className="text-violet-500" />
-          AI 精讲本集
-        </h2>
-
-        {content.vocabulary.length > 0 && (
-          <div>
-            <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-widest mb-3">
-              难点词汇预扫
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {content.vocabulary.map((v, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-ink-100 dark:border-ink-800 bg-ink-50/50 dark:bg-ink-950/40 px-4 py-3"
-                >
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-bold text-primary-700 dark:text-primary-300">
-                      {v.word}
-                    </span>
-                    {v.phonetic && (
-                      <span className="text-xs text-base-content/40 font-mono">
-                        {v.phonetic}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-base-content/80 mt-1">
-                    {v.meaning}
-                  </p>
-                  {v.reason && (
-                    <p className="text-xs text-base-content/50 mt-1">
-                      {v.reason}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
+      <section
+        ref={sectionRef}
+        className="rounded-2xl bg-white dark:bg-ink-900 border border-ink-100 dark:border-ink-800 shadow-sm overflow-hidden scroll-mt-24"
+      >
+        {/* ── Header（始终可见，点击 toggle 开合） ── */}
+        <button
+          type="button"
+          onClick={() => {
+            if (isOpen) handleCollapse();
+            else setIsOpen(true);
+          }}
+          className="w-full text-left p-6 md:p-8 flex items-center gap-3 group cursor-pointer"
+          aria-expanded={isOpen}
+          aria-label="AI 精讲本集"
+        >
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-primary-500 text-white shadow-md group-hover:scale-105 transition-transform">
+            <Sparkles size={22} />
           </div>
-        )}
-
-        {content.sentences.length > 0 && (
-          <div>
-            <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-widest mb-3">
-              长难句拆解
-            </h3>
-            <div className="space-y-4">
-              {content.sentences.map((s, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border-l-4 border-violet-400 bg-violet-50/40 dark:bg-violet-500/5 px-4 py-3"
-                >
-                  <p className="text-sm font-semibold text-ink-800 dark:text-ink-200 leading-relaxed">
-                    {s.text}
-                  </p>
-                  <p className="text-sm text-base-content/70 mt-2 leading-relaxed">
-                    {s.analysis}
-                  </p>
-                </div>
-              ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl md:text-2xl font-bold text-ink-900 dark:text-ink-50">
+                AI 精讲本集
+              </h2>
             </div>
+            <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
+              AI
+              精读本集字幕，生成专属精讲：难点词汇、长难句拆解、跟读句与理解测验。
+            </p>
           </div>
-        )}
+          <div className="text-ink-400 group-hover:text-ink-600 dark:group-hover:text-ink-300 transition-colors shrink-0">
+            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+        </button>
 
-        {content.shadowing.length > 0 && (
-          <div>
-            <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-widest mb-3">
-              本集跟读句推荐
-            </h3>
-            <div className="space-y-2">
-              {content.shadowing.map((s, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <Headphones
-                    size={16}
-                    className="text-primary-500 shrink-0 mt-0.5"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-ink-800 dark:text-ink-200">
-                      {s.text}
-                    </p>
-                    {s.reason && (
-                      <p className="text-xs text-base-content/50 mt-0.5">
-                        {s.reason}
+        {/* ── Expandable Content ── */}
+        {isOpen && (
+          <div className="px-6 md:px-8 pb-6 md:pb-8 flex flex-col gap-8">
+            {/* ── 难点词汇预扫 ── */}
+            {content.vocabulary.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-ink-500 dark:text-ink-400 uppercase tracking-widest mb-4">
+                  难点词汇预扫
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {content.vocabulary.map((v, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl bg-ink-50 dark:bg-ink-950/40 border border-ink-100 dark:border-ink-800 p-4"
+                    >
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="font-bold text-primary-600 dark:text-primary-300">
+                          {v.word}
+                        </span>
+                        {v.phonetic && (
+                          <span className="text-xs text-ink-400 dark:text-ink-500 font-mono">
+                            {v.phonetic}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-ink-700 dark:text-ink-300 mt-1.5 leading-relaxed">
+                        {v.meaning}
                       </p>
-                    )}
-                  </div>
+                      {v.reason && (
+                        <p className="text-xs text-ink-500 dark:text-ink-400 mt-1.5 leading-relaxed">
+                          {v.reason}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {/* ── 长难句拆解 ── */}
+            {content.sentences.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-ink-500 dark:text-ink-400 uppercase tracking-widest mb-4">
+                  长难句拆解
+                </h3>
+                <div className="space-y-3">
+                  {content.sentences.map((s, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl bg-ink-50 dark:bg-ink-950/40 border-l-4 border-l-primary-400 dark:border-l-primary-600 p-4"
+                    >
+                      <p className="text-sm font-semibold text-ink-800 dark:text-ink-200 leading-relaxed">
+                        {s.text}
+                      </p>
+                      <p className="text-sm text-ink-500 dark:text-ink-400 mt-2.5 leading-relaxed">
+                        {s.analysis}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 本集跟读句推荐 ── */}
+            {content.shadowing.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-ink-500 dark:text-ink-400 uppercase tracking-widest mb-4">
+                  本集跟读句推荐
+                </h3>
+                <div className="space-y-2.5">
+                  {content.shadowing.map((s, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl bg-ink-50 dark:bg-ink-950/40 p-4 flex items-start gap-3"
+                    >
+                      <Headphones
+                        size={16}
+                        className="text-primary-500 shrink-0 mt-0.5"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-ink-800 dark:text-ink-200 leading-relaxed">
+                          {s.text}
+                        </p>
+                        {s.reason && (
+                          <p className="text-xs text-ink-500 dark:text-ink-400 mt-1">
+                            {s.reason}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 理解测验 ── */}
+            {content.quiz.length > 0 && <QuizBlock quiz={content.quiz} />}
+
+            {/* ── 底部"收起内容"控制栏 ── */}
+            <div className="flex justify-end items-center mt-2 pt-4 border-t border-ink-100 dark:border-ink-800">
+              <button
+                type="button"
+                onClick={handleCollapse}
+                className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-primary-600 dark:text-ink-400 dark:hover:text-primary-400 transition-colors cursor-pointer py-2 px-3 -mr-3 rounded-lg hover:bg-ink-50 dark:hover:bg-ink-800/50"
+              >
+                收起内容
+                <ChevronUp className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}
-
-        {content.quiz.length > 0 && <QuizBlock quiz={content.quiz} />}
       </section>
     );
   }
 
   // ── 未加载：入口卡（免费锁定态 / PRO 加载态） ──
   return (
-    <section className="rounded-2xl bg-white dark:bg-ink-900 border border-ink-100 dark:border-ink-800 p-6 md:p-8">
+    <section className="rounded-2xl bg-white dark:bg-ink-900 border border-ink-100 dark:border-ink-800 shadow-sm">
       <button
         type="button"
         onClick={handleClick}
         disabled={isLoading}
-        className="w-full text-left group"
+        className="w-full text-left group p-6 md:p-8"
         aria-label="AI 精讲本集"
       >
         <div className="flex items-center gap-3 flex-wrap">
@@ -224,7 +297,7 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-base-content/60 mt-1">
+            <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
               {isLoading
                 ? "AI 正在精读字幕并生成精讲内容，首次生成约需 30-60 秒..."
                 : "AI 精读本集字幕，生成专属精讲：难点词汇、长难句拆解、跟读句与理解测验。"}
@@ -236,7 +309,7 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
           {isPremiumClient && !isLoading && (
             <ChevronDown
               size={20}
-              className="text-base-content/40 shrink-0 group-hover:text-base-content transition-colors"
+              className="text-ink-400 shrink-0 group-hover:text-ink-600 dark:group-hover:text-ink-300 transition-colors"
             />
           )}
         </div>
@@ -244,7 +317,7 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
           {FEATURE_CHIPS.map((chip) => (
             <span
               key={chip.text}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-50 dark:bg-ink-950/60 text-xs font-bold text-base-content/70"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-50 dark:bg-ink-950/60 text-xs font-bold text-ink-500 dark:text-ink-400"
             >
               <chip.icon size={13} />
               {chip.text}
@@ -261,18 +334,18 @@ function QuizBlock({ quiz }: { quiz: DeepDiveContent["quiz"] }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   return (
     <div>
-      <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-widest mb-3">
+      <h3 className="text-xs font-bold text-ink-500 dark:text-ink-400 uppercase tracking-widest mb-4">
         理解测验
       </h3>
-      <div className="space-y-5">
+      <div className="space-y-4">
         {quiz.map((q, qi) => {
           const picked = answers[qi];
           return (
             <div
               key={qi}
-              className="rounded-xl border border-ink-100 dark:border-ink-800 px-4 py-4"
+              className="rounded-xl bg-ink-50 dark:bg-ink-950/40 border border-ink-100 dark:border-ink-800 p-4"
             >
-              <p className="text-sm font-bold text-base-content mb-3">
+              <p className="text-sm font-bold text-ink-900 dark:text-ink-100 mb-3">
                 {qi + 1}. {q.question}
               </p>
               <div className="grid grid-cols-1 gap-2">
@@ -290,10 +363,10 @@ function QuizBlock({ quiz }: { quiz: DeepDiveContent["quiz"] }) {
                       }
                       className={`flex items-center gap-2 text-left px-3.5 py-2.5 rounded-lg border text-sm transition-colors ${
                         showState && isCorrect
-                          ? "border-success-300 dark:border-success-700 bg-success-50 dark:bg-success-900/20 text-success-700 dark:text-success-400 font-semibold"
+                          ? "border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 font-semibold"
                           : showState && isPicked && !isCorrect
                             ? "border-error-300 dark:border-error-700 bg-error-50 dark:bg-error-900/20 text-error-600 dark:text-error-400"
-                            : "border-ink-200 dark:border-ink-700 hover:border-primary-300 dark:hover:border-primary-700 text-base-content/80"
+                            : "border-ink-200 dark:border-ink-700 hover:border-primary-300 dark:hover:border-primary-700 text-ink-700 dark:text-ink-300 bg-white dark:bg-ink-900"
                       } ${showState ? "cursor-default" : "cursor-pointer"}`}
                     >
                       {showState && isCorrect ? (
@@ -301,7 +374,7 @@ function QuizBlock({ quiz }: { quiz: DeepDiveContent["quiz"] }) {
                       ) : showState && isPicked ? (
                         <XCircle size={16} className="shrink-0" />
                       ) : (
-                        <span className="w-4 text-center text-xs font-bold text-base-content/40 shrink-0">
+                        <span className="w-4 text-center text-xs font-bold text-ink-400 shrink-0">
                           {String.fromCharCode(65 + oi)}
                         </span>
                       )}
@@ -311,7 +384,7 @@ function QuizBlock({ quiz }: { quiz: DeepDiveContent["quiz"] }) {
                 })}
               </div>
               {picked !== undefined && q.explanation && (
-                <p className="text-xs text-base-content/60 mt-3 bg-ink-50 dark:bg-ink-950/50 rounded-lg px-3 py-2">
+                <p className="text-xs text-ink-600 dark:text-ink-400 mt-3 bg-white dark:bg-ink-900/50 rounded-lg px-3 py-2 leading-relaxed">
                   {q.explanation}
                 </p>
               )}
