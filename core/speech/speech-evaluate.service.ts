@@ -9,10 +9,8 @@ import prisma from "@/lib/prisma";
 import { uploadFile } from "@/lib/oss";
 import { isPremiumUser } from "@/core/auth/guard";
 import {
-  FREE_SPEECH_EVALUATIONS_PER_MONTH,
   FREE_REVIEW_EVALUATIONS_PER_DAY,
   REVIEW_EVAL_DAILY_BUFFER,
-  SPEECH_QUOTA_EXCEEDED,
   REVIEW_EVAL_QUOTA_EXCEEDED,
 } from "@/lib/quota";
 import { recordConversionEvent } from "@/lib/track";
@@ -26,9 +24,11 @@ const YOUDAO_URL = "https://openapi.youdao.com/iseapi";
 // ── DTOs ──
 
 /**
- * [P3-b] 评测场景双池拆分（报告 4.2-B）：
- * - learn   学新：剧集页沉浸跟读，共享月池（FREE_SPEECH_EVALUATIONS_PER_MONTH）
- * - review  复习：发音弱项闯关 / 句子本影子跟读，独立日池（FREE_REVIEW_EVALUATIONS_PER_DAY）
+ * 评测场景标记（数据画像用）：
+ * - learn   学新：剧集页沉浸跟读（精听）
+ * - review  复习：发音弱项闯关 / 句子本影子跟读
+ * [全局日池统一] learn 与 review 共用同一"每日跟读配额"池（5+1 buffer/日），
+ * scenario 仅作落库画像与埋点维度，不再参与配额分流（原 learn 月池已废止）。
  */
 export type EvalScenario = "learn" | "review";
 
@@ -74,7 +74,7 @@ export interface SaveSpeechResultOutput {
   message?: string;
 }
 
-/** 配额拦截结果：code 供前端区分弹窗场景（speech_quota / review_eval_quota） */
+/** 配额拦截结果：code 供前端区分弹窗场景（统一日池一律 REVIEW_EVAL_QUOTA_EXCEEDED） */
 export interface EvaluationQuotaBlock {
   code: string;
   message: string;
@@ -85,9 +85,9 @@ export interface EvaluationQuotaBlock {
 export interface EvaluationQuotaStatus {
   scenario: EvalScenario;
   used: number;
-  /** 对外承诺额度（不含复习日池缓冲） */
+  /** 对外承诺额度（不含日池缓冲） */
   limit: number;
-  /** 实际还可评测次数（复习日池含 +1 缓冲）；会员为 null（无限） */
+  /** 实际还可评测次数（含 +1 缓冲）；会员为 null（无限） */
   remaining: number | null;
   exhausted: boolean;
   isPremium: boolean;
@@ -102,12 +102,7 @@ function truncate(q: string) {
 }
 
 function encrypt(signStr: string) {
-  return crypto.createHash("sha256").update(signStr, "utf8").digest("hex");
-}
-
-function getMonthStart(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+  return crypto.createHash("sha256").update(signStr, "utf-8").digest("hex");
 }
 
 function getDayStart(): Date {
@@ -115,32 +110,24 @@ function getDayStart(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-/** 学新月池计数：本自然月的 learn 场景落库行数（存量行经 migration 回填为 learn） */
-async function getMonthlyEvaluationCount(userid: string): Promise<number> {
+/**
+ * [全局日池] 当日已用跟读评测次数：跨场景（learn + review）、跨剧集统一计数，
+ * 不论在哪个剧集或哪种练习入口，每天录音跟读共用一个池
+ */
+async function getDailyEvaluationCount(userid: string): Promise<number> {
   return prisma.speech_recognition.count({
     where: {
       userid,
-      scenario: "learn",
-      recognitionDate: { gte: getMonthStart() },
-    },
-  });
-}
-
-/** 复习日池计数：当日的 review 场景落库行数 */
-async function getDailyReviewCount(userid: string): Promise<number> {
-  return prisma.speech_recognition.count({
-    where: {
-      userid,
-      scenario: "review",
       recognitionDate: { gte: getDayStart() },
     },
   });
 }
 
 /**
- * [P3-b] 评测配额检查（唯一规则维护点，server action 前置检查与保存兜底同源）。
- * 会员/管理员直接放行；按 scenario 分流：learn 查月池、review 查日池（5+1 buffer）。
- * 返回 null 表示放行，否则返回拦截 code 与文案。
+ * [全局日池] 评测配额检查（唯一规则维护点，server action 前置检查与保存兜底同源）。
+ * 会员/管理员直接放行；learn / review 场景一律查当日跨场景总数（5 次 + 1 buffer，
+ * 自然日重置）。返回 null 表示放行，否则返回拦截 code 与文案。
+ * 检查与写入间的并发轻微越限无害（次日自动归零），不引入咨询锁。
  */
 export async function checkEvaluationQuota(
   user: { role?: string | null; userid?: string },
@@ -149,47 +136,29 @@ export async function checkEvaluationQuota(
   const hasPremium = await isPremiumUser(user);
   if (hasPremium) return null;
 
-  if (scenario === "review") {
-    // 日池天然按自然日重置，检查与写入间的并发轻微越限无害（次日自动归零），
-    // 不引入 sentences.toggleSave 级别的咨询锁
-    const used = await getDailyReviewCount(user.userid!);
-    if (used < FREE_REVIEW_EVALUATIONS_PER_DAY + REVIEW_EVAL_DAILY_BUFFER) {
-      return null;
-    }
-    return {
-      code: REVIEW_EVAL_QUOTA_EXCEEDED,
-      message: `今日 ${FREE_REVIEW_EVALUATIONS_PER_DAY} 次免费跟读评测已用完，明日额度自动就位。升级 PRO 解锁无限评测！`,
-      scenario,
-    };
+  const used = await getDailyEvaluationCount(user.userid!);
+  if (used < FREE_REVIEW_EVALUATIONS_PER_DAY + REVIEW_EVAL_DAILY_BUFFER) {
+    return null;
   }
-
-  const used = await getMonthlyEvaluationCount(user.userid!);
-  if (used < FREE_SPEECH_EVALUATIONS_PER_MONTH) return null;
-
   return {
-    code: SPEECH_QUOTA_EXCEEDED,
-    message: `本月 ${FREE_SPEECH_EVALUATIONS_PER_MONTH} 次免费语音评测已用完，升级会员解锁无限次评测！`,
+    code: REVIEW_EVAL_QUOTA_EXCEEDED,
+    message: `今日 ${FREE_REVIEW_EVALUATIONS_PER_DAY} 次免费跟读评测已用完，明日额度自动就位。升级 PRO 解锁无限评测！`,
     scenario,
   };
 }
 
 /**
- * [P3-b] 配额状态查询（/api/speech/quota）：供复习练习页预检置锁评分按钮。
+ * [全局日池] 配额状态查询（/api/speech/quota）：供各练习入口预检置锁评分按钮。
+ * learn / review 入口查的是同一个池（当日跨场景总数），scenario 仅原样回显。
  */
 export async function getEvaluationQuotaStatus(
   user: { role?: string | null; userid?: string },
   scenario: EvalScenario = "learn",
 ): Promise<EvaluationQuotaStatus> {
   const hasPremium = await isPremiumUser(user);
-  const limit =
-    scenario === "review"
-      ? FREE_REVIEW_EVALUATIONS_PER_DAY
-      : FREE_SPEECH_EVALUATIONS_PER_MONTH;
-  const buffer = scenario === "review" ? REVIEW_EVAL_DAILY_BUFFER : 0;
-  const used =
-    scenario === "review"
-      ? await getDailyReviewCount(user.userid!)
-      : await getMonthlyEvaluationCount(user.userid!);
+  const limit = FREE_REVIEW_EVALUATIONS_PER_DAY;
+  const buffer = REVIEW_EVAL_DAILY_BUFFER;
+  const used = await getDailyEvaluationCount(user.userid!);
   const remaining = Math.max(0, limit + buffer - used);
 
   return {

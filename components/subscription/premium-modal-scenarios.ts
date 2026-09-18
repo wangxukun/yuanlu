@@ -97,7 +97,8 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     cta: "解锁无限查询",
   },
 
-  /* ---- 语音评测（现有配额墙） ---- */
+  /* ---- 语音评测（历史场景：原学新月池已随全局日池统一废止，
+     服务端不再触发，保留仅为旧漏斗数据可读） ---- */
   speech_quota: {
     icon: Mic,
     title: "本月免费评测已用完",
@@ -134,7 +135,7 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     descriptionFallback:
       "今天的免费跟读评测圆满用完，明日额度自动就位。无限评测，把每个弱音磨到满分——PRO ¥0.46/天起。",
     benefits: [
-      { icon: Mic, text: "复习评测不限次" },
+      { icon: Mic, text: "跟读评测不限次" },
       { icon: Sparkles, text: "AI 逐句评分" },
       { icon: Target, text: "历史成绩对比" },
     ],

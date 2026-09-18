@@ -514,20 +514,16 @@ export function useSpeechEvaluation({
             response.error === SPEECH_QUOTA_EXCEEDED ||
             response.error === REVIEW_EVAL_QUOTA_EXCEEDED
           ) {
-            // [P3-b] 双池触墙承接：learn 月池→speech_quota / review 日池→review_eval_quota，
-            // 弹窗 + PREMIUM_MODAL_OPEN 埋点由 openPremiumModal 内置（验收红线）
+            // [全局日池] 触墙承接：learn / review 同池同码，统一弹
+            // review_eval_quota 场景窗（弹窗 + PREMIUM_MODAL_OPEN 埋点由
+            // openPremiumModal 内置，验收红线）；SPEECH_QUOTA_EXCEEDED 分支
+            // 仅为旧版响应兼容
             const quotaMessage =
               "message" in response && response.message
                 ? response.message
-                : "本月免费评测次数已用完";
+                : "今日免费跟读评测已用完";
             toast.error(quotaMessage);
-            useUIStore
-              .getState()
-              .openPremiumModal(
-                response.error === REVIEW_EVAL_QUOTA_EXCEEDED
-                  ? "review_eval_quota"
-                  : "speech_quota",
-              );
+            useUIStore.getState().openPremiumModal("review_eval_quota");
             onQuotaBlockedRef.current?.();
             return;
           }

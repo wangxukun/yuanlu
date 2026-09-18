@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { mergeSubtitles } from "@/lib/data";
 import { generateSignatureUrl } from "@/lib/oss";
-import {
-  requireAuth,
-  isPremiumUser,
-  canAccessEpisode,
-} from "@/core/auth/guard";
-import { recordConversionEvent } from "@/lib/track";
+import { requireAuth, canAccessEpisode } from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 
@@ -105,7 +100,7 @@ export async function GET(req: NextRequest) {
     const mergedSubtitles = await mergeSubtitles(
       voiceEpisode as unknown as Episode,
     );
-    let subtitles: Subtitle[] = mergedSubtitles.map((item) => ({
+    const subtitles: Subtitle[] = mergedSubtitles.map((item) => ({
       id: item.id,
       textEn: item.textEn,
       textCn: item.textCn,
@@ -186,38 +181,17 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    // 6. 处理非会员的试用模式（仅开放前 5 句）
-    // 会员判断与配额逻辑保持一致（role 或有效订阅任一命中）
-    let isTrialMode = false;
-    const isPremium = await isPremiumUser(session.user);
-
-    if (!isPremium) {
-      isTrialMode = true;
-      if (subtitles.length > 5) {
-        // 免费用户首次在本集练习且内容被截断时记录触墙事件（转化漏斗分析）
-        if (historyRecords.length === 0) {
-          await recordConversionEvent({
-            eventType: "TRIAL_REACHED",
-            source: "speech_practice",
-            userid: session.user.userid,
-            metadata: {
-              episodeid: id,
-              totalSubtitles: subtitles.length,
-            },
-          });
-        }
-        // 恢复试用限制，截取前 5 句（取消随机打乱以保证上下文连贯）
-        subtitles = subtitles.slice(0, 5);
-      }
-    }
-
+    // 6. [全局日池统一] 免费用户可完整浏览本集全部句子（原"前 5 句试用切片"
+    //    已废止，转化墙收敛到录音评测动作本身——每日 5 次全局跟读配额，
+    //    由 speech-evaluate.service 统一执法）。isTrialMode 恒为 false，
+    //    字段保留仅为旧客户端（Android 已发版包）响应结构兼容。
     return NextResponse.json({
       success: true,
       data: {
         episode: episodeData,
         subtitles,
         previousRecords: formattedRecords,
-        isTrialMode,
+        isTrialMode: false,
       },
     });
   } catch (error) {

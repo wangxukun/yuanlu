@@ -13,20 +13,13 @@ import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 import SpeechEvaluationCard from "./SpeechEvaluationCard";
 import PracticeSettingsButton from "./PracticeSettingsButton";
-import { useUIStore } from "@/store/ui-store";
 import {
   usePracticeSettingsStore,
   selectEffectivePassThreshold,
 } from "@/store/practice-settings-store";
 import { toast } from "sonner";
 import { saveSpeechResult } from "@/lib/actions/speech";
-import {
-  CheckCircle2,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-} from "lucide-react";
+import { CheckCircle2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImmersiveSpeechPracticeProps {
   isOpen: boolean;
@@ -43,7 +36,9 @@ export default function ImmersiveSpeechPractice({
   const [isLoading, setIsLoading] = useState(true);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [records, setRecords] = useState<SpeechPracticeRecord[]>([]);
-  const [isTrialMode, setIsTrialMode] = useState(false);
+  // [全局日池] 每日跟读配额是否已耗尽（预检 + 每次评测后刷新；
+  // 句子浏览不再受限——前 5 句切片已废止，墙只拦录音评测动作）
+  const [quotaExhausted, setQuotaExhausted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // UI State
@@ -63,6 +58,24 @@ export default function ImmersiveSpeechPractice({
 
   // Refs
   const cardListRef = useRef<HTMLDivElement>(null);
+
+  // [全局日池] 每日跟读配额预检：与弱项闯关/句子本跟读同一接口同一池
+  // （跨场景、跨剧集每日合计 5+1 buffer 次）。静默降级——接口失败不阻断练习，
+  // 触墙兜底仍由评测卡内 quotaWallHit 承接。
+  const refreshQuota = useCallback(async () => {
+    try {
+      const res = await fetch("/api/speech/quota?scenario=learn", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json?.success && json.data) {
+        setQuotaExhausted(!!json.data.exhausted);
+      }
+    } catch {
+      /* 预检失败不阻断：保存兜底会再拦 */
+    }
+  }, []);
 
   // Fetch Data
   useEffect(() => {
@@ -91,7 +104,6 @@ export default function ImmersiveSpeechPractice({
           const loadedSubtitles = json.data.subtitles || [];
           setSubtitles(loadedSubtitles);
           setRecords(json.data.previousRecords || []);
-          setIsTrialMode(json.data.isTrialMode || false);
 
           // 解析 URL 中的 subtitleId（发音弱项本跳转），记录下来；
           // 真正的定位在 filteredSubtitles 就绪后由专门 effect 处理，
@@ -120,11 +132,12 @@ export default function ImmersiveSpeechPractice({
     };
 
     fetchData();
+    refreshQuota();
 
     return () => {
       isMounted = false;
     };
-  }, [isOpen, episode.episodeid]);
+  }, [isOpen, episode.episodeid, refreshQuota]);
 
   // Lock body scroll
   useEffect(() => {
@@ -316,9 +329,12 @@ export default function ImmersiveSpeechPractice({
       speed: fullRecord?.speed,
       audioBase64: audioBase64,
       detailJson: rawDetails,
-      // [P3-b] 剧集页沉浸跟读属学新场景：计入月池（20 次/月），口径不变
+      // 场景画像：剧集页沉浸跟读 = learn（[全局日池] 与 review 共用每日配额池）
       scenario: "learn",
     });
+
+    // [全局日池] 每次落库后刷新余量——第 6 次（buffer 用尽）后本卡原位置锁
+    refreshQuota();
 
     if (result.error) {
       toast.error(
@@ -488,30 +504,6 @@ export default function ImmersiveSpeechPractice({
                   没有找到练习句子
                 </div>
               )}
-
-              {/* 试用模式：在最后（第5句）下方显示解锁提示 */}
-              {!isLoading && isTrialMode && subtitles.length > 0 && (
-                <div className="mt-4 p-4 rounded-xl border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/20 text-center mx-2 mb-4">
-                  <div className="flex justify-center mb-2">
-                    <Lock className="w-6 h-6 text-primary-500" />
-                  </div>
-                  <h4 className="text-sm font-bold text-primary-800 dark:text-primary-200 mb-1">
-                    解锁全部练习句子
-                  </h4>
-                  <p className="text-xs text-primary-600/80 dark:text-primary-400/80 mb-3 leading-relaxed">
-                    您正在体验前 5 句试用，成为 PRO
-                    会员即可解锁本集全篇语音评测。
-                  </p>
-                  <button
-                    onClick={() =>
-                      useUIStore.getState().openPremiumModal("trial_unlock")
-                    }
-                    className="btn btn-sm bg-primary-600 hover:bg-primary-700 text-white border-none w-full rounded-lg"
-                  >
-                    解锁 PRO 会员
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
@@ -544,29 +536,7 @@ export default function ImmersiveSpeechPractice({
                 </div>
               ) : filteredSubtitles.length > 0 && activeSubtitle ? (
                 <div className="w-full max-w-2xl mx-auto my-auto pb-24 md:pb-0 shrink-0">
-                  {isTrialMode && isCompleted && (
-                    <div className="mb-8 p-6 bg-white dark:bg-ink-900 rounded-2xl border border-primary-200 dark:border-primary-800 shadow-xl text-center">
-                      <h2 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
-                        体验已结束
-                      </h2>
-                      <p className="text-sm text-ink-500 mb-6">
-                        升级为 PRO
-                        会员，解锁本集全部练习卡片及更多独家高级内容。
-                      </p>
-                      <button
-                        onClick={() =>
-                          useUIStore
-                            .getState()
-                            .openPremiumModal("trial_complete")
-                        }
-                        className="btn btn-primary rounded-xl"
-                      >
-                        解锁全部
-                      </button>
-                    </div>
-                  )}
-
-                  {!isTrialMode && isCompleted && (
+                  {isCompleted && (
                     <div className="mb-8 p-6 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-2xl text-center shadow-lg animate-in slide-in-from-top-4">
                       <CheckCircle2 className="w-12 h-12 text-success-500 mx-auto mb-3" />
                       <h2 className="text-xl font-bold text-success-700 dark:text-success-400 mb-1">
@@ -596,6 +566,7 @@ export default function ImmersiveSpeechPractice({
                     episodeId={episode.episodeid}
                     episodeTitle={episode.title}
                     evalScenario="learn"
+                    quotaLocked={quotaExhausted}
                   />
                 </div>
               ) : (

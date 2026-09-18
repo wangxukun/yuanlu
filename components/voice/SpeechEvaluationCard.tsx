@@ -147,13 +147,12 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
 }) => {
   const { data: session } = useSession();
 
-  // [P3-b] 配额置锁：父层预检（quotaLocked）或本卡评测触墙后锁定评分入口
+  // [全局日池] 配额置锁：父层预检（quotaLocked）或本卡评测触墙后锁定录音入口。
+  // learn / review 共用同一每日池，锁定文案与弹窗 source 统一口径
   const [quotaWallHit, setQuotaWallHit] = React.useState(false);
   const isEvalLocked = quotaLocked || quotaWallHit;
-  const quotaModalSource =
-    evalScenario === "review" ? "review_eval_quota" : "speech_quota";
-  const quotaLockedLabel =
-    evalScenario === "review" ? "今日免费跟读评测已用完" : "本月免费评测已用完";
+  const quotaModalSource = "review_eval_quota";
+  const quotaLockedLabel = "今日免费跟读评测已用完";
 
   // ── 单句循环：句尾自然结束回调（ref 保持引用稳定，重播函数在 effect 中刷新） ──
   const isLoopingRef = React.useRef(false);
@@ -973,7 +972,8 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
         {/* 2. 中央：录音交互核心区 */}
         {(!result || isRecording || isProcessing) && (
           <div className="bg-base-200/50 border-y border-base-200 p-8 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
-            {/* [P3-b] 配额触墙置锁：评分按钮改开会员弹窗（review_eval_quota / speech_quota） */}
+            {/* [全局日池] 配额触墙置锁：麦克风按钮隐藏，原位置换为
+                "橙色虚线圆锁 + 提示文案 + 皇冠 CTA"（与弱项闯关页同款） */}
             {!isRecording && !isProcessing && isEvalLocked && (
               <div className="flex flex-col items-center gap-3 animate-in zoom-in duration-300">
                 <button
@@ -981,7 +981,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                     e.stopPropagation();
                     useUIStore.getState().openPremiumModal(quotaModalSource);
                   }}
-                  className="w-20 h-20 rounded-full bg-base-100 border-2 border-dashed border-amber-400 dark:border-amber-500/60 text-amber-500 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-300"
+                  className="w-20 h-20 rounded-full bg-base-100 border-dashed border-2 border-orange-400 dark:border-orange-500/60 text-orange-500 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-300"
                   aria-label="评测次数已用完，升级 PRO 解锁"
                   title={quotaLockedLabel}
                 >
@@ -995,7 +995,7 @@ const SpeechEvaluationCard: React.FC<SpeechEvaluationCardProps> = ({
                     e.stopPropagation();
                     useUIStore.getState().openPremiumModal(quotaModalSource);
                   }}
-                  className="btn btn-sm rounded-full border-0 bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full border-0 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-lg shadow-orange-500/30 transition-colors"
                 >
                   <Crown size={14} />
                   解锁无限评测
