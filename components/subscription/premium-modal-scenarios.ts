@@ -8,6 +8,7 @@ import {
   History,
   Layers,
   Mic,
+  Route,
   Sparkles,
   Target,
   TrendingUp,
@@ -226,6 +227,32 @@ const SCENARIOS: Record<string, PremiumModalScenario> = {
     ],
     priceAnchor: `PRO ${YEARLY_ANCHOR}`,
     cta: "解锁历史回放",
+  },
+  path_quota: {
+    icon: Route,
+    title: "第一条学习路径已经就位",
+    description:
+      "免费用户可创建 1 条学习路径——编辑、排序、添加剧集全部免费。PRO：无限路径，把每个学习目标都单独排一条。",
+    benefits: [
+      { icon: Route, text: "无限学习路径" },
+      { icon: Sparkles, text: "AI 智能生成路径" },
+      { icon: Target, text: "按目标分线推进" },
+    ],
+    priceAnchor: `PRO ${YEARLY_ANCHOR}`,
+    cta: "解锁无限路径",
+  },
+  path_ai_generate: {
+    icon: Sparkles,
+    title: "让 AI 帮你排一条学习路径",
+    description:
+      "告诉 AI 你的学习目标，它从剧集库中挑出最相关的一串，按先易后难排好顺序。PRO 专属：无限次智能生成。",
+    benefits: [
+      { icon: Sparkles, text: "AI 按主题挑选剧集" },
+      { icon: TrendingUp, text: "先易后难自动排序" },
+      { icon: Route, text: "无限学习路径" },
+    ],
+    priceAnchor: `PRO ${WEEKLY_ANCHOR}`,
+    cta: "解锁 AI 生成",
   },
 
   /* ---- 剧集侧权益（下载 / 练习 / 试用 / 专享） ---- */

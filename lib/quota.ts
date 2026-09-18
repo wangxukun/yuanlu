@@ -79,6 +79,17 @@ export const FREE_VISIBLE_ERRORS = 3;
 export const FREE_VISIBLE_HISTORY_RECORDS = 5;
 
 /**
+ * [P3-h] 免费用户学习路径总量上限（路径管理基础能力不设墙——创建/编辑/
+ * 删除/排序免费可用，仅总量限 1 条）。PRO 无限路径 + AI 智能生成。
+ * 仅拦"新增方向"：删除路径永不拦截（与生词/句子口径一致）。
+ */
+export const FREE_PATH_LIMIT = 1;
+
+/** 学习路径配额超限的错误码（server action / REST 创建接口返回），
+ * 客户端据此弹 path_quota 场景会员窗而非普通报错 */
+export const PATH_QUOTA_EXCEEDED = "PATH_QUOTA_EXCEEDED";
+
+/**
  * [P3-a] 80% 预告判定：达到容量 80%（第 24 条起）且未满时，
  * 收藏成功 toast 附带"还剩 {n} 个位置"（单集会话只提示一次）。
  */

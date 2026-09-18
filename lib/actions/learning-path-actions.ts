@@ -6,12 +6,16 @@ import { revalidatePath } from "next/cache";
 import { CreateLearningPathSchema } from "@/core/learning-path/dto";
 import { learningPathService } from "@/core/learning-path/learning-path.service";
 import { episodeService } from "@/core/episode/episode.service";
+import { recordConversionEvent } from "@/lib/track";
+import { PATH_QUOTA_EXCEEDED } from "@/lib/quota";
 
 // 1. 定义泛型 ActionState，替代 data?: any
 export type ActionState<T = undefined> = {
   error?: string;
   success?: boolean;
   data?: T;
+  /** [P3-h] 配额触墙错误码（前端据此弹 path_quota 场景会员窗而非普通报错） */
+  code?: string;
 };
 
 // 定义搜索结果的剧集类型
@@ -25,6 +29,9 @@ export interface SearchResultEpisode {
 
 /**
  * 创建学习路径
+ * [P3-h] 免费配额（FREE_PATH_LIMIT=1）在 service 层统一拦截（仅新增方向）；
+ * 触墙返回 code=PATH_QUOTA_EXCEEDED + 服务端 QUOTA_BLOCKED/path_quota 埋点
+ * （与句子收藏触墙同款漏斗口径）。
  */
 export async function createLearningPathAction(
   prevState: ActionState<undefined> | null, // 替换 any
@@ -50,7 +57,24 @@ export async function createLearningPathAction(
   }
 
   try {
-    await learningPathService.create(session.user.userid, validatedFields.data);
+    const result = await learningPathService.create(
+      session.user.userid,
+      validatedFields.data,
+    );
+
+    if (result.quotaExceeded || !result.path) {
+      await recordConversionEvent({
+        eventType: "QUOTA_BLOCKED",
+        source: "path_quota",
+        userid: session.user.userid,
+        metadata: { limit: result.limit, totalCount: result.totalCount },
+      });
+      return {
+        error: PATH_QUOTA_EXCEEDED,
+        code: PATH_QUOTA_EXCEEDED,
+      };
+    }
+
     revalidatePath("/library/learning-paths"); // 刷新列表页
     return { success: true };
   } catch (error: unknown) {

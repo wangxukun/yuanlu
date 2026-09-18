@@ -4,19 +4,70 @@ import prisma from "@/lib/prisma";
 import { CreateLearningPathDto, LearningPathDto } from "./dto";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss";
+import { isPremiumUser } from "@/core/auth/guard";
+import { FREE_PATH_LIMIT } from "@/lib/quota";
+
+/** create 结果：quotaExceeded 表示免费路径数已达上限、新增方向被拦截 */
+export interface CreatePathResult {
+  path: { pathid: number; pathName: string } | null;
+  /** [P3-h] 免费配额触墙（仅新增方向；删除/编辑/排序永不拦截） */
+  quotaExceeded?: boolean;
+  /** 触墙时 = 上限；成功时为创建后的路径总数 */
+  totalCount?: number;
+  /** 生效的容量上限（免费 FREE_PATH_LIMIT / 会员 null 不限） */
+  limit?: number | null;
+}
 
 export const learningPathService = {
   /**
-   * 创建新的学习路径
+   * 创建新的学习路径。
+   *
+   * [P3-h] 免费容量配额（FREE_PATH_LIMIT=1）在本层统一执行（M5 口径：
+   * Server Action 与 REST 双口径天然同源）；配额检查 + create 在同一事务内，
+   * 用户级 pg_advisory_xact_lock 串行化并发创建（M1，防双击绕过 count）。
+   * 会员判定在 service 内自查（ADMIN + 有效订阅），调用方无需传参。
+   * 删除路径不受任何配额约束（删除是腾出容量的正道，与生词/句子同口径）。
    */
-  async create(userid: string, data: CreateLearningPathDto) {
-    return await prisma.learning_paths.create({
-      data: {
-        userid,
-        pathName: data.pathName,
-        description: data.description,
-        isPublic: data.isPublic,
-      },
+  async create(
+    userid: string,
+    data: CreateLearningPathDto,
+  ): Promise<CreatePathResult> {
+    const user = await prisma.user.findUnique({
+      where: { userid },
+      select: { role: true },
+    });
+    const premium = await isPremiumUser({
+      role: user?.role,
+      userid,
+    });
+
+    return prisma.$transaction(async (tx) => {
+      // [M1] 用户级事务咨询锁：同一用户并发创建串行执行，事务内 count 可靠
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userid}))`;
+
+      const count = await tx.learning_paths.count({ where: { userid } });
+      if (!premium && count >= FREE_PATH_LIMIT) {
+        return {
+          path: null,
+          quotaExceeded: true,
+          totalCount: count,
+          limit: FREE_PATH_LIMIT,
+        };
+      }
+
+      const path = await tx.learning_paths.create({
+        data: {
+          userid,
+          pathName: data.pathName,
+          description: data.description,
+          isPublic: data.isPublic,
+        },
+      });
+      return {
+        path: { pathid: path.pathid, pathName: path.pathName },
+        totalCount: count + 1,
+        limit: premium ? null : FREE_PATH_LIMIT,
+      };
     });
   },
 
