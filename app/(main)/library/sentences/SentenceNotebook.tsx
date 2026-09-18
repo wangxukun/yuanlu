@@ -13,13 +13,16 @@ import {
   Download,
   FileSpreadsheet,
   Layers,
-  Infinity as InfinityIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { deleteSavedSentence } from "@/lib/actions/sentences-actions";
-import { FREE_SENTENCE_LIMIT, shouldPreviewSentenceQuota } from "@/lib/quota";
+import {
+  FREE_REVIEW_EVALUATIONS_PER_DAY,
+  FREE_SENTENCE_LIMIT,
+} from "@/lib/quota";
+import { QuotaStatusCard } from "@/components/quota/QuotaStatusCard";
 import { useUIStore } from "@/store/ui-store";
 import {
   buildSentenceCsv,
@@ -40,14 +43,17 @@ interface SentenceNotebookProps {
   isPremium?: boolean;
 }
 
+/* ── 配额双栏状态卡：容器/PRO 态/双栏三态梯度统一收敛于公共组件
+   components/quota/QuotaStatusCard（生词本同款复用）── */
+
 /**
  * 句子本主看板（复刻自 yuanlu-podcast pages/Sentences.tsx）：
  * 渐变 Banner + 统计行 + 卡片复习入口；搜索/剧集/标签 pills 筛选；
  * 常显英文原句的卡片列表（微播放器 + 折叠译文与笔记）+ 快捷标签抽屉。
  * 数据来自服务端渲染，删除/编辑后本地同步（乐观交互与源项目一致）。
  *
- * [P3-d] 配额倒计时可视化（报告 4.6）：容量进度条（80% 起琥珀预警，
- * 把"限制"感知转成"进度"感知）+ 复习日池今日余量；CSV/Anki 导出为 PRO 专属。
+ * [P3-d] 配额倒计时可视化（报告 4.6）：容量/日池双进度卡共用 QuotaStatusBar
+ * （80% 起琥珀预警、已满转红，把"限制"感知转成"进度"感知）；CSV/Anki 导出为 PRO 专属。
  */
 const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   sentences: initialList,
@@ -65,16 +71,21 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
   const [activeQuickEditSentence, setActiveQuickEditSentence] =
     useState<SavedSentenceItem | null>(null);
 
-  // [P3-d] 复习日池今日余量（容量条右侧指标；含 buffer 的真实可评次数）
-  const [evalRemaining, setEvalRemaining] = useState<number | null>(null);
-  const [evalLimit, setEvalLimit] = useState<number>(5);
+  // [P3-d] 复习日池今日用量（右卡指标）。展示按承诺口径 limit 计（P3-b 约定：
+  // +1 buffer 是真实可评次数但不对外泄露，进度条/文本均以 used/limit 呈现）
+  const [evalUsed, setEvalUsed] = useState<number | null>(null);
+  const [evalLimit, setEvalLimit] = useState<number>(
+    FREE_REVIEW_EVALUATIONS_PER_DAY,
+  );
   useEffect(() => {
     fetch("/api/speech/quota?scenario=review")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d?.success && d.data && typeof d.data.remaining === "number") {
-          setEvalRemaining(d.data.remaining);
-          setEvalLimit(d.data.limit ?? 5);
+        if (d?.success && d.data && typeof d.data.used === "number") {
+          const limit = d.data.limit ?? FREE_REVIEW_EVALUATIONS_PER_DAY;
+          setEvalLimit(limit);
+          // buffer 期的第 6 次评测不显示为 6/5——按承诺口径封顶
+          setEvalUsed(Math.min(d.data.used, limit));
         }
       })
       .catch(() => {});
@@ -205,94 +216,36 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
         tagCount={allTags.length}
       />
 
-      {/* [P3-d] 配额倒计时可视化（报告 4.6）：句子本容量条 + 复习日池余量，
+      {/* [P3-d] 配额倒计时可视化（报告 4.6）：双卡共用 QuotaStatusCard——
+          同一布局（标题左/状态右）、同一"已用量"填充与三态颜色梯度，
           把"限制"感知转为"进度"感知；PRO 显示无限态 */}
-      <div className="bg-white dark:bg-ink-900 rounded-3xl px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8">
-        {isPremium ? (
-          <div className="flex items-center gap-2.5 flex-1">
-            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
-              <InfinityIcon size={16} />
-            </span>
-            <div className="text-xs">
-              <p className="font-bold text-base-content">
-                PRO 无限收藏 · 已收 {sentences.length} 句
-              </p>
-              <p className="text-base-content/50 mt-0.5">
-                容量不设限，复习评测也不限次
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-bold text-base-content">
-                  句子本容量
-                </span>
-                <span
-                  className={`text-[11px] font-black ${
-                    sentences.length >= FREE_SENTENCE_LIMIT
-                      ? "text-red-500"
-                      : shouldPreviewSentenceQuota(sentences.length)
-                        ? "text-amber-500"
-                        : "text-base-content/50"
-                  }`}
-                >
-                  {sentences.length}/{FREE_SENTENCE_LIMIT}
-                  {sentences.length < FREE_SENTENCE_LIMIT
-                    ? ` · 还能收藏 ${FREE_SENTENCE_LIMIT - sentences.length} 句`
-                    : " · 已满（删除腾位或升级无限）"}
-                </span>
-              </div>
-              <div className="w-full bg-base-200 h-2 rounded-full overflow-hidden mt-2">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    sentences.length >= FREE_SENTENCE_LIMIT
-                      ? "bg-red-500"
-                      : shouldPreviewSentenceQuota(sentences.length)
-                        ? "bg-amber-500"
-                        : "bg-primary-600 dark:bg-primary-400"
-                  }`}
-                  style={{
-                    width: `${Math.min(100, (sentences.length / FREE_SENTENCE_LIMIT) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div className="sm:w-44 shrink-0 sm:border-l sm:border-base-200 sm:pl-6">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-bold text-base-content">
-                  今日复习评测
-                </span>
-                <span
-                  className={`text-[11px] font-black ${
-                    evalRemaining !== null && evalRemaining === 0
-                      ? "text-red-500"
-                      : "text-base-content/50"
-                  }`}
-                >
-                  {evalRemaining !== null
-                    ? evalRemaining === 0
-                      ? "已用完"
-                      : `剩 ${evalRemaining} 次`
-                    : "…"}
-                </span>
-              </div>
-              <div className="w-full bg-base-200 h-2 rounded-full overflow-hidden mt-2">
-                <div
-                  className="bg-primary-600 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
-                  style={{
-                    width:
-                      evalRemaining !== null
-                        ? `${Math.min(100, (evalRemaining / (evalLimit + 1)) * 100)}%`
-                        : "0%",
-                  }}
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      <QuotaStatusCard
+        isPremium={isPremium}
+        premiumTitle={`PRO 无限收藏 · 已收 ${sentences.length} 句`}
+        premiumSubtitle="容量不设限，复习评测也不限次"
+        columns={[
+          {
+            label: "句子本容量",
+            statusText:
+              sentences.length < FREE_SENTENCE_LIMIT
+                ? `${sentences.length}/${FREE_SENTENCE_LIMIT} · 还能收藏 ${FREE_SENTENCE_LIMIT - sentences.length} 句`
+                : `${sentences.length}/${FREE_SENTENCE_LIMIT} · 已满（删除腾位或升级无限）`,
+            used: sentences.length,
+            total: FREE_SENTENCE_LIMIT,
+          },
+          {
+            label: "今日复习评测",
+            statusText:
+              evalUsed === null
+                ? "…"
+                : evalUsed >= evalLimit
+                  ? `${evalLimit}/${evalLimit} · 已用完 (升级无限)`
+                  : `${evalUsed}/${evalLimit} · 剩${evalLimit - evalUsed}次`,
+            used: evalUsed ?? 0,
+            total: evalLimit,
+          },
+        ]}
+      />
 
       {/* Control / Search & Filter Panel（空状态隐藏：没有句子时无可检索内容，三端一致） */}
       {sentences.length > 0 && (

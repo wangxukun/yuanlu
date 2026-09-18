@@ -8,6 +8,11 @@ import { VocabularyStats } from "./components/VocabularyStats";
 import { VocabularyControls } from "./components/VocabularyControls";
 import { VocabularyList } from "./components/VocabularyList";
 import { ReviewModal } from "./components/ReviewModal";
+import { QuotaStatusCard } from "@/components/quota/QuotaStatusCard";
+import {
+  FREE_VOCABULARY_LIMIT,
+  FREE_VOCABULARY_DAILY_LIMIT,
+} from "@/lib/quota";
 
 export interface DictData {
   word: string;
@@ -67,10 +72,16 @@ export interface VocabularyItem {
 
 interface VocabularyNotebookProps {
   vocabularyList: VocabularyItem[];
+  /** 会员态：配额双栏卡口径（免费 50 上限 / PRO 无限） */
+  isPremium?: boolean;
+  /** 今日已新增生词数（SSR 按 /api/vocabulary/add 同一口径计算） */
+  todayAddedCount: number;
 }
 
 const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   vocabularyList: initialList,
+  isPremium = false,
+  todayAddedCount,
 }) => {
   const hookOptions = useVocabularyNotebook(initialList);
 
@@ -80,11 +91,42 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
   // 内的"未找到匹配的生词"占位符承接，顶部交互卡片保持可用。
   const isGlobalEmpty = hookOptions.stats.total === 0;
 
+  // 配额双栏卡（对齐句子本 P3-d 设计）：总量随删除实时联动（stats.total），
+  // 今日新增为 SSR 快照（新增发生在剧集页，回站刷新即同步）
+  const total = hookOptions.stats.total;
+  const dailyLeft = FREE_VOCABULARY_DAILY_LIMIT - todayAddedCount;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 xl:py-8 space-y-6 xl:space-y-8 font-sans">
       <VocabularyStats
         hookOptions={hookOptions}
         isGlobalEmpty={isGlobalEmpty}
+      />
+
+      <QuotaStatusCard
+        isPremium={isPremium}
+        premiumTitle={`PRO 无限收藏 · 已收 ${total} 词`}
+        premiumSubtitle="容量不设限，每日新增也不限"
+        columns={[
+          {
+            label: "生词本容量",
+            statusText:
+              total < FREE_VOCABULARY_LIMIT
+                ? `${total}/${FREE_VOCABULARY_LIMIT} · 还能收藏${FREE_VOCABULARY_LIMIT - total}个`
+                : `${total}/${FREE_VOCABULARY_LIMIT} · 已满 (删除腾位或升级无限)`,
+            used: total,
+            total: FREE_VOCABULARY_LIMIT,
+          },
+          {
+            label: "今日收藏生词",
+            statusText:
+              todayAddedCount >= FREE_VOCABULARY_DAILY_LIMIT
+                ? `${FREE_VOCABULARY_DAILY_LIMIT}/${FREE_VOCABULARY_DAILY_LIMIT} · 已用完 (升级无限)`
+                : `${todayAddedCount}/${FREE_VOCABULARY_DAILY_LIMIT} · 剩${dailyLeft}次`,
+            used: todayAddedCount,
+            total: FREE_VOCABULARY_DAILY_LIMIT,
+          },
+        ]}
       />
 
       {isGlobalEmpty ? (
