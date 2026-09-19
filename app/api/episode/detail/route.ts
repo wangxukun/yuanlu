@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { generateSignatureUrl } from "@/lib/oss";
 import {
   authWithMobile,
   canAccessEpisode,
@@ -74,6 +75,48 @@ export async function GET(req: NextRequest) {
       !(await canAccessEpisode(session?.user, episode))
     ) {
       stripExclusiveEpisodeMedia(episode);
+    }
+
+    // OSS 私有桶直链不可访问：Web 端 fetchEpisodeById 会在服务端二次签名，
+    // 但小程序/Android 直连本接口，无签名层——这里统一现签媒体地址（TTL 与 Web 端一致 3h）。
+    // 仅对非空 FileName 签名，保持专享剧集剥离态（P1-4）透传，不签出无效 URL。
+    if (episode) {
+      if (episode.coverFileName) {
+        episode.coverUrl = await generateSignatureUrl(
+          episode.coverFileName,
+          3600 * 3,
+        );
+      }
+      if (episode.audioFileName) {
+        episode.audioUrl = await generateSignatureUrl(
+          episode.audioFileName,
+          3600 * 3,
+        );
+      }
+      if (episode.subtitleEnUrl && episode.subtitleEnFileName) {
+        episode.subtitleEnUrl = await generateSignatureUrl(
+          episode.subtitleEnFileName,
+          3600 * 3,
+        );
+      }
+      if (episode.subtitleZhUrl && episode.subtitleZhFileName) {
+        episode.subtitleZhUrl = await generateSignatureUrl(
+          episode.subtitleZhFileName,
+          3600 * 3,
+        );
+      }
+      if (episode.subtitleBilingualUrl && episode.subtitleBilingualFileName) {
+        episode.subtitleBilingualUrl = await generateSignatureUrl(
+          episode.subtitleBilingualFileName,
+          3600 * 3,
+        );
+      }
+      if (episode.podcast?.coverFileName) {
+        episode.podcast.coverUrl = await generateSignatureUrl(
+          episode.podcast.coverFileName,
+          3600 * 3,
+        );
+      }
     }
 
     // 用户收听态（登录时）：断点续播进度 + 收藏态，驱动客户端续播与进度条
