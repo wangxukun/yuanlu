@@ -9,29 +9,29 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 export default function EmailCheckDialog() {
   const [modalKey, setModalKey] = useState(0);
   const [activeTab, setActiveTab] = useState<"phone" | "email">("phone");
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const { status } = useSession();
-
-  // 关闭时重置表单状态
-  const handleClose = () => {
-    setModalKey((prev) => prev + 1);
-  };
 
   useEffect(() => {
     // 如果已经登录，则不显示对话框 (虽然 render 处也有判断，但此处用于逻辑防御)
     if (status === "authenticated") return;
 
-    const dialog = dialogRef.current as any;
+    const dialog = dialogRef.current as HTMLDivElement & {
+      showModal?: () => void;
+      close?: () => void;
+    };
     if (!dialog) return;
 
     // Monkey patch to simulate native <dialog> API
     dialog.showModal = () => {
       dialog.classList.add("modal-open");
       dialog.setAttribute("open", "");
-      
+
       // Handle focus delay
       setTimeout(() => {
-        const emailInput = dialog.querySelector("input[type='email']") as HTMLInputElement;
+        const emailInput = dialog.querySelector(
+          "input[type='email']",
+        ) as HTMLInputElement;
         if (emailInput) {
           emailInput.focus();
           if (emailInput.value) emailInput.select();
@@ -55,7 +55,10 @@ export default function EmailCheckDialog() {
 
   const handleManualClose = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    const dialog = dialogRef.current as any;
+    const dialog = dialogRef.current as HTMLDivElement & {
+      showModal?: () => void;
+      close?: () => void;
+    };
     if (dialog && dialog.close) {
       dialog.close();
     }
@@ -64,16 +67,16 @@ export default function EmailCheckDialog() {
   return (
     <div
       id="email_check_modal_box"
-      className="modal backdrop-blur-sm bg-base-300/30 transition-all duration-300 z-40"
-      ref={dialogRef as any}
+      className="modal backdrop-blur-sm bg-base-300/30 transition-all duration-300 z-[9999]"
+      ref={dialogRef}
     >
       <div className="modal-box p-0 rounded-3xl shadow-2xl bg-base-100 max-w-md w-full overflow-hidden relative">
         {/* Header 区域 */}
         <div className="relative px-8 pt-8 pb-2 text-center">
-          <h3 className="text-2xl font-bold text-primary-600 dark:text-primary-400">欢迎来到远路播客</h3>
-          <p className="text-sm text-base-content/60 mt-2">
-            请选择登录方式
-          </p>
+          <h3 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+            欢迎来到远路播客
+          </h3>
+          <p className="text-sm text-base-content/60 mt-2">请选择登录方式</p>
 
           {/* 切换 Tab */}
           <div

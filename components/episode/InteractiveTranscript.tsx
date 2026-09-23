@@ -11,6 +11,7 @@ import React, {
 import { usePlayerStore } from "@/store/player-store";
 import { useSession } from "next-auth/react";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { Lock } from "lucide-react";
 import { Episode } from "@/core/episode/episode.entity";
 import { toast } from "sonner";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
@@ -596,8 +597,9 @@ export default function InteractiveTranscript({
                 ) as HTMLDialogElement | null;
                 if (modal) modal.showModal();
               }}
-              className="btn btn-primary rounded-full px-8 shadow-lg hover:shadow-xl transition-all font-medium"
+              className="bg-primary-600 hover:bg-primary-700 text-white font-semibold text-base py-3 px-8 rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
+              <Lock className="w-4 h-4" />
               登录后解锁全部字幕
             </button>
           </div>
