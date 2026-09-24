@@ -350,15 +350,19 @@ export async function mergeSubtitles(episode: Episode) {
     }
   }
 
-  // 2. 降级使用分开的 SRT 字幕
-  const subtitleEn = (await data(episode.subtitleEnUrl as string)) || null;
-  const subtitleZh = (await data(episode.subtitleZhUrl as string)) || null;
+  // 2. 降级使用分开的 SRT 字幕。
+  //    data() 拉取失败/URL 为空时返回 []（永不返回 null），中文缺失或条数/ID
+  //    对不上时降级英文单语（textCn 置空），不再抛错——字幕合并失败曾把
+  //    /api/episode/subtitles 整个路由打成 500，连坐 audioUrl 签发，导致
+  //    依赖该接口的移动端播放链路一起失败（2026-09-24 排查加固）。
+  const subtitleEn = (await data(episode.subtitleEnUrl as string)) || [];
+  const subtitleZh = (await data(episode.subtitleZhUrl as string)) || [];
 
-  if (subtitleEn === null || subtitleEn.length === 0) {
+  if (subtitleEn.length === 0) {
     return [];
   }
 
-  if (subtitleZh === null) {
+  if (subtitleZh.length === 0) {
     console.log("[Subtitle Loader] Loaded English-only subtitles (SRT format)");
     return subtitleEn.map((item) => {
       return {
@@ -371,25 +375,18 @@ export async function mergeSubtitles(episode: Episode) {
     });
   }
 
-  if (subtitleEn.length !== subtitleZh.length) {
-    throw new Error("中英文字幕不匹配");
-  }
-
   console.log(
     "[Subtitle Loader] Loaded Bilingual subtitles (Merged SRT format)",
   );
   return subtitleEn.map((enItem) => {
-    // 找到对应ID的中文字幕项
+    // 找到对应ID的中文字幕项；缺失时置空中译继续合并（不因单句缺译整集失败）
     const zhItem = subtitleZh.find((item) => item.id === enItem.id);
-    if (!zhItem) {
-      throw new Error(`Chinese subtitle not found for ID: ${enItem.id}`);
-    }
     return {
       id: enItem.id,
       start: enItem.start,
       end: enItem.end,
       textEn: enItem.text,
-      textCn: zhItem.text,
+      textCn: zhItem ? zhItem.text : "",
     };
   });
 }

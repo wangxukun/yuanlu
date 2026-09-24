@@ -21,7 +21,18 @@ export async function GET(req: NextRequest) {
 
   try {
     const episode = await fetchEpisodeById(id);
-    let subtitles = await mergeSubtitles(episode);
+    // 字幕合并与音频直链签发解耦：字幕侧任何异常（OSS 拉取失败/格式异常）
+    // 降级为空字幕继续返回，不再 500 连坐 audioUrl——移动端 playEpisode
+    // 依赖本接口兜底解析签名直链（2026-09-24 排查加固）
+    let subtitles: Awaited<ReturnType<typeof mergeSubtitles>> = [];
+    try {
+      subtitles = await mergeSubtitles(episode);
+    } catch (error) {
+      console.error(
+        "[GET /api/episode/subtitles] mergeSubtitles failed:",
+        error,
+      );
+    }
 
     // requireAuth：Web Cookie 会话优先，回退移动端 Bearer JWT（保持原 auth() 行为并兼容 Android）
     const authResult = await requireAuth();

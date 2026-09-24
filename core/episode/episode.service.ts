@@ -475,10 +475,11 @@ export const episodeService = {
       throw new Error("音频文件不存在");
     }
 
-    // 生成带下载响应头的签名 URL
+    // 生成带下载响应头的签名 URL（扩展名跟随实际对象，历史批次已迁 m4a）
+    const ext = episode.audioFileName.split(".").pop() || "mp3";
     return await generateSignatureUrl(episode.audioFileName, 60 * 60, {
       response: {
-        "content-disposition": `attachment; filename="${encodeURIComponent(episode.title)}.mp3"`,
+        "content-disposition": `attachment; filename="${encodeURIComponent(episode.title)}.${ext}"`,
       },
     });
   },
