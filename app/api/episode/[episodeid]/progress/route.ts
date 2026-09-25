@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/core/auth/guard";
 
+// 小程序端 wx.request 的 method 合法值不含 PATCH，导出 POST 别名走同一处理器
+// （Web/Android 继续用 PATCH，互不影响）。
+export { PATCH as POST };
+
 export async function PATCH(
   request: Request,
   props: { params: Promise<{ episodeid: string }> },
