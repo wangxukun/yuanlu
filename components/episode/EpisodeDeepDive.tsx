@@ -7,7 +7,9 @@
  * 深度精讲（难点词汇预扫/长难句拆解/跟读句推荐/理解测验）为 PRO 增量。
  * 免费点击锁定 → PremiumModal（source episode_deep_dive，openPremiumModal
  * 内置 PREMIUM_MODAL_OPEN 埋点，验收红线）；服务端另有会员门禁兜底（403
- * 时同样弹窗承接）。LLM 生成失败 toast 提示，不阻断剧集页。
+ * 时同样弹窗承接）。加载先经 probe=1 探测缓存：命中安静加载，未命中才
+ * 展示"首次生成约需 30-60 秒"进度文案（避免缓存命中时一闪而过）。
+ * LLM 生成失败 toast 提示，不阻断剧集页。
  *
  * UI：与 ShowNotes（节目介绍）一致的无背景扁平化风格——第一行为标题 +
  * 权限标识，第二行为星星图标与 2×2 标签网格；展开态下标签即过滤器，
@@ -63,6 +65,10 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
   const { data: session } = useSession();
   const [content, setContent] = useState<DeepDiveContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  /** 真生成态：仅当 probe 探测到无缓存（主请求将触发 LLM 首次生成）时为
+   *  true，驱动"首次生成约需 30-60 秒"进度文案；缓存命中的安静加载不置位，
+   *  避免该提示一闪而过 */
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   /** 当前选中的精讲模块过滤（"all" = 全部展示），仅展开态下可通过标签切换 */
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
@@ -75,6 +81,25 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
     if (content || isLoading) return;
     setIsLoading(true);
     try {
+      // 先静默探测缓存（后端 probe=1 只查库不触发 LLM）：未命中才展示
+      // "首次生成约需 30-60 秒"；命中（绝大多数请求路径）安静加载，
+      // 避免该提示一闪而过
+      try {
+        const probeRes = await fetch(
+          `/api/episode/deep-dive?episodeid=${episodeid}&probe=1`,
+          { cache: "no-store" },
+        );
+        if (probeRes.status === 403) {
+          // 免费锁定或会员态过期缝隙：弹窗承接（埋点内置），不再发主请求
+          useUIStore.getState().openPremiumModal("episode_deep_dive");
+          return;
+        }
+        const probeJson = await probeRes.json().catch(() => null);
+        setIsGenerating(!probeJson?.data?.cached);
+      } catch {
+        // 探测网络异常不阻断：保守按未缓存口径继续，由主请求错误口径兜底
+        setIsGenerating(true);
+      }
       const res = await fetch(`/api/episode/deep-dive?episodeid=${episodeid}`, {
         cache: "no-store",
       });
@@ -95,6 +120,7 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
       toast.warning("网络异常，AI 精讲加载失败");
     } finally {
       setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -368,8 +394,8 @@ export default function EpisodeDeepDive({ episodeid }: { episodeid: string }) {
           </span>
         </div>
 
-        {/* ── 生成中的进度提示（仅加载时出现） ── */}
-        {isLoading && (
+        {/* ── 生成中的进度提示（仅真生成时出现；缓存命中的安静加载不闪现） ── */}
+        {isGenerating && (
           <p className="text-sm text-ink-500 dark:text-ink-400">
             AI 正在精读字幕并生成精讲内容，首次生成约需 30-60 秒...
           </p>

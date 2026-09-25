@@ -11,6 +11,9 @@ import { episodeDeepDiveService } from "@/core/episode/episode-deep-dive.service
  *   404 { success:false, code:"EPISODE_NOT_FOUND" }   剧集不存在
  *   422 { success:false, code:"NO_SUBTITLE" }         无字幕不可生成
  *   503 { success:false, code:"LLM_UNAVAILABLE" }     LLM 失败（前端提示稍后再试，不阻断页面）
+ *
+ * probe=1：仅探测缓存是否命中（小程序首点分流提示用），不触发生成——
+ *   200 { success, data: { cached } }
  */
 export async function GET(req: NextRequest) {
   const guard = await requireAuth();
@@ -25,6 +28,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // probe=1：仅探测缓存命中，不触发生成（小程序用它分流"安静加载"与
+    // "首次生成约需 30-60 秒"提示，避免缓存命中时提示一闪而过）
+    if (req.nextUrl.searchParams.get("probe") === "1") {
+      const probe = await episodeDeepDiveService.probeDeepDive(
+        guard.session.user,
+        episodeid,
+      );
+      if (!probe.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: probe.code,
+            message: probe.message ?? "生成失败",
+          },
+          { status: 403 },
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        data: { cached: probe.cached },
+      });
+    }
+
     const result = await episodeDeepDiveService.getDeepDive(
       guard.session.user,
       episodeid,

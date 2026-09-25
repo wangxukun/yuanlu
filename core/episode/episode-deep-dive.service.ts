@@ -205,6 +205,34 @@ function sanitize(
 
 export const episodeDeepDiveService = {
   /**
+   * 缓存探测：只查本集精讲是否已落库，绝不触发 LLM 生成。
+   * 小程序首点分流 UI 用——cached=true 走安静加载，cached=false 才展示
+   * "首次生成约需 30-60 秒"，避免缓存命中时该提示一闪而过。
+   */
+  async probeDeepDive(
+    user: { role?: string | null; userid?: string },
+    episodeid: string,
+  ): Promise<{
+    ok: boolean;
+    code?: "PREMIUM_REQUIRED";
+    message?: string;
+    cached?: boolean;
+  }> {
+    if (!(await isPremiumUser(user))) {
+      return {
+        ok: false,
+        code: "PREMIUM_REQUIRED",
+        message: "AI 深度精讲是 PRO 会员专属",
+      };
+    }
+    const row = await prisma.episode_deep_dives.findUnique({
+      where: { episodeid },
+      select: { episodeid: true },
+    });
+    return { ok: true, cached: !!row };
+  },
+
+  /**
    * 获取（或首次生成）剧集深度精讲。PRO 专属；同集缓存命中零 LLM 成本。
    */
   async getDeepDive(
