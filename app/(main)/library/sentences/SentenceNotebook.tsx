@@ -219,33 +219,35 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
       {/* [P3-d] 配额倒计时可视化（报告 4.6）：双卡共用 QuotaStatusCard——
           同一布局（标题左/状态右）、同一"已用量"填充与三态颜色梯度，
           把"限制"感知转为"进度"感知；PRO 显示无限态 */}
-      <QuotaStatusCard
-        isPremium={isPremium}
-        premiumTitle={`PRO 无限收藏 · 已收 ${sentences.length} 句`}
-        premiumSubtitle="容量不设限，复习评测也不限次"
-        columns={[
-          {
-            label: "句子本容量",
-            statusText:
-              sentences.length < FREE_SENTENCE_LIMIT
-                ? `${sentences.length}/${FREE_SENTENCE_LIMIT} · 还能收藏 ${FREE_SENTENCE_LIMIT - sentences.length} 句`
-                : `${sentences.length}/${FREE_SENTENCE_LIMIT} · 已满（删除腾位或升级无限）`,
-            used: sentences.length,
-            total: FREE_SENTENCE_LIMIT,
-          },
-          {
-            label: "今日复习评测",
-            statusText:
-              evalUsed === null
-                ? "…"
-                : evalUsed >= evalLimit
-                  ? `${evalLimit}/${evalLimit} · 已用完 (升级无限)`
-                  : `${evalUsed}/${evalLimit} · 剩${evalLimit - evalUsed}次`,
-            used: evalUsed ?? 0,
-            total: evalLimit,
-          },
-        ]}
-      />
+      {sentences.length > 0 && (
+        <QuotaStatusCard
+          isPremium={isPremium}
+          premiumTitle={`PRO 无限收藏 · 已收 ${sentences.length} 句`}
+          premiumSubtitle="容量不设限，复习评测也不限次"
+          columns={[
+            {
+              label: "句子本容量",
+              statusText:
+                sentences.length < FREE_SENTENCE_LIMIT
+                  ? `${sentences.length}/${FREE_SENTENCE_LIMIT} · 还能收藏 ${FREE_SENTENCE_LIMIT - sentences.length} 句`
+                  : `${sentences.length}/${FREE_SENTENCE_LIMIT} · 已满（删除腾位或升级无限）`,
+              used: sentences.length,
+              total: FREE_SENTENCE_LIMIT,
+            },
+            {
+              label: "今日复习评测",
+              statusText:
+                evalUsed === null
+                  ? "…"
+                  : evalUsed >= evalLimit
+                    ? `${evalLimit}/${evalLimit} · 已用完 (升级无限)`
+                    : `${evalUsed}/${evalLimit} · 剩${evalLimit - evalUsed}次`,
+              used: evalUsed ?? 0,
+              total: evalLimit,
+            },
+          ]}
+        />
+      )}
 
       {/* Control / Search & Filter Panel（空状态隐藏：没有句子时无可检索内容，三端一致） */}
       {sentences.length > 0 && (

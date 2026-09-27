@@ -103,31 +103,33 @@ const VocabularyNotebook: React.FC<VocabularyNotebookProps> = ({
         isGlobalEmpty={isGlobalEmpty}
       />
 
-      <QuotaStatusCard
-        isPremium={isPremium}
-        premiumTitle={`PRO 无限收藏 · 已收 ${total} 词`}
-        premiumSubtitle="容量不设限，每日新增也不限"
-        columns={[
-          {
-            label: "生词本容量",
-            statusText:
-              total < FREE_VOCABULARY_LIMIT
-                ? `${total}/${FREE_VOCABULARY_LIMIT} · 还能收藏${FREE_VOCABULARY_LIMIT - total}个`
-                : `${total}/${FREE_VOCABULARY_LIMIT} · 已满 (删除腾位或升级无限)`,
-            used: total,
-            total: FREE_VOCABULARY_LIMIT,
-          },
-          {
-            label: "今日收藏生词",
-            statusText:
-              todayAddedCount >= FREE_VOCABULARY_DAILY_LIMIT
-                ? `${FREE_VOCABULARY_DAILY_LIMIT}/${FREE_VOCABULARY_DAILY_LIMIT} · 已用完 (升级无限)`
-                : `${todayAddedCount}/${FREE_VOCABULARY_DAILY_LIMIT} · 剩${dailyLeft}次`,
-            used: todayAddedCount,
-            total: FREE_VOCABULARY_DAILY_LIMIT,
-          },
-        ]}
-      />
+      {!isGlobalEmpty && (
+        <QuotaStatusCard
+          isPremium={isPremium}
+          premiumTitle={`PRO 无限收藏 · 已收 ${total} 词`}
+          premiumSubtitle="容量不设限，每日新增也不限"
+          columns={[
+            {
+              label: "生词本容量",
+              statusText:
+                total < FREE_VOCABULARY_LIMIT
+                  ? `${total}/${FREE_VOCABULARY_LIMIT} · 还能收藏${FREE_VOCABULARY_LIMIT - total}个`
+                  : `${total}/${FREE_VOCABULARY_LIMIT} · 已满 (删除腾位或升级无限)`,
+              used: total,
+              total: FREE_VOCABULARY_LIMIT,
+            },
+            {
+              label: "今日收藏生词",
+              statusText:
+                todayAddedCount >= FREE_VOCABULARY_DAILY_LIMIT
+                  ? `${FREE_VOCABULARY_DAILY_LIMIT}/${FREE_VOCABULARY_DAILY_LIMIT} · 已用完 (升级无限)`
+                  : `${todayAddedCount}/${FREE_VOCABULARY_DAILY_LIMIT} · 剩${dailyLeft}次`,
+              used: todayAddedCount,
+              total: FREE_VOCABULARY_DAILY_LIMIT,
+            },
+          ]}
+        />
+      )}
 
       {isGlobalEmpty ? (
         /* 全局空状态引导区：中央提示 + 去发现播客（三端一致） */
