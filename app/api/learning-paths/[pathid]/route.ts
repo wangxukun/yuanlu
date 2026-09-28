@@ -5,6 +5,10 @@ import { CreateLearningPathSchema } from "@/core/learning-path/dto";
 
 type RouteContext = { params: Promise<{ pathid: string }> };
 
+// 小程序端 wx.request 的 method 合法值不含 PATCH，导出 POST 别名走同一处理器
+// （Web/Android 继续用 PATCH，互不影响；同 api/episode/[episodeid]/progress 惯例）。
+export { PATCH as POST };
+
 /** 路径 id 解析：非正整数直接 400（pathid 是自增主键） */
 function parsePathid(raw: string): number | null {
   const id = Number(raw);
