@@ -108,33 +108,8 @@ export async function PUT(req: Request) {
       updateData.avatarUrl = avatarUrl;
     }
 
-    // 更新数据库
-    const updatedProfile = await prisma.user_profile.upsert({
-      where: { userid: session.user.userid },
-      update: updateData,
-      create: {
-        userid: session.user.userid,
-        ...updateData,
-        // 如果是创建，确保目标有默认值 (Schema 中已有 default，但显式写更安全)
-        dailyStudyGoalMins: updateData.dailyStudyGoalMins ?? 30,
-        weeklyListeningGoalHours: updateData.weeklyListeningGoalHours ?? 5,
-        weeklyWordsGoal: updateData.weeklyWordsGoal ?? 50,
-      },
-    });
-
-    // 重新生成签名 URL 返回给前端
-    type UserProfileWithAvatar = typeof updatedProfile & {
-      avatarFileName?: string | null;
-    };
-    const safeProfile = updatedProfile as UserProfileWithAvatar;
-    const profileWithSignature = {
-      ...safeProfile,
-      avatarUrl: safeProfile.avatarFileName
-        ? await generateSignatureUrl(safeProfile.avatarFileName, 3600 * 3)
-        : null,
-    };
-
-    return NextResponse.json({ success: true, data: profileWithSignature });
+    // 更新数据库（默认值兜底与签名头像回包见 persistProfileUpdate）
+    return persistProfileUpdate(session.user.userid, updateData);
   } catch (error) {
     console.error("Profile update error:", error);
     return NextResponse.json(
@@ -142,4 +117,85 @@ export async function PUT(req: Request) {
       { status: 500 },
     );
   }
+}
+
+/**
+ * 小程序端保存资料的两条链路都以 POST 进（wx.uploadFile 无 method 参数只能 POST；
+ * 纯文本保存走 wx.request JSON——uploadFile 必须带文件，无法只发表单字段）：
+ * - multipart/form-data → 复用 PUT 同一处理器（含头像分片与 objectKey 生成），Web/Android 不受影响；
+ * - application/json    → 字段同构、无头像分支，复用同一持久化与回包。
+ */
+export async function POST(req: Request) {
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return PUT(req);
+  }
+
+  // requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（Android 端依赖）
+  const guard = await requireAuth();
+  if (!guard.ok) {
+    return guard.response;
+  }
+  const session = guard.session;
+
+  try {
+    const body = await req.json();
+    const updateData: ProfileData = {
+      nickname: body.nickname || null,
+      bio: body.bio || null,
+      learnLevel: body.learnLevel || null,
+    };
+
+    // 与 PUT 的 formData 分支同口径：只有当字段存在时才更新，并确保转换为数字
+    if (body.dailyStudyGoalMins) {
+      updateData.dailyStudyGoalMins = parseInt(body.dailyStudyGoalMins, 10);
+    }
+    if (body.weeklyListeningGoalHours) {
+      updateData.weeklyListeningGoalHours = parseInt(
+        body.weeklyListeningGoalHours,
+        10,
+      );
+    }
+    if (body.weeklyWordsGoal) {
+      updateData.weeklyWordsGoal = parseInt(body.weeklyWordsGoal, 10);
+    }
+
+    return persistProfileUpdate(session.user.userid, updateData);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+/** upsert user_profile 并回带 3 小时签名头像（PUT 与 POST(JSON) 共用收尾） */
+async function persistProfileUpdate(userid: string, updateData: ProfileData) {
+  const updatedProfile = await prisma.user_profile.upsert({
+    where: { userid: userid },
+    update: updateData,
+    create: {
+      userid: userid,
+      ...updateData,
+      // 如果是创建，确保目标有默认值 (Schema 中已有 default，但显式写更安全)
+      dailyStudyGoalMins: updateData.dailyStudyGoalMins ?? 30,
+      weeklyListeningGoalHours: updateData.weeklyListeningGoalHours ?? 5,
+      weeklyWordsGoal: updateData.weeklyWordsGoal ?? 50,
+    },
+  });
+
+  // 重新生成签名 URL 返回给前端
+  type UserProfileWithAvatar = typeof updatedProfile & {
+    avatarFileName?: string | null;
+  };
+  const safeProfile = updatedProfile as UserProfileWithAvatar;
+  const profileWithSignature = {
+    ...safeProfile,
+    avatarUrl: safeProfile.avatarFileName
+      ? await generateSignatureUrl(safeProfile.avatarFileName, 3600 * 3)
+      : null,
+  };
+
+  return NextResponse.json({ success: true, data: profileWithSignature });
 }
