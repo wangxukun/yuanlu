@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
 import ProBadge from "@/components/ui/ProBadge";
 import Image from "next/image";
@@ -22,6 +22,7 @@ import { Headphones } from "lucide-react";
 import { formatTime, formatChineseDate } from "@/lib/tools";
 import { Episode } from "@/core/episode/episode.entity";
 import { usePlayerStore } from "@/store/player-store";
+import { useUIStore } from "@/store/ui-store";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { checkExclusivePlay } from "@/lib/client/auth-utils";
@@ -61,9 +62,11 @@ export default function EpisodeCard({
     setIsPlaying,
   } = usePlayerStore();
   const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onMenuToggle(null);
     if (!checkExclusivePlay(episode, session)) return;
     addToPlaylist(episode as Episode);
 
@@ -75,6 +78,47 @@ export default function EpisodeCard({
     }
 
     toast.success("已加入播放列表");
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMenuToggle(null);
+    if (!episode.episodeid) {
+      toast.error("单集信息不完整");
+      return;
+    }
+
+    if (!session?.user) {
+      toast.error("音频下载仅对会员开放");
+      return;
+    }
+
+    if (session.user.role !== "PREMIUM" && session.user.role !== "ADMIN") {
+      useUIStore.getState().openPremiumModal("episode_audio_download");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/episode/download?episodeid=${episode.episodeid}`,
+      );
+      const data = await res.json();
+
+      if (!data.success || !data.downloadUrl) {
+        throw new Error(data.error || "获取下载链接失败");
+      }
+
+      const a = document.createElement("a");
+      a.href = data.downloadUrl;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("正在开始下载音频");
+    } catch (error) {
+      console.error("Failed to download audio:", error);
+      toast.error("下载失败，请重试");
+    }
   };
 
   const handleMarkAsPlayed = async (e: React.MouseEvent) => {
@@ -135,6 +179,22 @@ export default function EpisodeCard({
 
   const isMenuOpen = activeMenuId === episode.episodeid;
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onMenuToggle(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, [isMenuOpen, onMenuToggle]);
+
   const isLocked =
     episode.isExclusive &&
     (!session?.user ||
@@ -143,7 +203,7 @@ export default function EpisodeCard({
   return (
     <div
       className={`group flex flex-col sm:flex-row gap-4 p-3 sm:p-4 rounded-xl shadow-e1 border transition-all duration-300 cursor-pointer relative ${
-        isMenuOpen ? "z-20" : "z-0"
+        isMenuOpen ? "z-40" : "z-0"
       } ${
         isCurrentPlaying || isCurrentPaused
           ? "bg-primary-600/5 dark:bg-primary-400/5 border-primary-600/30 dark:border-primary-400/30"
@@ -266,55 +326,67 @@ export default function EpisodeCard({
 
             {/* DaisyUI Dropdown for more actions */}
             <div
-              className="dropdown dropdown-end"
+              ref={menuRef}
+              className={`dropdown dropdown-end ${isMenuOpen ? "dropdown-open" : ""}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                tabIndex={0}
-                role="button"
-                className="p-2 text-base-content/60 hover:text-base-content rounded-full hover:bg-base-300 transition-colors"
+              <button
+                type="button"
+                className="p-2 text-base-content/60 hover:text-base-content rounded-full hover:bg-base-300 transition-colors !pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMenuToggle(isMenuOpen ? null : episode.episodeid);
+                }}
+                aria-expanded={isMenuOpen}
+                aria-haspopup="true"
+                aria-label="更多操作"
               >
                 <EllipsisHorizontalIcon className="w-6 h-6 sm:w-5 sm:h-5" />
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-xl z-[100] w-48 p-2 shadow-xl border border-base-200 mt-2"
-              >
-                <li>
-                  <button className="flex items-center gap-3">
-                    <ArrowDownTrayIcon className="w-4 h-4" />
-                    下载
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={handleAdd}
-                    className="flex items-center gap-3"
-                  >
-                    <QueueListIcon className="w-4 h-4" />
-                    加入播放队列
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={handleMarkAsPlayed}
-                    className="flex items-center gap-3"
-                  >
-                    <ArrowPathIcon className="w-4 h-4" />
-                    标记为已播
-                  </button>
-                </li>
-                <div className="divider my-0"></div>
-                <li>
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-3"
-                  >
-                    <ShareIcon className="w-4 h-4" />
-                    分享
-                  </button>
-                </li>
-              </ul>
+              </button>
+              {isMenuOpen && (
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-xl z-[100] w-48 p-2 shadow-xl border border-base-200 mt-2"
+                >
+                  <li>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-3"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      下载
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={handleAdd}
+                      className="flex items-center gap-3"
+                    >
+                      <QueueListIcon className="w-4 h-4" />
+                      加入播放队列
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={handleMarkAsPlayed}
+                      className="flex items-center gap-3"
+                    >
+                      <ArrowPathIcon className="w-4 h-4" />
+                      标记为已播
+                    </button>
+                  </li>
+                  <div className="divider my-0"></div>
+                  <li>
+                    <button
+                      onClick={handleShare}
+                      className="flex items-center gap-3"
+                    >
+                      <ShareIcon className="w-4 h-4" />
+                      分享
+                    </button>
+                  </li>
+                </ul>
+              )}
             </div>
           </div>
         </div>
@@ -341,7 +413,9 @@ export default function EpisodeCard({
               <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
-                    isFinished ? "bg-success" : "bg-primary-600 dark:bg-primary-400"
+                    isFinished
+                      ? "bg-success"
+                      : "bg-primary-600 dark:bg-primary-400"
                   }`}
                   style={{
                     width: `${progressPercentage}%`,
