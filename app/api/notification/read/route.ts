@@ -10,6 +10,10 @@ import { notificationService } from "@/core/notification/notification.service";
  * - 标记单条：{ "notificationId": 1 }
  * - 标记全部：{ "all": true }
  */
+// 小程序端 wx.request 的 method 合法值不含 PATCH，导出 POST 别名走同一处理器
+// （Web/Android 继续用 PATCH，互不影响；同 episode/progress 路由先例）。
+export { PATCH as POST };
+
 export async function PATCH(request: Request) {
   try {
     const session = await auth();

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { notificationService } from "@/core/notification/notification.service";
 
+// 小程序端 wx.request 对 DELETE 携带 JSON body 存在平台差异，导出 POST 别名
+// 走同一处理器兜底（Web 继续用 DELETE，互不影响；同 episode/progress 路由先例）。
+export { DELETE as POST };
+
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
