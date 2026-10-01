@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { authWithMobile } from "@/core/auth/guard";
 import {
   recordConversionEvent,
   CONVERSION_EVENT_TYPES,
@@ -11,6 +11,8 @@ import {
  * 客户端转化事件上报（目前用于会员弹窗打开 PREMIUM_MODAL_OPEN）。
  * 未登录用户也允许上报（弹窗可能在登录前触发），userid 记为空。
  * 事件类型白名单校验，防止任意数据写入。
+ * [T2.2] auth() 只认 NextAuth cookie，小程序走 Bearer JWT——换 authWithMobile()
+ * （cookie 优先、Bearer 回落），游客上报行为不变。
  */
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = await auth();
+    const session = await authWithMobile();
 
     await recordConversionEvent({
       eventType: eventType as ConversionEventType,

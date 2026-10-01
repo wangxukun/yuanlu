@@ -9,6 +9,8 @@ import prisma from "@/lib/prisma";
  * - TRIAL_REACHED       语音练习试用触墙（内容被截断且用户首次在本集练习）
  * - SUBSCRIPTION_RECOVERED  无法自动匹配的付款经认领找回并激活
  *   （source: admin_claim 管理员认领 / self_service 用户自助找回）
+ * - TRANSCRIPT_PDF_DOWNLOAD  文稿 PDF 下载漏斗（小程序会员链路，T2.2）
+ *   （source: start 发起 / success 成功 / fail_* 各失败分支）
  *
  * 记录失败只打日志、绝不抛错，埋点不能影响主业务流程。
  */
@@ -18,6 +20,7 @@ export const CONVERSION_EVENT_TYPES = [
   "QUOTA_BLOCKED",
   "TRIAL_REACHED",
   "SUBSCRIPTION_RECOVERED",
+  "TRANSCRIPT_PDF_DOWNLOAD",
 ] as const;
 
 export type ConversionEventType = (typeof CONVERSION_EVENT_TYPES)[number];
