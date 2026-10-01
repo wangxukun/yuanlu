@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import { notificationService } from "@/core/notification/notification.service";
 
 /**
@@ -16,11 +16,12 @@ export { PATCH as POST };
 
 export async function PATCH(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.userid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（小程序端依赖）
+    const guard = await requireAuth();
+    if (!guard.ok) {
+      return guard.response;
     }
-    const userId = session.user.userid;
+    const userId = guard.session.user.userid;
 
     const body = await request.json();
 

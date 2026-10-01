@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 import { notificationService } from "@/core/notification/notification.service";
 
 // 小程序端 wx.request 对 DELETE 携带 JSON body 存在平台差异，导出 POST 别名
@@ -8,12 +8,13 @@ export { DELETE as POST };
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user || !session.user.userid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // requireAuth：Web Cookie 优先，移动端 Bearer Token 兜底（小程序端依赖）
+    const guard = await requireAuth();
+    if (!guard.ok) {
+      return guard.response;
     }
 
-    const { userid } = session.user;
+    const { userid } = guard.session.user;
     const body = await request.json();
 
     if (body.all) {
