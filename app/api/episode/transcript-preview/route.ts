@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { mergeSubtitles } from "@/lib/data";
 import { episodeRepository } from "@/core/episode/episode.repository";
 import { generateSignatureUrl } from "@/lib/oss";
-import { auth } from "@/auth";
+import { requireAuth } from "@/core/auth/guard";
 
 /**
  * GET /api/episode/transcript-preview?episodeid=xxx
  * Returns a limited preview of the bilingual transcript (max 4 subtitle pairs).
  * Available to any logged-in user (no premium requirement).
+ * [T1.4] auth() 只认 NextAuth cookie，小程序/Android 走 Bearer JWT——
+ * 换 requireAuth()（cookie 优先、Bearer 回落），401 响应体不变。
  */
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json(
-      { success: false, error: "请先登录" },
-      { status: 401 },
-    );
-  }
+  const authResult = await requireAuth();
+  if (!authResult.ok) return authResult.response;
 
   const episodeid = req.nextUrl.searchParams.get("episodeid");
   if (!episodeid) {
