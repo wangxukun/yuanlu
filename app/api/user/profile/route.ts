@@ -4,6 +4,7 @@ import { requireAuth } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { generateSignatureUrl, uploadFile } from "@/lib/oss";
+import { deriveDisplayRole } from "@/lib/premium-role";
 
 // --- Types ---
 // 定义 ProfileData 接口以包含学习目标
@@ -45,8 +46,31 @@ export async function GET() {
 
   const safeProfile = profile as UserProfileWithAvatar;
 
+  // [T5.4 真机联调 2026-10-02] role 按订阅事实派生（口径红线：任何把 role
+  // 暴露给前端/移动端的地方必须经 deriveDisplayRole——纯小程序付费后 DB
+  // role 列不自动翻，与 subscription/status 接口口径一致）。
+  const latestPremium = await prisma.subscriptions.findFirst({
+    where: {
+      userid: session.user.userid,
+      subscriptionType: "PREMIUM",
+      endDate: { gte: new Date() },
+    },
+    orderBy: { endDate: "desc" },
+    select: { endDate: true },
+  });
+  const derivedUser = safeProfile.User
+    ? {
+        ...safeProfile.User,
+        role: deriveDisplayRole(
+          safeProfile.User.role,
+          latestPremium?.endDate ?? null,
+        ),
+      }
+    : safeProfile.User;
+
   const profileWithSignature = {
     ...safeProfile,
+    User: derivedUser,
     avatarUrl: safeProfile.avatarFileName
       ? await generateSignatureUrl(safeProfile.avatarFileName, 3600 * 3)
       : null,
