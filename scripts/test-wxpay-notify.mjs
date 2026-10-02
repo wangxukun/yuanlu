@@ -55,6 +55,7 @@ const {
   ackResponse,
   nackResponse,
   verifyNotifySignature,
+  verifyMessagePushSignature,
 } = await import("../core/wxpay/notify.core.ts");
 const { computePaySig } = await import("../core/wxpay/signature.ts");
 
@@ -167,6 +168,45 @@ assert(
     paySigHeader: goodSig,
   }),
   "uri 参与验签",
+);
+
+console.log("━━━ 二之二、通用消息推送验签（T5.4 真机联调落地） ━━━");
+// 官方向量：SHA1(sort([token,timestamp,nonce]).join(''))（公众号/小程序消息推送同款）
+assert(
+  verifyMessagePushSignature({
+    token: "yuanlu_test",
+    timestamp: "1700000000",
+    nonce: "abc123",
+    signature: "aba976c08ed274ad1630d93b18f23c54e74da34f",
+  }),
+  "官方口径向量通过（排序后拼接 SHA1）",
+);
+assert(
+  !verifyMessagePushSignature({
+    token: "yuanlu_test",
+    timestamp: "1700000001",
+    nonce: "abc123",
+    signature: "aba976c08ed274ad1630d93b18f23c54e74da34f",
+  }),
+  "timestamp 参与验签（篡改拒绝）",
+);
+assert(
+  !verifyMessagePushSignature({
+    token: "other",
+    timestamp: "1700000000",
+    nonce: "abc123",
+    signature: "aba976c08ed274ad1630d93b18f23c54e74da34f",
+  }),
+  "token 不匹配拒绝",
+);
+assert(
+  !verifyMessagePushSignature({
+    token: "",
+    timestamp: "1",
+    nonce: "n",
+    signature: "x",
+  }),
+  "token 未配置（空串）拒绝——GET 握手同理 403",
 );
 
 console.log("━━━ 三、回执格式 ━━━");

@@ -12,7 +12,7 @@
  * 无法被 Node 直跑仿真解析（keep 零依赖）；与 signature.ts 同式，两处
  * 算法一致性由官方向量单测共同把门。
  */
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 
 export type WxpayNotifyEvent =
   | "xpay_goods_deliver_notify"
@@ -140,4 +140,27 @@ export function verifyNotifySignature(input: {
     .update(input.uri + "&" + input.rawBody, "utf8")
     .digest("hex");
   return input.paySigHeader.toLowerCase() === computed;
+}
+
+/**
+ * 通用消息推送验签（T5.4 真机联调落地，2026-10-02）：官方 person.html
+ * 明确发货推送 URL 配置在【开发管理 → 消息推送】（通用 Token/echostr
+ * 通道，明文模式）——推送 POST 的 query 带 signature/timestamp/nonce，
+ * 校验式 = SHA1(sort([token, timestamp, nonce]).join(''))，与公众号/
+ * 小程序消息推送同款。token = MP 后台该页填写的 Token（env
+ * WXPAY_PUSH_TOKEN 同值）。
+ */
+export function verifyMessagePushSignature(input: {
+  token: string;
+  timestamp: string;
+  nonce: string;
+  signature: string;
+}): boolean {
+  if (!input.token || !input.timestamp || !input.nonce || !input.signature) {
+    return false;
+  }
+  const computed = createHash("sha1")
+    .update([input.token, input.timestamp, input.nonce].sort().join(""), "utf8")
+    .digest("hex");
+  return computed === input.signature;
 }
