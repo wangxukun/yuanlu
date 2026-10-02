@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlanGrant } from "@/lib/afdian-plans";
+import { extendPremiumSubscription } from "@/core/subscription/grant.service";
 
 /**
  * 爱发电订单认领与激活共享服务（P2-3）。
@@ -70,42 +71,13 @@ export async function applyOrderGrant(
     return { status: grant.status };
   }
 
-  // 订阅续期：在剩余时长上累加而非覆盖（保留原有正确行为）
-  const now = Date.now();
-  const activeSub = await tx.subscriptions.findFirst({
-    where: {
-      userid: input.userid,
-      subscriptionType: "PREMIUM",
-      endDate: { gt: new Date() },
-    },
-    orderBy: { endDate: "desc" },
-  });
-
-  const currentExpiryTimestamp = activeSub?.endDate
-    ? Math.max(activeSub.endDate.getTime(), now)
-    : now;
-  const newExpiryDate = new Date(
-    currentExpiryTimestamp + grant.days * 24 * 60 * 60 * 1000,
+  // 订阅续期：共享管道（core/subscription/grant.service，与虚拟支付发货
+  // 同一函数不分叉）——在剩余时长上累加而非覆盖（保留原有正确行为）
+  const { newExpiryDate, isRenewal } = await extendPremiumSubscription(
+    tx,
+    input.userid,
+    grant.days,
   );
-
-  if (activeSub) {
-    await tx.subscriptions.update({
-      where: { subscriptionid: activeSub.subscriptionid },
-      data: { endDate: newExpiryDate },
-    });
-  } else {
-    await tx.subscriptions.create({
-      data: {
-        userid: input.userid,
-        subscriptionType: "PREMIUM",
-        startDate: new Date(),
-        endDate: newExpiryDate,
-      },
-    });
-  }
-
-  // 注意：只写订阅记录，不再永久打标 role="PREMIUM"（P0-1）——
-  // 执行口径统一走 isPremiumUser 的"有效订阅"判定。
 
   await finalizeOrder(
     tx,
@@ -123,7 +95,7 @@ export async function applyOrderGrant(
     userid: input.userid,
     daysAdded: grant.days,
     newExpiryDate,
-    isRenewal: !!activeSub,
+    isRenewal,
   };
 }
 

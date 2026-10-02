@@ -10,6 +10,8 @@
     "test:wxpayconfig": "node scripts/test-wxpay-config.mjs",
     "test:wxpaysig": "node scripts/test-wxpay-signature.mjs",
     "test:wxpayorder": "node scripts/test-wxpay-order.mjs",
+    "test:wxpaynotify": "node scripts/test-wxpay-notify.mjs",
+    "test:wxpayreconcile": "node scripts/test-wxpay-reconcile.mjs",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx app/",
     "audit": "npm audit --registry https://registry.npmjs.org",
