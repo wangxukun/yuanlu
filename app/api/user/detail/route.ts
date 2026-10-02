@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/core/auth/guard";
 
+/**
+ * GET /api/user/detail — 管理后台用户详情（[id]/setting 权限页数据源）。
+ * [安全收紧 2026-10-03] 同 /api/user/list：加 requireAdmin + 移除 password；
+ * 消费方 lib/data.fetchUserById 已同步转发会话 Cookie 并改 no-store
+ * （转发凭据的 fetch 不得走缓存）。
+ */
 export async function GET(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (!guard.ok) {
+    return guard.response;
+  }
   const id = req.nextUrl.searchParams.get("id");
   console.log("[GET /api/user/detail]", id);
 
@@ -16,10 +27,9 @@ export async function GET(req: NextRequest) {
         userid: id,
       },
       select: {
-        // 明确选择需要字段
+        // 明确选择需要字段（password 不外发——管理界面无消费）
         userid: true,
         email: true,
-        password: true,
         role: true,
         languagePreference: true,
         createAt: true,

@@ -239,16 +239,24 @@ export const statsService = {
 
   /**
    * 获取全局用户统计数据（如：总注册人数、付费会员数）
+   * [T5.4 真机联调 2026-10-02] 会员数与 isPremiumUser/getSocialProofStats
+   * 同口径：按有效订阅（endDate > now）userid 去重——P0-1 后 role 只是
+   * 展示缓存，虚拟支付/爱发电发货只写订阅表不翻 role，按 role 列计数
+   * 会漏掉纯小程序付费会员。
    */
   async getGlobalUserStats() {
-    const [totalUsers, vipUsers] = await Promise.all([
+    const [totalUsers, memberRows] = await Promise.all([
       prisma.user.count(),
-      prisma.user.count({ where: { role: "PREMIUM" } }),
+      prisma.subscriptions.findMany({
+        where: { subscriptionType: "PREMIUM", endDate: { gt: new Date() } },
+        distinct: ["userid"],
+        select: { userid: true },
+      }),
     ]);
 
     return {
       totalUsers,
-      vipUsers,
+      vipUsers: memberRows.length,
     };
   },
 

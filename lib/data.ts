@@ -24,11 +24,15 @@ export async function fetchTags(): Promise<Tag[]> {
 }
 /**
  * 获取用户列表
+ * [安全收紧 2026-10-03] /api/user/list 已加 requireAdmin——此处服务端
+ * fetch 需转发会话 Cookie（同文件既有先例），否则管理页 403。
  */
 export async function fetchUsers(): Promise<User[]> {
+  const headersList = await headers();
+  const cookie = headersList.get("cookie") || "";
   const res = await fetch(`${baseUrl}/api/user/list`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Cookie: cookie },
   });
   if (!res.ok) {
     throw new Error("Failed to fetch users");
@@ -55,10 +59,15 @@ export async function fetchUsers(): Promise<User[]> {
  * @param id
  */
 export async function fetchUserById(id: string): Promise<User> {
+  // [安全收紧 2026-10-03] /api/user/detail 已加 requireAdmin——转发会话
+  // Cookie；转发凭据的请求不得复用缓存（原 revalidate 60 会按 URL 缓存
+  // 命中绕过守卫），改 no-store。
+  const headersList = await headers();
+  const cookie = headersList.get("cookie") || "";
   const res = await fetch(`${baseUrl}/api/user/detail?id=${id}`, {
     method: "GET",
-    headers: {},
-    next: { revalidate: 60 },
+    headers: { Cookie: cookie },
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error("Failed to fetch user");
