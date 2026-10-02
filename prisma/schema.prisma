@@ -49,6 +49,7 @@ model User {
   speech_recognition      speech_recognition[]
   study_groups            study_groups[]
   subscriptions           subscriptions[]
+  WxpayOrder              WxpayOrder[]
   daily_activities        user_daily_activity[]
   user_profile            user_profile?
   vocabulary              vocabulary[]
@@ -438,6 +439,33 @@ model AfdianOrder {
   /// [P2-3] 自助找回无法自动归属时登记的申请用户，管理端据此优先处理
   claimRequestedBy String?
   claimRequestedAt DateTime? @db.Timestamptz(6)
+
+  @@index([userid, createAt(sort: Desc)])
+  @@index([status, createAt(sort: Desc)])
+}
+
+/// [模块E T4.3] 微信虚拟支付订单流水（同构 AfdianOrder 的账本职责，
+/// 与爱发电两渠道到同一会员事实不分叉）：out_trade_no 商户单号唯一
+/// （8-32 位，下单生成）；wx_order_id 平台订单号唯一索引 = 发货推送
+/// 幂等闸门（xpay_goods_deliver_notify 重试/重放在此拦截，T4.4）。
+/// 金额恒为分且只来自 SKU 表（amountFen = 单价分 × buyQuantity），
+/// 不收前端价；status: PENDING → ACTIVATED（发货成功）/ CLOSED（超时关闭口径 TBD）。
+model WxpayOrder {
+  orderid      Int      @id @default(autoincrement())
+  outTradeNo   String   @unique @db.VarChar(32)
+  /// 平台订单号（WeChatPayInfo.MchOrderNo）——可空至推送/查单回填
+  wxOrderId    String?  @unique @db.VarChar(64)
+  userid       String?
+  planKey      String   @db.VarChar(20)
+  productId    String   @db.VarChar(64)
+  buyQuantity  Int
+  amountFen    Int
+  daysGranted  Int      @default(0)
+  status       String   @db.VarChar(30)
+  createAt     DateTime @default(now()) @db.Timestamptz(6)
+  updateAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  User User? @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([userid, createAt(sort: Desc)])
   @@index([status, createAt(sort: Desc)])
