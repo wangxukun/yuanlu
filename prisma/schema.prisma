@@ -25,6 +25,12 @@ model User {
   loginCount              Int                       @default(0)
   sessionVersion          Int                       @default(0)
   registerIp              String?                   @db.VarChar(45)
+  /// [模块E T3.1] 微信身份绑定（虚拟支付前置：signature 由 sessionKey 签发）。
+  /// openid 与自建账号一对一（单小程序单绑定），唯一约束防一号多绑；
+  /// 既有用户无绑定为 null。sessionKey 即签即用——下单前 wx.login 现换
+  /// （code2Session），存行仅为下单窗口内取用，不依赖长效。
+  wxOpenId                String?                   @unique @db.VarChar(64)
+  wxSessionKey            String?                   @db.VarChar(128)
   VisitorLog              VisitorLog[]
   conversionEvents        conversion_events[]
   dictionary_lookups      dictionary_lookups[]
@@ -639,10 +645,10 @@ model SavedSentence {
 /// 每集只生成一次（episodeid 唯一），全部 PRO 用户共享——LLM 边际成本
 /// 按剧集数封顶；内容为静态 JSON（难点词汇预扫/长难句拆解/跟读句推荐/测验）。
 model episode_deep_dives {
-  id         Int      @id @default(autoincrement())
-  episodeid  String   @unique
-  content    Json
-  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  id        Int      @id @default(autoincrement())
+  episodeid String   @unique
+  content   Json
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   episode episode @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
 }
