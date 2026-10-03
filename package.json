@@ -12,6 +12,7 @@
     "test:wxpayorder": "node scripts/test-wxpay-order.mjs",
     "test:wxpaynotify": "node scripts/test-wxpay-notify.mjs",
     "test:wxpayreconcile": "node scripts/test-wxpay-reconcile.mjs",
+    "test:wxpayorders": "node scripts/test-wxpay-orders.mjs",
     "test:msgseccheck": "node scripts/test-msg-sec-check.mjs",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx app/",
