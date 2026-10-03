@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { generateSignatureUrl, uploadFile } from "@/lib/oss";
 import { deriveDisplayRole } from "@/lib/premium-role";
+import { checkUserGeneratedText } from "@/core/security/msg-sec-check.service";
+import { SEC_SCENE } from "@/core/security/msg-sec-check.core";
 
 // --- Types ---
 // 定义 ProfileData 接口以包含学习目标
@@ -196,6 +198,23 @@ export async function POST(req: Request) {
 
 /** upsert user_profile 并回带 3 小时签名头像（PUT 与 POST(JSON) 共用收尾） */
 async function persistProfileUpdate(userid: string, updateData: ProfileData) {
+  // [内容安全] 昵称是公开 UGC（评论区随评论公开展示）——入库前过微信
+  // msgSecCheck（scene=1 资料；PUT(formData) 与 POST(JSON) 两路在此收敛，
+  // 绑定过微信的用户带 openid 走 v2，其余 v1 兼容）
+  if (updateData.nickname && updateData.nickname.trim()) {
+    const wxUser = await prisma.user.findUnique({
+      where: { userid },
+      select: { wxOpenId: true },
+    });
+    const sec = await checkUserGeneratedText(updateData.nickname, {
+      openid: wxUser?.wxOpenId ?? null,
+      scene: SEC_SCENE.PROFILE,
+    });
+    if (!sec.ok) {
+      return NextResponse.json({ error: sec.reason }, { status: 400 });
+    }
+  }
+
   const updatedProfile = await prisma.user_profile.upsert({
     where: { userid: userid },
     update: updateData,

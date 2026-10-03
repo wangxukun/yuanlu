@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/core/auth/guard";
 import { generateSignatureUrl } from "@/lib/oss";
+import { checkUserGeneratedText } from "@/core/security/msg-sec-check.service";
+import { SEC_SCENE } from "@/core/security/msg-sec-check.core";
 import { notificationService } from "@/core/notification/notification.service";
 import { NotificationType } from "@/core/notification/notification.entity";
 
@@ -17,7 +19,7 @@ export async function POST(request: Request) {
     // [安全修复] 检查用户是否被禁止评论
     const userRecord = await prisma.user.findUnique({
       where: { userid: currentUserId },
-      select: { isCommentAllowed: true },
+      select: { isCommentAllowed: true, wxOpenId: true },
     });
     if (!userRecord || userRecord.isCommentAllowed === false) {
       return NextResponse.json(
@@ -30,6 +32,16 @@ export async function POST(request: Request) {
 
     if (!episodeid || !content || !content.trim()) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+
+    // [内容安全] UGC 评论入微信 msgSecCheck（scene=2 评论；绑定过微信的
+    // 用户带 openid 走 v2 风险画像，其余 v1 兼容——见 msg-sec-check.core）
+    const sec = await checkUserGeneratedText(content, {
+      openid: userRecord.wxOpenId,
+      scene: SEC_SCENE.COMMENT,
+    });
+    if (!sec.ok) {
+      return NextResponse.json({ error: sec.reason }, { status: 400 });
     }
 
     // 2. 写入数据库
