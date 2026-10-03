@@ -39,6 +39,31 @@ export function useEpisodeComments(episodeId: string) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // [内容安全] 发布失败弹窗（daisyUI comment_fail_modal）：替代原生 alert。
+  // 消息优先取后端 error（msgSecCheck 拦截即「内容未通过安全检测，请修改后重试」），
+  // 5xx 或无文案时回退通用提示；根评论与回复两条发布链路共用。
+  const [commentFailMessage, setCommentFailMessage] = useState("");
+
+  const showCommentFail = (message: string) => {
+    setCommentFailMessage(message);
+    const modal = document.getElementById(
+      "comment_fail_modal",
+    ) as HTMLDialogElement | null;
+    if (modal) modal.showModal();
+  };
+
+  /** 解析发布失败响应体 → 弹窗文案：<500 透传后端 error（安全拦截文案等），其余回退通用 */
+  const readFailMessage = async (res: Response): Promise<string> => {
+    if (res.status >= 500) return "发布失败，请稍后重试";
+    try {
+      const body = await res.json();
+      if (body?.error) return String(body.error);
+    } catch {
+      // 非 JSON 响应体，走通用文案
+    }
+    return "发布失败，请稍后重试";
+  };
+
   const buildCommentTree = (flatComments: Comment[]): Comment[] => {
     const commentMap = new Map<number, Comment>();
     const roots: Comment[] = [];
@@ -89,9 +114,15 @@ export function useEpisodeComments(episodeId: string) {
           const element = document.getElementById(hash.substring(1));
           if (element) {
             element.scrollIntoView({ behavior: "smooth", block: "center" });
-            element.classList.add("bg-primary-600/10 dark:bg-primary-400/10", "rounded-xl");
+            element.classList.add(
+              "bg-primary-600/10 dark:bg-primary-400/10",
+              "rounded-xl",
+            );
             setTimeout(() => {
-              element.classList.remove("bg-primary-600/10 dark:bg-primary-400/10", "rounded-xl");
+              element.classList.remove(
+                "bg-primary-600/10 dark:bg-primary-400/10",
+                "rounded-xl",
+              );
             }, 3000);
           }
         }, 100);
@@ -117,7 +148,8 @@ export function useEpisodeComments(episodeId: string) {
         setComments((prev) => [newComment, ...prev]);
         setCommentContent("");
       } else {
-        alert("发布失败");
+        // daisyUI 弹窗（安全拦截时即后端的「内容未通过安全检测，请修改后重试」）
+        showCommentFail(await readFailMessage(res));
       }
     } catch (error) {
       console.error(error);
@@ -160,6 +192,9 @@ export function useEpisodeComments(episodeId: string) {
         setComments((prev) => addReplyToTree(prev));
         if (replyInputRef.current) replyInputRef.current.value = "";
         setReplyingToId(null);
+      } else {
+        // 回复与根评论共用同一失败弹窗（输入内容保留在 textarea 里可改后重发）
+        showCommentFail(await readFailMessage(res));
       }
     } catch (error) {
       console.error("Reply failed", error);
@@ -332,6 +367,7 @@ export function useEpisodeComments(episodeId: string) {
     formatDate,
     getDisplayName,
     session,
+    commentFailMessage,
   };
 }
 

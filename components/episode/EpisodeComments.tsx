@@ -4,6 +4,7 @@ import { useEpisodeComments } from "./comments/useEpisodeComments";
 import { CommentForm } from "./comments/CommentForm";
 import { CommentItem } from "./comments/CommentItem";
 import { DeleteCommentModal } from "./comments/DeleteCommentModal";
+import { CommentFailModal } from "./comments/CommentFailModal";
 
 export default function EpisodeComments({ episodeId }: { episodeId: string }) {
   const hookOptions = useEpisodeComments(episodeId);
@@ -41,6 +42,9 @@ export default function EpisodeComments({ episodeId }: { episodeId: string }) {
 
       {/* 删除确认 Modal */}
       <DeleteCommentModal hookOptions={hookOptions} />
+
+      {/* 发布失败 Modal（安全拦截文案等后端 error 透传） */}
+      <CommentFailModal hookOptions={hookOptions} />
     </div>
   );
 }
