@@ -429,7 +429,11 @@ export default function ReviewDeck({
 
   // [SRS] 再来一轮：只重测忘记子集（防死循环承接，vocab retryForgotten 同款）
   const startRetry = () => {
-    if (forgottenIds.length === 0) return;
+    // 无禁用态（按钮恒为主按钮样式）：忘记数为 0 时以 toast 反馈替代置灰
+    if (forgottenIds.length === 0) {
+      toast("本轮没有忘记的句子，无需再来一轮");
+      return;
+    }
     setRetryIds(new Set(forgottenIds));
     setRoundRatings([]);
     setSessionDone(false);
@@ -706,18 +710,17 @@ export default function ReviewDeck({
               <button
                 type="button"
                 onClick={startRetry}
-                disabled={forgottenIds.length === 0}
-                className="btn rounded-xl h-11 px-4 border-none bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold disabled:opacity-40"
+                className="btn rounded-xl px-5 border-none bg-primary-600 hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 text-white font-bold"
                 title="只重测本轮标记为忘记的句子"
               >
-                <RotateCcw size={15} />
-                再来一轮（忘记的 {forgottenIds.length} 句）
+                <RotateCcw size={16} />
+                再来一轮（{forgottenIds.length}）
               </button>
               {mode !== "srs" && (
                 <button
                   type="button"
                   onClick={continueBrowsing}
-                  className="btn rounded-xl h-11 px-4 btn-outline border-base-300 text-base-content text-xs font-bold"
+                  className="btn rounded-xl px-5 btn-outline border-base-300 text-base-content font-bold"
                   title="回到第一张继续浏览（原回环行为）"
                 >
                   继续刷
@@ -725,7 +728,7 @@ export default function ReviewDeck({
               )}
               <Link
                 href={base}
-                className="btn rounded-xl h-11 px-4 btn-outline border-base-300 text-base-content text-xs font-bold"
+                className="btn rounded-xl px-5 btn-outline border-base-300 text-base-content font-bold"
               >
                 返回句子本
               </Link>
