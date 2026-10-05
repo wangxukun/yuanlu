@@ -12,6 +12,7 @@ export const publicRoutes = [
   "/channel/:id",
   "/series/:id",
   "/contact",
+  "/app", // 小程序上线公告落地页(全站广播 targetUrl 指向这里,须可匿名访问)
   "/auth/user-agreement",
   "/auth/privacy-policy",
   "/auth/subscription-agreement",

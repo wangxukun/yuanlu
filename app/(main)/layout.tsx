@@ -17,6 +17,7 @@ import GlobalAudio from "@/components/player/GlobalAudio";
 import SubscriptionFlashToast from "@/components/subscription/SubscriptionFlashToast";
 import MobileBottomNav from "@/components/main/MobileBottomNav";
 import MobilePlayerBar from "@/components/player/MobilePlayerBar";
+import AnnouncementBanner from "@/components/announcement/AnnouncementBanner";
 
 export const metadata: Metadata = {
   title: "远路播客",
@@ -68,6 +69,9 @@ export default function RootLayout({
               />
 
               <div className="drawer-content flex flex-col relative w-full transition-all duration-300">
+                {/* 全站公告横幅(游客可达,可关闭) */}
+                <AnnouncementBanner />
+
                 <div className="hidden md:block">
                   <Header />
                 </div>
