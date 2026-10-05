@@ -78,7 +78,9 @@ export const achievementsService = {
             userid: userId,
             notificationText: `🏆 成就解锁：${def.icon} ${def.name} — ${def.description}`,
             type: NotificationType.ACHIEVEMENT,
-            targetUrl: "/charts",
+            // Web 端学习报表实际路由(历史上曾误发 /charts,Web 无该路由;
+            // 旧通知由 Web /charts 重定向页与小程序 resolveTarget 兼容分支兜底)
+            targetUrl: "/library/learning-report",
           });
         }),
       ).catch((err) =>
