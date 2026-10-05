@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
 import { filterLinkedVocabWords } from "@/core/sentences/linked-vocab";
 import { deleteSavedSentence } from "@/lib/actions/sentences-actions";
+import { isDue } from "@/lib/srs";
 import {
   FREE_REVIEW_EVALUATIONS_PER_DAY,
   FREE_SENTENCE_LIMIT,
@@ -139,6 +140,12 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
     new Set(sentences.flatMap((s) => s.tags || [])),
   ).filter(Boolean);
 
+  // [SRS] 今日到期待复习句数（isDue 与生词本 hook 同源；横幅双态驱动）
+  const dueCount = useMemo(
+    () => sentences.filter((s) => isDue(s.nextReviewAt)).length,
+    [sentences],
+  );
+
   // 筛选候选：来源剧集由收藏数据派生
   const episodeOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -214,6 +221,7 @@ const SentenceNotebook: React.FC<SentenceNotebookProps> = ({
         sentenceCount={sentences.length}
         vocabCount={linkedVocabWords.length}
         tagCount={allTags.length}
+        dueCount={dueCount}
       />
 
       {/* [P3-d] 配额倒计时可视化（报告 4.6）：双卡共用 QuotaStatusCard——

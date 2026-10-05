@@ -5,12 +5,11 @@ import {
   submitReviewAction,
   updateVocabularyStatusAction,
 } from "@/lib/actions/vocabulary-actions";
+import { isDue } from "@/lib/srs";
 import { VocabularyItem } from "../VocabularyNotebook";
 
-export const isDue = (dateStr?: string | null) => {
-  if (!dateStr) return true;
-  return new Date(dateStr) <= new Date();
-};
+// isDue 实现上收到 lib/srs（生词本/句子本共用单源）；保留导出兼容既有引用方
+export { isDue };
 
 export const formatDate = (dateStr?: string | null) => {
   if (!dateStr) return "N/A";

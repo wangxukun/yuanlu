@@ -67,3 +67,14 @@ export function calculateNextReview(
     nextReviewAt: nextReviewDate,
   };
 }
+
+/**
+ * 到期判定（vocabulary/sentences 两本通用）：
+ * nextReviewAt 为空视为到期（新条目立即进队列），否则 <= 当前时间即到期。
+ * 原实现住在 useVocabularyNotebook.ts（vocabulary 专用），抽到 lib/srs 供
+ * 生词本 hook 与句子本 ReviewDeck/SentenceStats 共用，口径单源。
+ */
+export function isDue(dateStr?: string | null): boolean {
+  if (!dateStr) return true;
+  return new Date(dateStr) <= new Date();
+}

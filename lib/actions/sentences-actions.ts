@@ -7,6 +7,7 @@ import {
   savedSentenceQuerySchema,
   toggleSentenceSaveSchema,
   updateSentenceMetaSchema,
+  submitSentenceReviewSchema,
 } from "@/core/sentences/dto";
 import { SENTENCE_QUOTA_EXCEEDED } from "@/lib/quota";
 import { recordConversionEvent } from "@/lib/track";
@@ -121,6 +122,43 @@ export async function updateSentenceMeta(input: {
     return {
       success: false,
       message: error instanceof Error ? error.message : "更新失败",
+    };
+  }
+}
+
+/**
+ * Server Action: [SRS] 提交句子复习打卡（quality 四档，Leitner 阶梯推进）
+ * 返回 { id, proficiency, nextReviewAt, daysAdded } 供卡组乐观更新
+ */
+export async function submitSentenceReview(input: {
+  id: number;
+  quality: 0 | 1 | 2 | 3;
+}): Promise<
+  SentenceActionResponse<
+    Awaited<ReturnType<typeof sentencesService.submitReview>>
+  >
+> {
+  try {
+    const session = await requireAuthAction();
+
+    const parsed = submitSentenceReviewSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, message: "参数无效" };
+    }
+
+    const result = await sentencesService.submitReview(
+      session.user.userid,
+      parsed.data.id,
+      parsed.data.quality,
+    );
+
+    revalidatePath("/library/sentences");
+    return { success: true, message: "打卡成功", data: result };
+  } catch (error) {
+    console.error("submitSentenceReview error:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "打卡失败",
     };
   }
 }

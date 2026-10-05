@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { isPremiumUser } from "@/core/auth/guard";
+import { calculateNextReview } from "@/lib/srs";
 import { FREE_SENTENCE_LIMIT } from "@/lib/quota";
 import type {
   SavedSentenceItem,
@@ -146,6 +147,43 @@ export const sentencesService = {
   },
 
   /**
+   * [SRS] 提交一次复习打卡（vocabularyService.submitReview 同款逐行口径）：
+   * 归属校验 → calculateNextReview（lib/srs Leitner 阶梯，零新算法）→ 落库。
+   * quality 四档：0=忘记（重置 0 级、留今日队列，防死循环由前端「再来一轮忘记子集」承接）
+   * / 1=模糊（降 1 级、明天再见）/ 2、3=认识/简单（升 1 级、按阶梯取间隔）。
+   */
+  async submitReview(userId: string, id: number, quality: number) {
+    const sentence = await prisma.savedSentence.findUnique({ where: { id } });
+
+    if (!sentence) {
+      throw new Error("句子不存在");
+    }
+    if (sentence.userid !== userId) {
+      throw new Error("无权操作此句子");
+    }
+
+    const { proficiency, nextReviewAt } = calculateNextReview(
+      sentence.proficiency,
+      quality,
+    );
+
+    const updated = await prisma.savedSentence.update({
+      where: { id },
+      data: { proficiency, nextReviewAt },
+    });
+
+    return {
+      id: updated.id,
+      proficiency: updated.proficiency,
+      nextReviewAt: updated.nextReviewAt.toISOString(),
+      // 增加了几天，供前端反馈「下次复习: N天后」（vocabulary daysAdded 同口径）
+      daysAdded: Math.round(
+        (nextReviewAt.getTime() - new Date().getTime()) / (1000 * 3600 * 24),
+      ),
+    };
+  },
+
+  /**
    * 获取用户收藏列表，支持多维度筛选：
    * - episodeid：按播客单集（来源）筛选
    * - tag：按标签筛选（数组 contains）
@@ -256,6 +294,8 @@ function toItem(row: SentenceWithEpisode): SavedSentenceItem {
     zhText: row.zhText,
     note: row.note,
     tags: row.tags,
+    proficiency: row.proficiency,
+    nextReviewAt: row.nextReviewAt.toISOString(),
     createAt: row.createAt.toISOString(),
     updateAt: row.updateAt.toISOString(),
   };

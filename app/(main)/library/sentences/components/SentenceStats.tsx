@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { BookA, BrainCircuit, PlayCircle, Tag, TextQuote } from "lucide-react";
+import {
+  BookA,
+  BrainCircuit,
+  CheckCircle,
+  PlayCircle,
+  Tag,
+  TextQuote,
+} from "lucide-react";
 import { useNotebookBase } from "@/lib/notebook-base";
 
 interface SentenceStatsProps {
@@ -9,6 +16,8 @@ interface SentenceStatsProps {
   vocabCount: number;
   /** 分类标签数 */
   tagCount: number;
+  /** [SRS] 今日到期待复习句数（isDue 口径，VocabularyStats.stats.due 同款双态横幅） */
+  dueCount: number;
 }
 
 /**
@@ -19,6 +28,7 @@ export function SentenceStats({
   sentenceCount,
   vocabCount,
   tagCount,
+  dueCount,
 }: SentenceStatsProps) {
   // 子页面入口用绝对路径前缀（相对路径在 Segment Cache Link 下解析基准是 layout 段，会 404）
   const base = useNotebookBase("sentences");
@@ -91,36 +101,44 @@ export function SentenceStats({
         )}
       </header>
 
-      {/* 2. 卡片复习入口（空状态隐藏：没有可复习的句子时不渲染横幅，三端一致） */}
+      {/* 2. 复习入口（空状态隐藏：没有可复习的句子时不渲染横幅，三端一致）。
+          [SRS] 到期双态横幅：due>0 遗忘曲线催复习（VocabularyStats 同款），
+          due=0 全部完成卡——句子本自此可达成「复习完成」终态 */}
       {sentenceCount > 0 && (
         <section className="grid grid-cols-1 gap-6">
-          <div className="bg-primary-600 dark:bg-primary-900/40 rounded-lg p-6 xl:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0 transition-colors">
-            <div>
-              <h2 className="text-xl xl:text-2xl font-bold flex items-center mb-2">
-                <BrainCircuit className="mr-3 text-primary-300" />
-                卡片复习已就绪
-              </h2>
-              <p className="text-white/80 max-w-lg text-sm xl:text-base">
-                共收藏{" "}
-                <span className="text-white font-bold">
-                  {sentenceCount} 个关键句
-                </span>
-                ，与生词本{" "}
-                <span className="text-white font-bold">
-                  {vocabCount} 个词汇
-                </span>{" "}
-                深度联动，随时开始 AI 影子跟读与卡片复习。
+          {dueCount > 0 ? (
+            <div className="bg-primary-600 dark:bg-primary-900/40 rounded-lg p-6 xl:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0 transition-colors">
+              <div>
+                <h2 className="text-xl xl:text-2xl font-bold flex items-center mb-2">
+                  <BrainCircuit className="mr-3 text-primary-300" />
+                  复习计划已就绪
+                </h2>
+                <p className="text-white/80 max-w-lg text-sm xl:text-base">
+                  根据遗忘曲线，你有{" "}
+                  <span className="text-white font-bold">
+                    {dueCount} 个句子
+                  </span>{" "}
+                  需要复习。
+                </p>
+              </div>
+              <Link
+                href={`${base}/review`}
+                title="进入全屏滑动复习卡片模式"
+                className="w-full sm:w-auto bg-white text-primary-600 px-8 py-3 rounded-lg font-bold hover:bg-ink-50 transition-all flex items-center justify-center shrink-0"
+              >
+                <PlayCircle className="mr-2" size={20} />
+                开始复习
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-ink-900 rounded-lg p-6 text-center text-base-content/60 transition-colors">
+              <CheckCircle className="mx-auto mb-2 text-success" size={32} />
+              <h3 className="font-medium text-base-content">全部完成了！</h3>
+              <p className="text-sm">
+                你做得很好，今日句子复习已清空。快去播客里收藏新句子吧。
               </p>
             </div>
-            <Link
-              href={`${base}/review`}
-              title="进入全屏滑动复习卡片模式"
-              className="w-full sm:w-auto bg-white text-primary-600 px-8 py-3 rounded-lg font-bold hover:bg-ink-50 transition-all flex items-center justify-center shrink-0"
-            >
-              <PlayCircle className="mr-2" size={20} />
-              卡片复习模式
-            </Link>
-          </div>
+          )}
         </section>
       )}
     </>

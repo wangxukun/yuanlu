@@ -26,6 +26,12 @@ export const savedSentenceQuerySchema = z.object({
   q: z.string().optional(),
 });
 
+/** [SRS] 复习打卡入参：quality 四档（0=忘记 1=模糊 2=认识 3=简单，vocabulary 同口径） */
+export const submitSentenceReviewSchema = z.object({
+  id: z.number().int(),
+  quality: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
+});
+
 export type ToggleSentenceSaveInput = z.infer<typeof toggleSentenceSaveSchema>;
 export type UpdateSentenceMetaInput = z.infer<typeof updateSentenceMetaSchema>;
 export type SavedSentenceQuery = z.infer<typeof savedSentenceQuerySchema>;
@@ -43,6 +49,10 @@ export interface SavedSentenceItem {
   zhText: string | null;
   note: string | null;
   tags: string[];
+  /** [SRS] Leitner 熟练度等级（0-6+） */
+  proficiency: number;
+  /** [SRS] 下次复习到期时间（isDue 判定；null 不会出现——列 NOT NULL，保留联合类型前端防漂移） */
+  nextReviewAt: string | null;
   createAt: string;
   updateAt: string;
 }

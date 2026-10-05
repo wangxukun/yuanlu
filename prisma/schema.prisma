@@ -658,6 +658,10 @@ model SavedSentence {
   note       String?
   /// 用户自定义标签（如：地道表达 / 长难句 / 写作素材）
   tags       String[] @default([])
+  /// [SRS] Leitner 熟练度等级（0-6+，vocabulary 表同口径；四档打卡驱动升降级）
+  proficiency  Int      @default(0)
+  /// [SRS] 下次复习到期时间（isDue 判定；新收藏即到期，vocabulary 同口径）
+  nextReviewAt DateTime @default(now()) @db.Timestamptz(6)
   createAt   DateTime @default(now()) @db.Timestamptz(6)
   updateAt   DateTime @updatedAt @db.Timestamptz(6)
 

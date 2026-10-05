@@ -25,6 +25,11 @@ import {
   Layers,
   Lock,
   Flame,
+  RotateCcw,
+  Clock,
+  CheckCircle,
+  Award,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedSentenceItem } from "@/core/sentences/dto";
@@ -34,6 +39,8 @@ import { useUIStore } from "@/store/ui-store";
 import VocabularyHighlighter from "@/components/sentence/VocabularyHighlighter";
 import { getEpisodeAudioUrl } from "@/lib/client/episode-audio";
 import { useNotebookBase } from "@/lib/notebook-base";
+import { calculateNextReview, isDue, ReviewQuality } from "@/lib/srs";
+import { submitSentenceReview } from "@/lib/actions/sentences-actions";
 
 interface ReviewDeckProps {
   sentences: SavedSentenceItem[];
@@ -54,8 +61,18 @@ type ReviewMode = "sequential" | "tag" | "srs";
  * 背景堆叠卡 + 手势角标 + 底部单手操作坞；顶部进度条。
  *
  * [P3-d] 模式选择器：基础刷句（滑动/翻面/重听/原音）永久免费；
- * 标签组卷、SRS 智能调度（最久收藏优先）与连续翻卡成就为 PRO 专属增量——
+ * 标签组卷、SRS 到期调度与连续翻卡成就为 PRO 专属增量——
  * 非会员点击置锁项弹 sentence_review_advanced 场景会员窗（埋点由 openPremiumModal 内置）。
+ *
+ * [SRS] 真遗忘曲线（对齐生词本口径）：
+ * - 卡背四档打卡（忘记/模糊/认识/简单 + 间隔预览）三模式通用免费——
+ *   打卡走 submitSentenceReview 更新 proficiency/nextReviewAt（Leitner 阶梯）
+ * - srs 模式 = isDue 到期队列（nextReviewAt 升序）；会员/管理员默认进 srs，
+ *   免费用户默认顺序刷（小程序侧 _autoModeByMembership 同口径，含用户手选
+ *   不覆盖与深链定位跳过两个守卫）
+ * - 三模式走完最后一张均进总结屏（四档统计 + 跳过数 + 再来一轮忘记子集；
+ *   sequential/tag 另有「继续刷」回第 0 张承接原回环浏览）；
+ *   左滑/下一句 = 跳过不评分
  */
 export default function ReviewDeck({
   sentences,
@@ -77,10 +94,31 @@ export default function ReviewDeck({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   // ── [P3-d] 模式选择器：顺序刷（免费）/ 标签组卷 / SRS 调度（PRO）──
-  const [mode, setMode] = useState<ReviewMode>("sequential");
+  // 会员/管理员默认 srs 到期队列（isPremium 含 ADMIN 直通）；免费用户默认顺序刷
+  const [mode, setMode] = useState<ReviewMode>(
+    isPremium ? "srs" : "sequential",
+  );
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   // 连续翻卡成就计数（PRO 解锁成就提示；免费仅展示锁定徽章）
   const [flipCount, setFlipCount] = useState(0);
+
+  // ── [SRS] 打卡会话状态 ──
+  // 本地副本：SSR 初值，打卡后按服务端返回乐观覆写 proficiency/nextReviewAt
+  const [items, setItems] = useState<SavedSentenceItem[]>(sentences);
+  useEffect(() => setItems(sentences), [sentences]);
+  // 本轮打卡记录（总结页四档统计 + 忘记子集「再来一轮」共用）
+  const [roundRatings, setRoundRatings] = useState<
+    { id: number; quality: ReviewQuality }[]
+  >([]);
+  // srs 模式走完队列 → 总结屏（sequential/tag 保持回环不变）
+  const [sessionDone, setSessionDone] = useState(false);
+  // 再来一轮的忘记子集（null = 首轮全量）
+  const [retryIds, setRetryIds] = useState<Set<number> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // 卡组快照版本：打卡会让 nextReviewAt 前移，若卡组随 items 实时重算，
+  // 刚打完的卡会被挤出 due 队列导致索引错位——进模式/换标签/再来一轮时定格
+  const [deckVersion, setDeckVersion] = useState(0);
+  const rebuildDeck = () => setDeckVersion((v) => v + 1);
 
   const openAdvancedModal = () =>
     useUIStore.getState().openPremiumModal("sentence_review_advanced");
@@ -92,6 +130,11 @@ export default function ReviewDeck({
     }
     setMode(next);
     if (next !== "tag") setSelectedTag(null);
+    // 换模式 = 新会话：清打卡记录/总结态/忘记子集，重定格卡组
+    setSessionDone(false);
+    setRoundRatings([]);
+    setRetryIds(null);
+    rebuildDeck();
   };
 
   // 标签组卷候选：句库中实际出现的标签（附计数）
@@ -105,27 +148,45 @@ export default function ReviewDeck({
     );
   }, [sentences]);
 
-  // 当前模式的卡组：
+  // 最新数据镜像：卡组快照从这里读（打卡更新 items 时不触发卡组重算）
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  // 当前模式的卡组（快照语义：仅 mode/tag/retry/version 变更时重算，打卡不扰动索引）：
   // - sequential：收藏序（最新在前，service 默认口径）
   // - tag：选中标签的子集组卷
-  // - srs：最久收藏优先（无独立复习记录字段，以收藏时间为代理调度）
+  // - srs：[SRS] 到期队列 = isDue 过滤 + nextReviewAt 升序（最早到期先复习；
+  //   曾以收藏时间为代理排序，现接真遗忘曲线调度）
   const deck = useMemo(() => {
+    const source = retryIds
+      ? itemsRef.current.filter((s) => retryIds.has(s.id))
+      : itemsRef.current;
     if (mode === "tag" && selectedTag)
-      return sentences.filter((s) => (s.tags || []).includes(selectedTag));
+      return source.filter((s) => (s.tags || []).includes(selectedTag));
     if (mode === "srs")
-      return [...sentences].sort((a, b) =>
-        a.createAt.localeCompare(b.createAt),
-      );
-    return sentences;
-  }, [mode, selectedTag, sentences]);
+      return source
+        .filter((s) => isDue(s.nextReviewAt))
+        .sort((a, b) =>
+          String(a.nextReviewAt || "").localeCompare(
+            String(b.nextReviewAt || ""),
+          ),
+        );
+    return source;
+  }, [mode, selectedTag, retryIds, deckVersion]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // 操作说明 DaisyUI 弹窗（原生 dialog，showModal 驱动）
   const helpModalRef = useRef<HTMLDialogElement>(null);
 
-  // 切换模式/标签后越界复位
+  // 切换模式/标签后越界复位 + 会话重置（标签 pills 直改 selectedTag 的路径）
   useEffect(() => {
     setCurrentIndex(0);
+    setSessionDone(false);
+    setRoundRatings([]);
+    setRetryIds(null);
+    rebuildDeck();
   }, [mode, selectedTag]);
 
   const currentSentence = deck[currentIndex] || null;
@@ -205,12 +266,18 @@ export default function ReviewDeck({
   };
 
   const handleNext = () => {
-    if (currentIndex < deck.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    } else {
-      setCurrentIndex(0); // Loop back
+    // 任意模式走完最后一张 → 总结屏（回环浏览改由总结屏「继续刷」显式承接）
+    if (currentIndex >= deck.length - 1) {
+      setSessionDone(true);
+      bumpFlipAchievement();
+      return;
     }
-    // [P3-d] 连续翻卡成就：每翻 10 张达成一级（PRO 专属提示）
+    setCurrentIndex((prev) => (deck.length ? (prev + 1) % deck.length : 0));
+    bumpFlipAchievement();
+  };
+
+  // [P3-d] 连续翻卡成就：每翻 10 张达成一级（PRO 专属提示）
+  const bumpFlipAchievement = () => {
     setFlipCount((prev) => {
       const next = prev + 1;
       if (isPremium && next % 10 === 0) {
@@ -218,6 +285,167 @@ export default function ReviewDeck({
       }
       return next;
     });
+  };
+
+  // ── [SRS] 四档打卡：乐观更新 → 服务端权威覆写 → 前进/收尾 ──
+  const advanceAfterRating = () => {
+    // 打完最后一张即一轮完成 → 总结屏（三模式同口径，不回环）
+    if (currentIndex >= deck.length - 1) {
+      setSessionDone(true);
+      bumpFlipAchievement();
+      return;
+    }
+    setCurrentIndex((prev) => (deck.length ? (prev + 1) % deck.length : 0));
+    bumpFlipAchievement();
+  };
+
+  const handleQualitySelect = async (quality: ReviewQuality) => {
+    if (!currentSentence || isSubmitting) return;
+    setIsSubmitting(true);
+    const prevProficiency = currentSentence.proficiency ?? 0;
+    const optimistic = calculateNextReview(prevProficiency, quality);
+
+    // 乐观更新本地副本（卡背间隔预览即时反映下一轮）
+    setItems((prev) =>
+      prev.map((s) =>
+        s.id === currentSentence.id
+          ? {
+              ...s,
+              proficiency: optimistic.proficiency,
+              nextReviewAt: optimistic.nextReviewAt.toISOString(),
+            }
+          : s,
+      ),
+    );
+
+    try {
+      const res = await submitSentenceReview({
+        id: currentSentence.id,
+        quality,
+      });
+      if (!res.success || !res.data) {
+        throw new Error(res.message || "打卡失败");
+      }
+      // 服务端权威值覆写（Leitner 口径与乐观值一致，以返回为准）
+      const authoritative = res.data;
+      setItems((prev) =>
+        prev.map((s) =>
+          s.id === authoritative.id
+            ? {
+                ...s,
+                proficiency: authoritative.proficiency,
+                nextReviewAt: authoritative.nextReviewAt,
+              }
+            : s,
+        ),
+      );
+      setRoundRatings((prev) => [...prev, { id: currentSentence.id, quality }]);
+      setIsFlipped(false);
+      advanceAfterRating();
+    } catch (error) {
+      // 失败回滚乐观更新，留在当前卡重试
+      setItems((prev) =>
+        prev.map((s) =>
+          s.id === currentSentence.id
+            ? {
+                ...s,
+                proficiency: prevProficiency,
+                nextReviewAt: currentSentence.nextReviewAt,
+              }
+            : s,
+        ),
+      );
+      toast.error(error instanceof Error ? error.message : "打卡失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // [SRS] 四档间隔预览（ReviewModal.getIntervalLabel 同口径）
+  const intervalPreviews = useMemo(() => {
+    const p = currentSentence?.proficiency ?? 0;
+    const label = (q: ReviewQuality) => {
+      const { nextReviewAt } = calculateNextReview(p, q);
+      const days = Math.round(
+        (nextReviewAt.getTime() - Date.now()) / (1000 * 3600 * 24),
+      );
+      if (days <= 0) return "今天";
+      if (days === 1) return "1天";
+      return `${days}天`;
+    };
+    return {
+      forgot: label(ReviewQuality.FORGOT),
+      hard: label(ReviewQuality.HARD),
+      good: label(ReviewQuality.GOOD),
+      easy: label(ReviewQuality.EASY),
+    };
+  }, [currentSentence]);
+
+  const srsButtons = [
+    {
+      quality: ReviewQuality.FORGOT,
+      icon: RotateCcw,
+      label: "忘记",
+      interval: intervalPreviews.forgot,
+      hover:
+        "hover:text-error-500 dark:hover:text-error-400 hover:ring-error-500/30 dark:hover:ring-error-400/30",
+    },
+    {
+      quality: ReviewQuality.HARD,
+      icon: Clock,
+      label: "模糊",
+      interval: intervalPreviews.hard,
+      hover: "hover:text-warning hover:ring-warning/30",
+    },
+    {
+      quality: ReviewQuality.GOOD,
+      icon: CheckCircle,
+      label: "认识",
+      interval: intervalPreviews.good,
+      hover: "hover:text-success hover:ring-success/30",
+    },
+    {
+      quality: ReviewQuality.EASY,
+      icon: Award,
+      label: "简单",
+      interval: intervalPreviews.easy,
+      hover:
+        "hover:text-info-500 dark:hover:text-info-400 hover:ring-info-500/30 dark:hover:ring-info-400/30",
+    },
+  ];
+
+  // 本轮忘记子集（再来一轮重测对象）
+  const forgottenIds = roundRatings
+    .filter((r) => r.quality === ReviewQuality.FORGOT)
+    .map((r) => r.id);
+
+  const summaryStats = {
+    forgot: roundRatings.filter((r) => r.quality === ReviewQuality.FORGOT)
+      .length,
+    hard: roundRatings.filter((r) => r.quality === ReviewQuality.HARD).length,
+    good: roundRatings.filter((r) => r.quality === ReviewQuality.GOOD).length,
+    easy: roundRatings.filter((r) => r.quality === ReviewQuality.EASY).length,
+  };
+
+  // [SRS] 再来一轮：只重测忘记子集（防死循环承接，vocab retryForgotten 同款）
+  const startRetry = () => {
+    if (forgottenIds.length === 0) return;
+    setRetryIds(new Set(forgottenIds));
+    setRoundRatings([]);
+    setSessionDone(false);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    rebuildDeck();
+  };
+
+  // 继续刷：回环浏览的显式承接（sequential/tag 总结屏入口；回第 0 张开新一轮。
+  // srs 不提供——到期队列已清空，继续走「今日已完成」语义）
+  const continueBrowsing = () => {
+    setRoundRatings([]);
+    setSessionDone(false);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    rebuildDeck();
   };
 
   const handleDragEnd = (
@@ -334,8 +562,8 @@ export default function ReviewDeck({
                     : m.key === "tag"
                       ? "按标签筛选组卷集中刷"
                       : m.key === "srs"
-                        ? "最久收藏优先，智能调度复习顺序"
-                        : "按收藏顺序复习"
+                        ? "按遗忘曲线到期优先，智能调度复习顺序"
+                        : "按收藏顺序复习（翻面四档打卡免费推进遗忘曲线）"
                 }
               >
                 <m.icon size={13} />
@@ -422,166 +650,298 @@ export default function ReviewDeck({
         <div className="absolute w-[92%] h-[380px] bg-base-200 rounded-3xl -bottom-2 scale-95 opacity-50 shadow-xs pointer-events-none" />
         <div className="absolute w-[96%] h-[390px] bg-base-200/80 rounded-3xl -bottom-1 scale-98 opacity-75 shadow-xs pointer-events-none" />
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSentence.id}
-            style={{ x, rotate }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.6}
-            onDragEnd={handleDragEnd}
-            whileTap={{ cursor: "grabbing" }}
-            initial={{ scale: 0.92, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.85, opacity: 0, transition: { duration: 0.15 } }}
-            onClick={toggleFlip}
-            className="relative w-full h-[410px] bg-base-100 rounded-3xl p-6 sm:p-7 shadow-xl border border-base-200 cursor-grab active:cursor-grabbing flex flex-col justify-between isolate overflow-hidden"
-          >
-            {/* Gesture Cue Overlays */}
-            {/* Right Swipe indicator: Replay Native Audio */}
-            <motion.div
-              style={{ opacity: opacityRight }}
-              className="absolute left-6 top-6 z-30 bg-emerald-500 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider -rotate-12 border-2 border-white pointer-events-none"
-            >
-              <Volume2 size={16} /> 重听原音
-            </motion.div>
-
-            {/* Left Swipe indicator: Next Sentence */}
-            <motion.div
-              style={{ opacity: opacityLeft }}
-              className="absolute right-6 top-6 z-30 bg-primary-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider rotate-12 border-2 border-white pointer-events-none"
-            >
-              下一句 <ArrowRight size={16} />
-            </motion.div>
-
-            {/* Card Content: Front (English + Highlight) vs Back (Chinese + Notes) */}
-            <div className="flex-1 flex flex-col justify-center">
-              {!isFlipped ? (
-                /* FRONT SIDE: English Sentence */
-                <div className="space-y-4 text-center">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 text-[11px] font-bold mx-auto">
-                    <Sparkles size={12} />
-                    <span>原句精听与复习</span>
-                  </div>
-
-                  <div className="text-xl sm:text-2xl font-serif font-bold text-ink-900 dark:text-ink-100 leading-relaxed px-2">
-                    <VocabularyHighlighter
-                      text={currentSentence.enText}
-                      highlightClassName="bg-accent-50 text-ink-900 dark:bg-accent-950/40 dark:text-accent-300 font-bold px-1 py-0.5 rounded border-b-2 border-accent-400 dark:border-accent-500 inline-block transition-all"
-                    />
-                  </div>
-
-                  <div className="text-xs text-ink-400 dark:text-ink-500 font-medium">
-                    轻触卡片空白处翻转查看译文与笔记
-                  </div>
+        {/* [SRS] 总结屏：任意模式走完一轮（忘记子集重测完毕同样回到这里） */}
+        {sessionDone ? (
+          <div className="w-full flex flex-col items-center justify-center text-center space-y-4 py-6 z-10">
+            <div className="bg-success/10 p-4 rounded-full">
+              <Trophy size={44} className="text-success" />
+            </div>
+            <h2 className="text-xl font-bold text-base-content">
+              {retryIds ? "忘记的句子重测完毕" : "本轮刷句复习完成"}
+            </h2>
+            <p className="text-sm text-base-content/60 max-w-xs">
+              {retryIds
+                ? "忘记的句子已重测完毕。"
+                : mode === "srs"
+                  ? "到期队列已清空，下次复习时间已按遗忘曲线排期。"
+                  : `已刷完一轮 ${deck.length} 张，翻面打卡的句子已按遗忘曲线排期。`}
+            </p>
+            <div className="grid grid-cols-4 gap-2 w-full max-w-sm">
+              {(
+                [
+                  {
+                    label: "忘记",
+                    count: summaryStats.forgot,
+                    cls: "bg-error/10 text-error",
+                  },
+                  {
+                    label: "模糊",
+                    count: summaryStats.hard,
+                    cls: "bg-warning/10 text-warning",
+                  },
+                  {
+                    label: "认识",
+                    count: summaryStats.good,
+                    cls: "bg-success/10 text-success",
+                  },
+                  {
+                    label: "简单",
+                    count: summaryStats.easy,
+                    cls: "bg-info-500/10 text-info-600 dark:text-info-400",
+                  },
+                ] as const
+              ).map((t) => (
+                <div key={t.label} className={`rounded-xl py-2.5 ${t.cls}`}>
+                  <div className="text-lg font-black">{t.count}</div>
+                  <div className="text-[10px] font-bold">{t.label}</div>
                 </div>
-              ) : (
-                /* BACK SIDE: Chinese Translation & Notes */
-                <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
-                  <div className="flex items-center justify-between border-b border-base-200 pb-2">
-                    <span className="text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1">
-                      <BookOpen size={13} /> 中文翻译参考
-                    </span>
-                    <span className="text-[10px] text-ink-400 dark:text-ink-500">
-                      已翻转
-                    </span>
-                  </div>
-
-                  <p className="text-base font-medium text-ink-500 dark:text-ink-300 leading-relaxed">
-                    {currentSentence.zhText || "暂无翻译"}
-                  </p>
-
-                  {/* Personal Note */}
-                  {currentSentence.note && (
-                    <div className="p-3 bg-base-200/60 rounded-2xl border border-base-300/40 text-xs text-ink-600 dark:text-ink-300 leading-relaxed font-sans">
-                      <strong className="text-primary-600 dark:text-primary-400 block mb-1">
-                        学习笔记：
-                      </strong>
-                      {currentSentence.note}
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {currentSentence.tags?.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 rounded-md bg-base-200 text-ink-500 dark:text-ink-400 text-[10px] font-medium"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              ))}
+            </div>
+            {deck.length - roundRatings.length > 0 && (
+              <p className="text-[11px] text-base-content/40">
+                另有 {deck.length - roundRatings.length} 张跳过未评分，保持到期
+              </p>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={startRetry}
+                disabled={forgottenIds.length === 0}
+                className="btn rounded-xl h-11 px-4 border-none bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold disabled:opacity-40"
+                title="只重测本轮标记为忘记的句子"
+              >
+                <RotateCcw size={15} />
+                再来一轮（忘记的 {forgottenIds.length} 句）
+              </button>
+              {mode !== "srs" && (
+                <button
+                  type="button"
+                  onClick={continueBrowsing}
+                  className="btn rounded-xl h-11 px-4 btn-outline border-base-300 text-base-content text-xs font-bold"
+                  title="回到第一张继续浏览（原回环行为）"
+                >
+                  继续刷
+                </button>
               )}
+              <Link
+                href={base}
+                className="btn rounded-xl h-11 px-4 btn-outline border-base-300 text-base-content text-xs font-bold"
+              >
+                返回句子本
+              </Link>
             </div>
-
-            {/* Card Bottom Meta Footer */}
-            <div className="pt-4 border-t border-base-200 flex items-center justify-between text-xs text-ink-400 dark:text-ink-500">
-              <span className="truncate max-w-[180px] font-medium text-[11px]">
-                {currentSentence.episodeTitle || "播客单集原声"}
-              </span>
-              <span className="font-mono text-[10px] bg-base-200 px-2 py-0.5 rounded">
-                {currentSentence.startTime}s - {currentSentence.endTime}s
-              </span>
+          </div>
+        ) : mode === "srs" && deck.length === 0 ? (
+          /* [SRS] 到期队列为空：今日已完成（非空句子本的兜底态） */
+          <div className="w-full flex flex-col items-center justify-center text-center space-y-4 py-10 z-10">
+            <div className="bg-success/10 p-4 rounded-full">
+              <CheckCircle size={40} className="text-success" />
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+            <h2 className="text-lg font-bold text-base-content">
+              今日句子复习已完成
+            </h2>
+            <p className="text-sm text-base-content/60 max-w-xs">
+              没有到期的句子。去播客里收藏新句子，或切回顺序刷自由浏览。
+            </p>
+            <Link
+              href={base}
+              className="btn rounded-xl px-6 border-none bg-primary-600 hover:bg-primary-500 text-white"
+            >
+              返回句子本
+            </Link>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSentence.id}
+              style={{ x, rotate }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.6}
+              onDragEnd={handleDragEnd}
+              whileTap={{ cursor: "grabbing" }}
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, transition: { duration: 0.15 } }}
+              onClick={toggleFlip}
+              className="relative w-full h-[410px] bg-base-100 rounded-3xl p-6 sm:p-7 shadow-xl border border-base-200 cursor-grab active:cursor-grabbing flex flex-col justify-between isolate overflow-hidden"
+            >
+              {/* Gesture Cue Overlays */}
+              {/* Right Swipe indicator: Replay Native Audio */}
+              <motion.div
+                style={{ opacity: opacityRight }}
+                className="absolute left-6 top-6 z-30 bg-emerald-500 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider -rotate-12 border-2 border-white pointer-events-none"
+              >
+                <Volume2 size={16} /> 重听原音
+              </motion.div>
 
-      {/* Bottom One-Handed Mobile Control Dock */}
-      <div className="bg-base-100 rounded-3xl p-3 shadow-lg border border-base-200 flex items-center justify-around gap-2">
-        {/* Replay button */}
-        <button
-          type="button"
-          onClick={playSentenceAudio}
-          className={`btn btn-circle rounded-full transition-transform active:scale-90 border-none ${
-            isPlayingAudio
-              ? "btn-success text-white shadow-md animate-pulse"
-              : "btn-ghost text-base-content hover:bg-base-200"
-          }`}
-          title="右滑或点击：重听原音"
-        >
-          <Volume2 size={22} />
-        </button>
+              {/* Left Swipe indicator: Next Sentence */}
+              <motion.div
+                style={{ opacity: opacityLeft }}
+                className="absolute right-6 top-6 z-30 bg-primary-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-lg flex items-center gap-1.5 text-xs uppercase tracking-wider rotate-12 border-2 border-white pointer-events-none"
+              >
+                下一句 <ArrowRight size={16} />
+              </motion.div>
 
-        {/* Flip Card toggle button */}
-        <button
-          type="button"
-          onClick={() => setIsFlipped(!isFlipped)}
-          className={`btn rounded-2xl h-12 px-5 font-bold text-xs flex items-center gap-1.5 transition-all border-none ${
-            isFlipped
-              ? "btn-neutral"
-              : "btn-outline border-base-300 text-base-content"
-          }`}
-          title="点击翻转卡片"
-        >
-          <Repeat size={16} />
-          <span>{isFlipped ? "看英文" : "看译文"}</span>
-        </button>
+              {/* Card Content: Front (English + Highlight) vs Back (Chinese + Notes) */}
+              <div className="flex-1 flex flex-col justify-center">
+                {!isFlipped ? (
+                  /* FRONT SIDE: English Sentence */
+                  <div className="space-y-4 text-center">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 text-[11px] font-bold mx-auto">
+                      <Sparkles size={12} />
+                      <span>原句精听与复习</span>
+                    </div>
 
-        {/* AI Shadowing Evaluation entry：路由到独立的影子跟读评测页（对齐发音弱项本闯关入口） */}
-        {currentSentence.subtitleId != null && (
-          <Link
-            href={`${base}/review/practice?subtitleId=${currentSentence.subtitleId}`}
-            className="btn btn-outline border-primary-500/30 text-primary-600 dark:text-primary-400 dark:border-primary-400/30 hover:bg-primary-600 hover:text-white hover:border-primary-600 dark:hover:bg-primary-500 dark:hover:text-white dark:hover:border-primary-500 rounded-2xl h-12 px-4 font-bold text-xs flex items-center gap-1.5"
-            title="AI 影子跟读评测"
-          >
-            <Mic size={16} />
-            <span>跟读</span>
-          </Link>
+                    <div className="text-xl sm:text-2xl font-serif font-bold text-ink-900 dark:text-ink-100 leading-relaxed px-2">
+                      <VocabularyHighlighter
+                        text={currentSentence.enText}
+                        highlightClassName="bg-accent-50 text-ink-900 dark:bg-accent-950/40 dark:text-accent-300 font-bold px-1 py-0.5 rounded border-b-2 border-accent-400 dark:border-accent-500 inline-block transition-all"
+                      />
+                    </div>
+
+                    <div className="text-xs text-ink-400 dark:text-ink-500 font-medium">
+                      轻触卡片空白处翻转查看译文与笔记
+                    </div>
+                  </div>
+                ) : (
+                  /* BACK SIDE: Chinese Translation & Notes */
+                  <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
+                    <div className="flex items-center justify-between border-b border-base-200 pb-2">
+                      <span className="text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1">
+                        <BookOpen size={13} /> 中文翻译参考
+                      </span>
+                      <span className="text-[10px] text-ink-400 dark:text-ink-500">
+                        已翻转
+                      </span>
+                    </div>
+
+                    <p className="text-base font-medium text-ink-500 dark:text-ink-300 leading-relaxed">
+                      {currentSentence.zhText || "暂无翻译"}
+                    </p>
+
+                    {/* Personal Note */}
+                    {currentSentence.note && (
+                      <div className="p-3 bg-base-200/60 rounded-2xl border border-base-300/40 text-xs text-ink-600 dark:text-ink-300 leading-relaxed font-sans">
+                        <strong className="text-primary-600 dark:text-primary-400 block mb-1">
+                          学习笔记：
+                        </strong>
+                        {currentSentence.note}
+                      </div>
+                    )}
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {currentSentence.tags?.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-0.5 rounded-md bg-base-200 text-ink-500 dark:text-ink-400 text-[10px] font-medium"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* [SRS] 四档打卡（三模式通用免费；小字=下次复习间隔预览，
+                      ReviewModal srsButtons 同款口径） */}
+                    <div className="grid grid-cols-4 gap-1.5 pt-2 mt-1 border-t border-base-200/70">
+                      {srsButtons.map((btn) => (
+                        <button
+                          key={btn.label}
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => handleQualitySelect(btn.quality)}
+                          className={`flex flex-col items-center py-2 px-1 rounded-xl bg-white dark:bg-ink-800 text-base-content/70 ring-1 ring-base-200 dark:ring-base-content/10 transition-all group disabled:opacity-50 ${btn.hover}`}
+                          title="打卡后按遗忘曲线排下次复习"
+                        >
+                          <btn.icon
+                            size={16}
+                            className="mb-0.5 group-hover:scale-110 transition-transform"
+                          />
+                          <span className="text-[10px] font-bold">
+                            {btn.label}
+                          </span>
+                          <span className="text-[9px] opacity-60">
+                            {btn.interval}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card Bottom Meta Footer */}
+              <div className="pt-4 border-t border-base-200 flex items-center justify-between text-xs text-ink-400 dark:text-ink-500">
+                <span className="truncate max-w-[180px] font-medium text-[11px]">
+                  {currentSentence.episodeTitle || "播客单集原声"}
+                </span>
+                <span className="font-mono text-[10px] bg-base-200 px-2 py-0.5 rounded">
+                  {currentSentence.startTime}s - {currentSentence.endTime}s
+                </span>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         )}
-
-        {/* Next Card button */}
-        <button
-          type="button"
-          onClick={handleNext}
-          className="btn btn-circle rounded-full shadow-md shadow-primary-600/20 dark:shadow-primary-400/20 transition-transform active:scale-90 border-none bg-primary-600 hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 text-white"
-          title="左滑或点击：下一句"
-        >
-          <ArrowRight size={22} />
-        </button>
       </div>
+
+      {/* Bottom One-Handed Mobile Control Dock（总结/今日完成态无当前卡，隐藏） */}
+      {!sessionDone &&
+        currentSentence &&
+        !(mode === "srs" && deck.length === 0) && (
+          <div className="bg-base-100 rounded-3xl p-3 shadow-lg border border-base-200 flex items-center justify-around gap-2">
+            {/* Replay button */}
+            <button
+              type="button"
+              onClick={playSentenceAudio}
+              className={`btn btn-circle rounded-full transition-transform active:scale-90 border-none ${
+                isPlayingAudio
+                  ? "btn-success text-white shadow-md animate-pulse"
+                  : "btn-ghost text-base-content hover:bg-base-200"
+              }`}
+              title="右滑或点击：重听原音"
+            >
+              <Volume2 size={22} />
+            </button>
+
+            {/* Flip Card toggle button */}
+            <button
+              type="button"
+              onClick={() => setIsFlipped(!isFlipped)}
+              className={`btn rounded-2xl h-12 px-5 font-bold text-xs flex items-center gap-1.5 transition-all border-none ${
+                isFlipped
+                  ? "btn-neutral"
+                  : "btn-outline border-base-300 text-base-content"
+              }`}
+              title="点击翻转卡片"
+            >
+              <Repeat size={16} />
+              <span>{isFlipped ? "看英文" : "看译文"}</span>
+            </button>
+
+            {/* AI Shadowing Evaluation entry：路由到独立的影子跟读评测页（对齐发音弱项本闯关入口） */}
+            {currentSentence.subtitleId != null && (
+              <Link
+                href={`${base}/review/practice?subtitleId=${currentSentence.subtitleId}`}
+                className="btn btn-outline border-primary-500/30 text-primary-600 dark:text-primary-400 dark:border-primary-400/30 hover:bg-primary-600 hover:text-white hover:border-primary-600 dark:hover:bg-primary-500 dark:hover:text-white dark:hover:border-primary-500 rounded-2xl h-12 px-4 font-bold text-xs flex items-center gap-1.5"
+                title="AI 影子跟读评测"
+              >
+                <Mic size={16} />
+                <span>跟读</span>
+              </Link>
+            )}
+
+            {/* Next Card button */}
+            <button
+              type="button"
+              onClick={handleNext}
+              className="btn btn-circle rounded-full shadow-md shadow-primary-600/20 dark:shadow-primary-400/20 transition-transform active:scale-90 border-none bg-primary-600 hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 text-white"
+              title="左滑或点击：下一句"
+            >
+              <ArrowRight size={22} />
+            </button>
+          </div>
+        )}
 
       {/* 操作说明弹窗（DaisyUI modal：原生 dialog + method="dialog" 关闭） */}
       <dialog ref={helpModalRef} className="modal">
