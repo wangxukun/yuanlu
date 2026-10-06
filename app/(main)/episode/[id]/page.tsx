@@ -4,6 +4,7 @@ import EpisodeComments from "@/components/episode/EpisodeComments";
 import ShowNotes from "@/components/episode/ShowNotes";
 import RelatedEpisodes from "@/components/episode/RelatedEpisodes";
 import EpisodeDeepDive from "@/components/episode/EpisodeDeepDive";
+import { notFound } from "next/navigation";
 import { Metadata } from "next";
 
 type Props = {
@@ -14,7 +15,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const episode = await fetchEpisodeById(id);
 
-  if (!episode) return { title: "单集未找到" };
+  // detail 接口在单集不存在时返回 200 + {userState:null}（truthy 空对象），按主键判空
+  if (!episode?.episodeid) {
+    notFound();
+  }
 
   return {
     title: `${episode.title} | ${episode.podcast?.title || "远路播客"}`,
@@ -37,6 +41,12 @@ export default async function EpisodePage({
 }) {
   const { id } = await params;
   const episode = await fetchEpisodeById(id);
+
+  // detail 接口在单集不存在时返回 200 + {userState:null}（truthy 空对象），
+  // 必须按业务主键判空，否则下方取 podcastid 会以 500 方式崩溃
+  if (!episode?.episodeid) {
+    notFound();
+  }
   const podcast = await fetchPodcastById(episode.podcastid);
 
   const jsonLd = {
