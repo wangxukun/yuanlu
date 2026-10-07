@@ -20,7 +20,16 @@ import {
   CartesianGrid,
 } from "recharts";
 import { format } from "date-fns";
-import type { ConversionStats } from "@/lib/actions/conversion-actions";
+import type {
+  ConversionStats,
+  YearTrafficHeatmap,
+} from "@/lib/actions/conversion-actions";
+import {
+  YearHeatmap,
+  HEATMAP_PRIMARY_LEVELS,
+  HEATMAP_INFO_LEVELS,
+  HEATMAP_ACCENT_LEVELS,
+} from "@/components/admin/YearHeatmap";
 import Link from "next/link";
 
 const EVENT_LABELS: Record<string, string> = {
@@ -69,8 +78,10 @@ const EVENT_COLORS: Record<string, string> = {
 
 export default function ConversionClient({
   stats,
+  yearTraffic,
 }: {
   stats: ConversionStats;
+  yearTraffic: YearTrafficHeatmap;
 }) {
   const summaryOf = (type: string) =>
     stats.summary.find((s) => s.eventType === type);
@@ -371,6 +382,73 @@ export default function ConversionClient({
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* 全年流量热力图：在线/注册为流量背景指标，置于事件趋势之后；
+          固定滚动 365 天窗口（北京时区），不受上方 days 筛选影响 */}
+      <div className="card bg-base-100 border border-base-200 shadow-sm">
+        <div className="card-body p-6">
+          <h2 className="card-title text-base font-black">
+            全年在线 / 注册热力图
+          </h2>
+          <p className="text-xs opacity-50 -mt-2">
+            近 365 天（{yearTraffic.startDate} ~ {yearTraffic.endDate}
+            ，北京时区）
+          </p>
+          <div className="mt-3 space-y-6">
+            <div>
+              <p className="text-sm font-bold mb-2">
+                在线 · 登录用户
+                <span className="text-xs font-normal opacity-50 ml-2">
+                  每日登录访问的独立用户（按账号去重）
+                </span>
+              </p>
+              <YearHeatmap
+                days={yearTraffic.days.map((d) => ({
+                  date: d.date,
+                  value: d.onlineUsers,
+                }))}
+                levels={HEATMAP_PRIMARY_LEVELS}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-bold mb-2">
+                在线 · 游客
+                <span className="text-xs font-normal opacity-50 ml-2">
+                  每日未登录访问的独立 IP（当日与登录用户同 IP
+                  的已并入登录用户）
+                </span>
+              </p>
+              <YearHeatmap
+                days={yearTraffic.days.map((d) => ({
+                  date: d.date,
+                  value: d.onlineGuests,
+                }))}
+                levels={HEATMAP_ACCENT_LEVELS}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-bold mb-2">
+                注册人数
+                <span className="text-xs font-normal opacity-50 ml-2">
+                  每日新注册用户数
+                </span>
+              </p>
+              <YearHeatmap
+                days={yearTraffic.days.map((d) => ({
+                  date: d.date,
+                  value: d.registrations,
+                }))}
+                levels={HEATMAP_INFO_LEVELS}
+              />
+            </div>
+          </div>
+          <p className="text-xs opacity-40 mt-2">
+            注：同一天内游客与登录用户 IP
+            相同的视为同一人（先浏览后登录），只计入登录用户；游客按 IP
+            去重，同一出口 IP 多设备会被合并，为近似值
+          </p>
         </div>
       </div>
 

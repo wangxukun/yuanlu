@@ -368,6 +368,10 @@ model speech_recognition {
   integrityScore  Float?
   overallScore    Float?
   speed           Float?
+  /// [存储优化] 评测明细（有道完整返回，词级/音素级）。新记录只存此字段，
+  /// 不再上传 OSS 的 detail JSON；detailUrl 仅存量行保留（/api/speech/detail
+  /// 优先读 detailJson，回落 detailUrl）。仅 PRO 行落库（免费行无消费方）。
+  detailJson      Json?
   detailUrl       String?   @db.VarChar(500)
   userAudioUrl    String?   @db.VarChar(500)
   subtitleId      Int?

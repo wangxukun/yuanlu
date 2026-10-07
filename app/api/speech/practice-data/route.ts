@@ -194,6 +194,11 @@ export async function GET(req: NextRequest) {
           detailUrl: isPremium ? (signedDetailUrl ?? undefined) : undefined,
           userAudioUrl: isPremium ? signedAudioUrl : undefined,
           subtitleId: record.subtitleId ?? undefined,
+          // [存储优化] 新记录词级细节存 DB detailJson（无 detailUrl），
+          // 以 hasDetail 标记驱动"细节"按钮（仅 PRO 有值为 true）
+          hasDetail: isPremium
+            ? Boolean(record.detailJson || record.detailUrl)
+            : undefined,
         };
       }),
     );

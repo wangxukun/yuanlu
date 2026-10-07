@@ -59,3 +59,13 @@
   - 根据用户的全局平均流利度和语速 (`speed`)，为其自动描绘能力等级画像（如 CEFR A2/B1）。
   - 首页或播客列表页根据该画像，优先推荐语速与难度匹配的 Episode。
   - 实现：`core/speech-profile` 服务聚合五维画像（准确/流利/完整/语速适配/综合）并推导 CEFR 等级（≥5 次评测生效）；弱项本页顶部展示画像雷达卡；首页"为你推荐"优先按画像等级匹配剧集难度（不足 5 次回退手动 learnLevel 设置）。
+
+## 存储策略（2026-10 冗余治理）
+
+**背景**：跟读录音原策略是"每次评测无条件上传 wav + detail json 到 OSS（`yuanlu/speech/{userid}/{episodeid}/` 时间戳命名）"，同一句反复重读各存一份，无去重、无清理。其中免费用户的录音回放/词级细节本就是 PRO 专属（practice-data 整条剥离 URL），属无消费方的死存储；剧集删除时 DB 行级联删但 OSS 文件残留为永久孤儿。治理后（`saveSpeechResultCore` 唯一维护点）：
+
+- **① 录音仅 PRO 上传**：免费用户只落 DB 分数行（配额计数、phonemeStats 弱项本、图表统计不受影响），不产生任何对象存储写入。
+- **② 评测明细存 DB**：新记录写 `speech_recognition.detailJson`（JSONB），不再上传 OSS json；`/api/speech/detail` 优先读 DB、回落存量 `detailUrl`；practice-data 以 `hasDetail` 标记驱动前端"细节"按钮。
+- **③ 同句保留 K=3**：同一 `(userid, episodeid, targetText)` 只保留最近 3 条录音的 OSS 文件（`SPEECH_AUDIO_KEEP_PER_SENTENCE`），超额旧文件删除并置空 DB 引用（行保留——配额计数/统计不依赖媒体文件，删行会导致免费配额被"重录同句"绕过）；历史面板（EvaluationHistoryPanel）同样按句最多展示最近 3 条（`MAX_PER_SENTENCE`，与文件保留数对齐）。
+- **④ 生命周期 + 对账**：Bucket 生命周期规则已配置——`yuanlu/speech/` 前缀、最后修改时间 **91 天**后删除（生命周期是**属主账号才能配置**的管理接口，应用 AK/SK 只有对象级权限，需控制台配置或用属主凭证运行 `scripts/set-speech-lifecycle.ts`）。应用侧 `lib/cleanupCron.ts` 每日 3:30 对账（`core/speech/speech-cleanup.service.ts`），保留期 **90 天 = 生命周期 - 1**：先删超期对象并置空行引用，OSS 次日删对象，避免 PRO 回放拿到已删对象的签名 URL（调任一侧须同步另一侧，可用 `SPEECH_MEDIA_RETENTION_DAYS` 覆盖 cron 侧）。补充工具：`scripts/sweep-speech-orphans.ts --days=N [--apply]` 清扫无 DB 引用的孤儿（历史剧集删除残留等）。手动存量清理：`scripts/cleanup-speech-oss.ts --days=N [--apply]`。
+- **⑤ 剧集删除级联**：`deleteEpisode` / `deleteEpisodeById` 在删剧集前清理该剧集全部用户的跟读录音 OSS 文件（`deleteEpisodeSpeechMedia`），杜绝孤儿。

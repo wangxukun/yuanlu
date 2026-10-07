@@ -5,7 +5,7 @@
  * Both the API route and Server Action must call this service.
  */
 import prisma from "@/lib/prisma";
-import { deleteObject } from "@/lib/oss";
+import { deleteObject, extractOssKey } from "@/lib/oss";
 
 /** Result of a user deletion operation */
 export interface DeleteUserResult {
@@ -120,28 +120,4 @@ export async function deleteUser(
     message: `用户已删除，清理了 ${ossKeysToDelete.length - ossFailures}/${ossKeysToDelete.length} 个 OSS 文件`,
     ossFailures,
   };
-}
-
-/**
- * Extract the OSS object key from a full URL or return the key directly.
- *
- * OSS URLs typically look like:
- *   https://bucket.oss-cn-hangzhou.aliyuncs.com/yuanlu/speech/userId/...
- *
- * We need just the path portion: "yuanlu/speech/userId/..."
- */
-function extractOssKey(urlOrKey: string): string | null {
-  if (!urlOrKey) return null;
-
-  // If it's already a relative key (no protocol), return as-is
-  if (!urlOrKey.startsWith("http")) return urlOrKey;
-
-  try {
-    const url = new URL(urlOrKey);
-    // Remove leading slash from pathname
-    return url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
-  } catch {
-    // If URL parsing fails, return original value as potential key
-    return urlOrKey;
-  }
 }

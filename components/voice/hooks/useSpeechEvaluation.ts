@@ -153,7 +153,10 @@ export function useSpeechEvaluation({
   const ttsAudioInstanceRef = useRef<HTMLAudioElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  const userAudioUrlRef = useRef<string | undefined>(undefined);
+  // 本会话创建的全部录音 blob URL：跟读历史列表（ImmersiveSpeechPractice 的
+  // records）会持有每一条的引用，中途 revoke 会让历史列表里除最新一条外
+  // 全部回放失败，因此只在卸载时统一回收
+  const blobUrlsRef = useRef<string[]>([]);
 
   // ── 原声播放：HTML5 Audio Pre-roll 流式精确对齐 ──
   // 使用独立的 HTMLAudioElement 实例播放原声，通过"安全回退 + 静音快进"
@@ -267,10 +270,6 @@ export function useSpeechEvaluation({
       }
     }
   }, [previousResult]);
-
-  useEffect(() => {
-    userAudioUrlRef.current = result?.userAudioUrl;
-  }, [result?.userAudioUrl]);
 
   const stopAllAudio = useCallback(() => {
     // 停止原声播放（HTMLAudioElement Pre-roll 方案）
@@ -429,17 +428,15 @@ export function useSpeechEvaluation({
         refAudioRef.current.src = "";
         refAudioRef.current = null;
       }
-      if (userAudioUrlRef.current) {
-        URL.revokeObjectURL(userAudioUrlRef.current);
-      }
+      // 回收本会话创建的全部录音 blob URL（会话内不回收，见 blobUrlsRef 注释）
+      blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      blobUrlsRef.current = [];
     };
   }, [stopAllAudio, stopRecordingCleanup]);
 
   const startRecording = async () => {
     stopAllAudio();
-    if (result?.userAudioUrl) {
-      URL.revokeObjectURL(result.userAudioUrl);
-    }
+    // 注意：这里不 revoke 上一条录音的 blob URL——历史列表仍持有其引用
     hasLocalResultRef.current = false;
     setResult(undefined);
     audioDataRef.current = [];
@@ -494,6 +491,7 @@ export function useSpeechEvaluation({
 
       const wavBlob = encodeWAV(mergedBuffer, 16000);
       const userAudioBlobUrl = URL.createObjectURL(wavBlob);
+      blobUrlsRef.current.push(userAudioBlobUrl);
 
       const reader = new FileReader();
       reader.readAsDataURL(wavBlob);

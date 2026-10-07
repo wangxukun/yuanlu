@@ -7,18 +7,27 @@ import { headers } from "next/headers";
 import { generateSignatureUrl } from "@/lib/oss";
 import { Prisma } from "@prisma/client"; // 引入签名函数
 import { revalidatePath } from "next/cache";
-import { newWithFileOnly, defaultDbFile } from "ip2region-ts";
+import {
+  isValidIp,
+  loadContentFromFile,
+  newWithBuffer,
+  defaultDbFile,
+} from "ip2region-ts";
+import { normalizeIp } from "@/core/utils/ip";
 
 // 核心技巧：通过 ReturnType 动态获取 Searcher 的实例类型
-type SearcherInstance = ReturnType<typeof newWithFileOnly>;
+type SearcherInstance = ReturnType<typeof newWithBuffer>;
 export async function logVisit(path: string) {
   try {
     const session = await auth();
     const headersList = await headers();
 
-    // 适配各类代理获取真实 IP
+    // 适配各类代理获取真实 IP；归一化 ::ffff:a.b.c.d 映射形式，避免历史库里
+    // 同一访客存两种写法导致按 IP 去重偏大
     const forwardedFor = headersList.get("x-forwarded-for");
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
+    const ip = forwardedFor
+      ? normalizeIp(forwardedFor.split(",")[0].trim())
+      : "127.0.0.1";
 
     const userAgent = headersList.get("user-agent") || "Unknown";
 
@@ -121,18 +130,23 @@ export async function getVisitorLogs(page = 1, pageSize = 20) {
 
 let searcher: SearcherInstance | null = null;
 
-// 初始化搜索器 (单例模式)
+// 初始化搜索器 (单例模式)：整库载入内存，避免 newWithFileOnly 每次
+// search 都重新打开 xdb 文件（日志页一次渲染要查 20 次）
 const getSearcher = () => {
   if (!searcher) {
     // ip2region-ts 自带了 xdb 数据文件
-    searcher = newWithFileOnly(defaultDbFile);
+    searcher = newWithBuffer(loadContentFromFile(defaultDbFile));
   }
   return searcher;
 };
 
 // 工具函数：解析 IP 位置
-const getLocation = async (ip: string) => {
+const getLocation = async (rawIp: string) => {
+  const ip = normalizeIp(rawIp);
   if (ip === "127.0.0.1" || ip === "::1") return "本地回环";
+  // ip2region 仅支持点分 IPv4：真实 IPv6（如 2408:…）直接标注，
+  // 不进 search()，否则每行抛一次 invalid ip 刷错误日志
+  if (!isValidIp(ip)) return ip.includes(":") ? "IPv6 地址" : "未知地理位置";
   try {
     const s = getSearcher();
     const data = await s.search(ip);

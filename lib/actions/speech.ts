@@ -89,10 +89,12 @@ export async function saveSpeechResult(params: {
     return { error: quotaBlock.code, message: quotaBlock.message };
   }
 
-  const result = await saveSpeechResultCore(session.user.userid, {
-    ...params,
-    scenario,
-  } satisfies SaveSpeechResultInput);
+  const result = await saveSpeechResultCore(
+    session.user.userid,
+    { ...params, scenario } satisfies SaveSpeechResultInput,
+    // role 来自服务端会话：saveSpeechResultCore 的会员态判定（ADMIN 直通）依赖它
+    session.user.role,
+  );
 
   if (result.success) {
     revalidatePath(`/episode/${params.episodeId}/practice`);
