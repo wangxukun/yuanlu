@@ -14,6 +14,7 @@ import {
   defaultDbFile,
 } from "ip2region-ts";
 import { normalizeIp } from "@/core/utils/ip";
+import { recordVisitorLog } from "@/lib/visitor-log";
 
 // 核心技巧：通过 ReturnType 动态获取 Searcher 的实例类型
 type SearcherInstance = ReturnType<typeof newWithBuffer>;
@@ -22,12 +23,9 @@ export async function logVisit(path: string) {
     const session = await auth();
     const headersList = await headers();
 
-    // 适配各类代理获取真实 IP；归一化 ::ffff:a.b.c.d 映射形式，避免历史库里
-    // 同一访客存两种写法导致按 IP 去重偏大
+    // 适配各类代理获取真实 IP（::ffff: 映射形式在 recordVisitorLog 内归一化）
     const forwardedFor = headersList.get("x-forwarded-for");
-    const ip = forwardedFor
-      ? normalizeIp(forwardedFor.split(",")[0].trim())
-      : "127.0.0.1";
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
 
     const userAgent = headersList.get("user-agent") || "Unknown";
 
@@ -40,13 +38,11 @@ export async function logVisit(path: string) {
       return;
     }
 
-    await prisma.visitorLog.create({
-      data: {
-        ip,
-        userAgent,
-        path,
-        userid: session?.user?.userid || null,
-      },
+    await recordVisitorLog({
+      ip,
+      userAgent,
+      path,
+      userid: session?.user?.userid || null,
     });
   } catch (error) {
     console.error("Log visit error:", error);
