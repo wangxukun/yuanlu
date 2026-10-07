@@ -447,7 +447,8 @@ export default function ConversionClient({
           <p className="text-xs opacity-40 mt-2">
             注：同一天内游客与登录用户 IP
             相同的视为同一人（先浏览后登录），只计入登录用户；游客按 IP
-            去重，同一出口 IP 多设备会被合并，为近似值
+            去重，同一出口 IP 多设备会被合并，为近似值。小程序访问（wxapp/
+            前缀路径，经 /api/track-visit 上报）与 Web 访问同口径计入在线统计
           </p>
         </div>
       </div>
