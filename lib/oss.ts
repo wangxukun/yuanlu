@@ -90,3 +90,25 @@ export async function deleteObject(fileName: string) {
     console.log(error);
   }
 }
+
+/**
+ * 从完整 OSS URL 中提取对象 key（"https://bucket.oss-cn-hangzhou.aliyuncs.com/yuanlu/speech/..."
+ * → "yuanlu/speech/..."）。已是相对 key（无协议头）则原样返回。
+ * speech_recognition 落库的 userAudioUrl/detailUrl 是上传返回的完整 URL，
+ * 删除前须经本函数转换（用户注销与剧集删除的级联清理、同句保留策略共用）。
+ */
+export function extractOssKey(urlOrKey: string): string | null {
+  if (!urlOrKey) return null;
+
+  // If it's already a relative key (no protocol), return as-is
+  if (!urlOrKey.startsWith("http")) return urlOrKey;
+
+  try {
+    const url = new URL(urlOrKey);
+    // Remove leading slash from pathname
+    return url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+  } catch {
+    // If URL parsing fails, return original value as potential key
+    return urlOrKey;
+  }
+}

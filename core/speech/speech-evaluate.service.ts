@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import prisma from "@/lib/prisma";
-import { uploadFile } from "@/lib/oss";
+import { uploadFile, deleteObject, extractOssKey } from "@/lib/oss";
 import { isPremiumUser } from "@/core/auth/guard";
 import {
   FREE_REVIEW_EVALUATIONS_PER_DAY,
@@ -236,21 +236,79 @@ export async function callYoudaoISE(
 }
 
 /**
+ * [③ 存储策略] 同一句跟读录音的 OSS 保留条数（含最新一次）。
+ * 同一 (userid, episodeid, targetText) 反复重读只保留最近 N 条录音文件，
+ * 超出的旧文件删除并置空 DB 引用（行保留——配额计数与历史列表不依赖媒体文件）。
+ */
+const SPEECH_AUDIO_KEEP_PER_SENTENCE = 3;
+
+/**
+ * [③] 删除同句超出保留条数的旧录音 OSS 文件并置空 DB 引用。
+ * best-effort：单条失败仅记日志，不影响本次评测保存。
+ */
+async function pruneSameSentenceAudio(
+  userid: string,
+  episodeid: string,
+  targetText: string,
+  keepNewestId: number,
+): Promise<void> {
+  const stale = await prisma.speech_recognition.findMany({
+    where: {
+      userid,
+      episodeid,
+      targetText,
+      recognitionid: { not: keepNewestId },
+      userAudioUrl: { not: null },
+    },
+    orderBy: { recognitionDate: "desc" },
+    // 除最新一条外再保留 KEEP-1 条，其余视为超额
+    skip: SPEECH_AUDIO_KEEP_PER_SENTENCE - 1,
+    take: 50,
+    select: { recognitionid: true, userAudioUrl: true, detailUrl: true },
+  });
+
+  for (const row of stale) {
+    for (const url of [row.userAudioUrl, row.detailUrl]) {
+      if (!url) continue;
+      const key = extractOssKey(url);
+      if (key) await deleteObject(key);
+    }
+    await prisma.speech_recognition.update({
+      where: { recognitionid: row.recognitionid },
+      data: { userAudioUrl: null, detailUrl: null },
+    });
+  }
+}
+
+/**
  * Save speech evaluation result to DB and OSS.
  * This function does NOT check auth — callers must provide userid.
+ *
+ * [存储策略 2026-10]（冗余治理，详见 VOICE-EVALUATION.md）：
+ * - ① 录音 wav 仅 PRO 上传 OSS——免费用户的回放/词级细节本就是 PRO 专属
+ *   （practice-data 整条剥离 URL），免费录音属无消费方的死存储，只落分数行
+ *   （配额计数、弱项本 phonemeStats、图表统计均不受影响）；
+ * - ② 评测明细改存 DB detailJson（JSONB），不再上传 OSS JSON 文件；
+ *   detailUrl 仅存量行保留，/api/speech/detail 优先读 detailJson 回落 detailUrl；
+ * - ③ 同一句只保留最近 SPEECH_AUDIO_KEEP_PER_SENTENCE 条录音的 OSS 文件。
  */
 export async function saveSpeechResultCore(
   userid: string,
   params: SaveSpeechResultInput,
+  userRole?: string | null,
 ): Promise<SaveSpeechResultOutput> {
   try {
+    // [①] 会员态判定必须带上调用方（服务端会话）的 role：
+    // isPremiumUser 的 ADMIN 直通依赖 role，只传 userid 时 ADMIN 若无订阅行
+    // 会被误判为免费用户，导致 ADMIN 跟读不上传录音（回放全部不可用）。
+    // role 只能来自服务端会话，绝不可放进 client 可控的 params。
+    const hasPremium = await isPremiumUser({ userid, role: userRole });
     let userAudioUrl = undefined;
-    let detailUrl = undefined;
     const timestamp = Date.now();
     const randomStr = crypto.randomUUID().substring(0, 8);
 
-    // 1. Upload audio to OSS
-    if (params.audioBase64) {
+    // 1. [①] 音频上传 OSS：仅 PRO（免费用户的录音无任何回放消费方）
+    if (hasPremium && params.audioBase64) {
       try {
         const audioBuffer = Buffer.from(params.audioBase64, "base64");
         const audioFileName = `yuanlu/speech/${userid}/${params.episodeId}/${timestamp}_${randomStr}.wav`;
@@ -261,19 +319,8 @@ export async function saveSpeechResultCore(
       }
     }
 
-    // 2. Upload detail JSON to OSS
-    if (params.detailJson) {
-      try {
-        const jsonBuffer = Buffer.from(JSON.stringify(params.detailJson));
-        const jsonFileName = `yuanlu/speech/${userid}/${params.episodeId}/${timestamp}_${randomStr}.json`;
-        const jsonUploadResult = await uploadFile(jsonBuffer, jsonFileName);
-        detailUrl = jsonUploadResult.fileUrl;
-      } catch (e) {
-        console.error("Failed to upload detail JSON to OSS", e);
-      }
-    }
-
-    // 3. Create speech_recognition record
+    // 2. Create speech_recognition record
+    //    [②] 评测明细存 DB detailJson（仅 PRO，免费行无消费方）
     const record = await prisma.speech_recognition.create({
       data: {
         userid,
@@ -289,11 +336,25 @@ export async function saveSpeechResultCore(
         overallScore: params.overallScore,
         speed: params.speed,
         userAudioUrl,
-        detailUrl,
+        detailJson: hasPremium ? params.detailJson : undefined,
         // [P3-b] 评测场景落库：月池/日池按此字段分流计数
         scenario: params.scenario ?? "learn",
       },
     });
+
+    // 3. [③] 同句保留策略：仅在本次确实产生了新录音文件时触发（免费行无文件）
+    if (userAudioUrl) {
+      try {
+        await pruneSameSentenceAudio(
+          userid,
+          params.episodeId,
+          params.targetText,
+          record.recognitionid,
+        );
+      } catch (e) {
+        console.error("Failed to prune same-sentence audio", e);
+      }
+    }
 
     // 4. Update phonemeStats in user_profile
     if (params.detailJson?.words) {
@@ -339,13 +400,15 @@ export async function saveSpeechResultCore(
       }
     }
 
-    // [P3-g] 返回载荷剥离 OSS 直链：record.userAudioUrl/detailUrl 是未签名的
+    // [P3-g] 返回载荷剥离 OSS 直链与 DB 明细：record.userAudioUrl/detailUrl 是未签名的
     // OSS 直链，落库需要它们，但任何客户端 payload 都不需要（Web 端即时回放
-    // 走本地 blob URL，历史回放/评测细节由 practice-data 按会员态签名下发）。
+    // 走本地 blob URL，历史回放/评测细节由 practice-data 按会员态签名下发；
+    // detailJson 为 DB 内部存储，词级数据客户端在评测响应中已持有）。
     // 全部调用方（server action / REST evaluateAndSave）均不消费这两个字段。
     const safeRecord: Record<string, unknown> = { ...record };
     delete safeRecord.userAudioUrl;
     delete safeRecord.detailUrl;
+    delete safeRecord.detailJson;
     return { success: true, data: safeRecord };
   } catch (error) {
     console.error("Failed to save speech recognition result:", error);
@@ -405,21 +468,25 @@ export async function evaluateAndSave(
   }
 
   // 3. Save result
-  const saveResult = await saveSpeechResultCore(userid, {
-    episodeId: params.episodeId,
-    targetText: params.targetText,
-    speechText: evalResult.details?.rec_paper?.read_chapter?.rec_paper || "",
-    accuracyScore: evalResult.score || 0,
-    targetStartTime: 0,
-    subtitleId: params.subtitleId,
-    fluencyScore: evalResult.details?.fluency,
-    integrityScore: evalResult.details?.integrity,
-    overallScore: evalResult.details?.overall,
-    speed: evalResult.details?.speed,
-    audioBase64: params.audioBase64,
-    detailJson: evalResult.details,
-    scenario,
-  });
+  const saveResult = await saveSpeechResultCore(
+    userid,
+    {
+      episodeId: params.episodeId,
+      targetText: params.targetText,
+      speechText: evalResult.details?.rec_paper?.read_chapter?.rec_paper || "",
+      accuracyScore: evalResult.score || 0,
+      targetStartTime: 0,
+      subtitleId: params.subtitleId,
+      fluencyScore: evalResult.details?.fluency,
+      integrityScore: evalResult.details?.integrity,
+      overallScore: evalResult.details?.overall,
+      speed: evalResult.details?.speed,
+      audioBase64: params.audioBase64,
+      detailJson: evalResult.details,
+      scenario,
+    },
+    userRole,
+  );
 
   if (saveResult.error) {
     // Evaluation succeeded but save failed — still return the score

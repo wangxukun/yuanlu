@@ -57,6 +57,8 @@ interface EvaluationHistoryPanelProps {
   historyTotal: number;
   /** 免费用户被切片隐藏的更早记录数（0 = 无锁定层） */
   hiddenCount: number;
+  /** 点击记录中的句子时跳转到该句的练习卡片（剧集页沉浸练习传入） */
+  onJumpToSentence?: (record: SpeechPracticeRecord) => void;
 }
 
 interface DetailWord {
@@ -86,6 +88,7 @@ export default function EvaluationHistoryPanel({
   isPremium,
   historyTotal,
   hiddenCount,
+  onJumpToSentence,
 }: EvaluationHistoryPanelProps) {
   const [playingId, setPlayingId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -94,16 +97,33 @@ export default function EvaluationHistoryPanel({
     Map<number, { loading: boolean; words: DetailWord[] | null }>
   >(new Map());
 
-  // 时间正序（曲线从左到右 = 从旧到新）
-  const sortedAsc = useMemo(
-    () =>
-      [...records].sort(
-        (a, b) =>
-          new Date(a.recognitionDate).getTime() -
-          new Date(b.recognitionDate).getTime(),
-      ),
-    [records],
-  );
+  // 同一句（targetText）最多展示的记录条数，与服务端录音文件保留数对齐
+  // （core/speech/speech-evaluate.service.ts 的 SPEECH_AUDIO_KEEP_PER_SENTENCE
+  // = 3；客户端组件不能直接 import 该服务模块，常量在此声明）。更早的行仅用于
+  // 服务端统计（配额/图表/成就），不再进入面板列表与进步曲线。
+  const MAX_PER_SENTENCE = 3;
+
+  // 时间正序（曲线从左到右 = 从旧到新），且同一句只保留最近 MAX_PER_SENTENCE 条
+  const sortedAsc = useMemo(() => {
+    const sorted = [...records].sort(
+      (a, b) =>
+        new Date(a.recognitionDate).getTime() -
+        new Date(b.recognitionDate).getTime(),
+    );
+    // 从最新往旧为每句分配 MAX_PER_SENTENCE 个保留名额，再还原正序
+    const keptQuota = new Map<string, number>();
+    const kept: SpeechPracticeRecord[] = [];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const r = sorted[i];
+      const key = r.targetText || `#${r.recognitionid}`;
+      const used = keptQuota.get(key) ?? 0;
+      if (used < MAX_PER_SENTENCE) {
+        keptQuota.set(key, used + 1);
+        kept.unshift(r);
+      }
+    }
+    return kept;
+  }, [records]);
   const latestFirst = useMemo(() => [...sortedAsc].reverse(), [sortedAsc]);
 
   const stopAudio = useCallback(() => {
@@ -160,11 +180,21 @@ export default function EvaluationHistoryPanel({
     [isPremium, playingId, stopAudio, openHistoryModal],
   );
 
-  // PRO：按需拉取词级评测细节（/api/speech/detail 已按会员门禁）
+  // PRO：按需加载词级评测细节。优先级：已缓存 > 会话内新记录自带的 words
+  // （伪 recognitionid 无法走服务端接口）> /api/speech/detail（已按会员门禁）
   const loadDetail = useCallback(
     async (record: SpeechPracticeRecord) => {
       const existing = detailStates.get(record.recognitionid);
       if (existing?.words) return; // 已加载，切换折叠交给 UI
+      if (record.words?.length) {
+        setDetailStates((prev) =>
+          new Map(prev).set(record.recognitionid, {
+            loading: false,
+            words: record.words!.map((w) => ({ word: w.word, score: w.score })),
+          }),
+        );
+        return;
+      }
       setDetailStates((prev) =>
         new Map(prev).set(record.recognitionid, {
           loading: true,
@@ -377,9 +407,21 @@ export default function EvaluationHistoryPanel({
                                 </span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-ink-700 dark:text-ink-300 line-clamp-1 leading-relaxed">
-                                  {record.targetText}
-                                </p>
+                                {/* 句子文本：点击跳转到该句的练习卡片（综合得分） */}
+                                {onJumpToSentence ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onJumpToSentence(record)}
+                                    className="text-left w-full text-sm text-ink-700 dark:text-ink-300 line-clamp-1 leading-relaxed hover:text-primary-600 dark:hover:text-primary-400 hover:underline underline-offset-2 decoration-primary-300 transition-colors"
+                                    title="跳转到该句的练习卡片"
+                                  >
+                                    {record.targetText}
+                                  </button>
+                                ) : (
+                                  <p className="text-sm text-ink-700 dark:text-ink-300 line-clamp-1 leading-relaxed">
+                                    {record.targetText}
+                                  </p>
+                                )}
                                 <div className="flex items-center gap-2 mt-1.5">
                                   {/* 回放：PRO 播签名 URL / 免费锁定承接 */}
                                   <button
@@ -414,27 +456,34 @@ export default function EvaluationHistoryPanel({
                                       </>
                                     )}
                                   </button>
-                                  {/* 词级细节：仅 PRO 且服务端带回了 detailUrl */}
-                                  {isPremium && record.detailUrl && (
-                                    <button
-                                      onClick={() => {
-                                        if (isExpanded) {
-                                          setExpandedId(null);
-                                        } else {
-                                          setExpandedId(record.recognitionid);
-                                          void loadDetail(record);
-                                        }
-                                      }}
-                                      className="btn btn-xs rounded-full border-none h-7 min-h-0 px-3 bg-ink-100 hover:bg-ink-200 dark:bg-ink-800 dark:hover:bg-ink-700 text-ink-700 dark:text-ink-200"
-                                      aria-label="展开词级评测细节"
-                                    >
-                                      <ChevronDown
-                                        size={12}
-                                        className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                                      />
-                                      细节
-                                    </button>
-                                  )}
+                                  {/* 词级细节：仅 PRO 且存在可展开的细节。
+                                      三种来源任一满足即可：
+                                      - 会话内新记录：客户端评测响应自带 words
+                                      - 刷新后的新记录：DB detailJson → hasDetail 标记
+                                      - 存量记录：OSS detailUrl */}
+                                  {isPremium &&
+                                    (record.detailUrl ||
+                                      record.hasDetail ||
+                                      (record.words?.length ?? 0) > 0) && (
+                                      <button
+                                        onClick={() => {
+                                          if (isExpanded) {
+                                            setExpandedId(null);
+                                          } else {
+                                            setExpandedId(record.recognitionid);
+                                            void loadDetail(record);
+                                          }
+                                        }}
+                                        className="btn btn-xs rounded-full border-none h-7 min-h-0 px-3 bg-ink-100 hover:bg-ink-200 dark:bg-ink-800 dark:hover:bg-ink-700 text-ink-700 dark:text-ink-200"
+                                        aria-label="展开词级评测细节"
+                                      >
+                                        <ChevronDown
+                                          size={12}
+                                          className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                        />
+                                        细节
+                                      </button>
+                                    )}
                                 </div>
                               </div>
                             </div>

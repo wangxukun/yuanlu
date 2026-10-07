@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       where: { recognitionid: Number(id) },
     });
 
-    if (!record || !record.detailUrl) {
+    if (!record) {
       return NextResponse.json(
         { error: "Record or detail not found" },
         { status: 404 },
@@ -45,6 +45,19 @@ export async function GET(req: NextRequest) {
       session.user.role !== "ADMIN"
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // [存储优化] 新记录的评测明细存 DB detailJson，直接返回；
+    // detailUrl 仅存量行保留（OSS JSON 上传已废止），命中则签名后取回
+    if (record.detailJson) {
+      return NextResponse.json({ success: true, data: record.detailJson });
+    }
+
+    if (!record.detailUrl) {
+      return NextResponse.json(
+        { error: "Record or detail not found" },
+        { status: 404 },
+      );
     }
 
     let signedDetailUrl = record.detailUrl;

@@ -5,7 +5,8 @@ import { auth } from "@/auth";
 import { requireAdminAction } from "@/core/auth/guard";
 import { episodeService } from "@/core/episode/episode.service";
 import { generateTagConnectOrCreate } from "@/lib/tools";
-import { deleteObject } from "@/lib/oss";
+import { deleteObject, extractOssKey } from "@/lib/oss";
+import prisma from "@/lib/prisma";
 
 export type EpisodeState = {
   errors?: {
@@ -183,6 +184,32 @@ export async function createEpisode(
   }
 }
 
+/**
+ * [存储优化] 删除剧集前级联清理该剧集下所有用户的跟读录音 OSS 文件。
+ * speech_recognition 行随剧集级联删除（DB onDelete: Cascade），但行上引用的
+ * yuanlu/speech/{userid}/{episodeid}/ 录音 wav 与明细 json 若不在此处删除，
+ * 会因 DB 引用消失沦为永久孤儿对象。best-effort：单对象失败不阻断剧集删除。
+ */
+async function deleteEpisodeSpeechMedia(episodeid: string): Promise<void> {
+  try {
+    const rows = await prisma.speech_recognition.findMany({
+      where: {
+        episodeid,
+        OR: [{ userAudioUrl: { not: null } }, { detailUrl: { not: null } }],
+      },
+      select: { userAudioUrl: true, detailUrl: true },
+    });
+    const keys = rows
+      .flatMap((r) => [r.userAudioUrl, r.detailUrl])
+      .filter((u): u is string => Boolean(u))
+      .map((u) => extractOssKey(u))
+      .filter((k): k is string => Boolean(k));
+    await Promise.allSettled(keys.map((k) => deleteObject(k)));
+  } catch (e) {
+    console.error(`[deleteEpisode] 清理剧集跟读录音失败 (${episodeid})`, e);
+  }
+}
+
 // 删除剧集
 export async function deleteEpisode(
   id: string,
@@ -201,6 +228,9 @@ export async function deleteEpisode(
   const delSubtitleBilingualResult = await deleteObject(
     subtitleBilingualFileName,
   );
+
+  // [存储优化] 剧集删除前清理用户跟读录音（须在级联删除 DB 行之前读取引用）
+  await deleteEpisodeSpeechMedia(id);
 
   const { success, message } = await episodeService.delete(id);
 
@@ -242,6 +272,8 @@ export async function deleteEpisodeById(id: string) {
   const delSubtitleBilingualResult = await deleteObject(
     subtitleBilingualFileName,
   );
+  // [存储优化] 剧集删除前清理用户跟读录音（须在级联删除 DB 行之前读取引用）
+  await deleteEpisodeSpeechMedia(id);
   // 删除数据库中数据
   const { success } = await episodeService.delete(id);
 

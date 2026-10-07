@@ -253,6 +253,7 @@ export default function ImmersiveSpeechPractice({
     const targetIdx = filteredSubtitles.findIndex(
       (s) => s.id === pendingSubtitleId,
     );
+    let resolvedIdx = targetIdx;
     if (targetIdx !== -1) {
       setActiveCardIndex(targetIdx);
     } else {
@@ -270,11 +271,20 @@ export default function ImmersiveSpeechPractice({
               );
               return after !== -1 ? after : filteredSubtitles.length - 1;
             })();
+      resolvedIdx = fallbackIdx;
       setActiveCardIndex(fallbackIdx);
       toast.info("该句被当前过滤条件排除，已定位到最近的句子", {
         duration: 3000,
       });
     }
+    // 左侧句子列表滚动到目标句可见（移动端列表隐藏时 querySelector 落空，no-op）
+    requestAnimationFrame(() => {
+      const subId = filteredSubtitles[resolvedIdx]?.id;
+      if (subId == null) return;
+      cardListRef.current
+        ?.querySelector(`[data-subtitle-id="${subId}"]`)
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
     setPendingSubtitleId(null);
   }, [pendingSubtitleId, isLoading, filteredSubtitles, subtitles]);
 
@@ -294,6 +304,30 @@ export default function ImmersiveSpeechPractice({
   const handlePrev = useCallback(() => {
     setActiveCardIndex((prev) => Math.max(prev - 1, 0));
   }, []);
+
+  // 跟读历史跳转：点击记录中的句子 → 关闭面板并定位到该句的综合得分卡片。
+  // 复用 pendingSubtitleId 定向跳转 effect（处理"目标被过滤条件排除→最近句兜底"
+  // 与过滤后索引修正），定位口径与 getLatestResult/getHistoricalRecords 一致：
+  // 优先 subtitleId，缺失时按 句文本 + 起始时间(±0.5s) 匹配
+  const handleJumpToSentence = useCallback(
+    (record: SpeechPracticeRecord) => {
+      setIsHistoryOpen(false);
+      const targetSub =
+        (record.subtitleId != null &&
+          subtitles.find((s) => s.id === record.subtitleId)) ||
+        subtitles.find(
+          (s) =>
+            record.targetText === s.textEn &&
+            Math.abs((record.targetStartTime || 0) - s.startSeconds) < 0.5,
+        );
+      if (!targetSub) {
+        toast.info("未找到该句对应的练习卡片，句子可能已被下架");
+        return;
+      }
+      setPendingSubtitleId(targetSub.id);
+    },
+    [subtitles],
+  );
 
   const handleEvaluate = async (
     subtitleId: number,
@@ -496,6 +530,7 @@ export default function ImmersiveSpeechPractice({
                     return (
                       <button
                         key={sub.id}
+                        data-subtitle-id={sub.id}
                         onClick={() => setActiveCardIndex(index)}
                         className={`w-full text-left p-3 rounded-xl transition-colors flex items-start gap-3 ${
                           isActive
@@ -682,6 +717,7 @@ export default function ImmersiveSpeechPractice({
                 historyMeta.historyTotal - FREE_VISIBLE_HISTORY_RECORDS,
               )
         }
+        onJumpToSentence={handleJumpToSentence}
       />
     </>
   );

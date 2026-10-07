@@ -72,4 +72,10 @@ export interface SpeechPracticeRecord {
   detailUrl?: string;
   userAudioUrl?: string;
   subtitleId?: number;
+  /// [存储优化] 是否存在可展开的词级评测细节（新记录存 DB detailJson 无
+  /// detailUrl，practice-data 以此标记驱动"细节"按钮；仅 PRO 记录为 true）
+  hasDetail?: boolean;
+  /// 会话内新记录由客户端评测响应直接携带的词级得分，历史面板展开
+  /// "细节"时优先使用（伪 recognitionid 无法走 /api/speech/detail 拉取）
+  words?: { word: string; score: number }[];
 }
