@@ -12,3 +12,20 @@
 export function normalizeIp(ip: string): string {
   return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
 }
+
+/**
+ * 从请求头提取客户端 IP（入库 registerIp 用，User.registerIp 为 VarChar(45)）。
+ *
+ * x-forwarded-for 经 CDN/反向代理是逗号分隔的整条链，移动网络下客户端是
+ * IPv6（单段最长即 45 字符），整链入库必然超出列宽——曾导致手机验证码
+ * 登录自动建号时 Prisma P2000（"value too long for varying(45)"）整单失败。
+ * 只取链上第一段（即最原始客户端），归一化后仍按 45 截断兜底。
+ */
+export function extractClientIp(
+  getHeader: (name: string) => string | null | undefined,
+): string {
+  const forwardedFor = getHeader("x-forwarded-for");
+  const first = forwardedFor?.split(",")[0]?.trim();
+  const raw = first || getHeader("x-real-ip")?.trim() || "unknown";
+  return normalizeIp(raw).slice(0, 45);
+}

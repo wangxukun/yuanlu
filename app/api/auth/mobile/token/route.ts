@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
 import { signMobileToken } from "@/core/auth/mobile-token.service";
+import { extractClientIp } from "@/core/utils/ip";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -66,10 +67,7 @@ export async function POST(request: NextRequest) {
 
       if (!user) {
         // Auto-register: aligned with Web's NextAuth authorize flow
-        const clientIp =
-          request.headers.get("x-forwarded-for") ||
-          request.headers.get("x-real-ip") ||
-          "Unknown";
+        const clientIp = extractClientIp((h) => request.headers.get(h));
 
         user = await prisma.user.create({
           data: {
@@ -170,13 +168,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    // 业务校验（验证码错误等）均在 try 内显式返回，落到这里的只有
+    // 基础设施异常（DB 等）——原文案是 Prisma 报错，不再直接透给客户端
     console.error("Mobile token login error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "登录失败",
-      },
-      { status: 400 },
+      { success: false, error: "登录失败，请稍后重试" },
+      { status: 500 },
     );
   }
 }

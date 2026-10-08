@@ -10,6 +10,7 @@ import { AdapterSession } from "@auth/core/adapters";
 import { generateSignatureUrl } from "@/lib/oss";
 import { authConfig } from "@/auth.config";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
+import { extractClientIp } from "@/core/utils/ip";
 import { deriveDisplayRole } from "@/lib/premium-role";
 
 // CustomAuthError has been removed as NextAuth strictly strips custom error properties.
@@ -84,10 +85,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             if (!user) {
               const headersList = await headers();
-              const clientIp =
-                headersList.get("x-forwarded-for") ||
-                headersList.get("x-real-ip") ||
-                "Unknown";
+              const clientIp = extractClientIp((h) => headersList.get(h));
 
               // 自动注册逻辑：如果用户不存在，则创建新用户
               const newUser = await prisma.user.create({
