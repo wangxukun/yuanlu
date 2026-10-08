@@ -20,6 +20,12 @@ export async function extendPremiumSubscription(
   userid: string,
   days: number,
 ): Promise<SubscriptionExtendResult> {
+  // [SUBSCRIBE-TASK 1.3] 同一 userid 的并发发放（手动设置双击提交、爱发电
+  // 认领与虚拟支付发货同时到达）在此串行：事务级咨询锁（惯例同
+  // learning-path/sentences）。不加锁时"先读后写"会丢失更新——两次 +30 天
+  // 只落一次；锁等待在事务提交后释放，后到者读到新 endDate 再叠加。
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userid}))`;
+
   const now = Date.now();
   const activeSub = await tx.subscriptions.findFirst({
     where: {
