@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getChannelData } from "@/core/channel/channel.service";
 import ChannelClient from "@/components/channel/ChannelClient";
+import { formatEpisodeCount } from "@/components/discover/ChannelCard";
 
 type Props = {
   params: Promise<{ name: string }>;
@@ -18,10 +19,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${channelData.platformName} · Channel | 远路播客`,
-    description: `${channelData.platformName} 频道 · ${channelData.podcastCount} Shows`,
+    description: `${channelData.platformName} 频道 · ${formatEpisodeCount(channelData.totalEpisodeCount)} 集英语播客内容`,
     openGraph: {
       title: `${channelData.platformName} · Channel`,
-      description: `探索 ${channelData.platformName} 旗下 ${channelData.podcastCount} 档热门播客`,
+      description: `探索 ${channelData.platformName} 频道的 ${formatEpisodeCount(channelData.totalEpisodeCount)} 集热门英语播客`,
     },
   };
 }

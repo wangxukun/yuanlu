@@ -9,6 +9,7 @@ import {
   BellAlertIcon,
   ShieldCheckIcon,
   BookOpenIcon,
+  SignalIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ const links = [
     icon: MicrophoneIcon,
   },
   { name: "标签管理", href: "/admin/tags", icon: TagIcon },
+  { name: "频道管理", href: "/admin/channels", icon: SignalIcon },
   { name: "用户管理", href: "/admin/users", icon: UserGroupIcon },
   { name: "系统通知", href: "/admin/notifications", icon: BellAlertIcon },
   { name: "订单认领", href: "/admin/afdian", icon: ReceiptText },

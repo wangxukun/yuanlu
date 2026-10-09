@@ -129,6 +129,20 @@ model podcast {
   @@index([createAt(sort: Desc)])
 }
 
+/// 频道（按 podcast.platform 聚合的运营实体）：品牌横幅 OSS key 与排序，
+/// 供发现页/全部频道页与 /api/channels 使用；无行时该频道回退代表节目封面
+model channel {
+  channelid     String   @id @default(cuid())
+  name          String   @unique @db.VarChar(255)
+  coverFileName String?  @db.VarChar(255)
+  description   String?
+  sortOrder     Int      @default(0)
+  createAt      DateTime @default(now()) @db.Timestamptz(6)
+  updateAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([sortOrder])
+}
+
 /// 播客评论模型，存储播客评论信息
 model comments {
   commentid   Int             @id @default(autoincrement())

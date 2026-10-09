@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
+import { getChannelBrandRows } from "@/lib/channel-covers";
 import { Prisma } from "@prisma/client";
+
+// 频道品牌横幅的签名时效：横幅不可变，长时效可让客户端缓存更久
+const CHANNEL_COVER_SIGN_EXPIRE = 3600 * 24 * 7;
 
 // 1. 定义查询条件对象，并使用 satisfies 确保符合 Prisma 类型
 // 这样既能获得自动补全，又能作为类型推断的依据
@@ -256,12 +260,37 @@ export async function getRecommendedChannels() {
       },
     });
 
+    // Aggregate episode totals per platform (one query, ~catalog-size rows)
+    const platformEpisodeRows = await prisma.podcast.findMany({
+      where: { platform: { not: null } },
+      select: {
+        platform: true,
+        _count: { select: { episode: true } },
+      },
+    });
+    const episodeCountByPlatform = new Map<string, number>();
+    for (const row of platformEpisodeRows) {
+      const key = row.platform!;
+      episodeCountByPlatform.set(
+        key,
+        (episodeCountByPlatform.get(key) || 0) + row._count.episode,
+      );
+    }
+
+    // 频道运营行（品牌横幅 key / 描述 / 排序），一次查询全量取回
+    const brandRows = await getChannelBrandRows();
+
     // For each platform, get a representative podcast cover
     const channels = await Promise.all(
       platformGroups
         .filter((g) => g.platform !== null)
         .map(async (group) => {
-          // Fetch the top podcast in this platform for its cover
+          // 优先频道品牌横幅（channel 表，私有 OSS 对象签名分发）；无行频道回退代表节目封面
+          const brandRow =
+            brandRows.get(group.platform!.trim().toLowerCase()) ?? null;
+          const brandCoverKey = brandRow?.coverFileName || null;
+
+          // Fetch the top podcast in this platform for its cover (fallback)
           const topPodcast = await prisma.podcast.findFirst({
             where: { platform: group.platform! },
             orderBy: { totalPlays: Prisma.SortOrder.desc },
@@ -273,14 +302,17 @@ export async function getRecommendedChannels() {
           });
 
           let coverUrl = topPodcast?.coverUrl || "default_cover_url";
-          if (
+          const fallbackKey =
             topPodcast?.coverFileName &&
             topPodcast.coverUrl !== "default_cover_url"
-          ) {
+              ? topPodcast.coverFileName
+              : null;
+          const signKey = brandCoverKey ?? fallbackKey;
+          if (signKey) {
             try {
               coverUrl = await generateSignatureUrl(
-                topPodcast.coverFileName,
-                3600 * 3,
+                signKey,
+                brandCoverKey ? CHANNEL_COVER_SIGN_EXPIRE : 3600 * 3,
               );
             } catch (e) {
               console.error(
@@ -294,10 +326,20 @@ export async function getRecommendedChannels() {
             name: group.platform!,
             podcastCount: group._count.podcastid,
             totalPlays: group._sum.totalPlays || 0,
+            episodeCount: episodeCountByPlatform.get(group.platform!) || 0,
             coverUrl,
-            description: topPodcast?.description || "",
+            description: brandRow?.description || topPodcast?.description || "",
           };
         }),
+    );
+
+    // 排序：channel 表中配置了 sortOrder 的频道优先按其顺序，其余按总播放量
+    const sortKey = (name: string) =>
+      brandRows.get(name.trim().toLowerCase())?.sortOrder ??
+      Number.MAX_SAFE_INTEGER;
+    channels.sort(
+      (a, b) =>
+        sortKey(a.name) - sortKey(b.name) || b.totalPlays - a.totalPlays,
     );
 
     return channels;

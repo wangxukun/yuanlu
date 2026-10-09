@@ -9,6 +9,7 @@ import {
   getLatestPodcasts,
 } from "@/lib/discover-service";
 import HorizontalScrollContainer from "@/components/discover/HorizontalScrollContainer";
+import ChannelCard from "@/components/discover/ChannelCard";
 import PodcastCard from "@/components/ui/PodcastCard";
 
 export const dynamic = "force-dynamic";
@@ -158,26 +159,14 @@ export default async function DiscoverPage() {
           </div>
           <div className="flex lg:grid lg:grid-cols-4 gap-6 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-none">
             {recommendedChannels.slice(0, 4).map((channel) => (
-              <Link
-                href={`/channel/${encodeURIComponent(channel.name)}`}
+              <ChannelCard
                 key={channel.name}
-                className="flex-none w-72 lg:w-auto lg:flex-initial"
-              >
-                <div className="bg-primary-50 dark:bg-primary-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
-                  <h3 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
-                    {channel.name}
-                  </h3>
-                  <p className="text-ink-500 dark:text-ink-400 text-sm font-medium mb-8">
-                    {channel.podcastCount} 档节目
-                  </p>
-                  <div className="mt-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-ink-800/50 text-primary-600 dark:text-primary-400 text-[12px] font-bold group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">
-                      computer
-                    </span>
-                    <span>频道主页</span>
-                  </div>
-                </div>
-              </Link>
+                name={channel.name}
+                coverUrl={channel.coverUrl}
+                podcastCount={channel.podcastCount}
+                episodeCount={channel.episodeCount}
+                className="flex-none w-64 lg:w-auto lg:flex-initial"
+              />
             ))}
           </div>
         </section>
