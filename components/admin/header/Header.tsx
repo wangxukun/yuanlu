@@ -68,6 +68,10 @@ export default function Header() {
           breadcrumbs.push({ label: "用户管理", href: "/admin/users" });
           break;
 
+        case "channels":
+          breadcrumbs.push({ label: "频道管理", href: "/admin/channels" });
+          break;
+
         case "tag-groups":
           breadcrumbs.push({
             label: "标签分组",

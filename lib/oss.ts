@@ -36,6 +36,7 @@ function getClient(): OSS {
 export async function uploadFile(
   fileContent: Buffer | Blob,
   uniqueFilename: string,
+  options?: { acl?: "private" | "public-read" },
 ): Promise<{ fileUrl: string; fileName: string }> {
   // 添加Blob处理逻辑
   if (fileContent instanceof Blob) {
@@ -43,7 +44,10 @@ export async function uploadFile(
     fileContent = Buffer.from(arrayBuffer);
   }
   try {
-    const result = await getClient().put(uniqueFilename, fileContent);
+    const result = await getClient().put(uniqueFilename, fileContent, {
+      // 对象级 ACL：public-read 用于无需签名即可访问的公开资源（如频道品牌封面）
+      headers: options?.acl ? { "x-oss-object-acl": options.acl } : undefined,
+    });
 
     if (!result.name) {
       throw new Error("文件上传失败");

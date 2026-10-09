@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeftIcon, SignalIcon } from "@heroicons/react/24/outline";
 import { getRecommendedChannels } from "@/lib/discover-service";
+import ChannelCard from "@/components/discover/ChannelCard";
 
 export const metadata: Metadata = {
   title: "全部频道 | 远路播客",
@@ -44,25 +45,13 @@ export default async function ChannelsPage() {
         {channels.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {channels.map((channel) => (
-              <Link
-                href={`/channel/${encodeURIComponent(channel.name)}`}
+              <ChannelCard
                 key={channel.name}
-              >
-                <div className="bg-primary-50 dark:bg-primary-900/10 p-8 rounded-lg hover:scale-[1.02] transition-all duration-300 group flex flex-col items-center text-center h-full">
-                  <h3 className="text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
-                    {channel.name}
-                  </h3>
-                  <p className="text-ink-500 dark:text-ink-400 text-sm font-medium mb-8">
-                    {channel.podcastCount} 档节目
-                  </p>
-                  <div className="mt-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-ink-800/50 text-primary-600 dark:text-primary-400 text-[12px] font-bold group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">
-                      computer
-                    </span>
-                    <span>频道主页</span>
-                  </div>
-                </div>
-              </Link>
+                name={channel.name}
+                coverUrl={channel.coverUrl}
+                podcastCount={channel.podcastCount}
+                episodeCount={channel.episodeCount}
+              />
             ))}
           </div>
         ) : (

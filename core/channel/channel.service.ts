@@ -186,6 +186,7 @@ export const getChannelData = cache(async (platformName: string) => {
   return {
     platformName,
     podcastCount: podcasts.length,
+    totalEpisodeCount: podcasts.reduce((sum, p) => sum + p._count.episode, 0),
     topShows: processedPodcasts,
     topEpisodes: processedEpisodes,
   };

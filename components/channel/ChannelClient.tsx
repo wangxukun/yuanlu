@@ -18,6 +18,7 @@ import {
 import { Radio } from "lucide-react";
 import { usePlayerStore } from "@/store/player-store";
 import { formatTime, formatDate } from "@/lib/tools";
+import { formatEpisodeCount } from "@/components/discover/ChannelCard";
 import type {
   ChannelData,
   ChannelShow,
@@ -219,7 +220,9 @@ export default function ChannelClient({ data }: { data: ChannelData }) {
               {data.platformName}
             </h1>
             <p className="text-white/80 text-sm sm:text-base font-medium">
-              {data.platformName} · 频道 · {data.podcastCount} 档节目
+              {data.platformName} · 频道 ·{" "}
+              {formatEpisodeCount(data.totalEpisodeCount)} 集
+              {data.podcastCount >= 3 && ` · ${data.podcastCount} 档节目`}
             </p>
           </div>
         </div>
