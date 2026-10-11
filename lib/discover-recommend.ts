@@ -153,24 +153,38 @@ export function scorePodcast(input: PodcastScoreInput): number {
   return score;
 }
 
-/** 解析用户目标难度集：语音评测推导等级优先，回退 learnLevel；空数组表示无个性化 */
-async function resolveTargetDifficulties(userId: string): Promise<string[]> {
+/**
+ * 解析用户等级标签与目标难度集（播客级/剧集级推荐共用）：
+ * 语音评测推导等级优先（标签为 CEFR 档如 B2），回退 learnLevel（标签为
+ * Beginner/Intermediate 等）；无 userId 或解析失败回退 General。
+ */
+export async function resolveUserLevel(
+  userId?: string,
+): Promise<{ label: string; targetDifficulties: string[] }> {
+  if (!userId) return { label: "General", targetDifficulties: [] };
   try {
     const derived = await speechProfileService.getDerivedLevel(userId);
-    if (derived) return CEFR_EPISODE_MAPPING[derived] ?? [];
+    if (derived) {
+      return {
+        label: derived,
+        targetDifficulties: CEFR_EPISODE_MAPPING[derived] ?? [],
+      };
+    }
 
     const profile = await prisma.user_profile.findUnique({
       where: { userid: userId },
       select: { learnLevel: true },
     });
-    if (profile?.learnLevel) return LEVEL_MAPPING[profile.learnLevel] ?? [];
+    if (profile?.learnLevel) {
+      return {
+        label: profile.learnLevel,
+        targetDifficulties: LEVEL_MAPPING[profile.learnLevel] ?? [],
+      };
+    }
   } catch (e) {
-    console.error(
-      "[discover-recommend] resolve target difficulties failed:",
-      e,
-    );
+    console.error("[discover-recommend] resolve user level failed:", e);
   }
-  return [];
+  return { label: "General", targetDifficulties: [] };
 }
 
 interface PersonalizationContext {
@@ -207,7 +221,7 @@ async function loadPersonalization(
         },
         select: { episode: { select: { podcastid: true } } },
       }),
-      resolveTargetDifficulties(userId),
+      resolveUserLevel(userId).then((r) => r.targetDifficulties),
     ]);
 
     for (const f of favorites) {

@@ -99,12 +99,12 @@ export default async function HomePage() {
 
       // 2. 剩余的给 ContinueListening 组件
       recentHistoryList = history.slice(1);
-    } else {
-      // 未登录用户的兜底推荐
-      recommendedData = await episodeService
-        .getRecommendedEpisodes(undefined)
-        .catch(() => ({ level: "General", items: [] }));
     }
+  } else {
+    // 未登录用户的兜底推荐（原兜底误写在登录块内，未登录永远拿不到推荐）
+    recommendedData = await episodeService
+      .getRecommendedEpisodes(undefined)
+      .catch(() => ({ level: "General", items: [] }));
   }
 
   recentPublishedEpisodes = await episodeService

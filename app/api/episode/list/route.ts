@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { generateSignatureUrl } from "@/lib/oss";
 import {
   authWithMobile,
   stripExclusiveMediaForEpisodeList,
 } from "@/core/auth/guard";
+import { getRecommendedEpisodeRanking } from "@/lib/episode-recommend";
 
 /**
  * GET /api/episode/list
- * 剧集全量列表，裸数组返回。
+ * 剧集列表，裸数组返回。
  *
  * 契约说明（勿破坏）：
  * - Android 端 ApiService.list() 依赖"不传参数 → 全量裸数组"的返回结构
- *   （见 ANDROID.md §API 约定），不能改为强制分页或包裹响应对象
+ *   （见 ANDROID.md §API 约定），不能改为强制分页或包裹响应对象；
+ *   无参模式的字段与顺序保持与历史行为完全一致
  * - 仅返回已发布（status='published'）剧集：未发布内容的元数据不外泄
- * - 可选分页：page/pageSize（pageSize 上限 100），传入后按发布时间倒序分页返回，
- *   仍是裸数组切片；不传则返回全量、顺序与历史行为一致
+ * - 可选分页：page/pageSize（pageSize 上限 100），是移动端主页的取数模式，
+ *   按「为你推荐」统一推荐序返回（登录个性化，见 lib/episode-recommend.ts），
+ *   并补齐 difficulty/playCount/duration（Android DTO 已声明的历史缺口字段）
+ *   与 OSS 签名 coverUrl；响应字段形状不变，仍是裸数组切片
  */
 export async function GET(req: NextRequest) {
   try {
@@ -22,66 +27,78 @@ export async function GET(req: NextRequest) {
     const pageSize = Number(req.nextUrl.searchParams.get("pageSize")) || 0;
     const paginated = page >= 1 && pageSize >= 1;
 
-    const episodes = await prisma.episode.findMany({
-      where: { status: "published" },
-      ...(paginated
-        ? {
-            orderBy: { publishAt: "desc" as const },
-            skip: (page - 1) * Math.min(pageSize, 100),
-            take: Math.min(pageSize, 100),
-          }
-        : {}),
-      select: {
-        // 明确选择需要字段
-        episodeid: true,
-        coverUrl: true,
-        coverFileName: true,
-        title: true,
-        audioUrl: true,
-        audioFileName: true,
-        subtitleEnUrl: true,
-        subtitleEnFileName: true,
-        subtitleZhUrl: true,
-        subtitleZhFileName: true,
-        subtitleBilingualUrl: true,
-        subtitleBilingualFileName: true,
-        publishAt: true,
-        createAt: true,
-        status: true,
-        isExclusive: true,
-        isCommentEnabled: true,
-        podcast: {
-          select: {
-            podcastid: true,
-            title: true,
-          },
-        },
-        tags: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
     // [P1-4] 专享剧集媒体字段按访问权剥离（列表内含专享项时才查一次会员态）。
     // Android 契约不变：仍是裸数组、字段形状不变，无权限时媒体字段为空串。
-    const session = await authWithMobile();
+    const session = await authWithMobile().catch(() => null);
+
+    if (!paginated) {
+      const episodes = await prisma.episode.findMany({
+        where: { status: "published" },
+        select: {
+          episodeid: true,
+          coverUrl: true,
+          coverFileName: true,
+          title: true,
+          audioUrl: true,
+          audioFileName: true,
+          subtitleEnUrl: true,
+          subtitleEnFileName: true,
+          subtitleZhUrl: true,
+          subtitleZhFileName: true,
+          subtitleBilingualUrl: true,
+          subtitleBilingualFileName: true,
+          publishAt: true,
+          createAt: true,
+          status: true,
+          isExclusive: true,
+          isCommentEnabled: true,
+          podcast: {
+            select: {
+              podcastid: true,
+              title: true,
+            },
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+      const stripped = await stripExclusiveMediaForEpisodeList(
+        episodes,
+        session?.user,
+      );
+      return NextResponse.json(stripped);
+    }
+
+    // 分页模式（移动端主页）：统一推荐序 + 补齐打分统计字段 + 签名封面
+    const { ranked } = await getRecommendedEpisodeRanking(
+      session?.user?.userid ?? undefined,
+    );
+    const take = Math.min(pageSize, 100);
+    const pageItems = ranked.slice((page - 1) * take, page * take);
+
+    const mapped = await Promise.all(
+      // score 为推荐服务内部调试字段，不进入响应
+      pageItems.map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async ({ score: _score, ...ep }) => ({
+          ...ep,
+          coverUrl: ep.coverFileName
+            ? await generateSignatureUrl(ep.coverFileName, 3600 * 3)
+            : ep.coverUrl,
+        }),
+      ),
+    );
     const stripped = await stripExclusiveMediaForEpisodeList(
-      episodes,
+      mapped,
       session?.user,
     );
     return NextResponse.json(stripped);
   } catch (error) {
-    // 确保异常时也释放连接
-    await prisma.$disconnect();
     console.error("[GET /api/episode/list]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
-  } finally {
-    // 最佳实践：在finally块中执行清理操作
-    await prisma.$disconnect();
+    return NextResponse.json({ error: "Internal Server Error", status: 500 });
   }
 }
