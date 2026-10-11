@@ -24,11 +24,7 @@ import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dt
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
 import { isPremiumUser } from "@/core/auth/guard";
-import {
-  speechProfileService,
-  CEFR_EPISODE_MAPPING,
-  LEVEL_MAPPING,
-} from "@/core/speech-profile/speech-profile.service";
+import { getRecommendedEpisodeRanking } from "@/lib/episode-recommend";
 
 export const episodeService = {
   /**
@@ -313,67 +309,40 @@ export const episodeService = {
 
   /**
    * 获取推荐单集
-   * 逻辑：根据用户设置的 learnLevel (Beginner/Intermediate/Advanced)
-   * 映射到对应的 episode.difficulty (A1-C2) 进行筛选
+   * 统一走 lib/episode-recommend.ts 的推荐排序（与移动端 /api/episode/list
+   * 分页模式同口径）：热度+新鲜度打分，登录时排除已看完/已收藏、等级命中加权。
+   * 难度过滤口径对齐移动端客户端：目标档非空且非 General 时先滤，
+   * 不足（含 0 条）回退全序并把标签重置 General。
    */
   async getRecommendedEpisodes(
     userId?: string,
     limit: number = 4,
   ): Promise<{ level: string; items: RecommendedEpisodeDto[] }> {
-    let userLevelLabel = "General"; // 显示给前端看的标签（如 "Intermediate"）
-    let targetDifficulties: string[] = []; // 实际查询数据库用的难度列表（如 ["B1", "B2"]）
+    const { ranked, level } = await getRecommendedEpisodeRanking(userId);
 
-    // 1. 获取用户偏好并进行映射
-    if (userId) {
-      // 自适应推荐：优先使用语音评测推导的 CEFR 等级（VOICE-EVALUATION 阶段四·任务3），
-      // 评测数据不足（<5 次）时回退到用户手动设置的 learnLevel
-      const derivedLevel = await speechProfileService.getDerivedLevel(userId);
-      if (derivedLevel) {
-        userLevelLabel = derivedLevel;
-        targetDifficulties = CEFR_EPISODE_MAPPING[derivedLevel] || [];
+    let userLevelLabel = level.label;
+    let selected = ranked;
+    if (
+      level.targetDifficulties.length > 0 &&
+      !(
+        level.targetDifficulties.length === 1 &&
+        level.targetDifficulties[0] === "General"
+      )
+    ) {
+      const matched = ranked.filter(
+        (ep) =>
+          !!ep.difficulty && level.targetDifficulties.includes(ep.difficulty),
+      );
+      if (matched.length > 0) {
+        selected = matched;
       } else {
-        const profile = await prisma.user_profile.findUnique({
-          where: { userid: userId },
-          select: { learnLevel: true },
-        });
-
-        if (profile?.learnLevel) {
-          userLevelLabel = profile.learnLevel;
-          // 根据映射表获取对应的难度列表
-          targetDifficulties = LEVEL_MAPPING[profile.learnLevel] || [];
-        }
+        // 按难度没查到数据（比如新用户选了 Advanced 但库里没有 C1/C2 的内容）：
+        // 回退全序，标签重置 General（前端对应 General 逻辑）
+        userLevelLabel = "General";
       }
     }
 
-    // 2. 构造查询条件
-    const where: Prisma.episodeWhereInput = {
-      status: "published",
-    };
-
-    // 如果映射出了具体的难度等级（例如不是空数组，也不是默认兜底），则加上筛选条件
-    if (targetDifficulties.length > 0 && userLevelLabel !== "General") {
-      where.difficulty = { in: targetDifficulties };
-    }
-
-    // 3. 查询数据库
-    let episodes = await episodeRepository.findAll(where);
-
-    // 4. 兜底策略：
-    // 如果按难度没查到数据（比如新用户选了 Advanced 但库里没有 C1/C2 的内容）
-    // 或者用户选的是 General（我们假设 General 看所有内容或者 fallback 到所有）
-    if (episodes.length === 0) {
-      console.log(
-        `[Recommendation] No episodes found for level ${userLevelLabel} (mapped to ${targetDifficulties.join(",")}), falling back to all published.`,
-      );
-      // 重置显示的标签为 "精选" 或 "最新" (前端对应 General 逻辑)
-      userLevelLabel = "General";
-      // 查所有已发布内容
-      episodes = await episodeRepository.findAll({ status: "published" });
-    }
-
-    // 5. 截取并映射 DTO
-    // 注意：Repository findAll 默认按 publishAt 倒序，取前 limit 个即为最新的推荐
-    const selectedEpisodes = episodes.slice(0, limit);
+    const selectedEpisodes = selected.slice(0, limit);
 
     const items: RecommendedEpisodeDto[] = await Promise.all(
       selectedEpisodes.map(async (ep) => {
@@ -388,7 +357,6 @@ export const episodeService = {
         // 获取分类逻辑：
         // 优先使用第一个 Tag 的名称
         // 如果没有 Tag，使用难度等级作为分类展示
-        // 需要确保 Repository.findAll 中包含了 tags 的 include/select
         const category =
           ep.tags && ep.tags.length > 0
             ? ep.tags[0].name
