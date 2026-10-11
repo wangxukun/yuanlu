@@ -24,7 +24,36 @@ import { RecommendedEpisodeDto } from "@/core/episode/dto/recommended-episode.dt
 import prisma from "@/lib/prisma";
 import { notificationService } from "@/core/notification/notification.service";
 import { isPremiumUser } from "@/core/auth/guard";
-import { getRecommendedEpisodeRanking } from "@/lib/episode-recommend";
+import {
+  getRecommendedEpisodeRanking,
+  MOBILE_HOME_POOL_SIZE,
+  type RankedEpisode,
+} from "@/lib/episode-recommend";
+
+/** RankedEpisode → 主页推荐 DTO（封面签名/时长分钟/分类兜底），主页两模块共用映射 */
+async function toHomeRecommendedDto(
+  ep: RankedEpisode,
+): Promise<RecommendedEpisodeDto> {
+  const coverUrl = await generateSignatureUrl(
+    ep.coverFileName || "",
+    3600 * 3,
+  ).catch(() => ep.coverUrl);
+
+  return {
+    id: ep.episodeid,
+    title: ep.title,
+    podcastTitle: ep.podcast?.title || "Unknown Podcast",
+    category:
+      ep.tags && ep.tags.length > 0
+        ? ep.tags[0].name
+        : ep.difficulty || "General",
+    duration: `${Math.floor(ep.duration / 60)} min`,
+    coverUrl: coverUrl,
+    difficulty: ep.difficulty || "General",
+    isExclusive: ep.isExclusive || false,
+    playCount: ep.playCount || 0,
+  };
+}
 
 export const episodeService = {
   /**
@@ -428,8 +457,23 @@ export const episodeService = {
   },
 
   /**
-   * 获取下载链接（带 attachment 签名）
+   * 主页「最新发布」（三端统一口径）：
+   * 与移动端客户端同源——推荐池（登录时含已看完/已收藏排除）前
+   * MOBILE_HOME_POOL_SIZE 条内按 publishAt 严格倒序取前 limit。
+   * 移动端「最新发布/最近发布」在同一数组上做同样排序，三端展示一致；
+   * 代价是该模块会隐去登录用户已看完/已收藏的剧集。
+   * 注意与 getRecentPublishedEpisodes（全站 createAt 倒序，无排除）口径不同。
    */
+  async getLatestFromRecommendPool(
+    userId?: string,
+    limit: number = 8,
+  ): Promise<RecommendedEpisodeDto[]> {
+    const { ranked } = await getRecommendedEpisodeRanking(userId);
+    const sorted = [...ranked.slice(0, MOBILE_HOME_POOL_SIZE)]
+      .sort((a, b) => b.publishAt.getTime() - a.publishAt.getTime())
+      .slice(0, limit);
+    return await Promise.all(sorted.map((ep) => toHomeRecommendedDto(ep)));
+  },
   async getDownloadUrl(id: string) {
     const episode = await episodeRepository.findById(id);
     if (!episode || !episode.audioFileName) {

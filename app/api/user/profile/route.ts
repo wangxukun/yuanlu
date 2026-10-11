@@ -7,6 +7,7 @@ import { generateSignatureUrl, uploadFile } from "@/lib/oss";
 import { deriveDisplayRole } from "@/lib/premium-role";
 import { checkUserGeneratedText } from "@/core/security/msg-sec-check.service";
 import { SEC_SCENE } from "@/core/security/msg-sec-check.core";
+import { speechProfileService } from "@/core/speech-profile/speech-profile.service";
 
 // --- Types ---
 // 定义 ProfileData 接口以包含学习目标
@@ -70,9 +71,21 @@ export async function GET() {
       }
     : safeProfile.User;
 
+  // [三端推荐口径统一] 语音评测推导的 CEFR 等级（评测 ≥5 次才有值，否则 null）：
+  // 移动端主页"为你推荐"的难度过滤优先用它，与 web 服务端 getRecommendedEpisodes
+  // 的等级解析口径一致（derivedLevel → CEFR 相邻档；回退 learnLevel 粗粒度档）。
+  // 推导失败不影响资料接口本身（回退 null，客户端自然走 learnLevel）。
+  const derivedLevel = await speechProfileService
+    .getDerivedLevel(session.user.userid)
+    .catch((e) => {
+      console.error("Profile derive level failed:", e);
+      return null;
+    });
+
   const profileWithSignature = {
     ...safeProfile,
     User: derivedUser,
+    derivedLevel,
     avatarUrl: safeProfile.avatarFileName
       ? await generateSignatureUrl(safeProfile.avatarFileName, 3600 * 3)
       : null,

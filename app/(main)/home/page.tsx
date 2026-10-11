@@ -107,8 +107,10 @@ export default async function HomePage() {
       .catch(() => ({ level: "General", items: [] }));
   }
 
+  // 「最新发布」三端统一口径：与移动端同池（推荐池前 50）publishAt 严格倒序，
+  // 登录时同样隐去已看完/已收藏剧集（详见 episode.service getLatestFromRecommendPool）
   recentPublishedEpisodes = await episodeService
-    .getRecentPublishedEpisodes(8)
+    .getLatestFromRecommendPool(user?.userid, 8)
     .catch(() => []);
 
   return (
