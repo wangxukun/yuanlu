@@ -52,6 +52,9 @@ yuanlu-project-context.xml
 /.claude/
 scripts/outro-template/*
 
+# 邮件批量发送脚本的已发送状态（本地防重发记录）
+scripts/.weapp-launch-email-state.json
+
 ANDROID.md
 ANDROID_APP.md
 yuanlu-membership-audit-final.md
