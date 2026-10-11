@@ -45,6 +45,13 @@ const DIVERSITY_WINDOW = 12;
 /** 候选窗口大小：仅取最近 N 条已发布剧集参与打分 */
 const CANDIDATE_WINDOW = 300;
 
+/**
+ * 移动端主页候选池窗口：weapp/android 以 page=1&pageSize=50 拉取推荐序前 50 条。
+ * web 端「最新发布」从同一池派生（publishAt 倒序）时必须对齐该窗口，
+ * 否则窗口外更新的剧集会造成三端口径分叉。
+ */
+export const MOBILE_HOME_POOL_SIZE = 50;
+
 // 字段为 /api/episode/list 分页模式所需字段的超集（另加打分用的
 // duration/playCount/difficulty），web 推荐 DTO 映射也复用同一行
 const candidateQuery = {
