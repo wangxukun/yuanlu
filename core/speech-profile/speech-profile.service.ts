@@ -35,6 +35,14 @@ export const CEFR_EPISODE_MAPPING: Record<string, string[]> = {
   C1: ["C1", "C2"],
 };
 
+/** 用户手动设置的粗粒度等级（learnLevel）→ 剧集细粒度 CEFR 难度档 */
+export const LEVEL_MAPPING: Record<string, string[]> = {
+  Beginner: ["A1", "A2"],
+  Intermediate: ["B1", "B2"],
+  Advanced: ["C1", "C2"],
+  General: ["General"], // General 用户匹配 General 内容
+};
+
 /** 理想语速区间（词/分钟）：跟读场景下接近原声语速即视为适配 */
 const IDEAL_SPEED_RANGE: [number, number] = [100, 150];
 

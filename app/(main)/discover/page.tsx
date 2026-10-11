@@ -8,6 +8,7 @@ import {
   getEditorPicks,
   getLatestPodcasts,
 } from "@/lib/discover-service";
+import { auth } from "@/auth";
 import HorizontalScrollContainer from "@/components/discover/HorizontalScrollContainer";
 import ChannelCard from "@/components/discover/ChannelCard";
 import PodcastCard from "@/components/ui/PodcastCard";
@@ -20,11 +21,15 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
+  // 登录时「为您推荐」启用个性化（排除已收藏/难度匹配），与移动端口径一致
+  const session = await auth();
+  const userId = session?.user?.userid ?? undefined;
+
   const [trendingPodcasts, recommendedChannels, editorPicks, newPodcasts] =
     await Promise.all([
       getTrendingPodcasts(),
       getRecommendedChannels(),
-      getEditorPicks(),
+      getEditorPicks(8, userId),
       getLatestPodcasts(8),
     ]);
 
