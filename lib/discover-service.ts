@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
 import { getChannelBrandRows } from "@/lib/channel-covers";
+import { getDiscoverRanking } from "@/lib/discover-recommend";
 import { Prisma } from "@prisma/client";
 
 // 频道品牌横幅的签名时效：横幅不可变，长时效可让客户端缓存更久
@@ -354,29 +355,15 @@ export type RecommendedChannel = Awaited<
 >[number];
 
 /**
- * 获取编辑精选播客 (isEditorPick = true)
+ * 发现页「为您推荐」：编辑精选优先 + 热度/新鲜度/完备度打分 + 个性化
+ * （统一排序见 lib/discover-recommend.ts，与 /api/podcast/list 口径一致）
  * @param limit 限制数量
+ * @param userId 可选登录用户，传入时启用个性化（排除已收藏/难度匹配等）
  */
-export async function getEditorPicks(limit: number = 8) {
+export async function getEditorPicks(limit: number = 8, userId?: string) {
   try {
-    const podcasts = await prisma.podcast.findMany({
-      where: {
-        isEditorPick: true,
-      },
-      take: limit,
-      include: {
-        tags: {
-          take: 1,
-          select: { name: true },
-        },
-        _count: {
-          select: { episode: true },
-        },
-      },
-      orderBy: {
-        createAt: Prisma.SortOrder.desc,
-      },
-    });
+    const { ranked } = await getDiscoverRanking(userId, limit);
+    const podcasts = ranked.slice(0, limit);
 
     const processedPodcasts = await Promise.all(
       podcasts.map(async (p) => {
@@ -395,7 +382,6 @@ export async function getEditorPicks(limit: number = 8) {
           ...p,
           coverUrl: signedCoverUrl,
           category: p.tags[0]?.name || "General",
-          episodeCount: p._count.episode,
         };
       }),
     );

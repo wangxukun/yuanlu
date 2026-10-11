@@ -27,15 +27,8 @@ import { isPremiumUser } from "@/core/auth/guard";
 import {
   speechProfileService,
   CEFR_EPISODE_MAPPING,
+  LEVEL_MAPPING,
 } from "@/core/speech-profile/speech-profile.service";
-
-// [新增] 难度映射表：将用户配置的粗粒度等级映射为剧集的细粒度 CEFR 标准
-const LEVEL_MAPPING: Record<string, string[]> = {
-  Beginner: ["A1", "A2"],
-  Intermediate: ["B1", "B2"],
-  Advanced: ["C1", "C2"],
-  General: ["General"], // General 用户匹配 General 内容
-};
 
 export const episodeService = {
   /**
