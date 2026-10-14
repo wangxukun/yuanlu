@@ -62,6 +62,21 @@ model User {
   dismissed_pronunciation dismissed_pronunciation[]
 }
 
+/// 小程序码短码映射（公众号联动 T1）：scene 短码（如 gzh_follow / gzh_w1_b）→
+/// 落地目标。getwxacodeunlimit 的 scene 上限 32 字符放不下剧集 cuid，
+/// 故码内只放短码、本表存完整目标；小程序启动后 GET /api/wxacode?scene= 换取目标。
+model qr_scene {
+  /// 短码本身（^[A-Za-z0-9_.\-]{1,32}$，与生成接口共用约束）
+  scene      String   @id @db.VarChar(32)
+  /// 目标类型：follow（关注回复）/ episode（直达剧集）/ article（文章文末码）
+  targetType String   @db.VarChar(20)
+  /// episode 类型时的剧集 cuid
+  episodeId  String?  @db.VarChar(64)
+  /// 公众号文章编号（如 gzh_w1_b，与 scene 同名时用于文章维度统计对账）
+  articleNo  String?  @db.VarChar(50)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+}
+
 /// 用户资料模型，存储用户的个人信息
 ///
 /// 该模型包含了用户的详细个人资料信息，如昵称、头像、个人简介等。
