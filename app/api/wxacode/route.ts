@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { uploadFile } from "@/lib/oss";
+import { uploadFile, generateSignatureUrl } from "@/lib/oss";
 import { generateWxacodeBuffer } from "@/core/wx/wxacode.service";
 import { requireAdmin } from "@/core/auth/guard";
 
@@ -82,14 +82,18 @@ export async function POST(request: NextRequest) {
       create: { scene, targetType, episodeId, articleNo },
     });
 
-    // 3. 生成码图并存 OSS（public-read：公众号图文/自动回复直接引用）
+    // 3. 生成码图并存 OSS——bucket 为 RAM 私有策略（禁止 public-read，实测
+    //    AccessDenied: Put public object acl is not allowed），私有 ACL 继承 +
+    //    长时效签名 URL 分发，对齐频道封面的既有模式；gen-qr 客户端会下载落盘
     const buffer = await generateWxacodeBuffer(scene, { page, envVersion });
     const fileName = `wxacode/${scene}.jpg`;
-    const { fileUrl } = await uploadFile(buffer, fileName, {
-      acl: "public-read",
-    });
+    await uploadFile(buffer, fileName);
+    const signedUrl = await generateSignatureUrl(fileName, 604800); // 7 天
 
-    return NextResponse.json({ success: true, data: { scene, fileUrl } });
+    return NextResponse.json({
+      success: true,
+      data: { scene, fileUrl: signedUrl, fileName },
+    });
   } catch (error) {
     console.error("wxacode generate error:", error);
     const message = error instanceof Error ? error.message : "生成失败";
