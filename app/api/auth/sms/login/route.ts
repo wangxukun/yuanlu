@@ -3,6 +3,7 @@ import { SmsAuthService } from "@/core/auth/sms-auth.service";
 import { PhoneLoginDTO } from "@/core/auth/sms-auth.dto";
 import { signMobileToken } from "@/core/auth/mobile-token.service";
 import { extractClientIp } from "@/core/utils/ip";
+import { normalizeSignupSource } from "@/core/utils/signup-source";
 import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -49,6 +50,9 @@ export async function POST(request: NextRequest) {
           phone: body.phone,
           email: `${body.phone}@placeholder.yuanlu.com`,
           registerIp: clientIp,
+          signupSource: normalizeSignupSource(
+            (body as { signupSource?: unknown }).signupSource,
+          ),
           user_profile: {
             create: {
               nickname: `用户_${body.phone.slice(-4)}`,

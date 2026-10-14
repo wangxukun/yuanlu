@@ -31,6 +31,9 @@ model User {
   /// （code2Session），存行仅为下单窗口内取用，不依赖长效。
   wxOpenId                String?                   @unique @db.VarChar(64)
   wxSessionKey            String?                   @db.VarChar(128)
+  /// 注册来源归因：小程序码 scene/路径参数（如 gzh_follow、gzh_w1_b），
+  /// 预留网页 utm。仅建号时写入一次，后续登录不覆盖。
+  signupSource            String?                   @db.VarChar(100)
   VisitorLog              VisitorLog[]
   conversionEvents        conversion_events[]
   dictionary_lookups      dictionary_lookups[]

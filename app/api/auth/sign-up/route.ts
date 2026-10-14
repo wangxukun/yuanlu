@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { normalizeSignupSource } from "@/core/utils/signup-source";
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, signupSource } = await request.json();
 
     // 获取注册IP地址（支持反向代理）
     const forwardedFor = request.headers.get("x-forwarded-for");
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword, // 存储哈希后的密码
         registerIp,
+        signupSource: normalizeSignupSource(signupSource),
       },
     });
 
