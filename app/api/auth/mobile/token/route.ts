@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
 import { signMobileToken } from "@/core/auth/mobile-token.service";
 import { extractClientIp } from "@/core/utils/ip";
+import { normalizeSignupSource } from "@/core/utils/signup-source";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -16,6 +17,8 @@ interface MobileLoginRequest {
   // Email + password login
   email?: string;
   password?: string;
+  // 注册来源归因（小程序码 scene/路径参数，仅手机号通道自动建号时落库）
+  signupSource?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -74,6 +77,7 @@ export async function POST(request: NextRequest) {
             phone: body.phone!,
             email: `${body.phone}@placeholder.yuanlu.com`,
             registerIp: clientIp,
+            signupSource: normalizeSignupSource(body.signupSource),
             user_profile: {
               create: {
                 nickname: `用户_${body.phone!.slice(-4)}`,
