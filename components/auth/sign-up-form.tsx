@@ -10,6 +10,7 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline"; // 引入新的图标用于反馈
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
+import SignupSourceSelect from "./signup-source-select";
 
 export default function SignUpForm() {
   const checkedEmail = useAuthStore((state) => state.checkedEmail);
@@ -19,6 +20,7 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [signupSource, setSignupSource] = useState("");
 
   // 是否同意协议
   const [agreed, setAgreed] = useState(false);
@@ -111,7 +113,11 @@ export default function SignUpForm() {
       const createResponse = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: checkedEmail, password }),
+        body: JSON.stringify({
+          email: checkedEmail,
+          password,
+          signupSource: signupSource || undefined,
+        }),
       });
       const createData = await createResponse.json();
 
@@ -258,6 +264,9 @@ export default function SignUpForm() {
             </div>
           </div>
         </div>
+
+        {/* 注册来源（可选，帮助我们了解大家从哪里来） */}
+        <SignupSourceSelect value={signupSource} onChange={setSignupSource} />
 
         {/* 协议复选框 */}
         <div className="form-control">

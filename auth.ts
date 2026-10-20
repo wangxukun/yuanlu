@@ -10,6 +10,7 @@ import { AdapterSession } from "@auth/core/adapters";
 import { generateSignatureUrl } from "@/lib/oss";
 import { authConfig } from "@/auth.config";
 import { SmsAuthService } from "@/core/auth/sms-auth.service";
+import { normalizeSignupSource } from "@/core/utils/signup-source";
 import { extractClientIp } from "@/core/utils/ip";
 import { deriveDisplayRole } from "@/lib/premium-role";
 
@@ -55,6 +56,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "password", type: "password" },
         phone: { label: "phone", type: "text" },
         code: { label: "code", type: "text" },
+        // 注册来源归因（网页"从哪里知道我们"下拉，仅手机号自动建号时使用）
+        signupSource: { label: "signupSource", type: "text" },
       },
       authorize: async (credentials) => {
         if (!credentials) return null;
@@ -88,11 +91,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               const clientIp = extractClientIp((h) => headersList.get(h));
 
               // 自动注册逻辑：如果用户不存在，则创建新用户
+              // signupSource：网页"从哪里知道我们"下拉（zod schema 之外的原始
+              // credentials 字段，走 normalizeSignupSource 校验，仅建号时落库）
               const newUser = await prisma.user.create({
                 data: {
                   phone,
                   email: `${phone}@placeholder.yuanlu.com`, // schema 要求 email 必填
                   registerIp: clientIp,
+                  signupSource: normalizeSignupSource(credentials.signupSource),
                   user_profile: {
                     create: {
                       nickname: `用户_${phone.slice(-4)}`,
