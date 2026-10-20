@@ -64,3 +64,6 @@ yuanlu-membership-audit-report.md
 
 /public/BingSiteAuth.xml
 /public/baidu_verify_codeva-c5mrESdpYZ.html
+
+# 小程序码生成产物（本地临时文件）
+wxacode/

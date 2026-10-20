@@ -7,7 +7,12 @@ import { AuthError } from "next-auth";
 import { phoneSignInSchema } from "@/lib/form-schema";
 import CaptchaModal from "./captcha-modal";
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
-import { DevicePhoneMobileIcon, KeyIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import {
+  DevicePhoneMobileIcon,
+  KeyIcon,
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
+import SignupSourceSelect from "./signup-source-select";
 
 export default function PhoneAuthForm() {
   const [phone, setPhone] = useState("");
@@ -15,6 +20,7 @@ export default function PhoneAuthForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [signupSource, setSignupSource] = useState("");
 
   const [countdown, setCountdown] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -33,12 +39,12 @@ export default function PhoneAuthForm() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     }
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const sendSmsCode = async (captchaData?: any) => {
+  const sendSmsCode = async (captchaData?: unknown) => {
     setError("");
     setSuccessMsg("");
 
@@ -69,12 +75,12 @@ export default function PhoneAuthForm() {
       } else {
         setError(data.error || "发送失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，请重试");
     }
   };
 
-  const onCaptchaSuccess = (captchaData: any) => {
+  const onCaptchaSuccess = (captchaData: unknown) => {
     setShowCaptcha(false);
     sendSmsCode(captchaData);
   };
@@ -98,17 +104,22 @@ export default function PhoneAuthForm() {
         redirect: false,
         phone,
         code,
+        signupSource: signupSource || undefined,
       });
 
       console.log("NextAuth signIn response:", res);
 
       if (res?.error) {
         // Read custom error from side-channel cookie if present
-        let errorMsg = res.error === "CredentialsSignin" ? "验证码错误或已过期" : res.error;
-        const match = document.cookie.match(new RegExp('(^| )custom_auth_error=([^;]+)'));
+        let errorMsg =
+          res.error === "CredentialsSignin" ? "验证码错误或已过期" : res.error;
+        const match = document.cookie.match(
+          new RegExp("(^| )custom_auth_error=([^;]+)"),
+        );
         if (match) {
           errorMsg = decodeURIComponent(match[2]);
-          document.cookie = "custom_auth_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          document.cookie =
+            "custom_auth_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         }
         setError(errorMsg);
         setLoading(false);
@@ -116,7 +127,9 @@ export default function PhoneAuthForm() {
       }
 
       if (res?.ok) {
-        const modal = document.getElementById("email_check_modal_box") as HTMLDialogElement;
+        const modal = document.getElementById(
+          "email_check_modal_box",
+        ) as HTMLDialogElement;
         if (modal) modal.close();
         router.refresh();
       }
@@ -154,10 +167,13 @@ export default function PhoneAuthForm() {
               type="tel"
               ref={inputRef}
               placeholder="请输入11位手机号码"
-              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 ${error && !phone ? "input-error" : ""
-                }`}
+              className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 transition-all rounded-xl h-12 ${
+                error && !phone ? "input-error" : ""
+              }`}
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+              onChange={(e) =>
+                setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))
+              }
               disabled={loading}
               required
             />
@@ -173,20 +189,24 @@ export default function PhoneAuthForm() {
               <input
                 type="text"
                 placeholder="恒创联众：输入6位验证码"
-                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12 ${error && !code ? "input-error" : ""
-                  }`}
+                className={`input input-bordered w-full pl-11 bg-base-200/50 focus:bg-base-100 focus:border-primary-600 dark:focus:border-primary-400 focus:z-10 transition-all h-12 ${
+                  error && !code ? "input-error" : ""
+                }`}
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) =>
+                  setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
                 disabled={loading}
                 required
               />
             </div>
             <button
               type="button"
-              className={`btn border-none join-item w-[110px] h-12 font-normal text-white transition-all ${phone.length !== 11 || loading
-                ? "btn-disabled bg-base-300 text-base-content/30"
-                : "bg-primary-600 hover:bg-primary-700"
-                }`}
+              className={`btn border-none join-item w-[110px] h-12 font-normal text-white transition-all ${
+                phone.length !== 11 || loading
+                  ? "btn-disabled bg-base-300 text-base-content/30"
+                  : "bg-primary-600 hover:bg-primary-700"
+              }`}
               disabled={countdown > 0 || phone.length !== 11 || loading}
               onClick={() => sendSmsCode()}
             >
@@ -194,6 +214,13 @@ export default function PhoneAuthForm() {
             </button>
           </div>
         </div>
+
+        {/* 注册来源（登录/注册合一：仅首次注册时记录，老用户可忽略） */}
+        <SignupSourceSelect
+          value={signupSource}
+          onChange={setSignupSource}
+          hint="仅首次注册时记录"
+        />
 
         {/* 协议复选框 */}
         <div className="form-control">

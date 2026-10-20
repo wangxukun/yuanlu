@@ -8,6 +8,7 @@ import * as fs from "node:fs";
 import prisma from "@/lib/prisma";
 
 const INPUT =
+  process.argv[2] ??
   "D:/wxkzd/AI-Podcast-Studio/播客收录控制/Espresso English/cover_update.json";
 
 async function main() {
