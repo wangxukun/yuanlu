@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import type {
   ConversionStats,
   YearTrafficHeatmap,
+  AcquisitionRow,
 } from "@/lib/actions/conversion-actions";
 import {
   YearHeatmap,
@@ -76,12 +77,31 @@ const EVENT_COLORS: Record<string, string> = {
   QUOTA_BLOCKED: "#ef4444",
 };
 
+// 获客来源分布的中文标签（gzh_* = 小程序码归因，web_* = 网页注册自报）
+const ACQUISITION_LABELS: Record<string, string> = {
+  gzh_follow: "公众号 · 关注欢迎",
+  gzh_c1: "文章 C1 · 产品总览",
+  gzh_a2: "文章 A2 · BBC六分钟",
+  gzh_a3: "文章 A3 · VOA",
+  gzh_w1_b: "每周精听 W1",
+  gzh_w2_b: "每周精听 W2",
+  web_bilibili: "网页注册 · B站",
+  web_xiaohongshu: "网页注册 · 小红书",
+  web_gzh: "网页注册 · 公众号",
+  web_weapp: "网页注册 · 小程序",
+  web_search: "网页注册 · 搜索引擎",
+  web_friend: "网页注册 · 朋友推荐",
+  web_other: "网页注册 · 其他",
+};
+
 export default function ConversionClient({
   stats,
   yearTraffic,
+  acquisition,
 }: {
   stats: ConversionStats;
   yearTraffic: YearTrafficHeatmap;
+  acquisition: AcquisitionRow[];
 }) {
   const summaryOf = (type: string) =>
     stats.summary.find((s) => s.eventType === type);
@@ -259,6 +279,74 @@ export default function ConversionClient({
           </div>
           <p className="text-xs opacity-40 mt-2">
             注：触墙用户数为试用触墙与配额拦截独立用户之和（个别用户可能同时命中两类，为近似上界）
+          </p>
+        </div>
+      </div>
+
+      {/* 获客来源分布（北极星：注册来源 × 留存）——公众号联动 T5 页面版 */}
+      <div className="card bg-base-100 border border-base-200 shadow-sm">
+        <div className="card-body p-6">
+          <h2 className="card-title text-base font-black">
+            获客来源分布（近 {stats.days} 天）
+          </h2>
+          <p className="text-xs opacity-50 -mt-2">
+            北极星口径：各来源注册数 ×
+            回访；扫码→注册率仅对小程序码来源（gzh_*）有意义
+          </p>
+          <div className="overflow-x-auto mt-2">
+            <table className="table table-sm">
+              <thead>
+                <tr className="text-[11px] font-bold opacity-50 uppercase tracking-widest">
+                  <th>来源</th>
+                  <th className="text-right">扫码进入</th>
+                  <th className="text-right">注册</th>
+                  <th className="text-right">回访</th>
+                  <th className="text-right">扫码→注册</th>
+                </tr>
+              </thead>
+              <tbody>
+                {acquisition.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center opacity-50 py-8">
+                      周期内暂无注册与扫码记录
+                    </td>
+                  </tr>
+                )}
+                {acquisition.map((row) => {
+                  const isScanSource = row.source.startsWith("gzh_");
+                  const rate =
+                    isScanSource && row.scans > 0
+                      ? ((row.signups / row.scans) * 100).toFixed(1) + "%"
+                      : "—";
+                  return (
+                    <tr key={row.source} className="hover:bg-base-200/30">
+                      <td>
+                        <span className="font-bold text-xs">
+                          {row.source === ""
+                            ? "未标注（自然 / 站外）"
+                            : (ACQUISITION_LABELS[row.source] ?? row.source)}
+                        </span>
+                        {row.source !== "" && (
+                          <span className="opacity-40 text-xs ml-2 font-mono">
+                            {row.source}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right font-black">
+                        {row.scans || "—"}
+                      </td>
+                      <td className="text-right font-black">{row.signups}</td>
+                      <td className="text-right opacity-70">{row.cameBack}</td>
+                      <td className="text-right opacity-70">{rate}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs opacity-40 mt-2">
+            回访 = 注册 1 小时后仍活跃（7 日留存的轻量近似，量级起来后升级
+            cohort 口径）；扫码进入 = 小程序码带参访问（同一人多次进入计多次）
           </p>
         </div>
       </div>
