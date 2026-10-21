@@ -1,6 +1,7 @@
 import {
   getConversionStats,
   getYearTrafficHeatmap,
+  getAcquisitionStats,
 } from "@/lib/actions/conversion-actions";
 import ConversionClient from "./ConversionClient";
 
@@ -12,14 +13,19 @@ export default async function ConversionAnalyticsPage(props: {
 
   // 获取数据（Server Action 内部处理管理员权限校验）；
   // 全年热力图为滚动 365 天窗口，与 days 筛选无关，并行取数
-  const [stats, yearTraffic] = await Promise.all([
+  const [stats, yearTraffic, acquisition] = await Promise.all([
     getConversionStats(days),
     getYearTrafficHeatmap(),
+    getAcquisitionStats(days),
   ]);
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen bg-base-200/20">
-      <ConversionClient stats={stats} yearTraffic={yearTraffic} />
+      <ConversionClient
+        stats={stats}
+        yearTraffic={yearTraffic}
+        acquisition={acquisition}
+      />
     </div>
   );
 }

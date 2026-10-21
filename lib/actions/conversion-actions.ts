@@ -282,3 +282,88 @@ export async function getYearTrafficHeatmap(): Promise<YearTrafficHeatmap> {
     days,
   };
 }
+
+// ==================== 获客来源分布（北极星指标：注册来源 × 留存） ====================
+
+export interface AcquisitionRow {
+  /** 归因键：gzh_*（小程序码 scene/src）、web_*（网页注册自报）、空串 = 未标注 */
+  source: string;
+  /** 扫码进入次数（VisitorLog 内 wxapp 带参路径；web 来源无此环节为 0） */
+  scans: number;
+  /** 周期内注册数 */
+  signups: number;
+  /** 注册后 1 小时以上仍活跃（7 日留存的轻量近似，冷启动期口径） */
+  cameBack: number;
+}
+
+/**
+ * 获客来源分布（T5 页面版，取代独立周报脚本）：
+ * - 扫码 = VisitorLog 中 wxapp/ 路径带 scene= 或 src= 的访问，SQL 正则提取来源键
+ * - 注册 = User.signupSource 聚合（含 NULL"未标注"组），回访 = lastActiveAt 晚于
+ *   createAt + 1h（注册当次会话不计，之后仍来过才算）
+ * 时间窗与 getConversionStats 同口径（days ∈ {7,30,90}，本地零点起）。
+ */
+export async function getAcquisitionStats(
+  days = 30,
+): Promise<AcquisitionRow[]> {
+  await requireAdminAction();
+
+  const periodDays = [7, 30, 90].includes(days) ? days : 30;
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (periodDays - 1));
+
+  const [scanRows, signupRows] = await Promise.all([
+    prisma.$queryRaw<{ source: string; scans: number }[]>(Prisma.sql`
+      SELECT split_part(substring(path FROM '((scene|src)=[A-Za-z0-9_.-]+)'), '=', 2) AS source,
+             COUNT(*)::int AS scans
+      FROM "VisitorLog"
+      WHERE "createAt" >= ${since}
+        AND path LIKE 'wxapp/%'
+        AND path ~ '(scene|src)='
+      GROUP BY 1
+    `),
+    prisma.$queryRaw<
+      {
+        source: string | null;
+        signups: number;
+        came_back: number;
+      }[]
+    >(Prisma.sql`
+      SELECT "signupSource" AS source,
+             COUNT(*)::int AS signups,
+             COUNT(*) FILTER (
+               WHERE "lastActiveAt" > "createAt" + interval '1 hour'
+             )::int AS came_back
+      FROM "User"
+      WHERE "createAt" >= ${since}
+      GROUP BY 1
+    `),
+  ]);
+
+  const map = new Map<string, AcquisitionRow>();
+  for (const r of scanRows) {
+    map.set(r.source, {
+      source: r.source,
+      scans: r.scans,
+      signups: 0,
+      cameBack: 0,
+    });
+  }
+  for (const r of signupRows) {
+    const key = r.source ?? "";
+    const row = map.get(key) ?? {
+      source: key,
+      scans: 0,
+      signups: 0,
+      cameBack: 0,
+    };
+    row.signups = r.signups;
+    row.cameBack = r.came_back;
+    map.set(key, row);
+  }
+
+  return [...map.values()].sort(
+    (a, b) => b.signups - a.signups || b.scans - a.scans,
+  );
+}
