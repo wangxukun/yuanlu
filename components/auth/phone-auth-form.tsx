@@ -100,11 +100,18 @@ export default function PhoneAuthForm() {
     setLoading(true);
 
     try {
+      // NextAuth signIn 用 URLSearchParams 序列化请求体，undefined 值会被
+      // 字符串化成字面量 "undefined" 传给后端——未选择来源时必须整键省略
+      const credentials: {
+        phone: string;
+        code: string;
+        signupSource?: string;
+      } = { phone, code };
+      if (signupSource) credentials.signupSource = signupSource;
+
       const res = await signIn("credentials", {
         redirect: false,
-        phone,
-        code,
-        signupSource: signupSource || undefined,
+        ...credentials,
       });
 
       console.log("NextAuth signIn response:", res);
