@@ -7,7 +7,9 @@
 export const SIGNUP_SOURCE_OPTIONS = [
   { value: "web_bilibili", label: "B 站" },
   { value: "web_xiaohongshu", label: "小红书" },
+  { value: "web_douyin", label: "抖音" },
   { value: "web_gzh", label: "微信公众号" },
+  { value: "web_sph", label: "微信视频号" },
   { value: "web_weapp", label: "微信小程序" },
   { value: "web_search", label: "搜索引擎" },
   { value: "web_friend", label: "朋友推荐" },
