@@ -6,8 +6,13 @@
 
 const SOURCE_RE = /^[A-Za-z0-9_.-]{1,100}$/;
 
+// JS 字符串化伪值：字符集合法但绝非真实来源（如 NextAuth signIn 的
+// URLSearchParams 会把 undefined 序列化成字面量 "undefined"），一律按无来源处理
+const JUNK_LITERALS = new Set(["undefined", "null", "NaN"]);
+
 export function normalizeSignupSource(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
+  if (JUNK_LITERALS.has(trimmed)) return undefined;
   return SOURCE_RE.test(trimmed) ? trimmed : undefined;
 }
