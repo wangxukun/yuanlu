@@ -41,7 +41,7 @@ export async function GET() {
     }
     // 私有桶直链 403：卡片封面统一现签（TTL 3h，与 detail 路由口径一致）
     const cards = await Promise.all(
-      result.cards.map(async (card) => ({
+      (result.cards || []).map(async (card) => ({
         ...card,
         coverUrl: await signOssHttpUrl(card.coverUrl),
       })),
