@@ -10,6 +10,7 @@ import {
 import { Episode } from "@/core/episode/episode.entity";
 import { Subtitle, SpeechPracticeRecord } from "@/lib/types";
 import { FREE_VISIBLE_HISTORY_RECORDS } from "@/lib/quota";
+import { attachClipAudio } from "@/core/corpus/clip-attach.core";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -114,6 +115,35 @@ export async function GET(req: NextRequest) {
       speaker: "speaker" in item ? item.speaker : undefined,
       words: "words" in item ? item.words : undefined,
     }));
+
+    // 3.5 [RESHAPE T1.3-4] 语料切片装饰（纯 additive）：命中的字幕句追加
+    //     可选 clipId / clipAudioUrl / clipOffset / clipDuration；未缓存切片
+    //     不触发转码（客户端可经 /api/clips/{clipId}/audio 懒取）。尽力而
+    //     为——装饰异常不拖垮既有响应，旧客户端对新字段零感知。
+    try {
+      const clipRows = await prisma.corpus_clips.findMany({
+        where: { episodeid: id },
+        select: {
+          clipid: true,
+          subtitleId: true,
+          startTime: true,
+          endTime: true,
+          clipAudioKey: true,
+        },
+      });
+      const decorated = await attachClipAudio(
+        subtitles,
+        clipRows,
+        (key, expire) => generateSignatureUrl(key, expire),
+        (item) => item.id,
+      );
+      subtitles.splice(0, subtitles.length, ...(decorated as Subtitle[]));
+    } catch (error) {
+      console.warn(
+        "[GET /api/speech/practice-data] clip decorate skipped:",
+        error,
+      );
+    }
 
     // 4. 数据类型适配
     const episodeData: Episode = {

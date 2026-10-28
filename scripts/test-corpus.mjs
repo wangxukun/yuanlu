@@ -11,6 +11,8 @@
  *      弱音画像解析（多形态容错）、双螺旋处方装配
  *   五、studio-generate.service（DI）：会员门禁、频率限制、LLM 降级、
  *      NO_MATCH、happy path 落库（items 携带 clipId 新列）
+ *   六、clip-attach.core（T1.3-4 additive 装饰器）：索引/未命中原样/缓存签发/
+ *      未缓存零转码零签名/签名失败不抛错/偏移时长口径/where 构造分组去重
  *
  * 运行：node scripts/test-corpus.mjs（yuanlu 仓；不依赖 DB/网络/OSS）
  */
@@ -47,6 +49,7 @@ const { clipAudioService } = await import(
 );
 const curatorCore = await import("../core/studio/curator.core.ts");
 const studioMod = await import("../core/studio/studio-generate.service.ts");
+const attachMod = await import("../core/corpus/clip-attach.core.ts");
 
 let failed = 0;
 function assert(cond, msg) {
@@ -912,6 +915,131 @@ console.log(
   assert(
     !noMatch.ok && noMatch.code === "NO_MATCH",
     "召回不足 → NO_MATCH（422 语义）",
+  );
+}
+
+console.log(
+  "━━━ 六、clip-attach.core（T1.3-4：既有响应的 additive 切片装饰） ━━━",
+);
+{
+  const { attachClipAudio, buildClipAttachIndex, buildClipRowsWhere } =
+    attachMod;
+  const signCalls = [];
+  const sign = async (key, expire) => {
+    signCalls.push({ key, expire });
+    if (key.includes("broken")) throw new Error("sign fail");
+    return `https://signed/${key}?e=${expire}`;
+  };
+
+  const rows = [
+    {
+      clipid: "cA",
+      subtitleId: 10,
+      startTime: 100,
+      endTime: 108,
+      clipAudioKey: "yuanlu/clips/cA.mp3",
+    },
+    {
+      clipid: "cB",
+      subtitleId: 11,
+      startTime: 200,
+      endTime: 212,
+      clipAudioKey: null,
+    },
+    {
+      clipid: "cC",
+      subtitleId: 12,
+      startTime: 300,
+      endTime: 308,
+      clipAudioKey: "broken/cC.mp3",
+    },
+  ];
+
+  // 索引构建
+  const idx = buildClipAttachIndex(rows);
+  assert(
+    idx.size === 3 && idx.get(10).clipid === "cA",
+    "索引：subtitleId → 切片行",
+  );
+
+  const items = [
+    { subtitleId: 10, en: "hit cached" },
+    { subtitleId: 11, en: "hit uncached" },
+    { subtitleId: 99, en: "no clip" },
+    { subtitleId: null, en: "null key" },
+    { subtitleId: 12, en: "sign broken" },
+  ];
+
+  const out = await attachClipAudio(items, rows, sign, (i) => i.subtitleId);
+
+  assert(
+    out[0].clipId === "cA" &&
+      out[0].clipAudioUrl === "https://signed/yuanlu/clips/cA.mp3?e=3600",
+    "缓存命中：clipId + 签名直链（默认 1h）",
+  );
+  assert(
+    near(out[0].clipOffset, 99.75) && near(out[0].clipDuration, 8.6),
+    "对齐协议：clipOffset=start-0.25 / clipDuration=end+0.35-start+0.25（与网关同口径）",
+  );
+  assert(
+    out[1].clipId === "cB" &&
+      out[1].clipAudioUrl === undefined &&
+      out[1].clipOffset === undefined,
+    "未缓存：仅 clipId，零签名零转码（客户端走 /api/clips/{id}/audio 懒取）",
+  );
+  assert(
+    JSON.stringify({ ...out[2] }) === JSON.stringify(items[2]) &&
+      out[2] === items[2],
+    "未命中条目：引用不变、零字段追加（既有消费方零感知）",
+  );
+  assert(out[3] === items[3], "key 为 null：原样返回");
+  assert(
+    out[4].clipId === "cC" &&
+      out[4].clipAudioUrl === undefined &&
+      near(out[4].clipOffset, 299.75),
+    "签名失败：url 缺省但偏移/时长仍在，不抛错",
+  );
+  assert(
+    signCalls.length === 2 && signCalls.every((c) => c.expire === 3600),
+    "签名仅对缓存行发起（未命中/未缓存/懒取路径零调用）",
+  );
+
+  // 自定义过期 + 自定义 keyOf（practice-data 的字幕条目以 id 为键）
+  signCalls.length = 0;
+  const byId = await attachClipAudio(
+    [{ id: 10 }, { id: 99 }],
+    rows,
+    sign,
+    (i) => i.id,
+    { expireSec: 120 },
+  );
+  assert(
+    signCalls.length === 1 &&
+      signCalls[0].expire === 120 &&
+      byId[0].clipId === "cA",
+    "keyOf 自定义（subtitles.id）+ 自定义 expireSec",
+  );
+
+  // where 构造：跨剧集分组去重 + 脏数据丢弃
+  const where = buildClipRowsWhere([
+    { episodeid: "e1", subtitleId: 1 },
+    { episodeid: "e1", subtitleId: 1 },
+    { episodeid: "e2", subtitleId: 7 },
+    { episodeid: "", subtitleId: 9 },
+    { episodeid: "e3" },
+  ]);
+  assert(
+    where.OR.length === 2 &&
+      where.OR[0].episodeid === "e1" &&
+      where.OR[0].subtitleId.in.length === 1 &&
+      where.OR[1].episodeid === "e2" &&
+      where.OR[1].subtitleId.in[0] === 7,
+    "where 构造：按剧集分组、subtitleId 去重、空 episodeid/缺 subtitleId 丢弃",
+  );
+  assert(
+    buildClipRowsWhere([]) === null &&
+      buildClipRowsWhere([{ episodeid: "e", subtitleId: 3 }]).OR.length === 1,
+    "where 构造：空输入 null / 单集单句可用",
   );
 }
 
