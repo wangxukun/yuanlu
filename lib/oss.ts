@@ -1,4 +1,5 @@
-import OSS, { Options } from "ali-oss";
+import OSS from "ali-oss";
+import type { Options } from "ali-oss";
 import * as process from "process";
 
 const config: Options = {
@@ -128,4 +129,20 @@ export function extractOssKey(urlOrKey: string): string | null {
     // If URL parsing fails, return original value as potential key
     return urlOrKey;
   }
+}
+
+/**
+ * [RESHAPE] 完整 OSS URL → 现签临时访问 URL（私有桶直链 403 防护）。
+ * 语料/剧集表落库存的是完整 URL（上传返回值），发现页明信片、今日五分钟
+ * 处方卡、微剧场详情等小程序直连接口须现签；TTL 与 detail 路由口径一致 3h。
+ * 空值原样返回（不签出无效地址）；已带查询串的 URL 不重复签。
+ */
+export async function signOssHttpUrl(
+  url: string | null | undefined,
+  expire = 3600 * 3,
+): Promise<string | null> {
+  if (!url) return url ?? null;
+  const key = extractOssKey(url);
+  if (!key || key === url) return url;
+  return generateSignatureUrl(key, expire);
 }

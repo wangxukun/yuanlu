@@ -5,6 +5,7 @@ import {
   pickGoldenClip,
   sanitizeSceneTitle,
 } from "@/core/corpus/clip-core";
+import { signOssHttpUrl } from "@/lib/oss";
 
 /**
  * [RESHAPE T1.4] GET /api/scenes/feed — 探索画廊分页卡片流（声音明信片）。
@@ -70,41 +71,44 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const items = rows.map((row) => {
-      const clips =
-        (
-          row.clipsJson as {
-            clips?: Array<{
-              textEn?: string;
-              textCn?: string | null;
-              start?: number;
-              end?: number;
-            }>;
-          } | null
-        )?.clips || [];
-      // 金句：首句带红线词时跳到首个干净句；全部命中回退首句并对译文再净
-      const goldenClip = pickGoldenClip(clips);
-      return {
-        sceneid: row.sceneid,
-        title: sanitizeSceneTitle(row.title, row.startTime),
-        summaryZh: row.summaryZh,
-        situationTag: row.situationTag,
-        cefrLevel: row.cefrLevel,
-        coverUrl: row.coverUrl,
-        duration: row.duration,
-        clipCount: clips.length,
-        golden: goldenClip
-          ? {
-              en: goldenClip.textEn || "",
-              zh: hasSensitiveTerm(goldenClip.textCn)
-                ? null
-                : goldenClip.textCn || null,
-              start: goldenClip.start ?? row.startTime,
-              end: goldenClip.end ?? row.endTime,
-            }
-          : null,
-      };
-    });
+    const items = await Promise.all(
+      rows.map(async (row) => {
+        const clips =
+          (
+            row.clipsJson as {
+              clips?: Array<{
+                textEn?: string;
+                textCn?: string | null;
+                start?: number;
+                end?: number;
+              }>;
+            } | null
+          )?.clips || [];
+        // 金句：首句带红线词时跳到首个干净句；全部命中回退首句并对译文再净
+        const goldenClip = pickGoldenClip(clips);
+        return {
+          sceneid: row.sceneid,
+          title: sanitizeSceneTitle(row.title, row.startTime),
+          summaryZh: row.summaryZh,
+          situationTag: row.situationTag,
+          cefrLevel: row.cefrLevel,
+          // 私有桶直链 403：封面现签（TTL 3h）
+          coverUrl: await signOssHttpUrl(row.coverUrl),
+          duration: row.duration,
+          clipCount: clips.length,
+          golden: goldenClip
+            ? {
+                en: goldenClip.textEn || "",
+                zh: hasSensitiveTerm(goldenClip.textCn)
+                  ? null
+                  : goldenClip.textCn || null,
+                start: goldenClip.start ?? row.startTime,
+                end: goldenClip.end ?? row.endTime,
+              }
+            : null,
+        };
+      }),
+    );
 
     return NextResponse.json({
       success: true,
