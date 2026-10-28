@@ -302,6 +302,9 @@ model learning_path_items {
   /// 路径详情）按剧集渲染不受影响，新消费方（小程序卡册）读 clipId/sceneId
   clipId    String?        @db.VarChar(64)
   sceneId   String?        @db.VarChar(64)
+  /// [RESHAPE T3.2] 蒙太奇卡片策展批注（心愿卡册条目专属，普通剧集条目为 null）
+  clipNote     String?
+  clipQuestion String?
   episode   episode        @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
   path      learning_paths @relation(fields: [pathid], references: [pathid], onDelete: Cascade)
 

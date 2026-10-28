@@ -389,6 +389,9 @@ export function createStudioGenerateService(deps: StudioGenerateDeps) {
           pathid: pathid.pathid,
           episodeid: card.episodeid,
           clipId: card.clipid,
+          // [T3.2] 逐卡策展批注/微互动题（蒙太奇卡册详情渲染用，可空列）
+          clipNote: card.note || null,
+          clipQuestion: card.question || null,
           order: index,
         })),
       });

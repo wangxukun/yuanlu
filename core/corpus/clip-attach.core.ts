@@ -109,3 +109,33 @@ export function buildClipRowsWhere(
     })),
   };
 }
+
+// ==================== 路径详情的蒙太奇卡片附加（T3.2） ====================
+
+export interface ClipCardRow {
+  clipid: string;
+  enText: string;
+  zhText: string | null;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  wpm: number;
+  cefrLevel: string | null;
+  coverUrl: string | null;
+  sourceLabel: string | null;
+}
+
+/**
+ * learning_path_items 的蒙太奇字段附加（纯 additive）：携带 clipId 的条目
+ * 附上 `clip`（corpus 切片行，供小程序卡册渲染原声卡）；无 clipId 的普通
+ * 剧集条目原样返回（零字段追加，网页版零感知）。
+ */
+export function decoratePathItemsWithClips<
+  T extends { clipId?: string | null },
+>(items: T[], clipRows: ClipCardRow[]): Array<T & { clip?: ClipCardRow }> {
+  const byId = new Map((clipRows || []).map((r) => [r.clipid, r]));
+  return (items || []).map((item) => {
+    const clip = item.clipId ? byId.get(item.clipId) : undefined;
+    return clip ? { ...item, clip } : item;
+  });
+}
