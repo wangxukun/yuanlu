@@ -14,6 +14,7 @@
     "test:wxpayreconcile": "node scripts/test-wxpay-reconcile.mjs",
     "test:wxpayorders": "node scripts/test-wxpay-orders.mjs",
     "test:msgseccheck": "node scripts/test-msg-sec-check.mjs",
+    "test:corpus": "node scripts/test-corpus.mjs",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx app/",
     "upload:channel-covers": "tsx scripts/upload-channel-covers.ts",
