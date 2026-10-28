@@ -23,9 +23,14 @@ export function runFfmpeg(args: string[]): Promise<Buffer> {
       if (stderr.length > 4000) stderr = stderr.slice(-2000);
     });
     child.on("error", (err) => reject(err));
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
       if (code === 0 && chunks.length > 0) resolve(Buffer.concat(chunks));
-      else reject(new Error(`ffmpeg exited ${code}: ${stderr.slice(-400)}`));
+      else
+        reject(
+          new Error(
+            `ffmpeg exited ${code}${signal ? ` signal ${signal}` : ""}: ${stderr.slice(-400)}`,
+          ),
+        );
     });
   });
 }
