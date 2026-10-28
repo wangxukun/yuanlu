@@ -591,3 +591,44 @@ export function mapDeepDiveIntoScenes(
     return { vocabulary, sentences, quiz };
   });
 }
+
+/* ─────────── 内容级合规净化（发现页语料红线词） ─────────── */
+
+/**
+ * 内容级红线词：场景标题/金句截自字幕原文，会自然携带「播客/AI」等
+ * 个人主体审核红线词（源码级扫描管不到数据库内容，读取侧须再净一道）。
+ * 英文侧只匹配独立词（\bAI\b 不误伤 said/daily/airline）。
+ */
+const SENSITIVE_CONTENT_RE = /播客|大模型|智能|\bAI\b|\bpodcasts?\b/i;
+
+export function hasSensitiveTerm(text: string | null | undefined): boolean {
+  return typeof text === "string" && SENSITIVE_CONTENT_RE.test(text);
+}
+
+/**
+ * 场景标题净化：命中红线词即整句弃用（截断改写会语句不通），
+ * 回落中性「微剧场 Ns」标题；空标题同口径回落。
+ */
+export function sanitizeSceneTitle(
+  title: string | null | undefined,
+  startTimeSec: number,
+): string {
+  const t = (title || "").trim();
+  if (t && !hasSensitiveTerm(t)) return t;
+  return `微剧场 ${Math.round(startTimeSec)}s`;
+}
+
+/**
+ * 金句挑选：默认首句，首句译文/原文带红线词时跳到下一句干净句
+ * （发现页明信片与日签海报直接展示金句双语，内容红线在这把住）。
+ * 全部命中时回退首句，由展示层对译文再净一道。
+ */
+export function pickGoldenClip<
+  T extends { textEn?: string | null; textCn?: string | null },
+>(clips: T[]): T | null {
+  if (!Array.isArray(clips) || clips.length === 0) return null;
+  for (const c of clips) {
+    if (!hasSensitiveTerm(c?.textEn) && !hasSensitiveTerm(c?.textCn)) return c;
+  }
+  return clips[0];
+}

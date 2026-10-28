@@ -29,6 +29,7 @@ import {
   buildClipsFromSubtitles,
   groupScenes,
   mapDeepDiveIntoScenes,
+  sanitizeSceneTitle,
   type SubtitleItem,
 } from "../core/corpus/clip-core";
 
@@ -244,7 +245,8 @@ async function main() {
         await prisma.micro_scenes.createMany({
           data: scenes.map((scene, i) => ({
             episodeid: ep.episodeid,
-            title: scene.title || `微剧场 ${Math.round(scene.startTime)}s`,
+            // 标题截自字幕首句，红线词（播客/AI…）整句弃用回落中性标题
+            title: sanitizeSceneTitle(scene.title, scene.startTime),
             summaryZh: scene.summaryZh,
             situationTag: meta.topicTags[0] || null,
             cefrLevel: meta.cefrLevel,
