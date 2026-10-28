@@ -1,6 +1,7 @@
 // yuanlu/core/learning-path/learning-path.service.ts
 
 import prisma from "@/lib/prisma";
+import { decoratePathItemsWithClips } from "@/core/corpus/clip-attach.core";
 import { CreateLearningPathDto, LearningPathDto } from "./dto";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss";
@@ -200,24 +201,54 @@ export const learningPathService = {
       // 路径封面 = 第一集签名封面（无剧集为 null，客户端回退标题占位）
       coverUrl: rawPath.items[0]?.episode?.coverUrl || null,
       creatorName: creator?.user_profile?.nickname || "User",
-      items: rawPath.items.map((item) => ({
-        id: item.id,
-        episodeid: item.episodeid,
-        order: item.order,
-        addedAt: item.addedAt,
-        episode: {
+      items: decoratePathItemsWithClips(
+        rawPath.items.map((item) => ({
+          id: item.id,
           episodeid: item.episodeid,
-          title: item.episode.title,
-          coverUrl: item.episode.coverUrl,
-          audioUrl: item.episode.audioUrl ?? "",
-          duration: item.episode.duration,
-          isExclusive: item.episode.isExclusive ?? false,
-          podcast: { title: item.episode.podcast?.title ?? "" },
-          progressSeconds: historyMap.get(item.episodeid)?.progressSeconds ?? 0,
-          isFinished: historyMap.get(item.episodeid)?.isFinished ?? false,
-        },
-      })),
+          order: item.order,
+          addedAt: item.addedAt,
+          // [RESHAPE T3.2] 蒙太奇卡册可空字段（普通剧集条目为 undefined，
+          // 纯 additive——网页版/旧客户端读不到即忽略）
+          clipId: item.clipId ?? undefined,
+          clipNote: item.clipNote ?? undefined,
+          clipQuestion: item.clipQuestion ?? undefined,
+          episode: {
+            episodeid: item.episodeid,
+            title: item.episode.title,
+            coverUrl: item.episode.coverUrl,
+            audioUrl: item.episode.audioUrl ?? "",
+            duration: item.episode.duration,
+            isExclusive: item.episode.isExclusive ?? false,
+            podcast: { title: item.episode.podcast?.title ?? "" },
+            progressSeconds:
+              historyMap.get(item.episodeid)?.progressSeconds ?? 0,
+            isFinished: historyMap.get(item.episodeid)?.isFinished ?? false,
+          },
+        })),
+        await this.fetchClipCards(rawPath.items),
+      ),
     };
+  },
+
+  /** [RESHAPE T3.2] 携带 clipId 的条目批量取语料切片行（无则零查询） */
+  async fetchClipCards(items: Array<{ clipId: string | null }>) {
+    const ids = items.map((i) => i.clipId).filter((v): v is string => !!v);
+    if (ids.length === 0) return [];
+    return prisma.corpus_clips.findMany({
+      where: { clipid: { in: ids } },
+      select: {
+        clipid: true,
+        enText: true,
+        zhText: true,
+        startTime: true,
+        endTime: true,
+        duration: true,
+        wpm: true,
+        cefrLevel: true,
+        coverUrl: true,
+        sourceLabel: true,
+      },
+    });
   },
 
   /**

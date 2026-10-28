@@ -873,6 +873,13 @@ console.log(
       ),
     "条目携带新增列 clipId + 兼容列 episodeid（网页版零感知）",
   );
+  assert(
+    db.items.every(
+      (it) =>
+        typeof it.clipNote === "string" && typeof it.clipQuestion === "string",
+    ),
+    "条目落库 clipNote/clipQuestion（蒙太奇点睛批注，T3.2 可空列）",
+  );
 
   // 频率限制（15s 冷却）
   const cooled = await service.generate("u1", "USER", { prompt: "再许一个愿" });
@@ -1040,6 +1047,67 @@ console.log(
     buildClipRowsWhere([]) === null &&
       buildClipRowsWhere([{ episodeid: "e", subtitleId: 3 }]).OR.length === 1,
     "where 构造：空输入 null / 单集单句可用",
+  );
+}
+
+console.log(
+  "━━━ 七、decoratePathItemsWithClips（T3.2 路径详情蒙太奇附加） ━━━",
+);
+{
+  const { decoratePathItemsWithClips } = attachMod;
+  const clipRows = [
+    {
+      clipid: "cA",
+      enText: "push back the timeline",
+      zhText: "推迟时间线",
+      startTime: 10,
+      endTime: 18,
+      duration: 8,
+      wpm: 120,
+      cefrLevel: "B2",
+      coverUrl: "cvA",
+      sourceLabel: "访谈",
+    },
+    {
+      clipid: "cB",
+      enText: "a bit of a stretch",
+      zhText: "有点勉强",
+      startTime: 30,
+      endTime: 38,
+      duration: 8,
+      wpm: 130,
+      cefrLevel: "B2",
+      coverUrl: null,
+      sourceLabel: null,
+    },
+  ];
+  const items = [
+    {
+      id: 1,
+      episodeid: "ep1",
+      clipId: "cA",
+      clipNote: "n1",
+      episode: { title: "E1" },
+    },
+    { id: 2, episodeid: "ep2", clipId: "ghost" },
+    { id: 3, episodeid: "ep3", clipId: null, episode: { title: "E3" } },
+  ];
+  const out = decoratePathItemsWithClips(items, clipRows);
+  assert(
+    out[0].clip &&
+      out[0].clip.clipid === "cA" &&
+      out[0].clip.enText === "push back the timeline",
+    "携带 clipId 且行存在 → 附 clip 切片行（enText/wpm/cefr 齐备）",
+  );
+  assert(!("clip" in out[1]), "clipId 指向缺失行 → 不附 clip（防御）");
+  assert(
+    !("clip" in out[2]) && JSON.stringify(out[2]) === JSON.stringify(items[2]),
+    "普通剧集条目 → 零字段追加（网页版零感知）",
+  );
+  assert(
+    decoratePathItemsWithClips([], clipRows).length === 0 &&
+      decoratePathItemsWithClips(items, []).every((o) => !("clip" in o)),
+    "空 items / 空切片行 → 全部原样",
   );
 }
 
