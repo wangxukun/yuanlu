@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
+import { signOssHttpUrl } from "@/lib/oss";
 import { createDailyPrescriptionService } from "@/core/studio/daily-prescription.service";
 
 /**
@@ -38,7 +39,14 @@ export async function GET() {
         { status: 422 },
       );
     }
-    return NextResponse.json({ success: true, data: { cards: result.cards } });
+    // 私有桶直链 403：卡片封面统一现签（TTL 3h，与 detail 路由口径一致）
+    const cards = await Promise.all(
+      result.cards.map(async (card) => ({
+        ...card,
+        coverUrl: await signOssHttpUrl(card.coverUrl),
+      })),
+    );
+    return NextResponse.json({ success: true, data: { cards } });
   } catch (error) {
     console.error("[GET /api/studio/daily-prescription]", error);
     return NextResponse.json(
