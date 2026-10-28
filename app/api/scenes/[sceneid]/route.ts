@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, canAccessEpisode } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
+import { sanitizeSceneTitle } from "@/core/corpus/clip-core";
 import { buildRealClipAudioDeps } from "@/core/corpus/clip-audio.deps";
 import { clipAudioService } from "@/core/corpus/clip-audio.service";
 
@@ -75,7 +76,7 @@ export async function GET(
         scene: {
           sceneid: scene.sceneid,
           episodeid: scene.episodeid,
-          title: scene.title,
+          title: sanitizeSceneTitle(scene.title, scene.startTime),
           summaryZh: scene.summaryZh,
           situationTag: scene.situationTag,
           cefrLevel: scene.cefrLevel,

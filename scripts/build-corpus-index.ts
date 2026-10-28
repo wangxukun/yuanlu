@@ -29,6 +29,7 @@ import {
   buildClipsFromSubtitles,
   groupScenes,
   mapDeepDiveIntoScenes,
+  sanitizeSceneTitle,
   type SubtitleItem,
 } from "../core/corpus/clip-core";
 
@@ -145,31 +146,91 @@ async function main() {
       totalScenes += scenes.length;
       if (args.dry) continue;
 
-      // 幂等重建（仅新增表）：先删后建
-      await prisma.corpus_clips.deleteMany({
+      // ── 幂等智能同步（clipid 稳定 → OSS 切片零孤儿） ──
+      // 已有 (episodeid, subtitleId) 的行 → update 原行（保留 clipid/clipAudioKey，
+      //   仅刷新声学指纹与元数据）——已缓存的 OSS 音频对象名不变，自然命中。
+      // 新增句 → create（新 clipid，首次播放时懒切片）。
+      // 已删除/被过滤的句 → delete 该行（对应的 OSS 对象由生命周期规则清理）。
+      // 微剧场同口径：deleteMany + createMany（sceneid 不稳定但 sceneid 不作为
+      //   OSS 对象名——微剧场音频也是懒生成，sceneid 变化仅影响首次转码）。
+      const existingClips = await prisma.corpus_clips.findMany({
         where: { episodeid: ep.episodeid },
+        select: { clipid: true, subtitleId: true },
       });
-      await prisma.micro_scenes.deleteMany({
-        where: { episodeid: ep.episodeid },
-      });
+      const existingBySubtitle = new Map(
+        existingClips.map((c) => [c.subtitleId, c]),
+      );
 
-      const created = await prisma.corpus_clips.createMany({
-        data: drafts.map((d) => ({
-          ...d,
-          ...meta,
-          wordsJson: (d.wordsJson ?? undefined) as object | undefined,
-          acousticFlags: (d.acousticFlags ?? undefined) as object | undefined,
-        })),
-      });
+      const draftSubIds = new Set(drafts.map((d) => d.subtitleId));
+      const toDelete = existingClips.filter(
+        (c) => !draftSubIds.has(c.subtitleId),
+      );
+      const toCreate = drafts.filter(
+        (d) => !existingBySubtitle.has(d.subtitleId),
+      );
+      const toUpdate = drafts.filter((d) =>
+        existingBySubtitle.has(d.subtitleId),
+      );
 
-      // createMany 后回读拿 clipid（cuid 由库侧生成），再组装微剧场
-      const inserted = await prisma.corpus_clips.findMany({
+      // 1) 删除已不存在的句（字幕修正后被过滤/移除）
+      if (toDelete.length > 0) {
+        await prisma.corpus_clips.deleteMany({
+          where: { clipid: { in: toDelete.map((c) => c.clipid) } },
+        });
+      }
+
+      // 2) 更新已有行（保留 clipid/clipAudioKey）
+      for (const d of toUpdate) {
+        const existing = existingBySubtitle.get(d.subtitleId)!;
+        await prisma.corpus_clips.update({
+          where: { clipid: existing.clipid },
+          data: {
+            startTime: d.startTime,
+            endTime: d.endTime,
+            duration: d.duration,
+            enText: d.enText,
+            zhText: d.zhText,
+            speaker: d.speaker,
+            wordsJson: (d.wordsJson ?? undefined) as object | undefined,
+            wpm: d.wpm,
+            acousticFlags: (d.acousticFlags ?? undefined) as object | undefined,
+            phonemeTags: d.phonemeTags,
+            wordCount: d.wordCount,
+            cefrLevel: meta.cefrLevel,
+            coverUrl: meta.coverUrl,
+            sourceLabel: meta.sourceLabel,
+            topicTags: meta.topicTags,
+          },
+        });
+      }
+
+      // 3) 新增句
+      if (toCreate.length > 0) {
+        await prisma.corpus_clips.createMany({
+          data: toCreate.map((d) => ({
+            ...d,
+            ...meta,
+            wordsJson: (d.wordsJson ?? undefined) as object | undefined,
+            acousticFlags: (d.acousticFlags ?? undefined) as object | undefined,
+          })),
+        });
+      }
+
+      // 回读全部行拿 clipid（含新增+保留），组装微剧场
+      const allClips = await prisma.corpus_clips.findMany({
         where: { episodeid: ep.episodeid },
         select: { clipid: true, subtitleId: true },
       });
       const idBySubtitle = new Map(
-        inserted.map((c) => [c.subtitleId, c.clipid]),
+        allClips.map((c) => [c.subtitleId, c.clipid]),
       );
+
+      // 微剧场：仍 deleteMany + createMany（sceneid 不用于 OSS 对象名，
+      // 首次请求时懒切片，sceneid 变化不产生 OSS 孤儿——旧 scene 的
+      // OSS 对象（如已生成）会在 OSS 生命周期规则下自然过期）
+      await prisma.micro_scenes.deleteMany({
+        where: { episodeid: ep.episodeid },
+      });
 
       const deepDiveRow = await prisma.episode_deep_dives.findUnique({
         where: { episodeid: ep.episodeid },
@@ -184,7 +245,8 @@ async function main() {
         await prisma.micro_scenes.createMany({
           data: scenes.map((scene, i) => ({
             episodeid: ep.episodeid,
-            title: scene.title || `微剧场 ${Math.round(scene.startTime)}s`,
+            // 标题截自字幕首句，红线词（播客/AI…）整句弃用回落中性标题
+            title: sanitizeSceneTitle(scene.title, scene.startTime),
             summaryZh: scene.summaryZh,
             situationTag: meta.topicTags[0] || null,
             cefrLevel: meta.cefrLevel,
@@ -212,10 +274,14 @@ async function main() {
           })),
         });
       }
-      if (created.count !== drafts.length) {
-        console.warn(
-          `  ⚠ ${ep.title}: 落库 ${created.count}/${drafts.length}`,
+
+      // 输出同步统计（增/删/更/保留——首次跑全部为增）
+      if (toDelete.length > 0 || toCreate.length > 0 || toUpdate.length > 0) {
+        console.log(
+          `    同步：新增 ${toCreate.length} / 更新 ${toUpdate.length} / 删除 ${toDelete.length} / 保留 clipid ${existingClips.length - toDelete.length}`,
         );
+      } else {
+        console.log(`    同步：全部命中，clipid 零变化`);
       }
     }
 

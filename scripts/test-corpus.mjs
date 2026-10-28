@@ -1111,6 +1111,68 @@ console.log(
   );
 }
 
+console.log("━━━ 内容级合规净化（标题/金句红线词） ━━━");
+{
+  assert(
+    clipCore.hasSensitiveTerm("这个播客叫做《英国英语播客》") === true,
+    "hasSensitiveTerm：标题含「播客」→ true",
+  );
+  assert(
+    clipCore.hasSensitiveTerm("大模型与人工智能时代") === true,
+    "hasSensitiveTerm：含「大模型/智能」→ true",
+  );
+  assert(
+    clipCore.hasSensitiveTerm("A daily podcast for learners") === true &&
+      clipCore.hasSensitiveTerm("AI will change everything") === true,
+    "hasSensitiveTerm：英文独立词 podcast/AI → true",
+  );
+  assert(
+    clipCore.hasSensitiveTerm("we said the airline is daily") === false &&
+      clipCore.hasSensitiveTerm("trainer and waiting") === false &&
+      clipCore.hasSensitiveTerm("") === false &&
+      clipCore.hasSensitiveTerm(null) === false,
+    "hasSensitiveTerm：said/airline/daily 不误伤（\\b 边界）/空值 → false",
+  );
+  assert(
+    clipCore.sanitizeSceneTitle("我们聊聊工作面试", 42) === "我们聊聊工作面试",
+    "sanitizeSceneTitle：干净标题原样通过",
+  );
+  assert(
+    clipCore.sanitizeSceneTitle("这个播客叫做X", 42.6) === "微剧场 43s",
+    "sanitizeSceneTitle：红线标题 → 中性「微剧场 Ns」（四舍五入）",
+  );
+  assert(
+    clipCore.sanitizeSceneTitle("", 7) === "微剧场 7s" &&
+      clipCore.sanitizeSceneTitle(null, 7) === "微剧场 7s",
+    "sanitizeSceneTitle：空标题同口径回落",
+  );
+  const gclips = [
+    { textEn: "a", textCn: "这个播客很棒" },
+    { textEn: "b", textCn: "干净的下一句" },
+    { textEn: "c", textCn: null },
+  ];
+  assert(
+    clipCore.pickGoldenClip(gclips)?.textEn === "b",
+    "pickGoldenClip：首句脏 → 跳到首个干净句",
+  );
+  assert(
+    clipCore.pickGoldenClip([
+      { textEn: "en-only", textCn: null },
+      { textEn: "b", textCn: "干净" },
+    ])?.textEn === "en-only",
+    "pickGoldenClip：首句无译文且干净 → 直接采用",
+  );
+  assert(
+    clipCore.pickGoldenClip([{ textEn: "a", textCn: "播客" }])?.textEn === "a",
+    "pickGoldenClip：全脏 → 回退首句（展示层再净）",
+  );
+  assert(
+    clipCore.pickGoldenClip([]) === null &&
+      clipCore.pickGoldenClip(undefined) === null,
+    "pickGoldenClip：空数组/undefined → null",
+  );
+}
+
 console.log("----------------------------------------");
 if (failed === 0) {
   console.log("ALL CORPUS ATOMIZATION TESTS PASSED");
