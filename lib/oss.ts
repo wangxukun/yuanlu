@@ -85,6 +85,19 @@ export async function generateSignatureUrl(
   }
 }
 
+/**
+ * [RESHAPE T1.3] 对象是否存在（HEAD 探测；语料切片缓存命中判断用）。
+ * 任何异常按不存在处理（降级走转码路径）。
+ */
+export async function objectExists(objectKey: string): Promise<boolean> {
+  try {
+    const head = await getClient().head(objectKey);
+    return !!head && (head.status === 200 || head.status === 204);
+  } catch {
+    return false;
+  }
+}
+
 // 删除文件
 export async function deleteObject(fileName: string) {
   try {

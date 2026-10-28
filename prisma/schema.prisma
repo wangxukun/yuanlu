@@ -297,6 +297,11 @@ model learning_path_items {
   episodeid String
   order     Int            @default(0)
   addedAt   DateTime       @default(now())
+  /// [RESHAPE T1.1] 卡册条目可空扩展（向后兼容剧集条目）：心愿定制卡册的
+  /// 条目指向语料切片/微剧场；episodeid 仍落切片所属剧集，旧消费方（Web
+  /// 路径详情）按剧集渲染不受影响，新消费方（小程序卡册）读 clipId/sceneId
+  clipId    String?        @db.VarChar(64)
+  sceneId   String?        @db.VarChar(64)
   episode   episode        @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade)
   path      learning_paths @relation(fields: [pathid], references: [pathid], onDelete: Cascade)
 
@@ -716,7 +721,80 @@ model episode_deep_dives {
   id        Int      @id @default(autoincrement())
   episodeid String   @unique
   content   Json
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  createdAt DateTime @default(now())
 
   episode episode @relation(fields: [episodeid], references: [episodeid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// [RESHAPE T1.1] 语料原子化：句级原声切片索引（corpus clips）。
+/// 由 scripts/build-corpus-index.ts 离线解析双语词级时间戳 JSON 产出；
+/// 小程序侧「零整集音频」的唯一音频粒度（配 /api/clips/{id}/audio 物理切片）。
+/// 刻意不建 episode 外键：语料索引独立于剧集生命周期（剧集下架不连锁删除，
+/// 重建索引用 episodeid 字符串对账），保持 additive 零侵入既有表。
+model corpus_clips {
+  /// 切片 cuid（兼作 OSS 切片对象名 yuanlu/clips/{clipid}.mp3）
+  clipid       String   @id @default(cuid())
+  episodeid    String
+  /// 字幕句索引（对应双语 JSON 条目 id / SavedSentence.subtitleId 同源）
+  subtitleId   Int
+  startTime    Float
+  endTime      Float
+  /// 单句时长（秒）
+  duration     Float
+  enText       String
+  zhText       String?
+  speaker      String?
+  /// 词级时间戳 [{word,start,end}]（毫秒级点读/扫光的原始数据）
+  wordsJson    Json?
+  /// 句真实语速（词/分钟，按首词起~末词止）
+  wpm          Int      @default(0)
+  /// 声学指纹：⚡连读吞音词块 [{startIdx,endIdx,durationSec,text}] 等
+  acousticFlags Json?
+  /// 音素标签（θ/v/w/r/l/ŋ 等启发式提取，弱音靶向召回用）
+  phonemeTags  String[] @default([])
+  /// 话题标签（剧集 tag 名搬运）
+  topicTags    String[] @default([])
+  /// CEFR 难度（源 episode.difficulty）
+  cefrLevel    String?  @db.VarChar(20)
+  coverUrl     String?  @db.VarChar(500)
+  /// 出处标签（节目名/主播，非跳转的静态文化溯源徽章数据源）
+  sourceLabel  String?  @db.VarChar(255)
+  /// OSS 物理切片对象 key（首次切片后回填）
+  clipAudioKey String?  @db.VarChar(255)
+  wordCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([episodeid, subtitleId])
+  @@index([episodeid])
+  @@index([cefrLevel, wpm])
+}
+
+/// [RESHAPE T1.1] 语料原子化：微剧场（micro scenes）。
+/// 3–6 句连续原声聚合的 15–40s 微语境（30 秒微剧场精研室的数据源）；
+/// clipsJson 携带完整词级时间戳，deepDiveJson 为映射到本窗口的既有
+/// episode_deep_dives 片段（词汇/长难句/测验，零 Token 复用）。
+model micro_scenes {
+  sceneid      String   @id @default(cuid())
+  episodeid    String
+  title        String   @db.VarChar(255)
+  summaryZh    String?
+  /// 语用场景标签（职场/闲聊/情感/连读 等运营策展口径）
+  situationTag String?  @db.VarChar(50)
+  cefrLevel    String?  @db.VarChar(20)
+  coverUrl     String?  @db.VarChar(500)
+  startTime    Float
+  endTime      Float
+  /// 场景总时长（秒，批处理保证 ≤40）
+  duration     Float
+  /// [{clipid,subtitleId,start,end,textEn,textCn,speaker,words}]（含词级时间戳）
+  clipsJson    Json?
+  /// 映射进本窗口的 deep-dive 片段 {vocabulary[],sentences[],quiz[]}
+  deepDiveJson Json?
+  /// OSS 物理切片对象 key（yuanlu/clips/{sceneid}.mp3，首次切片后回填）
+  clipAudioKey String?  @db.VarChar(255)
+  createdAt    DateTime @default(now())
+
+  @@index([episodeid])
+  @@index([situationTag])
 }
