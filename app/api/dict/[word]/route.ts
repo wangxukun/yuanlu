@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { authWithMobile } from "@/core/auth/guard";
+import prisma from "@/lib/prisma";
 import { dictionaryService } from "@/core/dictionary/dictionary.service";
+import { refineWordExamples } from "@/core/studio/curator.core";
+import { hasSensitiveTerm } from "@/core/corpus/clip-core";
 import {
   checkDictionaryQuota,
   recordDictionaryLookup,
@@ -83,6 +86,51 @@ export async function GET(
       }
     }
 
+    // [活体词典] 真实语境例句：语料切片按词检索（append-only 字段）。
+    // 合规红线：只返回切片 ID + 双语文本 + 词级时间戳，绝不返回音频 URL
+    // ——播放由小程序经 /api/clips/{clipid}/audio 网关按需现切（≤45s 硬闸）。
+    // 纯 DB 检索不计词典配额；语料未就绪/查询失败静默降级为空数组。
+    let corpusExamples: unknown[] = [];
+    try {
+      const candidates = await prisma.corpus_clips.findMany({
+        where: { enText: { contains: decodedWord, mode: "insensitive" } },
+        select: {
+          clipid: true,
+          episodeid: true,
+          subtitleId: true,
+          enText: true,
+          zhText: true,
+          startTime: true,
+          endTime: true,
+          duration: true,
+          cefrLevel: true,
+          wordsJson: true,
+        },
+        orderBy: { wpm: "asc" },
+        take: 30,
+      });
+      corpusExamples = refineWordExamples(
+        decodedWord,
+        candidates.filter(
+          (c) => !hasSensitiveTerm(c.enText) && !hasSensitiveTerm(c.zhText),
+        ),
+        3,
+      ).map((c) => ({
+        clipid: c.clipid,
+        episodeid: c.episodeid,
+        subtitleId: c.subtitleId,
+        enText: c.enText,
+        zhText: c.zhText,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        duration: c.duration,
+        cefrLevel: c.cefrLevel,
+        words: c.wordsJson || [],
+      }));
+    } catch (e) {
+      console.error("[Dictionary API] corpus examples failed:", e);
+    }
+
     // Tier 1: HTTP Cache-Control headers
     // DB hit: aggressive caching (browser 1 day / CDN 7 days)
     // LLM generation: shorter initial cache, stale-while-revalidate for durability
@@ -92,7 +140,7 @@ export async function GET(
         : "public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600";
 
     return NextResponse.json(
-      { success: true, data },
+      { success: true, data: { ...data, corpusExamples } },
       {
         headers: {
           "Cache-Control": cacheControl,
