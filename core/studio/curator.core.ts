@@ -47,6 +47,29 @@ export function sanitizeKeywords(list: unknown, max = 8): string[] {
   return out;
 }
 
+/**
+ * [活体词典] 词边界精筛：SQL contains 是子串匹配（查 art 会命中 start），
+ * 候选行在 JS 侧用 \b 词边界复检（大小写不敏感，正则元字符转义）。
+ */
+export function refineWordExamples<T extends { enText?: string | null }>(
+  word: string,
+  candidates: T[],
+  limit: number,
+): T[] {
+  const w = (word || "").trim();
+  if (!w || !Array.isArray(candidates)) return [];
+  const re = new RegExp(
+    `\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    "i",
+  );
+  const out: T[] = [];
+  for (const c of candidates) {
+    if (re.test(c.enText || "")) out.push(c);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 export interface RecallWhere {
   OR: Array<
     | { enText: { contains: string; mode: "insensitive" } }

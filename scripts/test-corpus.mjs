@@ -1173,6 +1173,48 @@ console.log("━━━ 内容级合规净化（标题/金句红线词） ━━�
   );
 }
 
+console.log("━━━ 活体词典：refineWordExamples 词边界精筛 ━━━");
+{
+  const cands = [
+    { enText: "We must start the project today." },
+    { enText: "Art is how we decorate space." },
+    { enText: "Compromise is the best answer." },
+    { enText: "they compromised on the price" },
+  ];
+  assert(
+    curatorCore.refineWordExamples("art", cands, 3).length === 1 &&
+      curatorCore.refineWordExamples("art", cands, 3)[0].enText.includes("Art"),
+    "refineWordExamples：查 art 不命中 start（\\b 词边界）",
+  );
+  assert(
+    curatorCore.refineWordExamples("compromise", cands, 3).length === 1,
+    "refineWordExamples：大小写不敏感精确命中 Compromise",
+  );
+  assert(
+    curatorCore
+      .refineWordExamples("start", cands, 5)[0]
+      .enText.includes("start"),
+    "refineWordExamples：普通词正常命中",
+  );
+  assert(
+    curatorCore.refineWordExamples(
+      "e-mail",
+      [{ enText: "send an e-mail now" }],
+      3,
+    ).length === 1,
+    "refineWordExamples：正则元字符（连字符）转义不炸",
+  );
+  assert(
+    curatorCore.refineWordExamples("", cands, 3).length === 0 &&
+      curatorCore.refineWordExamples("x", undefined, 3).length === 0,
+    "refineWordExamples：空词/空候选 → 空数组",
+  );
+  assert(
+    curatorCore.refineWordExamples("we", cands, 1).length === 1,
+    "refineWordExamples：limit 截断生效",
+  );
+}
+
 console.log("----------------------------------------");
 if (failed === 0) {
   console.log("ALL CORPUS ATOMIZATION TESTS PASSED");
