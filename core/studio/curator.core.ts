@@ -70,6 +70,35 @@ export function refineWordExamples<T extends { enText?: string | null }>(
   return out;
 }
 
+/**
+ * [语义检索] 结果精选：优先不同剧集（每集最多 2 条），单词量少优先，
+ * 输出按句长（词数）升序——供 /api/scenes/semantic-search 组装 3-5 条高质量结果。
+ */
+export function pickSemanticClips<
+  T extends { clipid: string; episodeid: string; enText: string },
+>(candidates: T[], limit: number): T[] {
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+  const wordCount = (s: string) =>
+    (String(s || "").match(/[A-Za-z][A-Za-z'’-]*/g) || []).length;
+  const sorted = candidates
+    .filter((c) => c && c.clipid && c.enText)
+    .sort((a, b) => wordCount(a.enText) - wordCount(b.enText));
+  const perEpisode = new Map<string, number>();
+  const uniqueRound: T[] = [];
+  const secondRound: T[] = [];
+  for (const c of sorted) {
+    const n = perEpisode.get(c.episodeid) || 0;
+    if (n === 0) uniqueRound.push(c);
+    else if (n === 1) secondRound.push(c);
+    else continue;
+    perEpisode.set(c.episodeid, n + 1);
+  }
+  const picked = (
+    uniqueRound.length >= limit ? uniqueRound : uniqueRound.concat(secondRound)
+  ).slice(0, limit);
+  return picked.sort((a, b) => wordCount(a.enText) - wordCount(b.enText));
+}
+
 export interface RecallWhere {
   OR: Array<
     | { enText: { contains: string; mode: "insensitive" } }
