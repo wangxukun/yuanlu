@@ -1215,6 +1215,54 @@ console.log("━━━ 活体词典：refineWordExamples 词边界精筛 ━━�
   );
 }
 
+console.log("━━━ 语义检索：pickSemanticClips 精选 ━━━");
+{
+  const mk = (id, ep, en) => ({ clipid: id, episodeid: ep, enText: en });
+  const cands = [
+    mk("a", "ep1", "I want to book a table for two tonight please"),
+    mk("b", "ep2", "Book a table"),
+    mk("c", "ep2", "Could we book a table near the window"),
+    mk("d", "ep2", "Another table sentence from same episode"),
+    mk("e", "ep3", "Reservation confirmed"),
+    mk("f", "ep1", "We have a reservation under the name"),
+  ];
+  const picked = curatorCore.pickSemanticClips(cands, 4);
+  assert(
+    picked.length === 4 && picked[0].clipid === "e" && picked[1].clipid === "b",
+    "pickSemanticClips：词数升序输出（2 词 Reservation confirmed 居首）",
+  );
+  const ids = picked.map((p) => p.clipid);
+  assert(
+    ids.includes("f") &&
+      ids.includes("e") &&
+      ids.includes("d") &&
+      !ids.includes("a"),
+    "pickSemanticClips：异剧集优先入选（ep1/ep3 必入，重复集取 6 词句弃 10 词句）",
+  );
+  const wc = (t) => (t.match(/[A-Za-z]+/g) || []).length;
+  const mono = curatorCore
+    .pickSemanticClips(cands, 99)
+    .every((c, i, arr) => i === 0 || wc(c.enText) >= wc(arr[i - 1].enText));
+  assert(mono, "pickSemanticClips：输出整体句长（词数）单调不减");
+  assert(
+    curatorCore.pickSemanticClips([], 5).length === 0 &&
+      curatorCore.pickSemanticClips(null, 5).length === 0,
+    "pickSemanticClips：空输入防御",
+  );
+  const dup = curatorCore.pickSemanticClips(
+    [
+      mk("x", "ep", "one two"),
+      mk("y", "ep", "one"),
+      mk("z", "ep", "one two three four"),
+    ],
+    5,
+  );
+  assert(
+    dup.length === 2 && dup.every((d) => d.episodeid === "ep"),
+    "pickSemanticClips：单剧集最多 2 条",
+  );
+}
+
 console.log("----------------------------------------");
 if (failed === 0) {
   console.log("ALL CORPUS ATOMIZATION TESTS PASSED");
