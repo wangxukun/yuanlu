@@ -99,6 +99,213 @@ export function pickSemanticClips<
   return picked.sort((a, b) => wordCount(a.enText) - wordCount(b.enText));
 }
 
+/* ═══════════ [语义检索质量] 语料质量门禁 + 相关性排序（2026-11-05） ═══════════
+ *
+ * 线上实测：纯召回 + 「句长升序」精选会把 "Bought, saw, call, automatic."
+ * 这类碎句与 check in a good dictionary 这类字面命中推到首位。以下两个纯函数
+ * 供 /api/scenes/semantic-search 在 JS 复检阶段使用：
+ *   1. isJunkClip：语料质量门禁（词数/功能词/时长/语速），碎句直接出局；
+ *   2. rankSemanticClips：相关性打分精选，替代「最短优先」。
+ */
+
+/** 功能词样本：自然句几乎必含其一；全缺 → 词表式碎句（如 "Bought, saw, call, automatic."） */
+const FUNCTION_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "to",
+  "of",
+  "in",
+  "on",
+  "at",
+  "for",
+  "with",
+  "and",
+  "or",
+  "but",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "it",
+  "its",
+  "this",
+  "that",
+  "these",
+  "those",
+  "i",
+  "you",
+  "we",
+  "they",
+  "he",
+  "she",
+  "my",
+  "your",
+  "our",
+  "their",
+  "his",
+  "her",
+  "me",
+  "him",
+  "them",
+  "as",
+  "if",
+  "so",
+  "not",
+  "do",
+  "does",
+  "did",
+  "have",
+  "has",
+  "had",
+  "will",
+  "would",
+  "can",
+  "could",
+  "there",
+  "what",
+  "when",
+  "how",
+  "who",
+  "than",
+  "then",
+  "just",
+  "about",
+  "from",
+]);
+
+export interface JunkGateOptions {
+  /** 最少词数（默认 5：4 词门挡不住碎句） */
+  minWords?: number;
+  /** 最短时长秒（默认 3） */
+  minDurationSec?: number;
+  /** 最长时长秒（默认 40） */
+  maxDurationSec?: number;
+  /** 语速合理区间（默认 [90, 240]） */
+  wpmRange?: [number, number];
+}
+
+/** 语料质量门禁：词表式碎句 / 过短过长 / 语速异常 → true（应剔除） */
+export function isJunkClip(
+  c: {
+    enText?: string | null;
+    wordCount?: number | null;
+    duration?: number | null;
+    wpm?: number | null;
+  },
+  options?: JunkGateOptions,
+): boolean {
+  const minWords = options?.minWords ?? 5;
+  const minDur = options?.minDurationSec ?? 3;
+  const maxDur = options?.maxDurationSec ?? 40;
+  const [wpmLo, wpmHi] = options?.wpmRange ?? [90, 240];
+  const words =
+    String(c.enText || "")
+      .toLowerCase()
+      .match(/[a-z][a-z'’-]*/g) || [];
+  if (words.length < minWords) return true;
+  if (!words.some((w) => FUNCTION_WORDS.has(w))) return true;
+  const dur = Number(c.duration);
+  if (Number.isFinite(dur) && (dur < minDur || dur > maxDur)) return true;
+  const wpm = Number(c.wpm);
+  if (Number.isFinite(wpm) && wpm > 0 && (wpm < wpmLo || wpm > wpmHi))
+    return true;
+  return false;
+}
+
+export interface SemanticRankContext {
+  /** DeepSeek 扩词（完整词块，小写） */
+  phrases: string[];
+  /** 每个词块的核心内容词（去停用词；与 phrases 平行数组） */
+  perPhraseWords: string[][];
+  /** 原始查询（中文意图或英文词句） */
+  query: string;
+  /** 中文 2 字滑窗（无中文查询为空数组） */
+  grams: string[];
+  /** 每集配额（默认 2） */
+  perEpisodeCap?: number;
+}
+
+/** 相关性打分（分值仅用于排序，语义见 rankSemanticClips 注释） */
+export function scoreSemanticClip(
+  c: { enText?: string | null; zhText?: string | null; wpm?: number | null },
+  ctx: SemanticRankContext,
+): number {
+  const en = String(c.enText || "").toLowerCase();
+  const zh = String(c.zhText || "");
+  if (!en) return -Infinity;
+  const words = en.match(/[a-z][a-z'’-]*/g) || [];
+  const phraseHit = (p: string) =>
+    new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(en);
+  const wordHit = (w: string) =>
+    new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(en);
+
+  let score = 0;
+  // L1 证据：完整词块命中（+40/块，去重）——最强英文信号
+  const hitPhrases = new Set(ctx.phrases.filter(phraseHit));
+  score += hitPhrases.size * 40;
+  // L2 证据：跨词块核心词共现（+12/词，去重，≥5 字符才算强）
+  const strongWords = new Set<string>();
+  ctx.perPhraseWords.forEach((ws) =>
+    ws.forEach((w) => {
+      if (w.length >= 5 && wordHit(w)) strongWords.add(w);
+    }),
+  );
+  score += strongWords.size * 12;
+  // L1' 证据：中文译文含完整查询（+25）——语义对齐最强的信号
+  if (ctx.query && zh.includes(ctx.query)) score += 25;
+  // L3 证据：中文滑窗（+6/窗，去重）
+  score += new Set(ctx.grams.filter((g) => zh.includes(g))).size * 6;
+  // 句长塑形：6–18 词的自然句 +10；>30 词独白 -15（旧「最短优先」的反向修正）
+  if (words.length >= 6 && words.length <= 18) score += 10;
+  else if (words.length > 30) score -= 15;
+  // 语速清晰度：90–200 wpm +5；异常快 -8
+  const wpm = Number(c.wpm);
+  if (Number.isFinite(wpm) && wpm > 0) {
+    if (wpm >= 90 && wpm <= 200) score += 5;
+    else if (wpm > 240) score -= 8;
+  }
+  return score;
+}
+
+/**
+ * [语义检索] 相关性排序精选：打分降序 + 每集配额（默认 2）+ 同分慢速优先
+ * （发音更清晰）。取代 pickSemanticClips 的「句长升序」（碎句云集根因）。
+ */
+export function rankSemanticClips<
+  T extends {
+    clipid: string;
+    episodeid: string;
+    enText: string;
+    zhText?: string | null;
+    wpm?: number | null;
+  },
+>(candidates: T[], limit: number, ctx: SemanticRankContext): T[] {
+  if (!Array.isArray(candidates) || candidates.length === 0 || limit <= 0)
+    return [];
+  const cap = ctx.perEpisodeCap ?? 2;
+  const scored = candidates
+    .filter((c) => c && c.clipid && c.enText)
+    .map((c) => ({ c, s: scoreSemanticClip(c, ctx) }))
+    .filter((x) => Number.isFinite(x.s))
+    .sort((a, b) => {
+      if (b.s !== a.s) return b.s - a.s;
+      return (Number(a.c.wpm) || 999) - (Number(b.c.wpm) || 999);
+    });
+  const perEpisode = new Map<string, number>();
+  const picked: T[] = [];
+  for (const { c } of scored) {
+    const n = perEpisode.get(c.episodeid) || 0;
+    if (n >= cap) continue;
+    perEpisode.set(c.episodeid, n + 1);
+    picked.push(c);
+    if (picked.length >= limit) break;
+  }
+  return picked;
+}
+
 export interface RecallWhere {
   OR: Array<
     | { enText: { contains: string; mode: "insensitive" } }

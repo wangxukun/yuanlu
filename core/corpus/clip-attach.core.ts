@@ -20,10 +20,12 @@ import { computeSliceWindow } from "@/core/corpus/clip-slice.core";
 
 export interface ClipAttachRow {
   clipid: string;
+  episodeid?: string;
   subtitleId: number;
   startTime: number;
   endTime: number;
   clipAudioKey: string | null;
+  wordsJson?: unknown;
 }
 
 export interface ClipAttachFields {
@@ -31,6 +33,7 @@ export interface ClipAttachFields {
   clipAudioUrl?: string;
   clipOffset?: number;
   clipDuration?: number;
+  clipWords?: Array<{ word?: string; start?: number; end?: number }>;
 }
 
 export function buildClipAttachIndex(
@@ -46,6 +49,8 @@ export function buildClipAttachIndex(
 
 /**
  * 装饰条目：按 keyOf 取条目的字幕句 id，命中切片行则追加字段。
+ * 当条目与切片行均携带 episodeid 时优先按 (episodeid, subtitleId) 复合键精确匹配，
+ * 避免跨剧集列表中相同 subtitleId 互相覆盖。
  * 未命中条目原样返回（引用不变），绝不修改/删除既有字段。
  */
 export async function attachClipAudio<T>(
@@ -57,14 +62,44 @@ export async function attachClipAudio<T>(
 ): Promise<Array<T & ClipAttachFields>> {
   const expireSec = options?.expireSec ?? 3600;
   const index = buildClipAttachIndex(clipRows);
+  const byComposite = new Map<string, ClipAttachRow>();
+  for (const row of clipRows || []) {
+    if (
+      row &&
+      typeof row.episodeid === "string" &&
+      row.episodeid &&
+      typeof row.subtitleId === "number"
+    ) {
+      byComposite.set(`${row.episodeid}::${row.subtitleId}`, row);
+    }
+  }
 
   return Promise.all(
     (items || []).map(async (item) => {
       const key = keyOf(item);
-      const row = key == null ? undefined : index.get(key);
+      if (key == null) return item as T & ClipAttachFields;
+
+      const rawEp =
+        item && typeof item === "object"
+          ? (item as Record<string, unknown>).episodeid
+          : undefined;
+      const itemEp = typeof rawEp === "string" ? rawEp : "";
+      let row: ClipAttachRow | undefined;
+      if (itemEp) {
+        row = byComposite.get(`${itemEp}::${key}`);
+        if (!row) {
+          const candidate = index.get(key);
+          if (candidate && !candidate.episodeid) row = candidate;
+        }
+      } else {
+        row = index.get(key);
+      }
       if (!row) return item as T & ClipAttachFields;
 
       const decorated = { ...item, clipId: row.clipid } as T & ClipAttachFields;
+      if (Array.isArray(row.wordsJson) && row.wordsJson.length > 0) {
+        decorated.clipWords = row.wordsJson as ClipAttachFields["clipWords"];
+      }
 
       // 已缓存切片：签发直链 + 对齐协议的偏移/时长（窗口口径与网关一致）
       if (row.clipAudioKey) {

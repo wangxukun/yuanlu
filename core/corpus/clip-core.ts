@@ -618,15 +618,33 @@ export function sanitizeSceneTitle(
   return `微剧场 ${Math.round(startTimeSec)}s`;
 }
 
+const OPENING_GREETING_RE =
+  /^(hello|hi|hey|welcome(\s+back)?(\s+to)?|good\s+(morning|afternoon|evening)|thanks?\s+for\s+(tuning|listening|joining)|in\s+today'?s\s+episode)\b/i;
+
+export function isOpeningGreeting(text: string | null | undefined): boolean {
+  const t = String(text || "").trim();
+  if (!t) return false;
+  return OPENING_GREETING_RE.test(t) || INTERJECTION_ONLY.test(t);
+}
+
 /**
- * 金句挑选：默认首句，首句译文/原文带红线词时跳到下一句干净句
- * （发现页明信片与日签海报直接展示金句双语，内容红线在这把住）。
- * 全部命中时回退首句，由展示层对译文再净一道。
+ * 金句挑选：默认首句，首句译文/原文带红线词或属于开场问候/寒暄碎句时跳到下一句干净实质句
+ * （发现页明信片与日签海报直接展示金句双语，内容红线与开场寒暄都在这把住）。
+ * 若全部干净句均为问候语则退回首个干净句；全部命中红线时回退首句，由展示层对译文再净一道。
  */
 export function pickGoldenClip<
   T extends { textEn?: string | null; textCn?: string | null },
 >(clips: T[]): T | null {
   if (!Array.isArray(clips) || clips.length === 0) return null;
+  for (const c of clips) {
+    if (
+      !hasSensitiveTerm(c?.textEn) &&
+      !hasSensitiveTerm(c?.textCn) &&
+      !isOpeningGreeting(c?.textEn)
+    ) {
+      return c;
+    }
+  }
   for (const c of clips) {
     if (!hasSensitiveTerm(c?.textEn) && !hasSensitiveTerm(c?.textCn)) return c;
   }
