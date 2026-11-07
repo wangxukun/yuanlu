@@ -60,10 +60,12 @@ export async function GET(req: NextRequest) {
           where,
           select: {
             clipid: true,
+            episodeid: true,
             subtitleId: true,
             startTime: true,
             endTime: true,
             clipAudioKey: true,
+            wordsJson: true,
           },
         });
         decorated = await attachClipAudio(

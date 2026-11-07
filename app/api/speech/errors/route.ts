@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
 import { mergeSubtitles } from "@/lib/data";
 import { requireAuth, isPremiumUser } from "@/core/auth/guard";
 import { Episode } from "@/core/episode/episode.entity";
 import { getWeakSentences } from "@/core/speech/weak-sentences.service";
+import {
+  attachClipAudio,
+  buildClipRowsWhere,
+  type ClipAttachRow,
+} from "@/core/corpus/clip-attach.core";
 
 export async function GET() {
   // requireAuth：Web Cookie 与移动端 Bearer 双口径（与 evaluate 一致）
@@ -91,6 +97,7 @@ export async function GET() {
     const episodeSubtitleCache = new Map<
       string,
       {
+        id?: number;
         textEn: string;
         textCn: string;
         start: number;
@@ -133,6 +140,7 @@ export async function GET() {
             subtitleBilingualUrl,
           } as unknown as Episode);
           subtitles = merged.map((item) => ({
+            id: (item as any).id,
             textEn: item.textEn,
             textCn: item.textCn,
             start: item.start,
@@ -149,6 +157,9 @@ export async function GET() {
           subtitles.find((s) => s.textEn.trim() === targetText) ??
           subtitles.find((s) => Math.abs(s.start - targetStart) < 0.5);
 
+        if (record.subtitleId == null && typeof matched?.id === "number") {
+          record.subtitleId = matched.id;
+        }
         record.subtitleTextCn = matched?.textCn ?? "";
         record.subtitleWords = matched?.words;
         record.subtitleEnd = matched?.end;
@@ -158,11 +169,46 @@ export async function GET() {
       }
     }
 
+    // [RESHAPE] 语料切片装饰（纯 additive：追加 clipId/clipAudioUrl/clipOffset/clipDuration/clipWords）
+    let decoratedRecords = uniqueRecords;
+    try {
+      const where = buildClipRowsWhere(
+        uniqueRecords
+          .filter((r) => r.episodeid && typeof r.subtitleId === "number")
+          .map((r) => ({
+            episodeid: r.episodeid as string,
+            subtitleId: r.subtitleId as number,
+          })),
+      );
+      if (where) {
+        const clipRows = await prisma.corpus_clips.findMany({
+          where,
+          select: {
+            clipid: true,
+            episodeid: true,
+            subtitleId: true,
+            startTime: true,
+            endTime: true,
+            clipAudioKey: true,
+            wordsJson: true,
+          },
+        });
+        decoratedRecords = await attachClipAudio(
+          uniqueRecords,
+          clipRows as ClipAttachRow[],
+          (key, expire) => generateSignatureUrl(key, expire),
+          (item) => item.subtitleId,
+        );
+      }
+    } catch (clipErr) {
+      console.warn("[GET /api/speech/errors] clip decorate skipped:", clipErr);
+    }
+
     // weakThreshold 一并回传：闯关页"已达标"判定与弱项列表生成共用同一口径（修 N1/N2）
     // [P3-c] totalErrors/isTrialMode：闯关页结算"成就先行 + 下一关转 PRO"据此判定
     return NextResponse.json({
       success: true,
-      data: uniqueRecords,
+      data: decoratedRecords,
       weakThreshold,
       totalErrors,
       isTrialMode,

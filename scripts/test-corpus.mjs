@@ -1048,6 +1048,51 @@ console.log(
       buildClipRowsWhere([{ episodeid: "e", subtitleId: 3 }]).OR.length === 1,
     "where 构造：空输入 null / 单集单句可用",
   );
+
+  // 跨剧集同 subtitleId 防碰撞 + clipWords 透传
+  const multiEpRows = [
+    {
+      clipid: "clip-ep1-10",
+      episodeid: "ep1",
+      subtitleId: 10,
+      startTime: 10,
+      endTime: 15,
+      clipAudioKey: "yuanlu/clips/clip-ep1-10.mp3",
+      wordsJson: [{ word: "hello", start: 10.1, end: 10.5 }],
+    },
+    {
+      clipid: "clip-ep2-10",
+      episodeid: "ep2",
+      subtitleId: 10,
+      startTime: 40,
+      endTime: 46,
+      clipAudioKey: null,
+      wordsJson: [{ word: "world", start: 40.2, end: 40.8 }],
+    },
+  ];
+  const multiEpOut = await attachClipAudio(
+    [
+      { episodeid: "ep1", subtitleId: 10 },
+      { episodeid: "ep2", subtitleId: 10 },
+      { episodeid: "ep3", subtitleId: 10 },
+    ],
+    multiEpRows,
+    sign,
+    (i) => i.subtitleId,
+  );
+  assert(
+    multiEpOut[0].clipId === "clip-ep1-10" &&
+      multiEpOut[1].clipId === "clip-ep2-10" &&
+      multiEpOut[2].clipId === undefined,
+    "跨剧集同 subtitleId：按 (episodeid, subtitleId) 复合键精准匹配，未建索引剧集不串台",
+  );
+  assert(
+    Array.isArray(multiEpOut[0].clipWords) &&
+      multiEpOut[0].clipWords[0].word === "hello" &&
+      Array.isArray(multiEpOut[1].clipWords) &&
+      multiEpOut[1].clipWords[0].word === "world",
+    "wordsJson 非空时透传 clipWords 词级时间戳",
+  );
 }
 
 console.log(
@@ -1163,6 +1208,16 @@ console.log("━━━ 内容级合规净化（标题/金句红线词） ━━�
     "pickGoldenClip：首句无译文且干净 → 直接采用",
   );
   assert(
+    clipCore.pickGoldenClip([
+      { textEn: "Hello and welcome back to our show.", textCn: "欢迎回到节目" },
+      {
+        textEn: "Negotiation starts before you sit down.",
+        textCn: "谈判在落座前就已开始。",
+      },
+    ])?.textEn === "Negotiation starts before you sit down.",
+    "pickGoldenClip：首句为开场问候寒暄 → 跳到下一句实质金句",
+  );
+  assert(
     clipCore.pickGoldenClip([{ textEn: "a", textCn: "播客" }])?.textEn === "a",
     "pickGoldenClip：全脏 → 回退首句（展示层再净）",
   );
@@ -1261,6 +1316,182 @@ console.log("━━━ 语义检索：pickSemanticClips 精选 ━━━");
     dup.length === 2 && dup.every((d) => d.episodeid === "ep"),
     "pickSemanticClips：单剧集最多 2 条",
   );
+}
+
+console.log("━━━ 语义检索：isJunkClip 语料门禁 ━━━");
+{
+  const junkWordList = {
+    enText: "Bought, saw, call, automatic.",
+    duration: 5.9,
+    wpm: 120,
+  };
+  assert(
+    curatorCore.isJunkClip(junkWordList) === true,
+    "isJunkClip：词表式碎句（零功能词）出局——线上首害样本",
+  );
+  assert(
+    curatorCore.isJunkClip({
+      enText: "If you're not sure, check in a good dictionary",
+      duration: 5,
+      wpm: 150,
+    }) === false,
+    "isJunkClip：自然句（含功能词）放行",
+  );
+  assert(
+    curatorCore.isJunkClip({
+      enText: "Yeah, okay, sure thing",
+      duration: 2,
+      wpm: 100,
+    }) === true,
+    "isJunkClip：语气词碎句出局",
+  );
+  assert(
+    curatorCore.isJunkClip({
+      enText: "We booked the flight and checked in right on time",
+      duration: 1.5,
+      wpm: 150,
+    }) === true,
+    "isJunkClip：时长 < 3s 出局",
+  );
+  assert(
+    curatorCore.isJunkClip({
+      enText: "We booked the flight and checked in right on time",
+      duration: 45,
+      wpm: 150,
+    }) === true,
+    "isJunkClip：时长 > 40s 出局",
+  );
+  assert(
+    curatorCore.isJunkClip({
+      enText: "We booked the flight and checked in right on time",
+      duration: 8,
+      wpm: 260,
+    }) === true,
+    "isJunkClip：语速 > 240 wpm 出局",
+  );
+  assert(
+    curatorCore.isJunkClip({ enText: "", duration: 8, wpm: 150 }) === true,
+    "isJunkClip：空文本出局",
+  );
+}
+
+console.log("━━━ 语义检索：rankSemanticClips 相关性排序 ━━━");
+{
+  const ctx = {
+    phrases: ["check in", "boarding pass", "airport counter"],
+    perPhraseWords: [
+      ["check", "counter"],
+      ["boarding", "pass"],
+      ["airport", "counter"],
+    ],
+    query: "机场值机",
+    grams: ["机场", "值机"],
+  };
+  const mk = (id, ep, en, zh, wpm) => ({
+    clipid: id,
+    episodeid: ep,
+    enText: en,
+    zhText: zh,
+    wpm,
+  });
+  const cands = [
+    // 字面单命中：旧算法的首位常客
+    mk(
+      "dict",
+      "ep1",
+      "If you're not sure, check in a good dictionary",
+      "如果你不确定，可以在一本好词典里查阅",
+      150,
+    ),
+    // 多证据：完整词块 + 核心词共现 + 中文滑窗
+    mk(
+      "good",
+      "ep2",
+      "You can check in at the airport counter and print your boarding pass",
+      "你可以在机场柜台值机并打印登机牌",
+      140,
+    ),
+    // 中文全句命中（最强语义对齐）
+    mk(
+      "zh",
+      "ep3",
+      "We arrived early to drop our bags at the counter",
+      "我们到得很早，为了在机场值机时托运行李",
+      130,
+    ),
+    // 同集第二条（配额测试）
+    mk(
+      "good2",
+      "ep2",
+      "The boarding pass scanner is right after the airport counter",
+      "登机牌扫描仪就在机场柜台后面",
+      135,
+    ),
+  ];
+  const picked = curatorCore.rankSemanticClips(cands, 3, ctx);
+  assert(picked.length === 3, "rankSemanticClips：限长 3 生效");
+  assert(
+    picked[0].clipid === "good",
+    "rankSemanticClips：多证据句（词块+共现+中文）居首",
+  );
+  assert(
+    picked.findIndex((p) => p.clipid === "dict") >
+      picked.findIndex((p) => p.clipid === "zh"),
+    "rankSemanticClips：字面单命中（check in a dictionary）沉到中文命中之后",
+  );
+  const capIds = curatorCore
+    .rankSemanticClips(
+      [
+        mk(
+          "a",
+          "ep",
+          "Could we check in early for the morning flight tomorrow",
+          "",
+          120,
+        ),
+        mk(
+          "b",
+          "ep",
+          "The boarding pass was printed at the airport counter",
+          "",
+          125,
+        ),
+        mk(
+          "c",
+          "ep",
+          "Airport counters open two hours before the flight leaves",
+          "",
+          130,
+        ),
+      ],
+      5,
+      ctx,
+    )
+    .map((p) => p.clipid);
+  assert(capIds.length === 2, "rankSemanticClips：单集配额（默认 2）生效");
+  assert(
+    curatorCore.rankSemanticClips([], 5, ctx).length === 0 &&
+      curatorCore.rankSemanticClips(null, 5, ctx).length === 0,
+    "rankSemanticClips：空输入防御",
+  );
+  // 打分单元：证据分值可叠加
+  const s = curatorCore.scoreSemanticClip(
+    {
+      enText: "You can check in at the airport counter",
+      zhText: "你可以在机场柜台值机",
+      wpm: 140,
+    },
+    ctx,
+  );
+  const sDict = curatorCore.scoreSemanticClip(
+    {
+      enText: "If you're not sure, check in a good dictionary",
+      zhText: "查词典",
+      wpm: 150,
+    },
+    ctx,
+  );
+  assert(s > sDict, "scoreSemanticClip：多证据分值 > 单字面命中");
 }
 
 console.log("----------------------------------------");
