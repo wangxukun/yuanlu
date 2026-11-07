@@ -35,7 +35,7 @@ import { buildRealClipAudioDeps } from "@/core/corpus/clip-audio.deps";
  */
 const REELS_MIN_SEC = 4;
 const REELS_MAX_SEC = 10;
-const OVERFETCH = 5; // 池放大倍数：乱序 + 每集去重后的精选余量
+const OVERFETCH = 15; // 池放大倍数：批量建库同刻同集密集，需大池才能跨集凑满（实测 60 行仅 3 集）
 const PRE_SIGN_AUDIO = 3; // 预签音频条数（首刷即播窗口）
 
 /**
