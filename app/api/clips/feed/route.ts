@@ -14,7 +14,7 @@ import { buildRealClipAudioDeps } from "@/core/corpus/clip-audio.deps";
 /**
  * [REELS] GET /api/clips/feed — 原声微流切片流（SoundBite Reels）。
  *
- * Query: page=1&pageSize=12&level=B2（level 可选，corpus_clips.cefrLevel）
+ * Query: page=1&pageSize=12&level=B1,B2（level 可选，逗号多选 cefrLevel）
  * 200 { success, data: { items[], page, pageSize, hasMore } }
  * item = { clipid, episodeid, subtitleId, podcastTitle, topic, difficulty,
  *          coverUrl(签), start, end, duration, textEn, textCn, words[],
@@ -82,14 +82,19 @@ export async function GET(req: NextRequest) {
       30,
       Math.max(1, Number(sp.get("pageSize")) || 12),
     );
-    const level = (sp.get("level") || "").trim().slice(0, 20) || null;
+    // 难度多选：level=B1,B2 → 逐 token 校验（A1–C2），脏 token 静默丢弃
+    const levels = (sp.get("level") || "")
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => /^[A-C][12]$/.test(s))
+      .slice(0, 6);
 
     const where = {
       duration: { gte: REELS_MIN_SEC, lte: REELS_MAX_SEC },
       // Json 列非 DB NULL 的 Prisma 写法（词级时间戳缺失的行不入池）
       wordsJson: { not: Prisma.DbNull },
       zhText: { not: null },
-      ...(level ? { cefrLevel: level } : {}),
+      ...(levels.length ? { cefrLevel: { in: levels } } : {}),
     };
 
     // 候选池：稳定排序（createdAt 批量建库同刻，clipid 决胜）+ 池放大
