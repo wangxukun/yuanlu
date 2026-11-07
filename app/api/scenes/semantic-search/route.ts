@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authWithMobile } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { signOssHttpUrl } from "@/lib/oss";
-import { pickSemanticClips } from "@/core/studio/curator.core";
+import { isJunkClip, rankSemanticClips } from "@/core/studio/curator.core";
 import { clipAudioService } from "@/core/corpus/clip-audio.service";
 import { buildRealClipAudioDeps } from "@/core/corpus/clip-audio.deps";
 import { anonymousLlmRateAllow } from "@/lib/dictionary-quota";
@@ -12,8 +12,9 @@ import { anonymousLlmRateAllow } from "@/lib/dictionary-quota";
  *
  * 管线：干净中文意图词 → DeepSeek 扩词（母语者常用英文词块 3-5 个，
  * 30min 进程内缓存 + 失败/超时 fail-open 空扩词）→ corpus_clips 联查
- * （enText 词边界命任一英文词块 OR zhText 含原始中文）→ pickSemanticClips
- * 精选（异剧集优先/词数升序，≤5 条）→ 实体封装（封面现签 + 懒切片直链
+ * （enText 词边界命任一英文词块 OR zhText 含原始中文）→ isJunkClip
+ * 语料门禁 + rankSemanticClips 相关性打分精选（多证据优先/每集 ≤2 条，
+ * 2026-11-05 取代「句长升序」）→ 实体封装（封面现签 + 懒切片直链
  * 现签 + 词级时间戳）。
  *
  * 成本防线：扩词缓存命中不计数不调 LLM；游客按 IP 日限复用词典匿名限流，
@@ -107,6 +108,7 @@ const CLIP_SELECT = {
   startTime: true,
   endTime: true,
   duration: true,
+  wpm: true,
   cefrLevel: true,
   coverUrl: true,
   wordsJson: true,
@@ -314,47 +316,36 @@ export async function POST(request: Request) {
       take: 300, // 候选池上限（wpm 慢速优先）
     });
 
-    // 三级召回分层（JS 词边界复检 + 质控）：
-    //   L1 完整词块命中 > L2 长专指词(≥6字符)命中或跨短语核心词共现 > L3 中文命中
-    //   （短泛词单命中如 time/call/check 不构成 L2 证据，防低相关淹没）
-    const phraseRes = phrases.map(
-      (p) => new RegExp(`\\b${escapeRe(p)}\\b`, "i"),
+    // 质控 + 相关性排序（2026-11-05 重做，取代三级召回分层 + 最短优先精选）：
+    //   1. isJunkClip 语料门禁：词表式碎句/过短过长/语速异常直接出局
+    //      （线上实测 "Bought, saw, call, automatic." 曾居首位）；
+    //   2. rankSemanticClips 打分：完整词块命中 +40 / 跨词块核心词 +12 /
+    //      中文译文含完整查询 +25 / 滑窗 +6 / 6-18 词自然句 +10——
+    //      多证据胜出，单一字面命中（check in a dictionary 类）自然沉底。
+    const wordBoundaryHit = (hay: string, needle: string) =>
+      new RegExp(`\\b${escapeRe(needle)}\\b`, "i").test(hay);
+    const usable = rows.filter(
+      (r) =>
+        !isJunkClip({
+          enText: r.enText,
+          duration: r.duration,
+          wpm: r.wpm,
+        }) &&
+        // 最低相关门槛：至少一条英文词块/核心词/中文证据（对齐旧 OR 召回语义）
+        (phrases.some((p) => wordBoundaryHit(r.enText, p)) ||
+          keywords.some((k) => wordBoundaryHit(r.enText, k)) ||
+          !!(
+            r.zhText &&
+            ((q && r.zhText.includes(q)) ||
+              grams.some((g) => r.zhText!.includes(g)))
+          )),
     );
-    const strongRes = keywords
-      .filter((k) => k.length >= 6)
-      .map((k) => new RegExp(`\\b${escapeRe(k)}\\b`, "i"));
-    const perPhraseRes = perPhraseWords.map((ws) =>
-      ws.map((w) => new RegExp(`\\b${escapeRe(w)}\\b`, "i")),
-    );
-    const zhHit = (r: { zhText: string | null }) =>
-      !!(
-        r.zhText &&
-        ((q && r.zhText.includes(q)) ||
-          grams.some((g) => r.zhText!.includes(g)))
-      );
-    const layer1 = rows.filter((r) =>
-      phraseRes.some((re) => re.test(r.enText)),
-    );
-    const rest1 = rows.filter((r) => !layer1.includes(r));
-    const layer2 = rest1.filter((r) => {
-      if (strongRes.some((re) => re.test(r.enText))) return true;
-      // 跨短语核心词共现：要求 ≥2 个「不同词」各自命中（一词属多短语不算）
-      const hitWords = new Set<string>();
-      perPhraseRes.forEach((ws, pi) => {
-        ws.forEach((re, wi) => {
-          if (re.test(r.enText)) hitWords.add(perPhraseWords[pi][wi]);
-        });
-      });
-      return hitWords.size >= 2;
+    const picked = rankSemanticClips(usable, RESULT_LIMIT, {
+      phrases,
+      perPhraseWords,
+      query: q,
+      grams,
     });
-    const layer3 = rest1.filter((r) => !layer2.includes(r) && zhHit(r));
-    let picked = pickSemanticClips(layer1, RESULT_LIMIT);
-    if (picked.length < RESULT_LIMIT) {
-      picked = pickSemanticClips(layer1.concat(layer2), RESULT_LIMIT);
-    }
-    if (picked.length < RESULT_LIMIT) {
-      picked = pickSemanticClips(layer1.concat(layer2, layer3), RESULT_LIMIT);
-    }
 
     // 实体封装：封面现签 + 懒切片直链现签（失败置 null，客户端回落网关懒取）
     const items = await Promise.all(
