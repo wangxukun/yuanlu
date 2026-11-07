@@ -68,3 +68,6 @@ yuanlu-membership-audit-report.md
 
 # 小程序码生成产物（本地临时文件）
 wxacode/
+# 本地环境记录与测试日志（2026-11-07 提交收口）
+.local/
+LOCAL-ENVIRONMENT.md
