@@ -30,7 +30,7 @@ function bucketize<T>(vals: T[], edges: number[], label: (t: T) => number) {
 }
 
 async function main() {
-  const { PrismaClient } = await import("@prisma/client");
+  const { PrismaClient, Prisma } = await import("@prisma/client");
   const prisma = new PrismaClient();
   const OSS = (await import("ali-oss")).default;
 
@@ -72,10 +72,10 @@ async function main() {
     `clipAudioKey 已回填 ${clipKeyed} 条（${pct(clipKeyed, clipTotal)}——其余为懒切片未播放过）`,
   );
   console.log(
-    `时长 avg=${clipAgg._avg.duration.toFixed(1)}s min=${clipAgg._min.duration}s max=${clipAgg._max.duration}s`,
+    `时长 avg=${(clipAgg._avg.duration ?? 0).toFixed(1)}s min=${clipAgg._min.duration}s max=${clipAgg._max.duration}s`,
   );
   console.log(
-    `语速 wpm avg=${Math.round(clipAgg._avg.wpm)} min=${clipAgg._min.wpm} max=${clipAgg._max.wpm}；词数 avg=${clipAgg._avg.wordCount.toFixed(1)} max=${clipAgg._max.wordCount}`,
+    `语速 wpm avg=${Math.round(clipAgg._avg.wpm ?? 0)} min=${clipAgg._min.wpm} max=${clipAgg._max.wpm}；词数 avg=${(clipAgg._avg.wordCount ?? 0).toFixed(1)} max=${clipAgg._max.wordCount}`,
   );
   console.log(
     `建库窗口：createdAt ${clipAgg._min.createdAt?.toISOString()} ~ updatedAt ${clipAgg._max.updatedAt?.toISOString()}`,
@@ -129,7 +129,7 @@ async function main() {
     where: { clipAudioKey: { not: null } },
   });
   const sceneWithDive = await prisma.micro_scenes.count({
-    where: { deepDiveJson: { not: null } },
+    where: { deepDiveJson: { not: Prisma.DbNull } },
   });
   const sceneRows = await prisma.micro_scenes.findMany({
     select: { title: true, situationTag: true, duration: true },
@@ -149,7 +149,7 @@ async function main() {
     `微剧场总数 ${sceneTotal} 段，覆盖 ${sceneEpisodes.length} 集，均 ${Math.round(sceneTotal / Math.max(1, sceneEpisodes.length))} 段/集`,
   );
   console.log(
-    `时长 avg=${sceneAgg._avg.duration.toFixed(1)}s min=${sceneAgg._min.duration}s max=${sceneAgg._max.duration}s`,
+    `时长 avg=${(sceneAgg._avg.duration ?? 0).toFixed(1)}s min=${sceneAgg._min.duration}s max=${sceneAgg._max.duration}s`,
   );
   console.log(
     `clipAudioKey 已回填 ${sceneKeyed}（${pct(sceneKeyed, sceneTotal)}）；deepDiveJson 已挂 ${sceneWithDive}（${pct(sceneWithDive, sceneTotal)}）`,
