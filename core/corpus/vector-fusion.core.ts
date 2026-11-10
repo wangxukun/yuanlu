@@ -10,9 +10,13 @@
  *     key/超时）→ 纯关键词；向量近邻空（未灌数）→ 纯关键词；
  *   - 补召回：向量命中但关键词未召回的行回库补拉，过同一 junk/敏感词门禁后
  *     并入候选池（池化评估口径：两路召回并池，Recall 才公平）。
+ *   - [2026-11-10] 向量 veto：向量路可用时，不在 top-60 近邻中的候选
+ *     证据分半降（×0.5）——治「关键词碰撞但语义不相关」的结构性问题。
+ *     向量路不可用时 veto 不生效（fail-open 到纯证据分）。
  *
  * 权重量纲：scoreSemanticClip 的词块命中 +40 / 共现 +12 / 中文完整 +25；
- * 向量分 W_VEC=25：sim 0.6 ≈ +15（强信号但不压倒多证据词块命中）。
+ * 向量分 W_VEC=35：sim 0.6 ≈ +21（强信号但不压倒多证据词块命中）。
+ * veto 系数 VETO_FACTOR=0.5：KW-only 候选证据分 75 → 37.5（掉出 top-4）。
  */
 import {
   scoreSemanticClip,
@@ -29,6 +33,13 @@ export const VECTOR_LANE_WEIGHT = 35;
  * （46 query 样本下属噪声级）、0.65 起切进有效带明显伤害（39.6%）。维持 0.3 惰性档。
  */
 export const VECTOR_MIN_SIM = 0.3;
+/**
+ * [2026-11-10] 向量 veto 系数——向量路可用但候选不在 top-60 近邻集时，
+ * 证据分乘以此系数。0.5 = 半降（75→37.5，掉出 top-4）；1 = 禁用 veto。
+ * 设计意图：关键词碰撞句（如「餐厅点单」对「咖啡厅点单闲聊」）的证据分
+ * 在无语义佐证时应打折——不然一个 "order" 词块命中 +40 就能排第 4。
+ */
+export const VECTOR_VETO_FACTOR = 0.5;
 
 /** 融合候选行基型（两路由的 CLIP_SELECT 行均结构兼容） */
 export interface FusionRow {
@@ -56,7 +67,10 @@ export interface VectorFuseParams<Row extends FusionRow> {
 /**
  * 融合排序：scoreSemanticClip(证据分) + sim×W_VEC(向量分)，
  * 每集配额（默认 2）+ 同分慢速优先——与 rankSemanticClips 挑选口径一致。
- * FLAG/向量不可用时退化为纯证据分（行为=现网）。
+ *
+ * [veto 机制] 向量路成功启用时，不在 top-60 近邻集的候选证据分半降
+ * （×VECTOR_VETO_FACTOR）——关键词碰撞句的「证据」无语义佐证时打折。
+ * 向量路不可用（FLAG 关/缺 key/超时）→ veto 不生效（fail-open 到纯证据分）。
  */
 export async function fuseRankClips<Row extends FusionRow>(
   params: VectorFuseParams<Row>,
@@ -65,9 +79,11 @@ export async function fuseRankClips<Row extends FusionRow>(
   const cap = params.perEpisodeCap ?? 2;
 
   const vectorSim = new Map<string, number>();
+  let vectorActive = false;
   if (vectorSearchOn()) {
     const qv = await embedQuery(query);
     if (qv) {
+      vectorActive = true;
       const hits = await clipEmbeddingRepo.nearestClips(qv, 60);
       const usableIds = new Set(usable.map((r) => r.clipid));
       for (const h of hits) {
@@ -90,14 +106,15 @@ export async function fuseRankClips<Row extends FusionRow>(
   }
 
   const scored = usable
-    .map((r) => ({
-      r,
-      s:
-        scoreSemanticClip(r, rankCtx) +
-        (vectorSearchOn()
-          ? (vectorSim.get(r.clipid) ?? 0) * VECTOR_LANE_WEIGHT
-          : 0),
-    }))
+    .map((r) => {
+      const evScore = scoreSemanticClip(r, rankCtx);
+      const vScore = (vectorSim.get(r.clipid) ?? 0) * VECTOR_LANE_WEIGHT;
+      // 向量 veto：向量路可用但候选不在近邻集 → 证据分半降
+      // （关键词碰撞句的「证据」无语义佐证时打折；向量路不可用时不生效）
+      const veto =
+        vectorActive && !vectorSim.has(r.clipid) ? VECTOR_VETO_FACTOR : 1;
+      return { r, s: evScore * veto + vScore };
+    })
     .filter((x) => Number.isFinite(x.s))
     .sort((a, b) => {
       if (b.s !== a.s) return b.s - a.s;
