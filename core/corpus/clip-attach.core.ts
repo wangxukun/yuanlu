@@ -26,6 +26,10 @@ export interface ClipAttachRow {
   endTime: number;
   clipAudioKey: string | null;
   wordsJson?: unknown;
+  /** [M1/T1.2] v2 预计算窗口 + 指纹（缺省 = 旧动态计算口径，偏移/时长展示不变） */
+  cutStart?: number | null;
+  cutEnd?: number | null;
+  contentHash?: string | null;
 }
 
 export interface ClipAttachFields {
@@ -106,6 +110,9 @@ export async function attachClipAudio<T>(
         const win = computeSliceWindow(row.clipid, {
           startTime: row.startTime,
           endTime: row.endTime,
+          cutStart: row.cutStart,
+          cutEnd: row.cutEnd,
+          contentHash: row.contentHash,
         });
         try {
           const url = await sign(row.clipAudioKey, expireSec);
