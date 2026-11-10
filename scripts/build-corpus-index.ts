@@ -12,6 +12,7 @@
  * 用法：
  *   npx tsx scripts/build-corpus-index.ts --limit=20        # 最新 20 集
  *   npx tsx scripts/build-corpus-index.ts --episode=<id>    # 单集重建
+ *   npx tsx scripts/build-corpus-index.ts --only-new        # 增量：只补「有字幕未入库」欠账集（分钟级）
  *   npx tsx scripts/build-corpus-index.ts --dry            # 只统计不落库
  * 字幕源：直接 fetch OSS 双语 JSON（mergeSubtitles 同源；无双语字幕的集跳过）。
  */
@@ -32,6 +33,9 @@ import {
   sanitizeSceneTitle,
   type SubtitleItem,
 } from "../core/corpus/clip-core";
+// [M0/T0.1] 建库级 junk 门禁与 semantic-search 读路径同函数同语义
+// （curator.core 零依赖纯模块，静态导入安全；lib/oss 仍须 env 就绪故动态导入）
+import { isJunkClip } from "../core/studio/curator.core";
 
 // 私有桶字幕必须现签后拉取（lib/data.ts data()/mergeSubtitles 同口径；
 // 裸 subtitleBilingualUrl 直接 fetch 会 403）。lib/oss 加载期读 env，
@@ -70,14 +74,16 @@ interface Args {
   limit: number;
   episode: string | null;
   dry: boolean;
+  onlyNew: boolean;
 }
 
 function parseArgs(): Args {
-  const args: Args = { limit: 0, episode: null, dry: false };
+  const args: Args = { limit: 0, episode: null, dry: false, onlyNew: false };
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith("--limit=")) args.limit = Number(arg.slice(8)) || 0;
     else if (arg.startsWith("--episode=")) args.episode = arg.slice(10);
     else if (arg === "--dry") args.dry = true;
+    else if (arg === "--only-new") args.onlyNew = true;
   }
   return args;
 }
@@ -88,7 +94,7 @@ async function main() {
   const prisma = new PrismaClient();
   const { generateSignatureUrl } = await import("../lib/oss");
   try {
-    const episodes = await prisma.episode.findMany({
+    let episodes = await prisma.episode.findMany({
       where: {
         status: "published",
         ...(args.episode ? { episodeid: args.episode } : {}),
@@ -105,6 +111,18 @@ async function main() {
       orderBy: { publishAt: "desc" },
       ...(args.limit > 0 ? { take: args.limit } : {}),
     });
+
+    // [T6.3 前置] 增量模式：只处理「已发布+有双语字幕但 corpus_clips 无行」的欠账集
+    // （分钟级；全量重跑对已入库集幂等零变化但 ~90 分钟——日常补新集用本模式）
+    if (args.onlyNew) {
+      const existing = await prisma.corpus_clips.groupBy({ by: ["episodeid"] });
+      const existingSet = new Set(existing.map((g) => g.episodeid));
+      const before = episodes.length;
+      episodes = episodes.filter((e) => !existingSet.has(e.episodeid));
+      console.log(
+        `[build-corpus-index] 增量模式：候选 ${before} 集 → 待入库欠账 ${episodes.length} 集（已入库 ${before - episodes.length} 集跳过）`,
+      );
+    }
 
     console.log(
       `[build-corpus-index] 候选剧集 ${episodes.length} 集${args.dry ? "（dry 模式，不落库）" : ""}`,
@@ -136,7 +154,9 @@ async function main() {
         topicTags: ep.tags.map((t) => t.name),
       };
 
-      const drafts = buildClipsFromSubtitles(ep.episodeid, subtitles);
+      const drafts = buildClipsFromSubtitles(ep.episodeid, subtitles, {
+        junkGate: isJunkClip,
+      });
       const scenes = groupScenes(ep.episodeid, drafts);
 
       console.log(
@@ -225,13 +245,8 @@ async function main() {
         allClips.map((c) => [c.subtitleId, c.clipid]),
       );
 
-      // 微剧场：仍 deleteMany + createMany（sceneid 不用于 OSS 对象名，
-      // 首次请求时懒切片，sceneid 变化不产生 OSS 孤儿——旧 scene 的
-      // OSS 对象（如已生成）会在 OSS 生命周期规则下自然过期）
-      await prisma.micro_scenes.deleteMany({
-        where: { episodeid: ep.episodeid },
-      });
-
+      // 微剧场：[M1/T1.3] 按 sceneKey upsert（重灌 sceneid 稳定 → OSS 已缓存
+      // 场景音频零作废）；陈旧组（重切分后消失的键）删除
       const deepDiveRow = await prisma.episode_deep_dives.findUnique({
         where: { episodeid: ep.episodeid },
         select: { content: true },
@@ -241,11 +256,11 @@ async function main() {
         (deepDiveRow?.content ?? null) as never,
       );
 
-      if (scenes.length > 0) {
-        await prisma.micro_scenes.createMany({
-          data: scenes.map((scene, i) => ({
-            episodeid: ep.episodeid,
-            // 标题截自字幕首句，红线词（播客/AI…）整句弃用回落中性标题
+      for (let i = 0; i < scenes.length; i++) {
+        const scene = scenes[i];
+        await prisma.micro_scenes.upsert({
+          where: { sceneKey: scene.sceneKey },
+          update: {
             title: sanitizeSceneTitle(scene.title, scene.startTime),
             summaryZh: scene.summaryZh,
             situationTag: meta.topicTags[0] || null,
@@ -271,9 +286,46 @@ async function main() {
             deepDiveJson: (deepDiveMapped[i] ?? undefined) as
               | object
               | undefined,
-          })),
+          },
+          create: {
+            episodeid: ep.episodeid,
+            sceneKey: scene.sceneKey,
+            title: sanitizeSceneTitle(scene.title, scene.startTime),
+            summaryZh: scene.summaryZh,
+            situationTag: meta.topicTags[0] || null,
+            cefrLevel: meta.cefrLevel,
+            coverUrl: meta.coverUrl,
+            startTime: scene.startTime,
+            endTime: scene.endTime,
+            duration: scene.duration,
+            clipsJson: {
+              clips: scene.clips
+                .map((c) => ({
+                  clipid: idBySubtitle.get(c.subtitleId) || null,
+                  subtitleId: c.subtitleId,
+                  start: c.start,
+                  end: c.end,
+                  textEn: c.textEn,
+                  textCn: c.textCn,
+                  speaker: c.speaker,
+                  words: c.words,
+                }))
+                .filter((c) => c.clipid),
+            } as object,
+            deepDiveJson: (deepDiveMapped[i] ?? undefined) as
+              | object
+              | undefined,
+          },
         });
       }
+      // 陈旧组清理：本集 sceneKey 不在本次草稿键集的行删除
+      const draftKeys = scenes.map((s) => s.sceneKey);
+      await prisma.micro_scenes.deleteMany({
+        where: {
+          episodeid: ep.episodeid,
+          ...(draftKeys.length ? { sceneKey: { notIn: draftKeys } } : {}),
+        },
+      });
 
       // 输出同步统计（增/删/更/保留——首次跑全部为增）
       if (toDelete.length > 0 || toCreate.length > 0 || toUpdate.length > 0) {
