@@ -1,6 +1,6 @@
 ---
 name: corpus-ingest
-description: 新剧集/字幕入库流水线（yuanlu 仓）：新播客剧集与双语字幕上传后，把新语料切成 corpus_clips 切片与 micro_scenes 场景（幂等、junk 门禁、sceneKey 稳定）的增量入库流程，含零切片诊断与验收。Use whenever 用户提到 新剧集上传、新字幕、新语料入库、补欠账、增量建库、新切片/新场景产生、only-new、build-corpus-index——入库完成后引导衔接 corpus-annotate skill 做标注。
+description: 新剧集/字幕入库流水线（yuanlu 仓）：新播客剧集与双语字幕上传后，把新语料切成 corpus_clips 切片与 micro_scenes 场景（幂等、junk 门禁、sceneKey 稳定）的增量入库流程，含零切片诊断、验收、新切片英文向量补灌（embed-corpus 增量灌 embedding）。Use whenever 用户提到 新剧集上传、新字幕、新语料入库、补欠账、增量建库、新切片/新场景产生、only-new、build-corpus-index、新切片灌向量/embedding 补灌——入库完成后引导衔接 corpus-annotate skill 做标注。
 ---
 
 # 新语料增量入库（切片 + 场景生成）
@@ -44,9 +44,23 @@ npx tsx scripts/tmp-clips-audit.ts   # 或轻量 count 对账
 2. **门禁回放**：抽查新入库行 `isJunkClip` 应 0 违例（建库侧已折进门禁）；
 3. **词级时间戳**：新行 `wordsJson` 缺失应为 0。
 
-### ⑤ 衔接标注（必做，否则新切片无分数无身份）
+### ⑤ 切片英文向量补灌（必做，否则新切片在向量检索里隐身）
+
+入库后新切片 `embedding IS NULL`——`VECTOR_SEARCH_ON=1` 的向量车道看不见它们，只能靠关键词路召回。文字已齐（enText），**无需等标注，入库完立即跑**：
+
+```bash
+npx tsx scripts/corpus/embed-corpus.ts
+# embedding IS NULL 天然增量（断点续跑）；分钟级；SiliconFlow BGE-M3 ~¥0.04/千句
+# 场景中文向量路不在此步——须等身份重建（见⑥），否则灌的是转写碎片
+```
+
+验收：`SELECT COUNT(*) FROM corpus_clips WHERE embedding IS NULL` 应回 0（或等于本次跳过的失败行）。
+
+### ⑥ 衔接标注（必做，否则新切片无分数无身份、新场景无身份证）
 
 入库只是「文字+时间戳」进库；新切片还需 worthyScore/场景标签、新场景还需身份重建 → **调 corpus-annotate skill**（`npx tsx scripts/corpus/annotate-clips.ts --run=<沿用既有 run 目录>` 断点增量：已标跳过、只标新句；随后 annotate-scenes → upsert → embed-scenes，`embeddingZh IS NULL` 天然只灌新场景）。
+
+> 依赖时机口诀：**英文向量跟着文字走（⑤，入库即灌）；中文向量跟着身份走（⑥，标注后才灌）**。查询侧 embedding（用户意图→向量）是路由内运行时代码（`core/corpus/query-embed.core.ts`），随部署自动生效，不属于批处理范畴。
 
 ## 全量 vs 增量
 

@@ -67,7 +67,12 @@ npx tsx scripts/corpus/annotate-scenes.ts --run=run1
 npx tsx scripts/corpus/upsert-annotations.ts --run=run1
 # 2) 场景 zh 向量（title+导读+句译文 → SiliconFlow BGE-M3；embeddingZh IS NULL 天然增量）
 npx tsx scripts/corpus/embed-scenes.ts --limit=50   # 冒烟后去 limit 全量
+# 3) 切片英文向量兜底（corpus-ingest skill ⑤ 的职责；若本轮新切片未灌则此处补跑，
+#    embedding IS NULL 天然增量——勿因「跑过一次」跳过检查）
+npx tsx scripts/corpus/embed-corpus.ts
 ```
+
+> 向量双路依赖口诀：**英文向量跟着文字走**（ingest 后即可灌，标注前后皆可）；**中文向量跟着身份走**（本 skill 落库后才灌）。收数链末尾统一验收 `clipEmbeddingRepo.coverage()`：两路水位 = 各自总数。
 
 3. **考卷验收**：用 `.local/eval/worthiness-500.csv`（人工正本）给模型分数判 P（worthy≥0.5 预测「值得学」），门槛 **P≥0.85**；不过 → 迭代 prompt 重开 run，不许带病上线。
 4. 收尾：T3.3 worthyScore 门禁生效检查（feed/match 召回挂 `worthyScore >= 阈值`）+ 场景搜索抽查 + 通知用户 DevTools 验收。
