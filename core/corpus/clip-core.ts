@@ -323,6 +323,13 @@ export interface BuildClipsOptions {
   minDurationSec?: number;
   /** 单句最少有效词数 */
   minWords?: number;
+  /**
+   * [M0/T0.1] 建库级语料门禁（谓词注入，保持本文件零依赖）：
+   * 传入 curator.core 的 isJunkClip 即生效——minWords 5 / 时长 3–40s /
+   * wpm 90–240 / 功能词在场，与 semantic-search 读路径门禁同函数同语义
+   * （杜绝建库/读侧两口漂移）。缺省不过滤（旧调用方行为不变）。
+   */
+  junkGate?: (draft: ClipDraft) => boolean;
 }
 
 export interface ClipDraft {
@@ -369,7 +376,7 @@ export function buildClipsFromSubtitles(
     if (isInterstitialSentence(enText, words.length)) continue;
 
     const acoustics = analyzeAcousticFlags(words, sub.start, end);
-    drafts.push({
+    const draft: ClipDraft = {
       episodeid,
       subtitleId: sub.id,
       startTime: sub.start,
@@ -386,7 +393,10 @@ export function buildClipsFromSubtitles(
           : null,
       phonemeTags: phonemeTagsFromText(enText),
       wordCount: words.length,
-    });
+    };
+    // [M0/T0.1] 建库级 junk 门禁（wpm 依赖声学指纹，故在草稿组装后判定）
+    if (options?.junkGate && options.junkGate(draft)) continue;
+    drafts.push(draft);
   }
   return drafts;
 }
@@ -405,6 +415,8 @@ export interface SceneClipRef {
 
 export interface SceneDraft {
   episodeid: string;
+  /** [M1/T1.3] 稳定键 = episodeid + ':' + 首句 subtitleId（重灌不变，upsert 对账键） */
+  sceneKey: string;
   title: string;
   summaryZh: string | null;
   startTime: number;
@@ -455,6 +467,7 @@ export function groupScenes(
           .find((z) => z && z.length >= 6);
         scenes.push({
           episodeid,
+          sceneKey: episodeid + ":" + bucket[0].subtitleId,
           title: (firstZh || bucket[0].enText).slice(0, 30),
           summaryZh: null,
           startTime: start,

@@ -24,6 +24,10 @@ import {
 export interface ClipLookupRow {
   startTime: number;
   endTime: number;
+  /** [M1/T1.2] v2 预计算窗口 + 对象名指纹（缺省行 = 旧动态计算行为） */
+  cutStart?: number | null;
+  cutEnd?: number | null;
+  contentHash?: string | null;
 }
 
 export interface ClipAudioDeps {
@@ -132,6 +136,9 @@ export const clipAudioService = {
     const windowResult = computeSliceWindow(id, {
       startTime: windowInput.startTime,
       endTime: windowInput.endTime,
+      cutStart: windowInput.cutStart,
+      cutEnd: windowInput.cutEnd,
+      contentHash: windowInput.contentHash,
     });
     if (!windowResult.ok) {
       return { ok: false, code: windowResult.code };

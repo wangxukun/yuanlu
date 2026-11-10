@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { authWithMobile } from "@/core/auth/guard";
 import prisma from "@/lib/prisma";
 import { signOssHttpUrl } from "@/lib/oss";
-import { isJunkClip, rankSemanticClips } from "@/core/studio/curator.core";
+import { isJunkClip } from "@/core/studio/curator.core";
+import { hasSensitiveTerm } from "@/core/corpus/clip-core";
+import { fuseRankClips } from "@/core/corpus/vector-fusion.core";
 import { clipAudioService } from "@/core/corpus/clip-audio.service";
 import { buildRealClipAudioDeps } from "@/core/corpus/clip-audio.deps";
 import { anonymousLlmRateAllow } from "@/lib/dictionary-quota";
@@ -340,11 +342,21 @@ export async function POST(request: Request) {
               grams.some((g) => r.zhText!.includes(g)))
           )),
     );
-    const picked = rankSemanticClips(usable, RESULT_LIMIT, {
-      phrases,
-      perPhraseWords,
+    // [M3/T3.1] 三路融合：证据分 + 向量车道（FLAG 门控，fail-open 回落关键词路）
+    const picked = await fuseRankClips({
       query: q,
-      grams,
+      usable,
+      rankCtx: { phrases, perPhraseWords, query: q, grams },
+      limit: RESULT_LIMIT,
+      fetchByClipIds: async (ids) =>
+        (await prisma.corpus_clips.findMany({
+          where: { clipid: { in: ids } },
+          select: CLIP_SELECT,
+        })) as typeof usable,
+      isEligible: (r) =>
+        !isJunkClip({ enText: r.enText, duration: r.duration, wpm: r.wpm }) &&
+        !hasSensitiveTerm(r.enText) &&
+        !hasSensitiveTerm(r.zhText),
     });
 
     // 实体封装：封面现签 + 懒切片直链现签（失败置 null，客户端回落网关懒取）

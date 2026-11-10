@@ -768,6 +768,32 @@ model corpus_clips {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // ── [M1/T1.1] 语料工厂 v2 additive（CORPUS §二；全部可空/带默认，读写经 raw SQL 或 M4 管线） ──
+  /// 切片窗口起点（秒，含 pad）；null=回落现动态计算（computeSliceWindow）
+  cutStart Float?
+  /// 切片窗口终点（秒，含 pad + overlap 裁剪后）
+  cutEnd   Float?
+  /// 审计：本行实际 padding
+  padBeforeMs Int?
+  padAfterMs  Int?
+  /// bleed|silence|too_short|too_long|overlap_fix
+  qcFlags         String[] @default([])
+  /// sha256(enText + cut 边界 + codec 参数)[:16]——对象名指纹 + 幂等（hash8 挂对象名）
+  contentHash     String?  @db.VarChar(40)
+  /// 如 corpus-wx-v1
+  pipelineVersion String?  @db.VarChar(20)
+  /// LLM 可追溯分（0–1，非 boolean；M2 产出）
+  worthyScore Float?
+  /// 标注模型可追溯（qwen2.5-14b-awq@2026-11-xx）
+  modelId     String? @db.VarChar(40)
+  /// {v:1, items:[{surface,lemma,charStart,charEnd,zh,pos}]}
+  highlights Json?
+  /// {v:1, slots:[{charStart,charEnd,answer,distractors[]}]}
+  clozeData  Json?
+  /// en_text 路 BGE-M3 dense（读写走 clip-embedding.repo raw SQL）
+  embedding  Unsupported("vector(1024)")?
+  clip_vocab clip_vocab[]
+
   @@unique([episodeid, subtitleId])
   @@index([episodeid])
   @@index([cefrLevel, wpm])
@@ -780,6 +806,9 @@ model corpus_clips {
 model micro_scenes {
   sceneid      String   @id @default(cuid())
   episodeid    String
+  /// [M1/T1.3] 稳定键 = episodeid + ":" + 首句 subtitleId（治 sceneid 重灌漂移；
+  /// 存量已由 migration 回填，建库写入口改按此 upsert）
+  sceneKey     String   @unique @db.VarChar(80)
   title        String   @db.VarChar(255)
   summaryZh    String?
   /// 语用场景标签（职场/闲聊/情感/连读 等运营策展口径）
@@ -797,7 +826,51 @@ model micro_scenes {
   /// OSS 物理切片对象 key（yuanlu/clips/{sceneid}.mp3，首次切片后回填）
   clipAudioKey String?  @db.VarChar(255)
   createdAt    DateTime @default(now())
+  /// [M1/T1.1] zh_text + scenarioDesc 路 BGE-M3（读写走 clip-embedding.repo raw SQL）
+  embeddingZh  Unsupported("vector(1024)")?
 
   @@index([episodeid])
   @@index([situationTag])
+}
+
+/// [M1/T1.1] 语义倒排：lemma → 原声例句（dict 例句切换精确召回的数据面，M3/T3.2 消费）
+model clip_vocab {
+  id          String      @id @default(cuid())
+  clipid      String
+  clip        corpus_clips @relation(fields: [clipid], references: [clipid], onDelete: Cascade)
+  /// 原型/词组（take a toll）
+  lemma       String      @db.VarChar(64)
+  /// 句中形态（overwhelmed）
+  surfaceForm String      @db.VarChar(64)
+  charStart   Int
+  charEnd     Int
+  /// 本句语境释义
+  contextZh   String?     @db.VarChar(255)
+
+  @@index([lemma])
+}
+
+/// [M1/T1.1] 用户生成微场景缓存（T3.6 RAG 组装/T3.7 消费：同意图秒回、
+/// 复用/分享/省 LLM；Gemini 方案采纳项）
+model generated_scene {
+  id               String   @id @default(cuid())
+  /// 用户意图原文
+  userPrompt       String   @db.VarChar(300)
+  /// userPrompt+levels 指纹 → 同意图秒回缓存
+  promptHash       String   @db.VarChar(40)
+  /// RAG 组装的场景导读 + 文化潜台词
+  scenarioOverview String?
+  /// RAG 组装的实战微挑战
+  roleplayTask     String?
+  /// 关联 corpus_clips.clipid
+  clipIds          String[]
+  /// 关联 micro_scenes.sceneid（可空）
+  sceneId          String?
+  /// 关联用户（游客空）
+  creatorId        String?
+  /// 复用计数（分享/热门）
+  hitCount         Int      @default(1)
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([promptHash])
 }

@@ -20,6 +20,17 @@ export const SLICE_MAX_DURATION_SEC = 45;
 export interface SliceWindowInput {
   startTime: number;
   endTime: number;
+  /**
+   * [M1/T1.2] v2 管线预计算的切片窗口（含 pad + overlap 裁剪）。
+   * 读序：cut 优先 → 缺失/非法回落 startTime/endTime 动态计算（旧行为）。
+   */
+  cutStart?: number | null;
+  cutEnd?: number | null;
+  /**
+   * [M1/T1.2] 对象名指纹（sha256(enText+cut+codec)[:16]）——挂对象名 {id}-{hash8}.mp3，
+   * 切片参数变更自动失效旧对象；缺省走旧对象名 {id}.mp3（命中不变）。
+   */
+  contentHash?: string | null;
 }
 
 export interface SliceWindow {
@@ -55,13 +66,35 @@ export function computeSliceWindow(
     return { ok: false, code: "INVALID_WINDOW" };
   }
 
-  const sliceStart = Math.max(0, input.startTime - padBefore);
-  const sliceEnd = input.endTime + padAfter;
+  // cut 读序：v2 预计算窗口优先（已含 pad/裁剪，不再二次让位）；
+  // 缺失或非法（越界/倒序/超出字幕窗）→ 回落动态计算（旧行为不变）
+  const hasCut =
+    typeof input.cutStart === "number" &&
+    typeof input.cutEnd === "number" &&
+    isFinite(input.cutStart) &&
+    isFinite(input.cutEnd) &&
+    input.cutEnd > input.cutStart &&
+    input.cutStart >= input.startTime - 1 &&
+    input.cutEnd <= input.endTime + 1;
+  const sliceStart = hasCut
+    ? Math.max(0, input.cutStart as number)
+    : Math.max(0, input.startTime - padBefore);
+  const sliceEnd = hasCut ? (input.cutEnd as number) : input.endTime + padAfter;
   const duration = sliceEnd - sliceStart;
   if (duration > maxDuration) {
     // 红线 2 服务端闸门：超时长（理论仅脏数据可触发，批处理已保证 ≤40s）
     return { ok: false, code: "TOO_LONG" };
   }
+
+  // 对象名指纹：contentHash 存在 → {id}-{hash8}.mp3（参数变更自动失效）；
+  // 缺省 → 旧对象名 {id}.mp3（存量 118 对象命中不变）
+  const hash8 =
+    typeof input.contentHash === "string" && input.contentHash.length >= 8
+      ? input.contentHash.slice(0, 8)
+      : null;
+  const objectKey = hash8
+    ? `yuanlu/clips/${id}-${hash8}.mp3`
+    : `yuanlu/clips/${id}.mp3`;
 
   return {
     ok: true,
@@ -70,7 +103,7 @@ export function computeSliceWindow(
       sliceEnd,
       duration: Math.round(duration * 1000) / 1000,
       clipOffset: sliceStart,
-      objectKey: `yuanlu/clips/${id}.mp3`,
+      objectKey,
     },
   };
 }

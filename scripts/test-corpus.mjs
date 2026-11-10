@@ -19,6 +19,8 @@
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { registerHooks } from "node:module";
+import { Buffer } from "node:buffer";
+import process from "node:process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = pathToFileURL(path.join(__dirname, "..") + path.sep).href;
@@ -170,6 +172,92 @@ console.log("━━━ 一、clip-core：切片构建 / 声学指纹 / 微剧场
     "end 缺省 = start+3 窗口兜底（时长 3s）",
   );
 
+  // [M0/T0.1] 建库级 junk 门禁：谓词注入 curator.isJunkClip（建库/读侧同函数同语义）
+  {
+    const junkSubs = [
+      // ① 旧过滤全过（≥2.5s/≥4词/非语气句）但时长 <3s → junk（minDur 3）
+      {
+        id: 1,
+        start: 0,
+        end: 2.8,
+        textEn: "She was kind of tired of the noise",
+        words: [
+          { word: "she", start: 0.1, end: 0.3 },
+          { word: "was", start: 0.4, end: 0.6 },
+          { word: "kind", start: 0.7, end: 0.9 },
+          { word: "of", start: 1.0, end: 1.1 },
+          { word: "tired", start: 1.2, end: 1.5 },
+          { word: "of", start: 1.6, end: 1.7 },
+          { word: "the", start: 1.8, end: 1.9 },
+          { word: "noise", start: 2.0, end: 2.4 },
+        ],
+      },
+      // ② 合格句：7s / 8 词 / 功能词在场 / wpm 140
+      {
+        id: 2,
+        start: 10,
+        end: 17,
+        textEn: "He was thinking about the whole plan again",
+        textCn: "他又在想整个计划",
+        words: [
+          { word: "he", start: 10.1, end: 10.3 },
+          { word: "was", start: 10.5, end: 10.7 },
+          { word: "thinking", start: 10.8, end: 11.4 },
+          { word: "about", start: 11.6, end: 11.9 },
+          { word: "the", start: 12.0, end: 12.1 },
+          { word: "whole", start: 12.3, end: 12.6 },
+          { word: "plan", start: 12.8, end: 13.2 },
+          { word: "again", start: 13.4, end: 13.9 },
+        ],
+      },
+      // ③ wpm 异常：8 词挤在 ~0.9s 内 → wpm≈530 > 240 → junk
+      {
+        id: 3,
+        start: 20,
+        end: 23.5,
+        textEn: "And the plan was all set for it now",
+        words: [
+          { word: "and", start: 20.1, end: 20.16 },
+          { word: "the", start: 20.2, end: 20.26 },
+          { word: "plan", start: 20.3, end: 20.4 },
+          { word: "was", start: 20.45, end: 20.5 },
+          { word: "all", start: 20.55, end: 20.6 },
+          { word: "set", start: 20.65, end: 20.72 },
+          { word: "for", start: 20.78, end: 20.84 },
+          { word: "it", start: 20.9, end: 20.96 },
+        ],
+      },
+      // ④ 功能词缺席：5 个实词地名、时长/词数/wpm 全达标 → junk（功能词在场）
+      {
+        id: 4,
+        start: 30,
+        end: 34,
+        textEn: "Paris London Tokyo Madrid Berlin",
+        words: [
+          { word: "paris", start: 30.1, end: 30.6 },
+          { word: "london", start: 30.8, end: 31.3 },
+          { word: "tokyo", start: 31.5, end: 32.0 },
+          { word: "madrid", start: 32.2, end: 32.7 },
+          { word: "berlin", start: 32.9, end: 33.4 },
+        ],
+      },
+    ];
+    const gated = clipCore.buildClipsFromSubtitles("ep3", junkSubs, {
+      junkGate: curatorCore.isJunkClip,
+    });
+    assert(
+      gated.length === 1 && gated[0].subtitleId === 2,
+      "junkGate=isJunkClip：时长<3s / wpm>240 / 功能词缺席 出局，仅合格句留库（实际 " +
+        gated.length +
+        " 条）",
+    );
+    const noGate = clipCore.buildClipsFromSubtitles("ep3-noGate", junkSubs);
+    assert(
+      noGate.length === 4,
+      "缺省不注入 junkGate → 旧过滤行为不变（4 条全过，门禁不越权）",
+    );
+  }
+
   // 微剧场聚合：句 1(10-16) → 句 6(60-67) 间隙 44s > 8s → 断组；各自不足 3 句 → 0 场景
   const scenes0 = clipCore.groupScenes("ep1", drafts);
   assert(scenes0.length === 0, "大间隙断组 + 每组 <3 句 → 0 场景");
@@ -198,6 +286,10 @@ console.log("━━━ 一、clip-core：切片构建 / 声学指纹 / 微剧场
   assert(
     near(scenes1[0].startTime, 0) && near(scenes1[0].duration, 17),
     "场景窗口 [0,17s]（含 2 个 1s 间隙）",
+  );
+  assert(
+    scenes1[0].sceneKey === "epS:1",
+    "[M1/T1.3] sceneKey = episodeid + ':' + 首句 subtitleId（重灌稳定，upsert 对账键）",
   );
 
   // maxTotalSec 收口：6 句 ×8s（7s 间隙）→ 每场景 ≤4 句（8*4+gap=35 ≤40，第 5 句超限断）
@@ -335,6 +427,49 @@ console.log("━━━ 二、clip-slice.core：窗口 / FFmpeg 参数 ━━━"
       "TOO_LONG",
     ">45s → TOO_LONG 硬闸门（红线 2 服务端）",
   );
+
+  // [M1/T1.2] cut 读序 + contentHash 指纹对象名（旧行为零变化）
+  {
+    const cut = sliceCore.computeSliceWindow("cid3", {
+      startTime: 100,
+      endTime: 108,
+      cutStart: 99.8,
+      cutEnd: 108.4, // v2 预计算窗口（已含 pad/裁剪，不二次让位）
+    });
+    assert(
+      cut.ok &&
+        near(cut.window.sliceStart, 99.8) &&
+        near(cut.window.sliceEnd, 108.4),
+      "cut 优先：直接采用预计算窗口（不再 -0.25/+0.35）",
+    );
+    assert(
+      cut.ok && cut.window.objectKey === "yuanlu/clips/cid3.mp3",
+      "无 contentHash → 旧对象名（存量 118 对象命中不变）",
+    );
+
+    const hashed = sliceCore.computeSliceWindow("cid4", {
+      startTime: 100,
+      endTime: 108,
+      cutStart: 99.8,
+      cutEnd: 108.4,
+      contentHash: "abcd1234ef567890abcd",
+    });
+    assert(
+      hashed.ok && hashed.window.objectKey === "yuanlu/clips/cid4-abcd1234.mp3",
+      "contentHash → {id}-{hash8}.mp3 指纹对象名（参数变更自动失效旧对象）",
+    );
+
+    const badCut = sliceCore.computeSliceWindow("cid5", {
+      startTime: 100,
+      endTime: 108,
+      cutStart: 200, // 越界（超出字幕窗 ±1s）→ 防御回落动态计算
+      cutEnd: 205,
+    });
+    assert(
+      badCut.ok && near(badCut.window.sliceStart, 99.75),
+      "非法 cut（越界）→ 回落旧动态计算口径",
+    );
+  }
 
   const args = sliceCore.buildFfmpegArgs({
     sourceUrl: "https://oss/e1.m4a?sig",
@@ -766,7 +901,6 @@ console.log(
     coverUrl: null,
     sourceLabel: "面试官",
   });
-  const llmResponses = [];
   let llmCall = 0;
   const deps = {
     prisma: {
@@ -774,8 +908,6 @@ console.log(
         findMany: async ({ where }) => {
           // 模拟召回：where.OR 任一 contains 命中即返回
           if (!where || !where.OR) return [];
-          const hit = (kw) =>
-            ["push", "back", "timeline", "delay"].some((w) => kw.includes(w));
           const matched =
             where.OR.filter((c) => c.enText || c.zhText).length > 0;
           return matched

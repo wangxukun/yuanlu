@@ -95,6 +95,8 @@ export async function GET(req: NextRequest) {
       wordsJson: { not: Prisma.DbNull },
       zhText: { not: null },
       ...(levels.length ? { cefrLevel: { in: levels } } : {}),
+      // [T3.3] worthyScore 门禁（考卷定标 th=0.4；null 未判不误杀）
+      OR: [{ worthyScore: { gte: 0.4 } }, { worthyScore: null }],
     };
 
     // 候选池：稳定排序（createdAt 批量建库同刻，clipid 决胜）+ 池放大
