@@ -11,6 +11,8 @@ import { authWithMobile } from "@/core/auth/guard";
 import { anonymousLlmRateAllow } from "@/lib/dictionary-quota";
 import { isJunkClip } from "@/core/studio/curator.core";
 import { fuseRankClips } from "@/core/corpus/vector-fusion.core";
+import { embedQuery, vectorSearchOn } from "@/core/corpus/query-embed.core";
+import { clipEmbeddingRepo } from "@/core/corpus/clip-embedding.repo";
 
 /**
  * [STUDIO] POST /api/scenes/match — 意图定制微场景的选料匹配。
@@ -446,6 +448,7 @@ async function pickScene(
   q: string,
   grams: string[],
   levels: string[],
+  zhWords: string[],
 ): Promise<{
   sceneid: string;
   episodeid: string;
@@ -457,51 +460,95 @@ async function pickScene(
   duration: number;
   sentences: SceneSentence[];
 } | null> {
-  const where = {
+  const SCENE_SELECT = {
+    sceneid: true,
+    episodeid: true,
+    title: true,
+    summaryZh: true,
+    situationTag: true,
+    cefrLevel: true,
+    coverUrl: true,
+    duration: true,
+    clipsJson: true,
+  } as const;
+  type SceneRow = {
+    sceneid: string;
+    episodeid: string;
+    title: string;
+    summaryZh: string | null;
+    situationTag: string | null;
+    cefrLevel: string | null;
+    coverUrl: string | null;
+    duration: number;
+    clipsJson: unknown;
+  };
+
+  // ① 关键词路：title/summaryZh/situationTag（T2.3 后标签已是受控枚举中文）
+  const allGrams = [...zhWords, ...grams];
+  const kwWhere = {
     duration: { gte: SCENE_DURATION_MIN, lte: SCENE_DURATION_MAX },
     ...(levels.length ? { cefrLevel: { in: levels } } : {}),
     OR: [
       { title: { contains: q } },
       { summaryZh: { contains: q } },
-      ...grams.map((g) => ({ title: { contains: g } })),
-      ...grams.map((g) => ({ summaryZh: { contains: g } })),
+      ...zhWords.map((w) => ({ situationTag: { contains: w } })),
+      ...allGrams.map((g) => ({ title: { contains: g } })),
+      ...allGrams.map((g) => ({ summaryZh: { contains: g } })),
     ],
   };
-  const rows = await prisma.micro_scenes.findMany({
-    where,
-    select: {
-      sceneid: true,
-      episodeid: true,
-      title: true,
-      summaryZh: true,
-      situationTag: true,
-      cefrLevel: true,
-      coverUrl: true,
-      duration: true,
-      clipsJson: true,
-    },
+  const kwRows = (await prisma.micro_scenes.findMany({
+    where: kwWhere,
+    select: SCENE_SELECT,
     orderBy: { createdAt: "desc" },
     take: 30,
-  });
+  })) as SceneRow[];
 
-  let best: (typeof rows)[number] | null = null;
-  let bestScore = 0;
-  for (const r of rows) {
-    if (hasSensitiveTerm(r.title) || hasSensitiveTerm(r.summaryZh)) continue;
-    let score = 0;
-    if (r.title.includes(q)) score += 3;
-    if ((r.summaryZh || "").includes(q)) score += 2;
-    for (const g of grams) {
-      if (r.title.includes(g)) score += 1;
-      if ((r.summaryZh || "").includes(g)) score += 1;
+  // ② 向量路（FLAG 门控）：embeddingZh 近邻——T2.3 身份重建后语义密度已就位
+  const vecSim = new Map<string, number>();
+  if (vectorSearchOn()) {
+    const qv = await embedQuery(q);
+    if (qv) {
+      const hits = await clipEmbeddingRepo.nearestScenes(qv, 10);
+      for (const h of hits) {
+        if (h.similarity >= 0.3) vecSim.set(h.id, h.similarity);
+      }
     }
-    score = Math.min(score, 8);
-    if (score > bestScore) {
-      bestScore = score;
+  }
+
+  // 合并池：关键词 ∪ 向量命中（向量路独有场景补拉）
+  const pool: SceneRow[] = [...kwRows];
+  const kwIds = new Set(kwRows.map((r) => r.sceneid));
+  const vecOnly = [...vecSim.keys()].filter((id) => !kwIds.has(id));
+  if (vecOnly.length > 0) {
+    const extra = (await prisma.micro_scenes.findMany({
+      where: { sceneid: { in: vecOnly.slice(0, 5) } },
+      select: SCENE_SELECT,
+    })) as SceneRow[];
+    pool.push(...extra);
+  }
+
+  // ③ 融合评分：关键词证据 + 向量相似度
+  const SCENE_VEC_W = 6; // sim 0.6→+3.6，与 title 完整命中 +3 同量纲
+  let best: SceneRow | null = null;
+  let bestScore = 0;
+  for (const r of pool) {
+    if (hasSensitiveTerm(r.title) || hasSensitiveTerm(r.summaryZh)) continue;
+    let kwScore = 0;
+    if (r.title.includes(q)) kwScore += 3;
+    if ((r.summaryZh || "").includes(q)) kwScore += 2;
+    for (const g of allGrams) {
+      if (r.title.includes(g)) kwScore += 1;
+      if ((r.summaryZh || "").includes(g)) kwScore += 1;
+    }
+    kwScore = Math.min(kwScore, 8);
+    const vScore = (vecSim.get(r.sceneid) ?? 0) * SCENE_VEC_W;
+    const total = kwScore + vScore;
+    if (total > bestScore) {
+      bestScore = total;
       best = r;
     }
   }
-  if (!best) return null;
+  if (!best || bestScore < 1) return null;
 
   const clips =
     (best.clipsJson as { clips?: Array<Record<string, unknown>> } | null)
@@ -707,7 +754,7 @@ export async function POST(request: Request) {
     const [picked, scene] = await Promise.all([
       pickClips(q, phrases, keywords, zhWords, grams, levels),
       // 场景打分同样吃中文内容词（标题/摘要命中即强信号）
-      pickScene(q, [...zhWords, ...grams], levels),
+      pickScene(q, grams, levels, zhWords),
     ]);
 
     const clips = await Promise.all(
