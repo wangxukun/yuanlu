@@ -9,7 +9,8 @@ import {
 } from "@/core/corpus/clip-core";
 import { authWithMobile } from "@/core/auth/guard";
 import { anonymousLlmRateAllow } from "@/lib/dictionary-quota";
-import { isJunkClip, rankSemanticClips } from "@/core/studio/curator.core";
+import { isJunkClip } from "@/core/studio/curator.core";
+import { fuseRankClips } from "@/core/corpus/vector-fusion.core";
 
 /**
  * [STUDIO] POST /api/scenes/match — 意图定制微场景的选料匹配。
@@ -306,6 +307,17 @@ const CLIP_SELECT = {
   coverUrl: true,
   sourceLabel: true,
   topicTags: true,
+  // [T3.3] worthy 门禁字段（isEligible 复检用）
+  worthyScore: true,
+};
+
+/**
+ * [T3.3] worthyScore 门禁工作点（考卷定标 grade-worthiness：th=0.4 → P 88.0%/R 55.9%）。
+ * 口径：未判（null，顽固失败窗残缺）不误杀——null OR ≥th。
+ */
+const WORTHY_THRESHOLD = 0.4;
+const worthyGate = {
+  OR: [{ worthyScore: { gte: WORTHY_THRESHOLD } }, { worthyScore: null }],
 };
 
 type ClipRow = {
@@ -323,6 +335,8 @@ type ClipRow = {
   coverUrl: string | null;
   sourceLabel: string | null;
   topicTags: string[];
+  // [T3.3] worthy 门禁字段
+  worthyScore: number | null;
 };
 
 async function pickClips(
@@ -342,16 +356,22 @@ async function pickClips(
       wordsJson: { not: Prisma.DbNull },
       zhText: { not: null },
       ...(withLevels && levels.length ? { cefrLevel: { in: levels } } : {}),
-      OR: [
-        ...phrases.map((p) => ({
-          enText: { contains: p, mode: "insensitive" as const },
-        })),
-        ...keywords.map((k) => ({
-          enText: { contains: k, mode: "insensitive" as const },
-        })),
-        { zhText: { contains: q } },
-        ...zhWords.map((w) => ({ zhText: { contains: w } })),
-        ...grams.map((g) => ({ zhText: { contains: g } })),
+      // AND 级合成：证据命中 AND worthy 门禁（T3.3：null 未判不误杀）
+      AND: [
+        {
+          OR: [
+            ...phrases.map((p) => ({
+              enText: { contains: p, mode: "insensitive" as const },
+            })),
+            ...keywords.map((k) => ({
+              enText: { contains: k, mode: "insensitive" as const },
+            })),
+            { zhText: { contains: q } },
+            ...zhWords.map((w) => ({ zhText: { contains: w } })),
+            ...grams.map((g) => ({ zhText: { contains: g } })),
+          ],
+        },
+        worthyGate,
       ],
     };
     const rows = await prisma.corpus_clips.findMany({
@@ -378,11 +398,31 @@ async function pickClips(
           zhWords.some((w) => r.zhText!.includes(w)) ||
           grams.some((g) => r.zhText!.includes(g))),
     );
-    return rankSemanticClips(usable, CLIP_RESULT_LIMIT, {
-      phrases,
-      perPhraseWords: phrases.map(phraseContentWords),
+    // [M3/T3.1] 三路融合：证据分 + 向量车道（FLAG 门控，fail-open 回落关键词路）
+    return fuseRankClips({
       query: q,
-      grams: [...zhWords, ...grams], // 中文内容词并进 grams 车道（zhText 命中 +6/词）
+      usable,
+      rankCtx: {
+        phrases,
+        perPhraseWords: phrases.map(phraseContentWords),
+        query: q,
+        grams: [...zhWords, ...grams], // 中文内容词并进 grams 车道（zhText 命中 +6/词）
+      },
+      limit: CLIP_RESULT_LIMIT,
+      fetchByClipIds: async (ids) =>
+        (await prisma.corpus_clips.findMany({
+          where: { clipid: { in: ids } },
+          select: CLIP_SELECT,
+        })) as ClipRow[],
+      isEligible: (r: ClipRow) =>
+        !isJunkClip(
+          { enText: r.enText, duration: r.duration, wpm: r.wpm },
+          { minDurationSec: 4, maxDurationSec: 15 },
+        ) &&
+        !hasSensitiveTerm(r.enText) &&
+        !hasSensitiveTerm(r.zhText) &&
+        // [T3.3] 向量补召回同过 worthy 门禁（null 未判不误杀）
+        (r.worthyScore == null || r.worthyScore >= WORTHY_THRESHOLD),
     });
   };
 
@@ -491,6 +531,114 @@ async function pickScene(
   };
 }
 
+/**
+ * [UX 2026-11-09] 无相关语料门——3 路自一致性打分投票（单问二元裁决实测两个
+ * 方向都会翻车：复合意图被整单否决/相邻话题被放行；纯阈值门经 50 query 金
+ * 标准校准也不可行——信号重叠 60% 准确率封顶。故：top-5 候选逐条 0-10 场景
+ * 相关度打分，3 路并行（1 路温度 0 + 2 路温度 0.5 制造有效多样性，延迟≈单
+ * 次）取每条中位分，任一条中位 ≥6 即放行）。null = 投票失败（fail-open 按
+ * 命中返回）。30min 缓存。
+ */
+const judgeCache = new Map<string, { verdict: boolean; at: number }>();
+const JUDGE_CACHE_TTL_MS = 30 * 60 * 1000;
+const JUDGE_SCORE_PASS = 6;
+const JUDGE_VOTES = 3;
+
+async function judgeOnce(
+  q: string,
+  top: Array<{ enText: string; zhText: string | null }>,
+  temperature: number,
+): Promise<number[] | null> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) return null;
+  const baseUrl = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
+  const modelName = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const user = `意图：${q}\n候选：\n${top
+    .map(
+      (t, i) => `${i + 1}. EN: ${t.enText}\n   ZH: ${t.zhText || "（无译文）"}`,
+    )
+    .join("\n")}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          {
+            role: "system",
+            content: `你是检索结果审核员，对每个候选英文原声句独立打「与用户意图的场景相关度」分（0-10）：
+- 9-10 = 该句在意图场景里母语者真的会说 / 直接教该场景的核心表达（「咖啡厅点单」→ "Can I get a latte to go?"）；
+- 6-8 = 覆盖意图的部分主要维度（复合意图如「点单+闲聊」→ 咖啡馆闲聊句；「面试谈缺点」→ 谈如何面对批评改进）；
+- 3-5 = 话题沾边但场景不同（谈咖啡文化纪录片、通用学习建议句）；
+- 0-2 = 场景完全无关（仅个别词偶合）。
+输出严格 JSON：{"scores": [8,2,5,0,3]}——与候选一一对应的整数数组。`,
+          },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+        temperature,
+        max_tokens: 80,
+      }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    const parsed = JSON.parse(
+      result.choices?.[0]?.message?.content || "{}",
+    ) as { scores?: unknown };
+    if (!Array.isArray(parsed.scores) || parsed.scores.length !== top.length)
+      return null;
+    const scores = parsed.scores.map((v) =>
+      typeof v === "number" && v >= 0 && v <= 10 ? v : -1,
+    );
+    if (scores.some((s) => s < 0)) return null;
+    return scores;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function judgeRelevance(
+  q: string,
+  top: Array<{ enText: string; zhText: string | null; clipid: string }>,
+): Promise<boolean | null> {
+  const cacheKey = q + "::" + top.map((t) => t.clipid).join(",");
+  const hit = judgeCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < JUDGE_CACHE_TTL_MS) return hit.verdict;
+
+  const votes = await Promise.all(
+    Array.from({ length: JUDGE_VOTES }, (_, i) =>
+      judgeOnce(q, top, i === 0 ? 0 : 0.5),
+    ),
+  );
+  const valid = votes.filter((v): v is number[] => v !== null);
+  if (valid.length === 0) return null; // 全军覆没 → fail-open
+  // 每条候选取各票中位分；任一条中位 ≥ 阈值 → 放行
+  let verdict = false;
+  for (let c = 0; c < top.length; c++) {
+    const col = valid.map((v) => v[c]).sort((a, b) => a - b);
+    const median = col[Math.floor(col.length / 2)];
+    if (median >= JUDGE_SCORE_PASS) {
+      verdict = true;
+      break;
+    }
+  }
+  if (judgeCache.size > 300) {
+    const first = judgeCache.keys().next().value;
+    if (first) judgeCache.delete(first);
+  }
+  judgeCache.set(cacheKey, { verdict, at: Date.now() });
+  return verdict;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => null)) as {
@@ -589,12 +737,28 @@ export async function POST(request: Request) {
       }),
     );
 
+    // [UX 2026-11-09] 无相关语料门：语料靠日常积累、不作为提分杠杆——
+    // 语义不相关时显式 noMatch（前端提示），绝不静默降级到不相关内容。
+    // 判据：召回为空 → 直接 noMatch；有召回 → DeepSeek 快裁 top-3（30min 缓存，
+    // fail-open：裁决失败按命中返回，防 LLM 抖动误报"无相关语料"）。
+    let noMatch = false;
+    if (picked.length === 0) {
+      noMatch = true;
+    } else {
+      // 裁决窗口 top-5（实测教训：top-3 时最相关的句子恰在 4-6 名，
+      // 排序噪声会劫持判定——「咖啡厅点单闲聊」即此病例）
+      const judged = await judgeRelevance(q, picked.slice(0, 5));
+      if (judged === false) noMatch = true;
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        clips,
-        scene,
+        clips: noMatch ? [] : clips,
+        scene: noMatch ? null : scene,
         source: phrases.length || zhWords.length ? "llm" : "keyword",
+        noMatch,
+        ...(noMatch ? { message: "无相关语料" } : {}),
       },
     });
   } catch (error) {

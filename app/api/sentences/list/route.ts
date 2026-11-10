@@ -66,6 +66,9 @@ export async function GET(req: NextRequest) {
             endTime: true,
             clipAudioKey: true,
             wordsJson: true,
+            cutStart: true,
+            cutEnd: true,
+            contentHash: true,
           },
         });
         decorated = await attachClipAudio(
