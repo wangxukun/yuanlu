@@ -425,6 +425,58 @@ export interface SceneDraft {
   clips: SceneClipRef[];
 }
 
+/**
+ * [2026-11-11 场景字幕补洞] 场景物理音频切的是 [startTime, endTime] 整窗，
+ * 但组桶（groupScenes）只吃过了门禁的 drafts——被 minDuration/minWords/
+ * junkGate 丢弃的行仍在音频里发声（实测 7.6s 洞：「Never order fresh fish
+ * on a Monday」2.48s 因差 0.02s 不达 2.5s 门禁被杀），clipsJson 缺行 →
+ * 播放出现「有声无字幕」段。
+ *
+ * 补洞口径：窗口内被丢的字幕行补回场景字幕（仅排除纯语气词应答——<0.5s
+ * 的 Yeah./Uh 无教学价值且整块按钮卡观感差）。补行只做场景字幕，不建独立
+ * 切片（clipid=undefined，corpus_clips 无行），startTime/endTime 与首句
+ * subtitleId 均不变 → sceneKey/sceneid 与 OSS 懒切片缓存零作废。
+ *
+ * 入参用结构子类型（ startTime/endTime/clips ），供建库脚本（SceneDraft）
+ * 与存量修补脚本（DB 行映射）共用。
+ */
+export function backfillSceneSubtitleGaps<
+  T extends { startTime: number; endTime: number; clips: SceneClipRef[] },
+>(scenes: T[], subtitles: SubtitleItem[]): void {
+  if (!scenes?.length || !subtitles?.length) return;
+  for (const scene of scenes) {
+    const have = new Set(scene.clips.map((c) => c.subtitleId));
+    const holes: SceneClipRef[] = [];
+    for (const sub of subtitles) {
+      if (typeof sub?.id !== "number" || have.has(sub.id)) continue;
+      const start = sub.start;
+      if (typeof start !== "number") continue;
+      const end =
+        typeof sub.end === "number" && sub.end >= start ? sub.end : start + 3;
+      if (!(start >= scene.startTime && end <= scene.endTime)) continue;
+      const textEn = String(sub.textEn || "").trim();
+      if (!textEn) continue;
+      const words = validWords(sub.words);
+      // 纯语气词/应答碎句不入场景字幕（音频里通常 <0.5s 一闪而过）
+      if (isInterstitialSentence(textEn, words.length)) continue;
+      holes.push({
+        clipid: undefined,
+        subtitleId: sub.id,
+        start,
+        end,
+        textEn,
+        textCn: sub.textCn ? String(sub.textCn).trim() || null : null,
+        speaker: sub.speaker ? String(sub.speaker) : null,
+        words,
+      });
+    }
+    if (!holes.length) continue;
+    scene.clips = scene.clips
+      .concat(holes)
+      .sort((a, b) => a.start - b.start || a.subtitleId - b.subtitleId);
+  }
+}
+
 export interface GroupScenesOptions {
   minClips?: number;
   maxClips?: number;
