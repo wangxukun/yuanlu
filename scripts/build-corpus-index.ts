@@ -27,6 +27,7 @@ for (const line of fs
 }
 
 import {
+  backfillSceneSubtitleGaps,
   buildClipsFromSubtitles,
   groupScenes,
   mapDeepDiveIntoScenes,
@@ -158,6 +159,9 @@ async function main() {
         junkGate: isJunkClip,
       });
       const scenes = groupScenes(ep.episodeid, drafts);
+      // [2026-11-11] 场景字幕补洞：门禁丢弃的短句/超速句仍在场景物理音频里
+      // 发声，不补进 clipsJson 会出现「有声无字幕」段（详见 clip-core 注释）
+      backfillSceneSubtitleGaps(scenes, subtitles);
 
       console.log(
         `  ✓ ${ep.title}: 字幕 ${subtitles.length} 句 → 切片 ${drafts.length} / 微剧场 ${scenes.length}`,
@@ -270,18 +274,18 @@ async function main() {
             endTime: scene.endTime,
             duration: scene.duration,
             clipsJson: {
-              clips: scene.clips
-                .map((c) => ({
-                  clipid: idBySubtitle.get(c.subtitleId) || null,
-                  subtitleId: c.subtitleId,
-                  start: c.start,
-                  end: c.end,
-                  textEn: c.textEn,
-                  textCn: c.textCn,
-                  speaker: c.speaker,
-                  words: c.words,
-                }))
-                .filter((c) => c.clipid),
+              // [2026-11-11] 不再按 clipid 过滤——补洞行无独立切片（clipid=null）
+              // 但必须留在场景字幕里，否则物理音频出现「有声无字幕」段
+              clips: scene.clips.map((c) => ({
+                clipid: idBySubtitle.get(c.subtitleId) || null,
+                subtitleId: c.subtitleId,
+                start: c.start,
+                end: c.end,
+                textEn: c.textEn,
+                textCn: c.textCn,
+                speaker: c.speaker,
+                words: c.words,
+              })),
             } as object,
             deepDiveJson: (deepDiveMapped[i] ?? undefined) as
               | object
@@ -299,18 +303,16 @@ async function main() {
             endTime: scene.endTime,
             duration: scene.duration,
             clipsJson: {
-              clips: scene.clips
-                .map((c) => ({
-                  clipid: idBySubtitle.get(c.subtitleId) || null,
-                  subtitleId: c.subtitleId,
-                  start: c.start,
-                  end: c.end,
-                  textEn: c.textEn,
-                  textCn: c.textCn,
-                  speaker: c.speaker,
-                  words: c.words,
-                }))
-                .filter((c) => c.clipid),
+              clips: scene.clips.map((c) => ({
+                clipid: idBySubtitle.get(c.subtitleId) || null,
+                subtitleId: c.subtitleId,
+                start: c.start,
+                end: c.end,
+                textEn: c.textEn,
+                textCn: c.textCn,
+                speaker: c.speaker,
+                words: c.words,
+              })),
             } as object,
             deepDiveJson: (deepDiveMapped[i] ?? undefined) as
               | object

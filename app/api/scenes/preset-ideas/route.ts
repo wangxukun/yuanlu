@@ -6,12 +6,14 @@ import prisma from "@/lib/prisma";
  *
  * 从语料库实况生成 6 条「最有可能搜到好结果」的意图描述（≤8 字）。
  *
- * 选料口径：取场景标签覆盖面最广的 6 个不同 scenarioTag（各选一个代表场景，
- * 提炼其意图为一句话描述），确保：
+ * 选料口径：取场景标签覆盖面最广的 18 个 scenarioTag 组成候选池，**每次请求
+ * 随机洗牌取 6 个**（各选一个代表场景，提炼其意图为一句话描述），确保：
  *   - 语料库里确实有这个场景的丰富内容（不是编造的）
  *   - 6 条覆盖 6 个不同场景（多样性）
  *   - 每条 ≤8 个中文字（小程序 UI 约束）
  *   - 难度从语料库实况取多数档（非固定）
+ *   - 刷新按钮每次换一组（[BUG 2026-11-11] 原实现确定性取前 6，
+ *     前端刷新拉到的永远是同一组——改为池内随机才可刷新）
  *
  * 200 { success, data: { ideas: [{icon, text, tag, level}] } }
  * 失败 → 返回静态兜底 6 条（B 版预设的精简版）。
@@ -61,16 +63,23 @@ const TAG_TEMPLATES: Record<string, { icon: string; text: string }> = {
 
 export async function GET() {
   try {
-    // ① 按标签统计场景覆盖面（worthyScore ≥0.4 的场景才算有效覆盖）
+    // ① 按标签统计场景覆盖面，取覆盖面最广的 18 个标签组成候选池
+    //    （覆盖面门槛保证「搜到好结果」，池宽保证刷新可换组）
     const tagCounts = await prisma.micro_scenes.groupBy({
       by: ["situationTag"],
       where: { situationTag: { not: null } },
       _count: { _all: true },
       orderBy: { _count: { situationTag: "desc" } },
-      take: 12,
+      take: 18,
     });
 
-    // ② 取前 6 个不同标签的代表场景 + 主流难度
+    // ①' Fisher-Yates 洗牌候选池——每次请求随机取 6（刷新换组）
+    for (let i = tagCounts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [tagCounts[i], tagCounts[j]] = [tagCounts[j], tagCounts[i]];
+    }
+
+    // ② 取 6 个不同标签的代表场景 + 主流难度
     const picked: Array<{
       icon: string;
       text: string;
