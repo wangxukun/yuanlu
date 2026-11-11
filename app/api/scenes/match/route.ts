@@ -18,14 +18,16 @@ import { clipEmbeddingRepo } from "@/core/corpus/clip-embedding.repo";
  * [STUDIO] POST /api/scenes/match — 意图定制微场景的选料匹配。
  *
  * Body: { q: 目标/场景想法（中文）, levels?: string[]（CEFR 多选） }
- * 200 { success, data: { clips[], scene|null, source } }
+ * 200 { success, data: { clips[], scenes[], scene|null, source } }
  *   clips ≤4：意图匹配的单句切片（4–15s，词级时间戳）——复刻 semantic-search
  *     的检索管线（DeepSeek 双语扩词：英文词块 phrases + 中文内容词 zhWords
  *     → 关键词/中文译文多车道召回 → isJunkClip 门禁 → rankSemanticClips
  *     多证据排序，中文内容词并进 grams 车道 zhText 命中 +6/词），
  *     难度多选入参是本路由的增量；
- *   scene ≤1：微场景（micro_scenes 15–45s，3–6 句连续语境，clipsJson 自带
- *     词级时间戳）——标题/摘要按查询原文与二字滑窗匹配打分取最优；
+ *   scenes ≤2：微场景 top-2（micro_scenes 15–45s，3–6 句连续语境，clipsJson
+ *     自带词级时间戳 + 逐句 subtitleId 收藏键）——标题/摘要按查询原文与
+ *     二字滑窗匹配打分，第二场景优先不同 episodeid（[2026-11-11] 单场景
+ *     升级双场景）；scene = scenes[0] 兼容旧客户端；
  *   source: "llm"（扩词命中，走了 LLM）| "keyword"（fail-open 纯关键词）。
  *
  * 成本防线对齐 semantic-search：扩词 30min 缓存命中不计数；未命中游客按
@@ -439,27 +441,31 @@ async function pickClips(
 interface SceneSentence {
   textEn: string;
   textCn: string | null;
+  /** 所属字幕行 id（句子本真实收藏键；clipsJson 逐句自带） */
+  subtitleId: number | null;
   start: number;
   end: number;
   words: TimedWord[];
 }
 
-async function pickScene(
+async function pickScenes(
   q: string,
   grams: string[],
   levels: string[],
   zhWords: string[],
-): Promise<{
-  sceneid: string;
-  episodeid: string;
-  title: string;
-  summaryZh: string | null;
-  situationTag: string | null;
-  cefrLevel: string | null;
-  coverUrl: string | null;
-  duration: number;
-  sentences: SceneSentence[];
-} | null> {
+): Promise<
+  Array<{
+    sceneid: string;
+    episodeid: string;
+    title: string;
+    summaryZh: string | null;
+    situationTag: string | null;
+    cefrLevel: string | null;
+    coverUrl: string | null;
+    duration: number;
+    sentences: SceneSentence[];
+  }>
+> {
   const SCENE_SELECT = {
     sceneid: true,
     episodeid: true,
@@ -527,10 +533,13 @@ async function pickScene(
     pool.push(...extra);
   }
 
-  // ③ 融合评分：关键词证据 + 向量相似度
+  // ③ 融合评分：关键词证据 + 向量相似度——[2026-11-11] 取 top-2（第二场景
+  //    优先不同 episodeid 保证语境多样性；池内不足时允许同集）
   const SCENE_VEC_W = 6; // sim 0.6→+3.6，与 title 完整命中 +3 同量纲
   let best: SceneRow | null = null;
   let bestScore = 0;
+  let second: SceneRow | null = null;
+  let secondScore = 0;
   for (const r of pool) {
     if (hasSensitiveTerm(r.title) || hasSensitiveTerm(r.summaryZh)) continue;
     let kwScore = 0;
@@ -544,38 +553,69 @@ async function pickScene(
     const vScore = (vecSim.get(r.sceneid) ?? 0) * SCENE_VEC_W;
     const total = kwScore + vScore;
     if (total > bestScore) {
-      bestScore = total;
+      second = best;
+      secondScore = bestScore;
       best = r;
+      bestScore = total;
+    } else if (total > secondScore) {
+      second = r;
+      secondScore = total;
     }
   }
-  if (!best || bestScore < 1) return null;
+  if (!best || bestScore < 1) return [];
 
-  const clips =
-    (best.clipsJson as { clips?: Array<Record<string, unknown>> } | null)
-      ?.clips || [];
-  const sentences: SceneSentence[] = clips
-    .map((c) => ({
-      textEn: String(c.textEn || ""),
-      textCn: c.textCn != null ? String(c.textCn) : null,
-      start: Number(c.start) || 0,
-      end: Number(c.end) || 0,
-      words: Array.isArray(c.words) ? (c.words as TimedWord[]) : [],
-    }))
-    .filter((s) => s.textEn && s.end > s.start)
-    .sort((a, b) => a.start - b.start);
-  if (!sentences.length) return null;
+  // 第二场景：优先挑不同 episodeid 的候选（同集场景常为相邻语境，重复感强）
+  if (second && second.episodeid === best.episodeid) {
+    const alt = pool.find(
+      (r) =>
+        r.sceneid !== best!.sceneid &&
+        r.sceneid !== second!.sceneid &&
+        r.episodeid !== best!.episodeid &&
+        !hasSensitiveTerm(r.title) &&
+        !hasSensitiveTerm(r.summaryZh),
+    );
+    if (alt) second = alt;
+  }
 
-  return {
-    sceneid: best.sceneid,
-    episodeid: best.episodeid,
-    title: best.title,
-    summaryZh: best.summaryZh,
-    situationTag: best.situationTag,
-    cefrLevel: best.cefrLevel,
-    coverUrl: await signOssHttpUrl(best.coverUrl || ""),
-    duration: best.duration,
-    sentences,
-  };
+  const rows: SceneRow[] = [best];
+  // 评分 >=1 的第二名才保留（低于门槛=纯噪声，宁缺勿滥）
+  if (second && second.sceneid !== best.sceneid && secondScore >= 1) {
+    rows.push(second);
+  }
+
+  const out: Awaited<ReturnType<typeof pickScenes>> = [];
+  for (const r of rows) {
+    const clips =
+      (r.clipsJson as { clips?: Array<Record<string, unknown>> } | null)
+        ?.clips || [];
+    const sentences: SceneSentence[] = clips
+      .map((c) => ({
+        textEn: String(c.textEn || ""),
+        textCn: c.textCn != null ? String(c.textCn) : null,
+        subtitleId:
+          c.subtitleId != null && c.subtitleId !== undefined
+            ? Number(c.subtitleId)
+            : null,
+        start: Number(c.start) || 0,
+        end: Number(c.end) || 0,
+        words: Array.isArray(c.words) ? (c.words as TimedWord[]) : [],
+      }))
+      .filter((s) => s.textEn && s.end > s.start)
+      .sort((a, b) => a.start - b.start);
+    if (!sentences.length) continue;
+    out.push({
+      sceneid: r.sceneid,
+      episodeid: r.episodeid,
+      title: r.title,
+      summaryZh: r.summaryZh,
+      situationTag: r.situationTag,
+      cefrLevel: r.cefrLevel,
+      coverUrl: await signOssHttpUrl(r.coverUrl || ""),
+      duration: r.duration,
+      sentences,
+    });
+  }
+  return out;
 }
 
 /**
@@ -751,10 +791,10 @@ export async function POST(request: Request) {
     );
     const grams = zhGrams(q);
 
-    const [picked, scene] = await Promise.all([
+    const [picked, scenes] = await Promise.all([
       pickClips(q, phrases, keywords, zhWords, grams, levels),
       // 场景打分同样吃中文内容词（标题/摘要命中即强信号）
-      pickScene(q, grams, levels, zhWords),
+      pickScenes(q, grams, levels, zhWords),
     ]);
 
     const clips = await Promise.all(
@@ -802,7 +842,10 @@ export async function POST(request: Request) {
       success: true,
       data: {
         clips: noMatch ? [] : clips,
-        scene: noMatch ? null : scene,
+        // [2026-11-11] scenes：top-2 微场景（主+次，次场优先不同 episodeid）；
+        // scene 保留为 scenes[0] 兼容旧客户端
+        scenes: noMatch ? [] : scenes,
+        scene: noMatch ? null : (scenes[0] ?? null),
         source: phrases.length || zhWords.length ? "llm" : "keyword",
         noMatch,
         ...(noMatch ? { message: "无相关语料" } : {}),
