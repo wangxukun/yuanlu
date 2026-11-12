@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/core/auth/guard";
 import { generateSignatureUrl } from "@/lib/oss";
+import { chinaDayOf, addUTCDays } from "@/core/utils/china-date";
 
 /**
  * GET /api/speech/leaderboard?period=weekly|daily&metric=score|count
@@ -23,9 +24,11 @@ export async function GET(req: NextRequest) {
   const metric =
     req.nextUrl.searchParams.get("metric") === "count" ? "count" : "score";
 
-  const start = new Date();
+  let start = new Date();
+  let end: Date | undefined;
   if (period === "daily") {
-    start.setHours(0, 0, 0, 0);
+    start = new Date(chinaDayOf(start).getTime() - 8 * 3600000);
+    end = addUTCDays(start, 1);
   } else {
     start.setDate(start.getDate() - 7);
   }
@@ -33,7 +36,10 @@ export async function GET(req: NextRequest) {
   try {
     const grouped = await prisma.speech_recognition.groupBy({
       by: ["userid"],
-      where: { recognitionDate: { gte: start }, userid: { not: null } },
+      where: {
+        recognitionDate: { gte: start, ...(end ? { lt: end } : {}) },
+        userid: { not: null },
+      },
       _count: { recognitionid: true },
       _avg: { overallScore: true },
     });
@@ -49,7 +55,11 @@ export async function GET(req: NextRequest) {
 
     const sorted =
       metric === "count"
-        ? [...rows].sort((a, b) => b.evalCount - a.evalCount)
+        ? [...rows].sort(
+            (a, b) =>
+              b.evalCount - a.evalCount ||
+              (a.userid < b.userid ? -1 : a.userid > b.userid ? 1 : 0),
+          )
         : [...rows]
             .filter((r) => r.evalCount >= 5) // 平均分榜需至少 5 次评测
             .sort(
