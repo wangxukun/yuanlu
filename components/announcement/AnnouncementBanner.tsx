@@ -8,7 +8,12 @@ import { Megaphone, X } from "lucide-react";
 // 全站公告横幅 —— 广播收件箱只覆盖注册用户,游客(未登录)拿不到通知行,
 // 游客可达的公告走这条横幅:内容与 /app 落地页同源,点击跳转。
 // 换公告时改 id(变了会对所有人重新展示,旧的关闭状态失效)+ 文案 + 链接。
+//
+// [暂时下线 2026-11-12] 小程序主体升级停服中,「正式上线」公告与实况矛盾
+// （已发退款致歉广播）——公告暂时下线,横幅不再渲染。恢复:改回 true 即可。
 // ---------------------------------------------------------------------------
+const ANNOUNCEMENT_ENABLED = false;
+
 const ANNOUNCEMENT = {
   id: "weapp-launch-2026-10",
   text: "远路播客微信小程序正式上线：微信扫码即用，账号与会员权益互通",
@@ -17,7 +22,7 @@ const ANNOUNCEMENT = {
 const STORAGE_KEY = "yuanlu:announcement-dismissed";
 
 export default function AnnouncementBanner() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(ANNOUNCEMENT_ENABLED);
 
   // SSR 恒渲染(游客无闪跳),挂载后按 localStorage 隐藏已关闭者
   useEffect(() => {
