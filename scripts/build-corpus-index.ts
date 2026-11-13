@@ -17,6 +17,7 @@
  * 字幕源：直接 fetch OSS 双语 JSON（mergeSubtitles 同源；无双语字幕的集跳过）。
  */
 import * as fs from "node:fs";
+import * as crypto from "node:crypto";
 
 for (const line of fs
   .readFileSync(`${process.cwd()}/.env`, "utf-8")
@@ -29,6 +30,7 @@ for (const line of fs
 import {
   backfillSceneSubtitleGaps,
   buildClipsFromSubtitles,
+  enrichDraftsWithCutWindows,
   groupScenes,
   mapDeepDiveIntoScenes,
   sanitizeSceneTitle,
@@ -158,6 +160,11 @@ async function main() {
       const drafts = buildClipsFromSubtitles(ep.episodeid, subtitles, {
         junkGate: isJunkClip,
       });
+      // [2026-11-13 M1 补灌] v2 预计算窗口（cut/pad/hash/qcFlags）——与存量
+      // 回填脚本 backfill-cut-fingerprint.ts 同函数同口径，新集入库即带指纹
+      enrichDraftsWithCutWindows(drafts, (s) =>
+        crypto.createHash("sha256").update(s).digest("hex"),
+      );
       const scenes = groupScenes(ep.episodeid, drafts);
       // [2026-11-11] 场景字幕补洞：门禁丢弃的短句/超速句仍在场景物理音频里
       // 发声，不补进 clipsJson 会出现「有声无字幕」段（详见 clip-core 注释）
@@ -224,6 +231,12 @@ async function main() {
             coverUrl: meta.coverUrl,
             sourceLabel: meta.sourceLabel,
             topicTags: meta.topicTags,
+            cutStart: d.cutStart ?? undefined,
+            cutEnd: d.cutEnd ?? undefined,
+            padBeforeMs: d.padBeforeMs ?? undefined,
+            padAfterMs: d.padAfterMs ?? undefined,
+            contentHash: d.contentHash ?? undefined,
+            qcFlags: d.qcFlags ?? [],
           },
         });
       }
@@ -236,6 +249,12 @@ async function main() {
             ...meta,
             wordsJson: (d.wordsJson ?? undefined) as object | undefined,
             acousticFlags: (d.acousticFlags ?? undefined) as object | undefined,
+            cutStart: d.cutStart ?? undefined,
+            cutEnd: d.cutEnd ?? undefined,
+            padBeforeMs: d.padBeforeMs ?? undefined,
+            padAfterMs: d.padAfterMs ?? undefined,
+            contentHash: d.contentHash ?? undefined,
+            qcFlags: d.qcFlags ?? [],
           })),
         });
       }

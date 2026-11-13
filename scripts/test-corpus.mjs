@@ -404,8 +404,8 @@ console.log("━━━ 二、clip-slice.core：窗口 / FFmpeg 参数 ━━━"
     "时长 8.6s / clipOffset=sliceStart（对齐协议）",
   );
   assert(
-    w.ok && w.window.objectKey === "yuanlu/clips/cid1.mp3",
-    "OSS key = yuanlu/clips/{id}.mp3",
+    w.ok && w.window.objectKey === "yuanlu/clips/cid1.aac",
+    "OSS key = yuanlu/clips/{id}.aac",
   );
 
   const head = sliceCore.computeSliceWindow("cid2", {
@@ -443,8 +443,8 @@ console.log("━━━ 二、clip-slice.core：窗口 / FFmpeg 参数 ━━━"
       "cut 优先：直接采用预计算窗口（不再 -0.25/+0.35）",
     );
     assert(
-      cut.ok && cut.window.objectKey === "yuanlu/clips/cid3.mp3",
-      "无 contentHash → 旧对象名（存量 118 对象命中不变）",
+      cut.ok && cut.window.objectKey === "yuanlu/clips/cid3.aac",
+      "无 contentHash → 裸名 .aac（2026-11-13 容器换代，存量 mp3 失权懒重切）",
     );
 
     const hashed = sliceCore.computeSliceWindow("cid4", {
@@ -455,8 +455,8 @@ console.log("━━━ 二、clip-slice.core：窗口 / FFmpeg 参数 ━━━"
       contentHash: "abcd1234ef567890abcd",
     });
     assert(
-      hashed.ok && hashed.window.objectKey === "yuanlu/clips/cid4-abcd1234.mp3",
-      "contentHash → {id}-{hash8}.mp3 指纹对象名（参数变更自动失效旧对象）",
+      hashed.ok && hashed.window.objectKey === "yuanlu/clips/cid4-abcd1234.aac",
+      "contentHash → {id}-{hash8}.aac 指纹对象名（参数变更自动失效旧对象）",
     );
 
     const badCut = sliceCore.computeSliceWindow("cid5", {
@@ -586,7 +586,7 @@ console.log("━━━ 三、clip-audio.service（DI mock）：缓存 / 转码 /
         signedSource: "https://signed-source/ep1.m4a",
       },
     ],
-    ossObjects: new Set(["yuanlu/clips/cHit.mp3"]),
+    ossObjects: new Set(["yuanlu/clips/cHit.aac"]),
   };
   // 缓存命中场景行
   rows.clips.push({
@@ -594,7 +594,7 @@ console.log("━━━ 三、clip-audio.service（DI mock）：缓存 / 转码 /
     episodeid: "ep1",
     startTime: 10,
     endTime: 18,
-    clipAudioKey: "yuanlu/clips/cHit.mp3",
+    clipAudioKey: "yuanlu/clips/cHit.aac",
   });
 
   const deps = makeDeps(rows);
@@ -608,7 +608,7 @@ console.log("━━━ 三、clip-audio.service（DI mock）：缓存 / 转码 /
   assert(
     hit.ok &&
       hit.cached === true &&
-      hit.url === "https://signed/yuanlu/clips/cHit.mp3",
+      hit.url === "https://signed/yuanlu/clips/cHit.aac",
     "缓存命中 → 直接签发（cached=true）",
   );
   assert(calls.ffmpeg === 0, "缓存命中零 FFmpeg 调用");
@@ -625,13 +625,13 @@ console.log("━━━ 三、clip-audio.service（DI mock）：缓存 / 转码 /
   );
   assert(
     calls.ffmpeg === 1 &&
-      calls.put[0] === "yuanlu/clips/c1.mp3" &&
+      calls.put[0] === "yuanlu/clips/c1.aac" &&
       calls.clipUpdate === 1,
-    "FFmpeg 一次 + OSS put yuanlu/clips/c1.mp3 + clipAudioKey 回填",
+    "FFmpeg 一次 + OSS put yuanlu/clips/c1.aac + clipAudioKey 回填",
   );
 
   // 并发单飞：同 id 并发仅一次转码
-  rows.ossObjects.delete("yuanlu/clips/c1.mp3");
+  rows.ossObjects.delete("yuanlu/clips/c1.aac");
   calls.ffmpeg = 0;
   const [a, b] = await Promise.all([
     clipAudioService.ensureClipAudio("c1", deps),
