@@ -346,6 +346,118 @@ export interface ClipDraft {
   acousticFlags: { fastLinks: FastLinkBlock[] } | null;
   phonemeTags: string[];
   wordCount: number;
+  /** [2026-11-13] v2 预计算切片窗口（含 pad + overlap 裁剪），由
+   * computeClipCutFields 在草稿序（同集字幕序）上补齐 */
+  cutStart?: number;
+  cutEnd?: number;
+  padBeforeMs?: number;
+  padAfterMs?: number;
+  contentHash?: string;
+  qcFlags?: string[];
+}
+
+/** [2026-11-13] contentHash 编码指纹——列进 hash 的事实标准串（对象名 {id}-{hash8}）。
+ * 改剪法/编码参数必须换新串，旧对象自动失权（M1「参数变更自动失效」语义）。 */
+export const CLIP_CODEC_FINGERPRINT = "aac-24k-mono-64k";
+
+export interface CutWindowFields {
+  cutStart: number;
+  cutEnd: number;
+  padBeforeMs: number;
+  padAfterMs: number;
+  contentHash: string;
+  /** bleed=原尾让会闯入下句（边界盲听实证 47% 病灶）；overlap_fix=已按
+   * next_raw_start−30ms 裁剪（M4/T4.1 口径的数据级落地） */
+  flags: string[];
+}
+
+/**
+ * [2026-11-13 M1 欠账补灌] v2 预计算切片窗口（建库管线 / 存量回填脚本同源）：
+ *   cutStart = max(0, start − padBefore)                    —— 与动态路径一致
+ *   cutEnd   = min(end + padAfter, nextRawStart − trim,     —— overlap 裁剪防 bleed
+ *                  cutStart + maxDuration)                  —— 45s 服务端闸门对齐
+ *   非法行（裁剪啃穿/脏数据）返回 null，调用方保持该行列为空（回落动态路径）。
+ * contentHash = sha256(enText ⊕1 cutStart ⊕1 cutEnd ⊕1 CLIP_CODEC_FINGERPRINT)[:16]
+ * （sha256 注入保持本模块零依赖；建库/回填两侧 node 环境传 crypto 实现）。
+ */
+export function computeClipCutFields(
+  row: { enText: string; startTime: number; endTime: number },
+  nextRawStart: number | null,
+  options: {
+    sha256hex: (s: string) => string;
+    padBefore?: number;
+    padAfter?: number;
+    maxDuration?: number;
+    overlapTrimSec?: number;
+  },
+): CutWindowFields | null {
+  const padBefore = options.padBefore ?? 0.25;
+  const padAfter = options.padAfter ?? 0.35;
+  const maxDuration = options.maxDuration ?? 45;
+  const trim = options.overlapTrimSec ?? 0.03;
+  const { enText, startTime, endTime } = row;
+  if (
+    !isFinite(startTime) ||
+    !isFinite(endTime) ||
+    endTime <= startTime ||
+    !enText
+  ) {
+    return null;
+  }
+
+  const cutStart = Math.max(0, startTime - padBefore);
+  let cutEnd = endTime + padAfter;
+  const flags: string[] = [];
+  if (
+    nextRawStart != null &&
+    isFinite(nextRawStart) &&
+    cutEnd > nextRawStart - trim
+  ) {
+    // 原尾让会闯入下一句人声（bleed）→ 按下句真实起始回让 30ms 裁剪
+    cutEnd = nextRawStart - trim;
+    flags.push("bleed", "overlap_fix");
+  }
+  if (cutEnd - cutStart > maxDuration) cutEnd = cutStart + maxDuration;
+  // 裁剪不啃穿：保底 0.3s（cutStart ≤ endTime ⇒ 保底值恒 ≤ endTime+0.3，
+  // 不会越出 computeSliceWindow 的 cutEnd ≤ endTime+1 合法域）
+  cutEnd = Math.max(cutEnd, cutStart + 0.3);
+  if (cutEnd <= cutStart) return null;
+
+  const hash = options
+    .sha256hex(
+      `${enText}\u0001${cutStart.toFixed(3)}\u0001${cutEnd.toFixed(3)}\u0001${CLIP_CODEC_FINGERPRINT}`,
+    )
+    .slice(0, 16);
+
+  return {
+    cutStart,
+    cutEnd,
+    padBeforeMs: Math.round(padBefore * 1000),
+    padAfterMs: Math.round(padAfter * 1000),
+    contentHash: hash,
+    flags,
+  };
+}
+
+/** 在同集字幕序的草稿数组上原地补齐 cut/pad/hash/qcFlags（建库管线用） */
+export function enrichDraftsWithCutWindows(
+  drafts: ClipDraft[],
+  sha256hex: (s: string) => string,
+): void {
+  for (let i = 0; i < drafts.length; i++) {
+    const next = drafts[i + 1];
+    const f = computeClipCutFields(drafts[i], next ? next.startTime : null, {
+      sha256hex,
+    });
+    if (!f) continue;
+    const d = drafts[i];
+    d.cutStart = f.cutStart;
+    d.cutEnd = f.cutEnd;
+    d.padBeforeMs = f.padBeforeMs;
+    d.padAfterMs = f.padAfterMs;
+    d.contentHash = f.contentHash;
+    d.qcFlags = f.flags;
+  }
 }
 
 /**

@@ -38,7 +38,12 @@ async function main() {
     // 去重：滑窗重叠（stride5/window6）致同一 clipid 多行——保留末次判定
     const byId = new Map<
       string,
-      { clipid: string; worthyScore: number; pipelineVersion: string }
+      {
+        clipid: string;
+        worthyScore: number;
+        pipelineVersion: string;
+        modelId?: string;
+      }
     >();
     for (const l of lines) {
       try {
@@ -46,6 +51,7 @@ async function main() {
           clipid: string;
           worthyScore: number;
           pipelineVersion: string;
+          modelId?: string;
         };
         if (typeof x.worthyScore === "number") byId.set(x.clipid, x);
       } catch {
@@ -57,19 +63,39 @@ async function main() {
       `clips.jsonl：${lines.length} 行 → 去重后 ${rows.length} 唯一${dry ? "（dry 不写）" : ""}`,
     );
     if (!dry) {
+      // [2026-11-13] modelId 补写（考卷可追溯性）：jsonl 行内 modelId 优先，
+      // 缺省回退 env VLLM_MODEL（annotate-clips 跑批同源）；两者皆空则不写该列
+      const envModel = (process.env.VLLM_MODEL || "").trim();
+      const modelOf = (x: { modelId?: unknown }) =>
+        typeof x.modelId === "string" && x.modelId.trim()
+          ? x.modelId.trim()
+          : envModel || null;
+      const withModel = rows.some((r) => modelOf(r));
       for (let i = 0; i < rows.length; i += 200) {
         // 逐批 UPDATE ... FROM VALUES（raw，幂等覆盖）
         const { Prisma } = await import("@prisma/client");
         const batch = rows.slice(i, i + 200);
-        const values = batch.map(
-          (r) =>
-            Prisma.sql`(${r.clipid}, ${r.worthyScore}::double precision, ${r.pipelineVersion})`,
-        );
-        await prisma.$executeRaw`
-          UPDATE corpus_clips AS c
-          SET "worthyScore" = v.w, "pipelineVersion" = v.pv
-          FROM (VALUES ${Prisma.join(values)}) AS v(cid, w, pv)
-          WHERE c.clipid = v.cid`;
+        if (withModel) {
+          const values = batch.map(
+            (r) =>
+              Prisma.sql`(${r.clipid}, ${r.worthyScore}::double precision, ${r.pipelineVersion}, ${modelOf(r)})`,
+          );
+          await prisma.$executeRaw`
+            UPDATE corpus_clips AS c
+            SET "worthyScore" = v.w, "pipelineVersion" = v.pv, "modelId" = v.m
+            FROM (VALUES ${Prisma.join(values)}) AS v(cid, w, pv, m)
+            WHERE c.clipid = v.cid`;
+        } else {
+          const values = batch.map(
+            (r) =>
+              Prisma.sql`(${r.clipid}, ${r.worthyScore}::double precision, ${r.pipelineVersion})`,
+          );
+          await prisma.$executeRaw`
+            UPDATE corpus_clips AS c
+            SET "worthyScore" = v.w, "pipelineVersion" = v.pv
+            FROM (VALUES ${Prisma.join(values)}) AS v(cid, w, pv)
+            WHERE c.clipid = v.cid`;
+        }
         clipUpdated += batch.length;
       }
     }

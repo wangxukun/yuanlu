@@ -86,15 +86,19 @@ export function computeSliceWindow(
     return { ok: false, code: "TOO_LONG" };
   }
 
-  // 对象名指纹：contentHash 存在 → {id}-{hash8}.mp3（参数变更自动失效）；
-  // 缺省 → 旧对象名 {id}.mp3（存量 118 对象命中不变）
+  // [2026-11-13] 切片容器全面迁 AAC/ADTS：mp3 无帧索引，InnerAudioContext
+  // 的 startTime seek 落点先天不准（词级毫秒扫光漂移），AAC 帧头自带精确
+  // 时戳。实测 contentHash 列全库为空（M1 指纹未灌数）→ 全部行走缺省分支，
+  // 故缺省对象名同步迁 {id}.aac（存量 ~118 个旧 mp3 缓存对象失权懒重切，
+  // 换代成本可接受；clipAudioKey 回填自动指新对象）。指纹分支保留 .aac
+  // 规则（未来 M1 补灌后无缝衔接）。
   const hash8 =
     typeof input.contentHash === "string" && input.contentHash.length >= 8
       ? input.contentHash.slice(0, 8)
       : null;
   const objectKey = hash8
-    ? `yuanlu/clips/${id}-${hash8}.mp3`
-    : `yuanlu/clips/${id}.mp3`;
+    ? `yuanlu/clips/${id}-${hash8}.aac`
+    : `yuanlu/clips/${id}.aac`;
 
   return {
     ok: true,
@@ -108,14 +112,17 @@ export function computeSliceWindow(
   };
 }
 
-/** FFmpeg 参数（输入 seek + 64kbps/24kHz/mono + 双端 150ms 淡入淡出 → stdout） */
+/** FFmpeg 参数（输入 seek + 64kbps/24kHz/mono + 双端 150ms 淡入淡出 → stdout）。
+ * format 默认 mp3（旧行为）；'aac' = ADTS 流（指纹行新批次，seek 精确）。 */
 export function buildFfmpegArgs(params: {
   sourceUrl: string;
   sliceStart: number;
   duration: number;
   fadeSec?: number;
+  format?: "mp3" | "aac";
 }): string[] {
   const fadeSec = params.fadeSec ?? SLICE_FADE_SEC;
+  const aac = params.format === "aac";
   return [
     "-hide_banner",
     "-loglevel",
@@ -132,10 +139,11 @@ export function buildFfmpegArgs(params: {
     "1",
     "-ar",
     "24000",
+    ...(aac ? ["-c:a", "aac"] : []),
     "-b:a",
     "64k",
     "-f",
-    "mp3",
+    aac ? "adts" : "mp3",
     "pipe:1",
   ];
 }

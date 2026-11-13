@@ -174,6 +174,9 @@ export const clipAudioService = {
           sourceUrl,
           sliceStart: win.sliceStart,
           duration: win.duration,
+          // [2026-11-13] 编码随对象名走：指纹行 .aac（ADTS，seek 精确）；
+          // 旧行对象名 .mp3 保持 mp3（名实相符，存量行为零变化）
+          format: win.objectKey.endsWith(".aac") ? "aac" : "mp3",
         }),
       );
     } catch (error) {
