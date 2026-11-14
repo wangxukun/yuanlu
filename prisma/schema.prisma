@@ -64,6 +64,24 @@ model User {
   relay_segments          relay_segment[]
   social_likes_given      social_likes[]
   weapp_streak_logs       weapp_streak_log[]
+  daily_challenges       daily_challenge_assignment[]
+}
+
+/// 今日挑战：按中国自然日首次生成后固定；发放记录不等同真实曝光。
+model daily_challenge_assignment {
+  id               String   @id @default(cuid()) @db.VarChar(64)
+  userid           String
+  date             DateTime @db.Date
+  algorithmVersion String   @db.VarChar(32)
+  seedDigest       String   @db.VarChar(64)
+  status           String   @db.VarChar(16)
+  fallbackStage    String   @db.VarChar(32)
+  items            Json
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  User             User     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, date])
+  @@index([createdAt])
 }
 
 /// 小程序码短码映射（公众号联动 T1）：scene 短码（如 gzh_follow / gzh_w1_b）→
