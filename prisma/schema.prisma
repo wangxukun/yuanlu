@@ -63,6 +63,7 @@ model User {
   relay_rooms_initiated   relay_room[]
   relay_segments          relay_segment[]
   social_likes_given      social_likes[]
+  weapp_streak_logs       weapp_streak_log[]
 }
 
 /// 小程序码短码映射（公众号联动 T1）：scene 短码（如 gzh_follow / gzh_w1_b）→
@@ -950,4 +951,23 @@ model social_likes {
 
   @@unique([likerUserid, targetType, targetId, likeDate])
   @@index([targetType, targetId, likeDate])
+}
+
+/// [weapp-backend] 小程序「每日学习连胜」打卡行（与网站版 user_daily_activity
+/// 收听打卡体系完全隔离：不写不读互不干扰）。口径 = 跟读开口（评测完成，
+/// 不设分数线，接力评测也算）+ 手动点亮双通道；一人一日一行（中国日界，
+/// 服务端唯一约束权威判重，防刷天）；streakDays 由本表读时连算，无反范式计数。
+model weapp_streak_log {
+  id            String   @id @default(cuid())
+  userid        String
+  date          DateTime @db.Date
+  /// SPEECH | MANUAL
+  source        String   @db.VarChar(20)
+  /// SPEECH 来源松关联 speech_recognition（不做 Prisma relation）
+  recognitionid Int?
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  user          User     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userid, date])
+  @@index([userid, date(sort: Desc)])
 }
