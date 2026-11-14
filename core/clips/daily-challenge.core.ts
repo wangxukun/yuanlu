@@ -2,11 +2,19 @@ import { createHash, createHmac } from "node:crypto";
 import { hasSensitiveTerm, type TimedWord } from "@/core/corpus/clip-core";
 import { isJunkClip } from "@/core/studio/curator.core";
 
-export const DAILY_VERSION = "daily-v1";
+export const DAILY_VERSION = "daily-v2";
 export const DAILY_SIZE = 5;
 export const WINDOW_SIZE = 128;
 export const MAX_WINDOWS = 12;
 const DAY_MS = 86400000;
+
+export function cleanTranscriptText(text: string | null | undefined): string {
+  if (!text) return "";
+  return String(text)
+    .replace(/^\s*(?:\[SPEAKER_\d+\]|SPEAKER_\d+\s*:)\s*/gi, "")
+    .replace(/\s*\[SPEAKER_\d+\]\s*/gi, " ")
+    .trim();
+}
 
 export type Sentence = { episodeid: string; subtitleId: number };
 export type HistoryItem = Sentence & {
@@ -457,15 +465,24 @@ export function selectDaily(
       keys = new Set<string>(),
       texts = new Set<string>();
     const episodes = new Map<string, number>(),
-      topics = new Map<string, number>();
+      topics = new Map<string, number>(),
+      series = new Map<string, number>();
+    const seriesCap = stage.name === "normal" ? 1 : 5;
     const add = (r: (typeof candidates)[number], vocabulary: boolean) => {
       const topic = r.clip.topicTags[0] || "__unknown__";
+      const seriesKey = (r.clip.sourceLabel || "")
+        .trim()
+        .toLowerCase()
+        .slice(0, 18);
       if (
         picked.length >= DAILY_SIZE ||
         keys.has(r.key) ||
         texts.has(r.hash) ||
         (episodes.get(r.clip.episodeid) || 0) >= stage.episodeCap ||
-        (topics.get(topic) || 0) >= stage.topicCap
+        (topics.get(topic) || 0) >= stage.topicCap ||
+        (seriesKey &&
+          seriesKey !== "test" &&
+          (series.get(seriesKey) || 0) >= seriesCap)
       )
         return;
       const reused =
@@ -492,6 +509,7 @@ export function selectDaily(
       texts.add(r.hash);
       episodes.set(r.clip.episodeid, (episodes.get(r.clip.episodeid) || 0) + 1);
       topics.set(topic, (topics.get(topic) || 0) + 1);
+      if (seriesKey) series.set(seriesKey, (series.get(seriesKey) || 0) + 1);
     };
     for (const r of candidates)
       if (picked.length < 2 && r.matchedWords.length && !r.practiced)

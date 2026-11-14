@@ -51,7 +51,7 @@ export async function getDailyAssignment(
   const date = chinaDate(now);
   if (user) {
     const saved = await deps.findAssignment(user.userid, date);
-    if (saved) return saved;
+    if (saved && saved.algorithmVersion === DAILY_VERSION) return saved;
   } else if (!input.anonymousId) throw new Error("ANONYMOUS_ID_REQUIRED");
   const startedAt = Date.now();
   const seed = dailySeed(

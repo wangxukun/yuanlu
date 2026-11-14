@@ -4,6 +4,7 @@ import { authWithMobile, isPremiumUser } from "@/core/auth/guard";
 import { detectFastLinks, type TimedWord } from "@/core/corpus/clip-core";
 import {
   chinaDate,
+  cleanTranscriptText,
   parseDailyInput,
   isDailyClipUsable,
   sentenceKey,
@@ -146,8 +147,8 @@ export async function POST(req: NextRequest) {
           start: clip.startTime,
           end: clip.endTime,
           duration: clip.duration,
-          textEn: clip.enText,
-          textCn: clip.zhText,
+          textEn: cleanTranscriptText(clip.enText),
+          textCn: cleanTranscriptText(clip.zhText),
           words,
           wpm: clip.wpm,
           phoneticTip: buildPhoneticTip(words, clip.wpm),

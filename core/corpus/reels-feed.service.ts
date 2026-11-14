@@ -230,8 +230,16 @@ async function hydrateReelsItems(
         start: r.startTime,
         end: r.endTime,
         duration: r.duration,
-        textEn: r.enText,
-        textCn: r.zhText,
+        textEn: r.enText
+          .replace(/^\s*(?:\[SPEAKER_\d+\]|SPEAKER_\d+\s*:)\s*/gi, "")
+          .replace(/\s*\[SPEAKER_\d+\]\s*/gi, " ")
+          .trim(),
+        textCn: r.zhText
+          ? r.zhText
+              .replace(/^\s*(?:\[SPEAKER_\d+\]|SPEAKER_\d+\s*:)\s*/gi, "")
+              .replace(/\s*\[SPEAKER_\d+\]\s*/gi, " ")
+              .trim()
+          : null,
         words,
         phoneticTip: buildPhoneticTip(words, r.wpm),
         wpm: r.wpm,

@@ -171,7 +171,24 @@ export function buildDailyChallengeDeps(secret: string): DailyChallengeDeps {
         ],
         skipDuplicates: true,
       });
-      const winner = await findAssignment(userid, proposal.date);
+      let winner = await findAssignment(userid, proposal.date);
+      if (winner && winner.algorithmVersion !== proposal.algorithmVersion) {
+        await prisma.daily_challenge_assignment.updateMany({
+          where: {
+            userid,
+            date: dbDate(proposal.date),
+            algorithmVersion: { not: proposal.algorithmVersion },
+          },
+          data: {
+            algorithmVersion: proposal.algorithmVersion,
+            seedDigest: proposal.seedDigest,
+            status: proposal.status,
+            fallbackStage: proposal.fallbackStage,
+            items: proposal.items as unknown as Prisma.InputJsonValue,
+          },
+        });
+        winner = await findAssignment(userid, proposal.date);
+      }
       if (!winner) throw new Error("DAILY_ASSIGNMENT_NOT_SAVED");
       return winner;
     },
