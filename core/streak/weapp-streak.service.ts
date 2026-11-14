@@ -20,7 +20,11 @@ export interface WeappStreakStatus {
   ignitedToday: boolean;
   /** 领先全站 X% 语伴 = 参与者（近 60 天有记录）中当前连胜少于我的人数占比 */
   percentile: number;
+  /** 真实最近 7 天（i=6=今日）：label 按真实星期（今日格标「今日」），lit=当日有点亮行 */
+  week: { date: string; label: string; lit: boolean; today: boolean }[];
 }
+
+const WEEK_LABELS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 export type IgniteResult =
   | { ok: true; data: WeappStreakStatus & { justIgnited: boolean } }
@@ -73,7 +77,17 @@ async function computeStatus(
   const windowStart = subUTCDays(today, 59);
   const myDates = byUser.get(userid) ?? [];
   const streakDays = computeStreak(myDates);
-  const ignitedToday = myDates.some((d) => isSameUTCDay(chinaDayOf(d), today));
+  const daySet = new Set(myDates.map((d) => chinaDayOf(d).getTime()));
+  const ignitedToday = daySet.has(today.getTime());
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = subUTCDays(today, 6 - i);
+    return {
+      date: d.toISOString().slice(0, 10),
+      label: i === 6 ? "今日" : WEEK_LABELS[d.getUTCDay()],
+      lit: daySet.has(d.getTime()),
+      today: i === 6,
+    };
+  });
 
   let others = 0;
   let fewer = 0;
@@ -88,7 +102,7 @@ async function computeStatus(
   }
   const percentile = others > 0 ? Math.floor((fewer / others) * 100) : 0;
 
-  return { streakDays, ignitedToday, percentile };
+  return { streakDays, ignitedToday, percentile, week };
 }
 
 /** GET /api/streak —— 连胜状态（streakDays / ignitedToday / percentile） */
