@@ -164,6 +164,43 @@ assert.equal(
   ).fallbackStage,
   "diversity_relaxed",
 );
+// Same-day history entries must not self-exclude today's guest draw on retry.
+const sameDayHistory = picked.items.map((i) => ({
+  episodeid: i.episodeid,
+  subtitleId: i.subtitleId,
+  servedOn: date,
+}));
+assert.deepEqual(
+  c.selectDaily(pool, { ...context, history: sameDayHistory }),
+  picked,
+  "Same-day servedOn entries must not trigger cooldown self-exclusion",
+);
+// Inflected word forms in clips match base vocabulary words (e.g. projects/projected -> project).
+const inflectedClip = clip(999, {
+  enText: "She projected the quarterly results clearly for everyone",
+  wordsJson: "She projected the quarterly results clearly for everyone"
+    .split(" ")
+    .map((word, j) => ({ word, start: j * 0.5, end: j * 0.5 + 0.4 })),
+});
+const inflectedPick = c.selectDaily([inflectedClip], {
+  ...context,
+  vocabulary: ["project"],
+});
+assert.deepEqual(inflectedPick.items[0].matchedWords, ["project"]);
+assert.equal(inflectedPick.items[0].selectionReason, "vocabulary");
+// Cards are ordered from warm-up (easier level / lower wpm) to harder.
+const mixedDifficulty = [
+  clip(10, { episodeid: "ep-a", cefrLevel: "B2", wpm: 160, topicTags: ["t1"] }),
+  clip(11, { episodeid: "ep-b", cefrLevel: "B1", wpm: 140, topicTags: ["t2"] }),
+  clip(12, { episodeid: "ep-c", cefrLevel: "B1", wpm: 105, topicTags: ["t3"] }),
+  clip(13, { episodeid: "ep-d", cefrLevel: "B2", wpm: 120, topicTags: ["t4"] }),
+  clip(14, { episodeid: "ep-e", cefrLevel: "B1", wpm: 125, topicTags: ["t5"] }),
+];
+const orderedPick = c.selectDaily(mixedDifficulty, context);
+assert.deepEqual(
+  orderedPick.items.map((i) => i.clipid),
+  ["clip-12", "clip-14", "clip-11", "clip-13", "clip-10"],
+);
 
 // Simulate actual progression: each day's practice is added only AFTER allocation.
 let emitted = 0,

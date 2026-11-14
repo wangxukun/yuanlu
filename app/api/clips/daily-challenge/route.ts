@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
 import { signOssHttpUrl } from "@/lib/oss";
 import { authWithMobile, isPremiumUser } from "@/core/auth/guard";
 import { detectFastLinks, type TimedWord } from "@/core/corpus/clip-core";
@@ -16,12 +15,26 @@ import {
   accessibleEpisodes,
   buildDailyChallengeDeps,
   latestPractice,
+  loadAssignedClips,
 } from "@/core/clips/daily-challenge.repo";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
 const json = (body: unknown, status = 200) =>
   NextResponse.json(body, { status, headers });
+
+function buildPhoneticTip(words: TimedWord[], wpm: number): string {
+  const link = detectFastLinks(words)[0];
+  if (link) {
+    const next = words[link.endIdx + 1]?.word;
+    const phrase = next ? `${link.text} ${next}` : link.text;
+    const ms = Math.round(link.durationSec * 1000);
+    return ms > 0
+      ? `注意 '${phrase}' 中 '${link.text}' 的弱读连读（仅 ${ms}ms），粘成一团念更地道。`
+      : `注意 '${link.text}' 中的弱读连读。`;
+  }
+  return `本句语速 ${wpm} 词/分钟，可先慢速跟读。`;
+}
 
 /** Get-or-create today's assignment. Discover's feed and its pagination remain untouched. */
 export async function POST(req: NextRequest) {
@@ -76,28 +89,7 @@ export async function POST(req: NextRequest) {
       episodeid: i.episodeid,
       subtitleId: i.subtitleId,
     }));
-    const rows = pairs.length
-      ? await prisma.corpus_clips.findMany({
-          where: { OR: pairs },
-          select: {
-            clipid: true,
-            episodeid: true,
-            subtitleId: true,
-            enText: true,
-            zhText: true,
-            wordsJson: true,
-            startTime: true,
-            endTime: true,
-            duration: true,
-            wpm: true,
-            cefrLevel: true,
-            topicTags: true,
-            worthyScore: true,
-            sourceLabel: true,
-            coverUrl: true,
-          },
-        })
-      : [];
+    const rows = await loadAssignedClips(pairs);
     const [episodes, progress] = await Promise.all([
       accessibleEpisodes(
         rows.map((r) => r.episodeid),
@@ -144,7 +136,6 @@ export async function POST(req: NextRequest) {
             clipAudioUrl: null,
           };
         const words = clip.wordsJson as unknown as TimedWord[];
-        const link = detectFastLinks(words)[0];
         return {
           ...base,
           clipid: clip.clipid,
@@ -159,9 +150,7 @@ export async function POST(req: NextRequest) {
           textCn: clip.zhText,
           words,
           wpm: clip.wpm,
-          phoneticTip: link
-            ? `注意 '${link.text}' 中的弱读连读。`
-            : `本句语速 ${clip.wpm} 词/分钟，可先慢速跟读。`,
+          phoneticTip: buildPhoneticTip(words, clip.wpm),
           isExclusive: !!episodes.get(clip.episodeid)?.isExclusive,
           // Lazy audio avoids cold ffmpeg work in selection and always rechecks the audio gateway.
           clipAudioUrl: null,

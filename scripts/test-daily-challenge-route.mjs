@@ -14,7 +14,8 @@ const stubs = {
   "@/core/clips/daily-challenge.repo": `
     export const buildDailyChallengeDeps = () => globalThis.dailyRouteTest.deps;
     export const accessibleEpisodes = async () => globalThis.dailyRouteTest.episodes;
-    export const latestPractice = async () => globalThis.dailyRouteTest.progress;`,
+    export const latestPractice = async () => globalThis.dailyRouteTest.progress;
+    export const loadAssignedClips = async () => globalThis.dailyRouteTest.rows;`,
 };
 registerHooks({
   resolve(specifier, context, nextResolve) {

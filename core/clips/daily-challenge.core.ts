@@ -254,6 +254,105 @@ const STAGES = [
   },
 ];
 
+const IRREGULAR_STEMS: Record<string, string> = {
+  went: "go",
+  gone: "go",
+  saw: "see",
+  seen: "see",
+  took: "take",
+  taken: "take",
+  came: "come",
+  knew: "know",
+  known: "know",
+  thought: "think",
+  told: "tell",
+  found: "find",
+  gave: "give",
+  given: "give",
+  made: "make",
+  said: "say",
+  felt: "feel",
+  left: "leave",
+  kept: "keep",
+  held: "hold",
+  wrote: "write",
+  written: "write",
+  stood: "stand",
+  heard: "hear",
+  meant: "mean",
+  met: "meet",
+  ran: "run",
+  paid: "pay",
+  sat: "sit",
+  spoke: "speak",
+  spoken: "speak",
+  lay: "lie",
+  led: "lead",
+  read: "read",
+  grew: "grow",
+  grown: "grow",
+  lost: "lose",
+  fell: "fall",
+  fallen: "fall",
+  sent: "send",
+  built: "build",
+  understood: "understand",
+  drew: "draw",
+  drawn: "draw",
+  broke: "break",
+  broken: "break",
+  spent: "spend",
+  cut: "cut",
+  rose: "rise",
+  risen: "rise",
+  drove: "drive",
+  driven: "drive",
+  bought: "buy",
+  wore: "wear",
+  worn: "wear",
+  chose: "choose",
+  chosen: "choose",
+};
+
+export function wordForms(word: string): string[] {
+  const w = normalizeWord(word);
+  if (!w) return [];
+  const out = new Set<string>([w]);
+  if (IRREGULAR_STEMS[w]) out.add(IRREGULAR_STEMS[w]);
+  if (w.length > 5 && w.endsWith("ies")) out.add(w.slice(0, -3) + "y");
+  if (w.length > 5 && w.endsWith("es")) {
+    out.add(w.slice(0, -2));
+    out.add(w.slice(0, -1));
+  } else if (w.length > 4 && w.endsWith("s") && !w.endsWith("ss")) {
+    out.add(w.slice(0, -1));
+  }
+  if (w.length > 5 && w.endsWith("ied")) out.add(w.slice(0, -3) + "y");
+  else if (w.length > 5 && w.endsWith("ed")) {
+    const base = w.slice(0, -2);
+    out.add(base);
+    out.add(w.slice(0, -1));
+    if (base.length > 3 && base.at(-1) === base.at(-2))
+      out.add(base.slice(0, -1));
+  }
+  if (w.length > 6 && w.endsWith("ing")) {
+    const base = w.slice(0, -3);
+    out.add(base);
+    out.add(base + "e");
+    if (base.length > 3 && base.at(-1) === base.at(-2))
+      out.add(base.slice(0, -1));
+  }
+  return [...out].filter((f) => f.length >= 4);
+}
+
+const CEFR_ORDER: Record<string, number> = {
+  A1: 1,
+  A2: 2,
+  B1: 3,
+  B2: 4,
+  C1: 5,
+  C2: 6,
+};
+
 /** Ranking is keyed by sentence, never array position. Cooldown precedes vocabulary. */
 export function selectDaily(
   clips: DailyClip[],
@@ -267,9 +366,15 @@ export function selectDaily(
   allowFallback = true,
 ): Selection {
   const history = mergeHistory(context.history);
-  const vocab = new Set(
-    context.vocabulary.map(normalizeWord).filter((w) => w.length >= 5),
-  );
+  // Map any stem/base form -> canonical vocabulary word ( >= 5 chars ).
+  const vocabMap = new Map<string, string>();
+  for (const raw of context.vocabulary) {
+    const clean = normalizeWord(raw);
+    if (clean.length < 5) continue;
+    for (const form of wordForms(clean)) {
+      if (!vocabMap.has(form)) vocabMap.set(form, clean);
+    }
+  }
   const unique = new Map(
     clips.filter(isDailyClipUsable).map((c) => [sentenceKey(c), c]),
   );
@@ -277,15 +382,27 @@ export function selectDaily(
     .map((clip) => {
       const key = sentenceKey(clip),
         h = history.get(key);
-      const practiced = [clip.lastPracticedOn, h?.practicedOn]
+      // Ignore same-day or future entries so guest retries on the same day never exclude today's own draw.
+      const priorServed =
+        h?.servedOn && h.servedOn < context.date ? h.servedOn : undefined;
+      const priorLocalPracticed =
+        h?.practicedOn && h.practicedOn < context.date
+          ? h.practicedOn
+          : undefined;
+      const priorServerPracticed =
+        clip.lastPracticedOn && clip.lastPracticedOn < context.date
+          ? clip.lastPracticedOn
+          : undefined;
+      const practiced = [priorServerPracticed, priorLocalPracticed]
         .filter(Boolean)
         .sort()
         .pop();
       const matchedWords = [
         ...new Set(
           (clip.wordsJson as TimedWord[])
-            .map((w) => normalizeWord(w.word || ""))
-            .filter((w) => vocab.has(w)),
+            .flatMap((w) => wordForms(w.word || ""))
+            .map((f) => vocabMap.get(f))
+            .filter((w): w is string => !!w),
         ),
       ];
       const preferred = ["B1", "B2"].includes(clip.cefrLevel || "");
@@ -300,7 +417,7 @@ export function selectDaily(
         hash: textHash(clip.enText),
         matchedWords,
         practiced,
-        served: h?.servedOn,
+        served: priorServed,
         preferred,
         score,
       };
@@ -332,7 +449,11 @@ export function selectDaily(
       }
       return b.score - a.score || a.key.localeCompare(b.key);
     });
-    const picked: SelectionItem[] = [],
+    const picked: Array<{
+        item: SelectionItem;
+        levelRank: number;
+        wpm: number;
+      }> = [],
       keys = new Set<string>(),
       texts = new Set<string>();
     const episodes = new Map<string, number>(),
@@ -351,17 +472,21 @@ export function selectDaily(
         (r.served && r.served >= daysBefore(context.date, 30)) ||
         (r.practiced && r.practiced >= daysBefore(context.date, 90));
       picked.push({
-        slot: picked.length + 1,
-        clipid: r.clip.clipid,
-        episodeid: r.clip.episodeid,
-        subtitleId: r.clip.subtitleId,
-        textHash: r.hash,
-        matchedWords: r.matchedWords,
-        selectionReason: reused
-          ? "cooldown_reuse"
-          : vocabulary
-            ? "vocabulary"
-            : "explore",
+        item: {
+          slot: picked.length + 1,
+          clipid: r.clip.clipid,
+          episodeid: r.clip.episodeid,
+          subtitleId: r.clip.subtitleId,
+          textHash: r.hash,
+          matchedWords: r.matchedWords,
+          selectionReason: reused
+            ? "cooldown_reuse"
+            : vocabulary || (r.matchedWords.length > 0 && !r.practiced)
+              ? "vocabulary"
+              : "explore",
+        },
+        levelRank: CEFR_ORDER[r.clip.cefrLevel || ""] || 3,
+        wpm: r.clip.wpm || 120,
       });
       keys.add(r.key);
       texts.add(r.hash);
@@ -373,12 +498,21 @@ export function selectDaily(
         add(r, true);
     for (const r of candidates) if (!r.matchedWords.length) add(r, false);
     for (const r of candidates) add(r, false); // Scarce non-hits must not make a rich vocabulary a penalty.
+    // Order selected cards from warm-up (easier / slower) to challenge (harder / faster).
+    picked.sort(
+      (a, b) =>
+        a.levelRank - b.levelRank || a.wpm - b.wpm || a.item.slot - b.item.slot,
+    );
+    const orderedItems = picked.map((p, idx) => ({
+      ...p.item,
+      slot: idx + 1,
+    }));
     result = {
-      items: picked,
+      items: orderedItems,
       status:
-        picked.length === DAILY_SIZE
+        orderedItems.length === DAILY_SIZE
           ? "complete"
-          : picked.length
+          : orderedItems.length
             ? "partial"
             : "empty",
       fallbackStage: stage.name,

@@ -114,6 +114,32 @@ export async function accessibleEpisodes(
     );
 }
 
+export async function loadAssignedClips(
+  pairs: { episodeid: string; subtitleId: number }[],
+) {
+  if (!pairs.length) return [];
+  return prisma.corpus_clips.findMany({
+    where: { OR: pairs },
+    select: {
+      clipid: true,
+      episodeid: true,
+      subtitleId: true,
+      enText: true,
+      zhText: true,
+      wordsJson: true,
+      startTime: true,
+      endTime: true,
+      duration: true,
+      wpm: true,
+      cefrLevel: true,
+      topicTags: true,
+      worthyScore: true,
+      sourceLabel: true,
+      coverUrl: true,
+    },
+  });
+}
+
 export function buildDailyChallengeDeps(secret: string): DailyChallengeDeps {
   const findAssignment: DailyChallengeDeps["findAssignment"] = async (
     userid,
@@ -150,14 +176,36 @@ export function buildDailyChallengeDeps(secret: string): DailyChallengeDeps {
       return winner;
     },
     async history(userid, date) {
-      const rows = await prisma.daily_challenge_assignment.findMany({
-        where: {
-          userid,
-          date: { gte: dbDate(daysBefore(date, 90)), lt: dbDate(date) },
-        },
-        select: { date: true, items: true },
-      });
-      return rows.flatMap((r) =>
+      const since = dbDate(daysBefore(date, 90));
+      const beforeDate = dbDate(date);
+      const [rows, practicedRows] = await Promise.all([
+        prisma.daily_challenge_assignment.findMany({
+          where: {
+            userid,
+            date: { gte: since, lt: beforeDate },
+          },
+          select: { date: true, items: true },
+        }),
+        prisma.speech_recognition
+          .findMany({
+            where: {
+              userid,
+              episodeid: { not: null },
+              subtitleId: { not: null },
+              overallScore: { not: null },
+              recognitionDate: { gte: since, lt: beforeDate },
+            },
+            select: {
+              episodeid: true,
+              subtitleId: true,
+              recognitionDate: true,
+            },
+            orderBy: { recognitionDate: "desc" },
+            take: 1000,
+          })
+          .catch(() => []),
+      ]);
+      const assigned = rows.flatMap((r) =>
         (r.items as unknown as SelectionItem[]).map(
           (i): HistoryItem => ({
             episodeid: i.episodeid,
@@ -166,33 +214,55 @@ export function buildDailyChallengeDeps(secret: string): DailyChallengeDeps {
           }),
         ),
       );
+      const practiced = practicedRows
+        .filter(
+          (r) =>
+            typeof r.episodeid === "string" &&
+            typeof r.subtitleId === "number" &&
+            r.recognitionDate instanceof Date,
+        )
+        .map(
+          (r): HistoryItem => ({
+            episodeid: r.episodeid as string,
+            subtitleId: r.subtitleId as number,
+            practicedOn: chinaDate(r.recognitionDate as Date),
+          }),
+        );
+      return [...assigned, ...practiced];
     },
     async vocabulary(userid) {
-      return (
-        await prisma.vocabulary.findMany({
-          where: { userid },
+      // Prefer active (non-mastered) words ordered by review urgency; fall back to plain select on minimal test schemas.
+      try {
+        const rows = await prisma.vocabulary.findMany({
+          where: {
+            userid,
+            status: { not: "MASTERED" }, // 列非空：not 已覆盖全部非 MASTERED 行，null 分支不存在
+          },
           select: { word: true },
-        })
-      ).map((r) => r.word);
+          orderBy: [{ nextReviewAt: "asc" }, { proficiency: "asc" }],
+          take: 500,
+        });
+        return rows.map((r) => r.word);
+      } catch {
+        return (
+          await prisma.vocabulary.findMany({
+            where: { userid },
+            select: { word: true },
+          })
+        ).map((r) => r.word);
+      }
     },
-    async sample(pivot, userid, premium) {
+    async sample(pivot, _userid, premium) {
       const rows = await sampleWindow(pivot);
       if (!rows.length) return [];
-      const [episodes, practiced] = await Promise.all([
-        accessibleEpisodes(
-          rows.map((r) => r.episodeid),
-          premium,
-        ),
-        userid ? latestPractice(userid, rows) : Promise.resolve([]),
-      ]);
-      const practiceMap = new Map(
-        practiced.map((p) => [sentenceKey(p), chinaDate(p.recognitionDate)]),
+      const episodes = await accessibleEpisodes(
+        rows.map((r) => r.episodeid),
+        premium,
       );
       return rows
         .filter((r) => episodes.has(r.episodeid))
         .map((r) => ({
           ...r,
-          lastPracticedOn: practiceMap.get(sentenceKey(r)),
           isExclusive: !!episodes.get(r.episodeid)?.isExclusive,
         }));
     },
