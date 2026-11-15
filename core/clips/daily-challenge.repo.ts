@@ -68,14 +68,19 @@ export async function latestPractice(
       subtitleId: number;
       recognitionDate: Date;
       overallScore: number;
+      accuracyScore: number | null;
+      fluencyScore: number | null;
+      integrityScore: number | null;
+      detailJson: unknown;
       recognitionid: number;
     }>
   >(Prisma.sql`
     WITH candidates(episodeid, subtitle_id) AS (VALUES ${Prisma.join(keys.map((c) => Prisma.sql`(${c.episodeid}::text, ${c.subtitleId}::int)`))})
-    SELECT c.episodeid, c.subtitle_id AS "subtitleId", r."recognitionDate", r."overallScore", r.recognitionid
+    SELECT c.episodeid, c.subtitle_id AS "subtitleId", r."recognitionDate", r."overallScore",
+      r."accuracyScore", r."fluencyScore", r."integrityScore", r."detailJson", r.recognitionid
     FROM candidates c
     JOIN LATERAL (
-      SELECT "recognitionDate", "overallScore", recognitionid FROM speech_recognition
+      SELECT "recognitionDate", "overallScore", "accuracyScore", "fluencyScore", "integrityScore", "detailJson", recognitionid FROM speech_recognition
       WHERE userid = ${userid} AND episodeid = c.episodeid AND "subtitleId" = c.subtitle_id
         AND episodeid IS NOT NULL AND "subtitleId" IS NOT NULL
         AND "recognitionDate" IS NOT NULL AND "overallScore" IS NOT NULL

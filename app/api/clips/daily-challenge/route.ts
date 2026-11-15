@@ -120,7 +120,20 @@ export async function POST(req: NextRequest) {
           sentenceKey: sentenceKey(chosen),
           available,
           evaluation: p
-            ? { recognitionId: p.recognitionid, score: p.overallScore }
+            ? {
+                recognitionId: p.recognitionid,
+                score: p.overallScore,
+                // 四维分随行常存（免费行也有）；词级明细仅 detailJson 落库行
+                // （PRO）携带——重启/换设备恢复报告用，形状对齐 resultView.details
+                details: {
+                  overall: p.overallScore,
+                  pronunciation: p.accuracyScore,
+                  fluency: p.fluencyScore,
+                  integrity: p.integrityScore,
+                  words:
+                    (p.detailJson as { words?: unknown[] } | null)?.words ?? [],
+                },
+              }
             : null,
         };
         if (!available || !clip)
