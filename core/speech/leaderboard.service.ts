@@ -35,6 +35,8 @@ export interface LbEntry {
   badge: string;
   featuredSentence: string | null;
   featuredClipId: string | null;
+  /** 代表作命中 corpus 切片时的完整切片（feed-item 形状，挑战同款加练用） */
+  featuredClip: Record<string, unknown> | null;
   likes: number;
   likedByMe: boolean;
   firstName: string;
@@ -185,7 +187,7 @@ export async function getLeaderboard(
         .map((r) => `${r.episodeid}|${r.subtitleId}`),
     ),
   ];
-  const clipMap = new Map<string, string>();
+  const clipMap = new Map<string, Record<string, unknown>>();
   if (pairs.length) {
     const clips = await prisma.corpus_clips.findMany({
       where: {
@@ -194,10 +196,38 @@ export async function getLeaderboard(
           return { episodeid, subtitleId: Number(subtitleId) };
         }),
       },
-      select: { clipid: true, episodeid: true, subtitleId: true },
+      select: {
+        clipid: true,
+        episodeid: true,
+        subtitleId: true,
+        startTime: true,
+        endTime: true,
+        duration: true,
+        enText: true,
+        zhText: true,
+        wordsJson: true,
+        wpm: true,
+        cefrLevel: true,
+        sourceLabel: true,
+        topicTags: true,
+      },
     });
     for (const c of clips)
-      clipMap.set(`${c.episodeid}|${c.subtitleId}`, c.clipid);
+      clipMap.set(`${c.episodeid}|${c.subtitleId}`, {
+        clipid: c.clipid,
+        episodeid: c.episodeid,
+        subtitleId: c.subtitleId,
+        showTitle: c.sourceLabel || "原声节目",
+        topic: c.topicTags && c.topicTags.length ? c.topicTags[0] : "",
+        difficulty: c.cefrLevel || "",
+        start: c.startTime,
+        end: c.endTime,
+        duration: c.duration,
+        textEn: c.enText,
+        textCn: c.zhText,
+        words: Array.isArray(c.wordsJson) ? c.wordsJson : [],
+        wpm: c.wpm,
+      });
   }
 
   const decorateEntry = (
@@ -207,6 +237,10 @@ export async function getLeaderboard(
     const u = users.get(row.userid);
     const nickname = u?.nickname ?? `用户_${row.userid.slice(-4)}`;
     const featured = featuredByUser.get(row.userid);
+    const featuredClip =
+      featured?.episodeid && featured?.subtitleId != null
+        ? (clipMap.get(`${featured.episodeid}|${featured.subtitleId}`) ?? null)
+        : null;
     return {
       userid: row.userid,
       nickname,
@@ -216,11 +250,8 @@ export async function getLeaderboard(
       streakDays: streaks.get(row.userid) ?? 0,
       badge: badgeOf(rank, row.evalCount),
       featuredSentence: featured?.targetText ?? null,
-      featuredClipId:
-        featured?.episodeid && featured?.subtitleId != null
-          ? (clipMap.get(`${featured.episodeid}|${featured.subtitleId}`) ??
-            null)
-          : null,
+      featuredClipId: featuredClip ? (featuredClip.clipid as string) : null,
+      featuredClip: featuredClip ?? null,
       likes: likeCount.get(row.userid) ?? 0,
       likedByMe: likedSet.has(row.userid),
       firstName: nickname.split(" ")[0],
