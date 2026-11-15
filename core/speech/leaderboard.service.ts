@@ -1,13 +1,8 @@
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { decoratePublicUsers } from "@/core/social/public-user";
-import {
-  chinaToday,
-  chinaDayOf,
-  addUTCDays,
-  subUTCDays,
-  isSameUTCDay,
-} from "@/core/utils/china-date";
+import { streaksForUsers } from "@/core/streak/weapp-streak.service";
+import { chinaToday, chinaDayOf, addUTCDays } from "@/core/utils/china-date";
 
 /**
  * [weapp-backend] 发音达人日榜/周榜服务（自 app/api/speech/leaderboard/route.ts
@@ -83,46 +78,6 @@ function badgeOf(rank: number, evalCount: number): string {
   return "";
 }
 
-/** 批量 streak：与 stats.service.calculateStreak 同口径（isActive 连续日，止于今天/昨天） */
-function batchStreak(
-  activities: { userid: string; date: Date }[],
-): Map<string, number> {
-  const byUser = new Map<string, Date[]>();
-  for (const a of activities) {
-    const list = byUser.get(a.userid) ?? [];
-    list.push(a.date);
-    byUser.set(a.userid, list);
-  }
-  const today = chinaToday();
-  const yesterday = subUTCDays(today, 1);
-  const out = new Map<string, number>();
-  for (const [userid, dates] of byUser) {
-    dates.sort((a, b) => b.getTime() - a.getTime());
-    if (!dates.length) {
-      out.set(userid, 0);
-      continue;
-    }
-    const latest = chinaDayOf(dates[0]);
-    if (!isSameUTCDay(latest, today) && !isSameUTCDay(latest, yesterday)) {
-      out.set(userid, 0);
-      continue;
-    }
-    let streak = 0;
-    let cursor = latest;
-    for (const d of dates) {
-      const day = chinaDayOf(d);
-      if (isSameUTCDay(day, cursor)) {
-        streak++;
-        cursor = subUTCDays(cursor, 1);
-      } else {
-        break;
-      }
-    }
-    out.set(userid, streak);
-  }
-  return out;
-}
-
 export async function getLeaderboard(
   myUserid: string,
   period: LbPeriod,
@@ -178,18 +133,11 @@ export async function getLeaderboard(
 
   const rankOf = new Map(sorted.map((r, i) => [r.userid, i + 1]));
 
-  const [users, activities, featuredRaw, lastActiveRaw, likeRows, myLikeRows] =
+  const [users, streaks, featuredRaw, lastActiveRaw, likeRows, myLikeRows] =
     await Promise.all([
       decoratePublicUsers(ids),
-      // streak 窗口 90 天足够覆盖任意显示合理的连续天数
-      prisma.user_daily_activity.findMany({
-        where: {
-          userid: { in: ids },
-          isActive: true,
-          date: { gte: subUTCDays(chinaToday(), 90) },
-        },
-        select: { userid: true, date: true },
-      }),
+      // streakDays=跟读开口口径（weapp_streak_log，与主页连胜卡同源）
+      streaksForUsers(ids),
       // 每用户窗口内最高分一条（代表作句 + 反查切片）
       prisma.$queryRaw<RawFeatured[]>(Prisma.sql`
         SELECT DISTINCT ON (userid) userid, "overallScore", "targetText", "subtitleId", "episodeid"
@@ -222,7 +170,6 @@ export async function getLeaderboard(
       }),
     ]);
 
-  const streaks = batchStreak(activities);
   const featuredByUser = new Map(featuredRaw.map((r) => [r.userid, r]));
   const lastActiveByUser = new Map(
     lastActiveRaw.map((r) => [r.userid, r.last]),

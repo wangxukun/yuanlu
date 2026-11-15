@@ -112,6 +112,19 @@ export async function getStreakStatus(
   return computeStatus(userid, await loadAllRows());
 }
 
+/** 批量连胜（跟读开口口径）：日榜达人卡 streakDays 装饰共用——与主页连胜卡
+ *  同一数据源 weapp_streak_log（勿再用网站收听 isActive 口径，两套会打架） */
+export async function streaksForUsers(
+  userids: string[],
+): Promise<Map<string, number>> {
+  const byUser = await loadAllRows();
+  const out = new Map<string, number>();
+  for (const uid of new Set(userids.filter(Boolean))) {
+    out.set(uid, computeStreak(byUser.get(uid) ?? []));
+  }
+  return out;
+}
+
 /**
  * POST /api/streak/ignite —— 点亮今日（当日幂等）。
  * 双通道：带 recognitionId = 跟读开口自动验收（校验归属 + 评测发生在今日
