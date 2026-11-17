@@ -1,95 +1,47 @@
 ---
 name: corpus-annotate
-description: 语料批处理标注流水线（yuanlu 仓）：给新增切片打 worthyScore/场景标签、给微场景补办身份（标题/导读/scenarioTag）、落库、灌向量、考卷验收的完整过夜批流程。Use whenever 用户提到 新切片标注、场景身份重建、worthyScore 标注、语料标注、给场景补身份证、过夜标注批、新语料入库后处理——包括 build-corpus-index 补新集之后、或提到 4090/vLLM/Qwen 标注、T2.3。
+description: 给语料切片标 worthyScore/scenarioTag，为微场景重建标题导读标签，落库、补向量并用评测集验收。
 ---
 
-# 语料批处理标注流水线
+# 语料批处理标注
 
-对 corpus_clips（worthyScore + scenarioTag）与 micro_scenes（title/summaryZh/situationTag 身份重建）跑本地 4090 Qwen 批标注，再落库、灌场景向量、考卷验收。管线脚本都在 `scripts/corpus/`，产物在 `.local/annotate/<run>/`。
+脚本位于 [scripts/corpus](../../../scripts/corpus)，产物 .local/annotate/<run>/。新入库后或模型/prompt 迭代时使用；本文区分实际程序行为与人工质量标准。
 
-## 什么时候跑
+## 准备
 
-- `build-corpus-index` 补了新集（新增切片/场景没分数没身份）
-- 场景搜索/推荐需要 worthyScore 门禁数据
-- 上一次考卷（P≥0.85）没过、prompt 迭代后重标
+- 核对数据库目标、字幕与 run；annotate 脚本会读数据库，不是纯离线零凭据程序。生产写入使用受控环境，不因运行标注取得额外生产变更授权。
+- 既有任务默认 Qwen2.5-14B-Instruct-AWQ，served name qwen25-14b-awq；保留本任务模型选择，不自行换 R1 推理模型。先读 /v1/models 核实正在运行的服务，勿停用户服务或另起一份抢显存。
+- .env 使用 VLLM_BASE / VLLM_MODEL（默认 http://127.0.0.1:8000/v1 与 qwen25-14b-awq）；追加变量前确认换行，不打印 API key。
+- 确需起服务时在已有 vllm 环境用 `vllm serve /home/xk/models/Qwen2.5-14B-Instruct-AWQ --served-model-name qwen25-14b-awq --port 8000 --max-model-len 8192 --gpu-memory-utilization 0.92`，参数按空闲资源核对，等待就绪。
 
-## 阶段 0 · 准备
+## 流程
 
-1. WSL 起推理服务（独立窗口，全程别关；日志出现 `Uvicorn running` 才算就绪）：
-
-```bash
-conda activate vllm
-vllm serve /home/xk/models/Qwen2.5-14B-Instruct-AWQ \
-  --served-model-name qwen25-14b-awq --port 8000 \
-  --max-model-len 8192 --gpu-memory-utilization 0.92
-```
-
-2. Windows 连通性自检：`curl -s http://127.0.0.1:8000/v1/models | head -c 200` 返回含 `qwen25-14b-awq`。
-3. `yuanlu/.env` 确认两行（**先确认文件末行有换行符再追加**——历史上 FLAG 粘进 API key 的坑）：
-
-```
-VLLM_BASE=http://127.0.0.1:8000/v1
-VLLM_MODEL=qwen25-14b-awq
-```
-
-**模型选型纪律：只用 Qwen2.5-14B-Instruct-AWQ，不要换 DeepSeek-R1-Distill-32B**——本任务是打分/贴标签/按模板写三件套（判断题非推理题），R1 蒸馏系先吐长 `<think>` 再作答：JSON 模式打架、吞吐塌 3-10 倍、temperature=0 幂等重跑失效。质量疑虑用考卷验收兜底，不过再升 Qwen 更大 Instruct 档。
-
-## 阶段 1 · 冒烟（必做，5 分钟）
-
-```bash
+```powershell
 npx tsx scripts/corpus/annotate-clips.ts --run=run1 --limit=200
-head -20 .local/annotate/run1/clips.jsonl
-```
-
-过关三眼：旁白句（_Now let's hear..._）`w` 0.0-0.3；自然口语句 `w` 0.7-1.0；`s` 全是 `core/corpus/scenario-taxonomy.ts` 30 枚举之一。不过关 → 停，把样例给用户看，别放全量。
-
-## 阶段 2 · 切片全量（约 10-20 GPU 时）
-
-```bash
+Get-Content .local/annotate/run1/clips.jsonl -TotalCount 20
+# 冒烟合格再全量：
 npx tsx scripts/corpus/annotate-clips.ts --run=run1
-```
-
-- 滑窗 6 句/stride 5；JSON 校验 + 重试 1 次 + 窗口隔离（失败率 <5% 属正常）
-- **断点续跑**：中断后重跑同命令自动跳过已标句。**增量标注沿用同一 run 目录**（已标跳过、只标新句）；仅当 prompt/模型/pipelineVersion 变更时才开新 run 目录
-
-## 阶段 3 · 场景身份重建（约 2-4 小时，接续跑）
-
-```bash
 npx tsx scripts/corpus/annotate-scenes.ts --run=run1
-```
-
-抽查 `scenes.jsonl`：`title` 是场景化标题（如「机场值机行李超重交涉」）非第一句转写；`summaryZh` 30-60 字；红线词（AI/人工智能/播客）判废重试。
-
-## 阶段 4 · 收数链（顺序执行，勿跳）
-
-```bash
-# 1) 落库（可 --dry 先看统计）：worthyScore/pipelineVersion→clips；title/summaryZh/situationTag→scenes（按 sceneKey）
+npx tsx scripts/corpus/upsert-annotations.ts --run=run1 --dry
 npx tsx scripts/corpus/upsert-annotations.ts --run=run1
-# 2) 场景 zh 向量（title+导读+句译文 → SiliconFlow BGE-M3；embeddingZh IS NULL 天然增量）
-npx tsx scripts/corpus/embed-scenes.ts --limit=50   # 冒烟后去 limit 全量
-# 3) 切片英文向量兜底（corpus-ingest skill ⑤ 的职责；若本轮新切片未灌则此处补跑，
-#    embedding IS NULL 天然增量——勿因「跑过一次」跳过检查）
+npx tsx scripts/corpus/embed-scenes.ts --limit=50
+# 向量冒烟后去掉 limit；补查英文向量欠账：
+npx tsx scripts/corpus/embed-scenes.ts
 npx tsx scripts/corpus/embed-corpus.ts
 ```
 
-> 向量双路依赖口诀：**英文向量跟着文字走**（ingest 后即可灌，标注前后皆可）；**中文向量跟着身份走**（本 skill 落库后才灌）。收数链末尾统一验收 `clipEmbeddingRepo.coverage()`：两路水位 = 各自总数。
+冒烟核对旁白低分/自然口语高分、scenario-taxonomy 枚举合法、JSON 可解析；不合格停批量，展示样例定位。模型/prompt/pipelineVersion 或输入内容变化时开新 run；沿用旧 run 只会跳过已完成的 clipid/sceneKey，不会发现文本变化。
 
-3. **考卷验收**：用 `.local/eval/worthiness-500.csv`（人工正本）给模型分数判 P（worthy≥0.5 预测「值得学」），门槛 **P≥0.85**；不过 → 迭代 prompt 重开 run，不许带病上线。
-4. 收尾：T3.3 worthyScore 门禁生效检查（feed/match 召回挂 `worthyScore >= 阈值`）+ 场景搜索抽查 + 通知用户 DevTools 验收。
+## 实际落库与断点语义
 
-## 验收门槛汇总
+- 切片滑窗 6、stride 5、4 组并发，失败重试一次并隔离；重叠窗口可能在 JSONL 重复出现 clipid，upsert 会去重。沿用 run 追加缺失记录，不代表重新推理“逐字节幂等”。
+- annotate-clips temperature=0；annotate-scenes 当前 temperature=0.2，不能承诺新一轮输出确定性。续跑是读取已完成键而非重新生成一致结果。
+- clips 输出 worthyScore/scenarioTag，落库只写 worthyScore/pipelineVersion/modelId（模型取行内或环境配置）；scenarioTag 保留在 JSONL，当前无切片标签列写入。
+- scenes 按 sceneKey 更新 title/summaryZh/situationTag，不更换 sceneid。prompt 要求 title≤18 字、summary 30–60 字；代码校验并非严格同一长度范围，人工抽查不可省。
+- embed-scenes/embeddingZh 与 embed-corpus/embedding 只补 NULL。身份/文字修订后，已有向量不会自动失效；需安排对应记录重算，不能直接声称覆盖正确。
 
-| 项              | 门槛                                       |
-| --------------- | ------------------------------------------ |
-| 冒烟 jsonl      | 旁白低分/口语高分/枚举零编造               |
-| 窗口失败率      | <5%（隔离不污染）                          |
-| worthiness 考卷 | P≥0.85（宁缺勿滥）                         |
-| 幂等重跑        | 同 run 同句逐字节一致（temperature=0）     |
-| 场景身份        | 标题场景化/导读 30-60 字/枚举合法/零红线词 |
+## 验收
 
-## 已知坑
+人工金标准 .local/eval/worthiness-500.csv；工具 [scripts/eval/grade-worthiness.ts](../../../scripts/eval/grade-worthiness.ts)。P≥0.85、复标κ≥0.75，记录 R 与缺考；运行时门禁当前 0.4、考卷可比较不同阈值，勿混为单一阈值。失败窗率、场景身份语义、受控标签、动态文案、两路向量水位与检索抽查单独验收。
 
-- `.env` 追加前确认末行有换行符（FLAG 粘 key 教训）
-- WSL 服务窗口与 Git Bash 跑批窗口要同时活着；屏幕可锁窗口不可关
-- vLLM 首次加载权重 1-2 分钟，别抢跑
-- Prisma Json 列过滤用 `Prisma.DbNull` 不是 `null`
+身份导读必须描述可学习场景，不能用第一句转写冒充；生成内容查红线词。质量未过不放开上线门禁。总量/耗时随数据和环境变化，不沿用旧“过夜已跑完”作为本次结果。

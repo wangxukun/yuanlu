@@ -1,219 +1,27 @@
-# 远路播客 UI 重设计 · 进度记录
-
-> 分支：`feat/transcript` ｜ 最近提交：工作区未提交（桌面端字幕阅读页重设计）
-> 设计概念：**「纸上远行」**——暖纸底色（书的温度）+ 远青（路的延伸）+ 曙光橙（每一步的奖励），用"旅程/里程"隐喻承载学习数据，替代原 AI 默认的 indigo→purple 渐变风。
-
----
-
-## 一、总体思路
-
-### 诊断结论（原界面核心问题）
-
-1. **两个品牌紫并存**：`indigo-600` 与硬编码 `#5830E0` 各据一方
-2. **两套样式体系并存**：DaisyUI 语义 token vs 硬编码 slate/indigo
-3. **三套字体体系**：fonts.ts + 26 处内联 `Plus Jakarta Sans` + `font-['Lexend']`
-4. **徽章过载**：8+ 处复制粘贴的 PRO 渐变徽章、5 处重复难度配色映射
-5. **品牌零落地**：「远路」的旅程意象在视觉中不存在
-6. 同屏三种圆角、听写功能缺失、播放键 hover 才浮现等交互问题
-
-### 设计系统（已落地的 token）
-
-| 角色   | 色板                 | 主值                                           |
-| ------ | -------------------- | ---------------------------------------------- |
-| 中性色 | `ink`（暖纸，11 级） | bg `#FAF8F3` / 文字 `#1B1812` / 暗色 `#151310` |
-| 主色   | `primary`（远青）    | 主按钮 `#1F7A5C` / hover `#1A6349`             |
-| 强调   | `accent`（曙光橙）   | 生词高亮 `#FAE5C6` / 徽章 `#D98A17`            |
-| 信息   | `info`（黛蓝）       | `#4A7FA5`                                      |
-| 错误   | `error`（陶土红）    | `#D2503F`                                      |
-
-- 字体：**Plus Jakarta Sans**（UI/西文，`--font-jakarta`）+ **Source Serif 4**（英文精读，`--font-serif`），中文落系统栈
-- 圆角阶梯：8/12/16/24（`--r-sm/md/lg/xl`）；阴影：`--e1/e2/e3`；z-index 分层：`--z-*`
-- 难度配色：A→远青 / B1→黛蓝 / B2→曙光橙 / C→陶土红
-- 里程换算：收听 1 小时 = 5km（步行速度隐喻）
-
----
-
-## 二、已完成（对应实施 Prompt 的 Step 编号）
-
-### ✅ Step 1-3：设计 token + 字体收编 + 全局换肤
-
-- `tailwind.config.mjs`：五组色板 + `font-display` + `eq` 波形动画 keyframes
-- `globals.css`：全套 CSS 变量 + DaisyUI 5 `--color-*` 语义色覆盖（见"坑"一节）
-- `components/fonts.ts`：Jakarta + Source Serif 4（next/font 自托管），删除 Google Fonts `<link>`、26 处内联 fontFamily、1 处 Lexend
-- `scripts/retheme.mjs`：一次性换肤脚本，110 文件 ~2000 处替换（slate/gray→ink、indigo/emerald/green→primary、purple/orange/amber/yellow→accent、blue/sky/cyan/violet→info、red/rose→error、硬编码 hex/rgba→token、品牌渐变拍平）
-
-### ✅ Step 5：徽章/难度组件化
-
-- 新建 `components/ui/ProBadge.tsx`、`components/ui/DifficultyBadge.tsx`、`lib/difficulty.ts`
-- 替换 8 处 PRO 渐变徽章、5 处难度映射；amber 全局并入 accent（零残留）
-
-### ✅ Step 7：首页旅程化
-
-- `HomeClient` 重构：文字问候 + 🔥streak chip；继续收听卡（封面+进度+「还剩约 N 分钟」+ 实心 ResumeButton）
-- `WeeklyMileageCard`（替代 UserStatsCard）：本周里程 km = 小时 × 5，「词汇路标」
-- `JourneyStrip`：SVG 蜿蜒小径 + 7 日节点（学习日点亮+小旗、今天虚线圈），数据接 `statsService.getWeeklyActivityChart`
-- 响应式修复：收听卡移动端封面通栏；JourneyStrip 移动/桌面双画幅参数化渲染
-
-### ✅ Step 6：剧集页
-
-- 封面播放键常驻右下 56px（`primary-600` + e3 阴影），移除 hover 才浮现
-- 「开始精听」主 CTA：播放 + 打开沉浸逐字稿（`isLyricsOpen` 提升至 `player-store`）
-- 逐字稿排版：英文 serif `text-lg/xl leading-[1.85]/[1.9]`；激活句 `bg-primary-50` + 3px `primary-500` 竖条；中文 `text-sm leading-[1.7] ink-400`；单词 hover 统一 `bg-accent-100 text-accent-700`
-- 修复：768px 按钮重叠（`sm:flex-row`→`lg:flex-row`）；≤820px 音频/文稿/收藏/分享仅图标；相关剧集改单列
-
-### ✅ Step 8：播放器统一与波形微交互
-
-- `PlayControlBar` 悬浮药丸规范：桌面/平板端固定高度 `h-16 px-6`，应用纯圆角 `rounded-full` 与 `md:shadow-[var(--e3)]`
-- 进度条粗细精修：桌面端进度条轨高度调整为 `h-1`（保留 12px 白色拖拽滑块）
-- 品牌波形微交互：播放中封面图叠加半透明黑底 + 4 柱 `animate-eq` 白色跳动波形，同步应用至桌面控制条、播放列表当前项及移动端 `MobilePlayerBar` Mini 播放器
-- 下线清理：彻底清理并删除废弃遗留组件 `components/player/Player.tsx`
-
-### ✅ Step 4：播客卡统一
-
-- `components/ui/PodcastCard.tsx`：抽象通用播客卡片，采用 `aspect-square` 正方形封面、角标插槽（如 01/02/03 排行榜与 New 标签）、圆点分隔的 Meta 信息行及 Hover 缩放微交互
-- 重构 `app/(main)/discover/page.tsx`：替换热门节目 (Trending)、为您推荐 (For You)、新节目 (New Programs) 3 处内联重复实现，精简代码
-
-### ✅ Step 9：听写模式（核心新功能）
-
-- `DictationItem.tsx`：隐藏 Input 捕获键盘与手机软键盘输入，实时逐词比对引擎（正确 `text-primary-600` / 错误 `text-error line-through` / 待填 `border-dashed` 虚线下划线），同句 3 次拼写错误触发提示
-- `InteractiveTranscript.tsx` 与 `FullContentTranscript.tsx` 多端集成：桌面端/平板端（`FullContentTranscript`）与移动端（`InteractiveTranscript`）均支持「📖 精读 / ✍️ 听写」模式切换；听写模式下自动切至 0.8x 慢速播放，底层通过 `useTranscriptScroll` 在 60fps 动画帧侦听层原生实现单句死循环锁定与拼写正确后的自动下一句跳动（解决了计时器竞态与 React 闭包导致移动端死循环失效的问题）。
-
-### ✅ Step 10：学习报告页旅程化
-
-- `StatsOverview` 旅程仪表盘：累计里程 km 大数字（`totalHours × 5`）+ 连续天数🔥 + 词汇路标，统一 ink/primary/accent 设计令牌
-- `MilestoneRoadmap` SVG 里程碑路图：新建 5 节点（1/5/21.1/42.2/100km）蜿蜒旅程路径，已达成节点着远青色+曙光橙旗帜，当前位置脉冲动画圆点
-- `ActivityChart` 单色化去网格：删除 CartesianGrid 降低视觉噪音，Tooltip 改为暖纸色系，标题更新为「本周行程记录」
-- `AchievementsCard` 里程碑化：标题改为「远路里程碑」，解锁/未解锁双态配色统一至 ink/primary 设计令牌
-- `personal-center/page.tsx` 页面组装：在 StatsOverview 和 ActivityChart 之间嵌入 MilestoneRoadmap
-
-### ✅ Step 11：设计令牌落地与个人中心重构
-
-- `tailwind.config.mjs`：正式将 `app/globals.css` 中的 `--r-*`, `--e*`, `--z-*` 等变量注册为 Tailwind 配置（覆盖 `borderRadius` 的 sm/md/lg/xl，新增 `boxShadow` e1/e2/e3 及 `zIndex` 别名）
-- 个人中心重构：废弃大横幅设计，改为卡片化风格，包含居中的头像和「远行客 Lv.X」身份徽章，引入「旅程数据」「里程碑」「最近听过」三大下划线 Tab 切页，并彻底下线遗留的 `ProfileCard` 组件。
-
-### ✅ Step 12：响应式布局优化与按钮风格统一
-
-- **个人中心移动端布局** (`personal-center/page.tsx`)：移动端头像与个人信息调整为 `flex-row` 左右列布局，信息文本左对齐，并优化了各种窄屏设备的响应式间距与元素遮挡。
-- **单集详情页平板端收拢** (`episode/[id]/page.tsx` & `ActionButtons.tsx`)：将单集详情页网格断点由 `md` 提升至 `lg`，使平板端统一应用全宽单列布局；`ActionButtons` 响应式断点下调至 `md`，实现在平板端所有按钮呈一行优雅排版。
-- **按钮视觉风格统一** (`ActionButtons.tsx` & `LearningPathsClient.tsx`)：剥离 DaisyUI `.btn` 自带的修饰阴影与微缩放，统一采用 `PodcastHero` 的纯粹原生 Tailwind 色块风格（`bg-[#1F7A5C] hover:bg-[#1A6349]` 等）。
-- **频道页 Banner 与暗色模式修复** (`ChannelClient.tsx`)：显式指定浅色模式深绿底色 `bg-[#1F7A5C]` 解决原 `bg-primary` 失效导致对比度缺失问题，增加 `antialiased` 修复深色背景上的文字边缘发虚，并添加 `dark:bg-ink-950` 实现暗色模式下的沉浸式纯黑底板。
-
-### ✅ Step 15：个人中心与弹窗统一精修
-
-- **个人简介与首页融合**：`HomeClient.tsx` 与个人中心全线优先渲染用户 `profile.bio`，空状态下优雅回退至“路虽远行则将至，事虽难做则可成。”；个人中心加入时间规范化为“YYYY年M月D日”中文字符格式。
-- **编辑资料弹窗重构 (`EditProfileModal.tsx`)**：
-  - 风格完全对齐 `ProofreadModal`：采用原生 `<dialog>`、DaisyUI `modal-box` 结构、`rounded-xl` / `shadow-e3` / `bg-base-100`、顶部品牌渐变 Header。
-  - Tabs 标签页升级：重构为 `tabs-boxed` 药丸切页风格，选中态高亮浮起。
-  - 清理重复表单：移除“学习目标”中重复且数值不规范的“英语水平”选择框，仅在“个人资料”保留一处。
-  - 学习目标与输入框布局重构：统一进度条为 `range-primary` 与精致 Tag 角标；解决刻度下标 (`10m/60m/120m`) 对齐问题；重构 Flex 布局，确保桌面端、平板端与移动端下的标题、进度条及输入框均单独一行全宽优雅排版。
-- **查词助手弹窗对齐 (`VocabularyModal.tsx`)**：
-  - 结构样式对齐 `ProofreadModal`：应用 `max-h-[80vh]`、滚动体、`bg-ink-50` 上下文参考框及 `bg-primary-600` 定制风格按钮，修复底部 safe-area 对齐导致按键贴边的 Padding 问题。
-
-### ✅ Step 16：移动端全屏播放器沉浸式体验重构
-
-- **去除巨型封面 (`MobilePlayerSheet.tsx`)**：移除了移动端播放器默认在顶部占据近半屏高度的正方形大封面图，彻底重构为横向紧凑布局 (Compact Header)。封面缩小为 48x48 并与标题同行显示，对齐 Spotify/Apple Music 展开歌词后的顶部常驻栏体验。
-- **释放精听字幕空间**：将进度条、播放/暂停、倍速、循环等控制按钮的间距深度压缩。重构后，播放器头部仅占用 25%~30% 屏幕高度，释放出高达 70% 的垂直空间专门用于 `InteractiveTranscript`（精读与听写区域），大幅提升了移动端沉浸式学习体验。
-
-### ✅ Step 13：卡片、弹窗与小组件样式统一规范化
-
-- **弹窗与抽屉层 (Modals & Sheets)**：重构 `ReviewModal`, `TranscriptPreviewModal`, `PremiumModal`, `MobilePlayerSheet`, `VocabularyModal`, `ProofreadModal`, `DeleteCommentModal` 等，统一采用 `rounded-xl`、`shadow-e3` 与 `bg-base-100`，彻底替代内联硬编码样式。
-- **核心卡片层 (Core Cards)**：重构 `PodcastCard`, `EpisodeCard`, `SpeechEvaluationCard`, `ImmersiveCard`, `AchievementsCard` 等卡片，统一阴影层级为 `shadow-e1`（Hover 浮起 `shadow-e2`），采用 DaisyUI 语义色 `bg-base-100`/`bg-base-200`，消除暗黑模式下样式不匹配与碎片化现象。
-- **列表与微组件层 (Lists & Micro-components)**：重构 `List`, `SubtitleItem`, `DictationItem`, `CommentItem`, `TranscriptToolbar`, `PlayControlBar` 等组件，规范边框为 `border-base-200` 并收敛阴影与背景色。
-
-### ✅ Step 14：数据库时区问题与日期统计修复
-
-- **时区问题根因修复** (`core/utils/china-date.ts` & `core/stats/stats.service.ts`)：解决 `date-fns` 的 `startOfDay` 在 UTC+8 环境下将本地时间转换为 UTC 传给 Prisma 时，被 PostgreSQL `@db.Date` 截断导致存储日期比实际中国日期早一天（CST 7/27 -> 存储 7/26）的问题。
-- **中国时区工具库封装** (`core/utils/china-date.ts`)：新增 `chinaToday`, `chinaStartOfWeek`, `chinaEndOfWeek`, `addUTCDays`, `subUTCDays`, `isSameUTCDay`, `dateToUTCKey` 等工具方法，统一返回以 China Standard Time (UTC+8) 为准的 UTC 午夜 Date / Key 对象。
-- **统计服务彻底重构** (`stats.service.ts`)：将活动打卡 `updateDailyActivity`、首页及报告页图表 `getWeeklyActivityChart`、连续天数 `calculateStreak` 等核心逻辑全部迁移至 `china-date` 工具集，消除了读取与写入端不匹配及连续打卡计算断层的 Bug。
-- **历史数据全量迁移与合并** (`scripts/fix-activity-dates.js`)：编写并成功执行一次性全量修正脚本，根据记录的真实创建时间 `createAt (Timestamptz)` 自动重计算并更正 `user_daily_activity` 表的 `date` 字段，对已有同天记录自动合并秒数与学习词汇量，修复了全库 1100+ 条历史偏差记录。
-
-### ✅ Step 17：移动端导航改造与样式精修
-
-- **移动端 "我的" 聚合页 (`/auth/mine`)**：隐藏移动端 `Header` 释放屏幕空间，重定向底部导航的"我的"至全新 `/auth/mine` 页面。采用卡片式设计聚合了用户状态、主题切换、系统消息、退出登录，以及从左侧导航精简迁移出来的学习路线（学习路径/收听历史/我的收藏）。桌面端/平板端原导航保持原貌不变。
-- **授权及订阅按钮品牌色对齐**：移除了全站所有身份表单及订阅对话框依赖于 DaisyUI 的 `btn-primary`（会导致在部分模式下退化为默认蓝色），统一采用原生 Tailwind 类 `bg-primary-600 hover:bg-primary-700` 以达成百分百品牌绿。
-- **注册复选框跨模式对比度修复**：移除了注册协议复选框的预设色彩，通过 `border-base-content/50` 以及 `checked:bg-primary-400` 让暗/亮模式下的复选框不仅与主题绿协调，还能保证足够的可见度。
-- **生词复习与文稿预览弹窗层级及风格重构**：将生词复习弹窗 (`ReviewModal.tsx`) 的 Header 与 Footer 视觉完全全对齐至查词助手组件（包括渐变头、透明描边、同源的关闭与操作按钮）；并针对移动端设备，将复习弹窗与文稿预览弹窗 (`TranscriptPreviewModal.tsx`) 的 `z-index` 全局提升至 `200`，彻底解决被移动端底导栏 (`z-190`) 遮挡底部操作区的问题。
-
-### ✅ Step 18：移动端通知提醒与图标语义统一
-
-- **全局状态管理重构** (`store/notification-store.ts`)：新建 Zustand Store 将消息通知的抓取逻辑与未读数状态提取为全局级状态。消除了 `NotificationBell.tsx` 独立拉取状态可能导致的移动端休眠或重复请求，并为移动端的 `MobileBottomNav` 实现了安全可靠的兜底轮询（防止移动端隐藏 Header 时导致请求不触发）。
-- **移动端未读消息强提醒**：为移动端底部导航栏的“我的”图标（`MobileBottomNav.tsx`）和个人中心页的“消息通知”菜单栏（`auth/mine/page.tsx`）加入了未读消息的强红点提示，保证了多端状态一致与提醒无死角。修复了 Tailwind 色彩体系在嵌套条件下的 `bg-error` 与 `ring` 等渲染截断问题。
-- **收藏图标语意统一**：为了避免收藏与点赞混淆，将散落在 `PodcastHero.tsx`, `ActionButtons.tsx`, `FavoritesPage.tsx` 以及 `nav-links-logined.tsx` 中的 Heart 或原版 Bookmark 图标，全线统一为更具书签和沉浸学习语境的 `BookmarkSquareIcon`（Outline/Solid），实现了 UI 语义规范的大统一。
-
-### ✅ Step 19：UI 细节精修与主题色统一
-
-- **个人中心缺省昵称体验优化**：优化了个人中心 (`personal-center/page.tsx`) 的展示逻辑，当用户未设置昵称或昵称为默认 "User" 时，自动截取用户邮箱 (`email`) 前缀进行兜底展示，提升了用户初始状态的个性化体验。
-- **学习路径对比度与品牌色修复**：修复了 `LearningPathDetailClient.tsx` 页面头部大区域的颜色冲突。弃用了不可靠的 DaisyUI `bg-primary` 和 `text-neutral-content`，统一转为原生的 `bg-primary-600` 搭配 `text-white`，解决了特定主题下深绿背景上文字发暗无法看清的问题。官方课程角标与播放按钮也一并对齐到纯净的 `bg-primary-600`。
-- **收藏页图标风格统一**：将 `FavoritesPage.tsx` 中的书签图标进行了实心填充风格 (`fill-current` / `style`) 处理，与全站核心大图标（如学习路径的 Map 页面背景图标）的重量感保持一致，并修正了品牌绿色值，避免了主题漂移。
-
-### ✅ Step 20：移动端 Chrome 底部导航栏跳动根治
-
-- **问题**：移动端 Chrome 向上滑动时，`fixed bottom-0` 的底部导航栏 (`MobileBottomNav.tsx`) 会随地址栏动画先上移、手势结束后才跳回底部；Edge 与 iOS 均正常。
-- **根因（浏览器行为变化，非代码回归）**：Chrome 135+ 在 Android 上启用 edge-to-edge（2025-04 起按设备分批推送），滚动时底部系统区域 (chin) 收起/展开，`env(safe-area-inset-bottom)` 变为**滚动过程中实时变化的动态值**。盒子尺寸依赖动态 env() 的 fixed 元素无法被 Chrome 合成器锚定，只能等主线程在动画结束后重排，表现为"先上移再跳回"。
-- **排除的方案**：① App Shell 内层滚动（能根治但会导致地址栏永不自动隐藏，放弃）；② `pb-safe` 放回 fixed 元素自身触发 Chrome opt-out 启发式（实测未生效）；③ `visualViewport` JS 逐帧锚定（该 API 的 resize 事件只在地址栏动画**结束后**触发一次，原理上无法逐帧跟踪，放弃）。
-- **最终方案（纯 CSS，保留地址栏自动隐藏）**：`globals.css` 新增 `--safe-bottom-max: env(safe-area-max-inset-bottom, env(safe-area-inset-bottom, 0px))`——用 Chrome 专为该问题提供的**恒定最大安全区**取代动态 inset，底栏盒子尺寸恒定 + `bottom:0` 即可被合成器逐帧锚定，任何滑动速度下纹丝不动；不支持的浏览器（Edge/iOS/旧 Chrome，其 inset 本为静态）自动回退为当前 inset。已应用于 `MobileBottomNav`（padding 与玻璃背景收归 fixed 元素自身）、`MobilePlayerBar`、`--mobile-bottom-total`、`--mobile-bottom-with-player` 及激活指示点。
-
-### ✅ Step 21：移动端复习卡片沉浸式体验重构与细节修复
-
-- **生词复习弹窗全屏防穿透重构** (`ReviewModal.tsx`)：彻底解决 React 中由于父级组件 `transform` 或 `contain` 属性产生的包含块 (Containing Block) 导致 `fixed` 定位失效问题。通过 `createPortal` 逃逸到 `document.body` 根节点，并在移动端弃用弹窗模式启用 `absolute inset-0`，确保 100% 贴合物理屏幕四边（覆盖地址栏与安全区空白），实现真正无死角的沉浸式全屏。
-- **超长文案滑动防削顶适配**：修复由 Flexbox 强制垂直居中引发的长文案溢出被削顶 (Clipping) 的 Web 通病。重构为 `min-h-max` (max-content) 结合 `my-auto` 伸缩，确保短句完美垂直居中，超长难句与冗长翻译则自然向下延展并通过父级安全滚动，永不截断。
-- **单词拼写智能校验自动跳转**：在填空区启用主动 `autoFocus` 聚焦，实时侦听输入。当例句挖空单词或单句循环完整拼写正确时，自动无缝触发翻转至卡片背面，同时取消背景区域的易误触翻面事件，使复习心流更专注。
-- **主页最近播放进度条修复** (`RecentHistory.tsx`)：修正了 `bg-primary` 色板配置变更导致宽度色块变透明的历史遗留问题，标准对齐全站原生绿 `bg-primary-500`。
-
-### ✅ Step 22：桌面端字幕阅读页（精听全屏）完整重设计
-
-> 诊断驱动的重构：关闭按钮语义错误（居中大箭头像"向下滚动"）、无进度上下文、阅读密度过低（1080p 仅 4–6 句）、激活句圆角卡片"贴片"跳动、宽屏两侧空白浪费、底栏药丸↔通栏形态跳变、缺句级导航与快捷键、生词零状态可视化。参考 LingQ / Langster / Apple Podcasts Transcript 重设计为**三栏沉浸阅读 + 常驻浮动药丸**。范围仅桌面端（md+），移动端 `MobilePlayerSheet` 未动。
-
-- **顶栏三段式 slim bar**（`FullContentTranscript.tsx` h-14）：左侧 = 收起（expand_more + "返回"）+ 分隔线 + 封面/剧集标题（点击回详情页）；中间（lg+ 绝对居中）= 实时进度 `第 X/N 句 · m:ss/m:ss`（tabular-nums）；右侧 = 双语/英文/中文紧凑分段控件 → 听写模式强调按钮（primary 描边 pill，激活实心）→ 设置下拉 → 关闭 X。
-- **设置下拉收编低频项**：自动滚动 Toggle、字号三档 A-/A+（`localStorage["fct-font-size-level"]` 持久化，英 text-base/lg/xl 三档）、深浅色 ThemeSwitcher、字幕校对（登录可见）、快捷键图例、"AI 翻译仅供参考"（原滚动区胶囊已移除）。
-- **SubtitleRow 重设计**：结构改为 `[时间轨 w-9 m:ss] [文本 flex-1] [hover 操作槽]`；激活态改为**通栏浅色带** `bg-primary-50/80` + 左侧 2px `primary-500` 指示条（无圆角卡片、无布局跳动），英文 `font-semibold text-primary-950`；密度提升一倍（`py-2.5` + leading-1.7，一屏 8–10 句）；hover 浮现「播放此句 / 单句循环」，校对模式替换为铅笔。
-- **生词状态可视化**：文中已存生词以 `bg-accent-100/80 text-accent-800` 标记（tooltip"已在生词本中"），保存生词成功后本地即时追加高亮，打通查词→标记→复习闭环。
-- **右侧学习面板**（新建 `transcript/LearningPanel.tsx`，xl+ 显示、sticky）：Tab「本集生词」（词条+首行释义+发音+时间戳句跳，点击词条复用查词弹窗）/「本集信息」（封面标题+查看详情）；含未登录引导、空态、加载态。
-- **生词数据**：新建 `app/api/vocabulary/list/route.ts`（GET，auth + `episodeid` 查询，复用 vocabulary 表 `[userid, episodeid]` 索引）。
-- **键盘快捷键**（新建 `transcript/useTranscriptKeyboard.ts`）：Space 播放暂停、←/→ 句跳、R 当前句循环、Esc 收起；input/textarea/contenteditable 聚焦或查词/校对弹窗打开时自动忽略，Space/arrows preventDefault。
-- **PlayControlBar 药丸常驻**：删除字幕打开时的通栏退化分支（形态不再跳变）；字幕打开时主按钮两侧出现 ‹ › 句级跳转（从 store `currentTime` + 已拉取字幕求 activeIndex，听写模式禁用）；fullscreen 按钮在字幕打开时变为"收起字幕"（`close_fullscreen`）。
-- **播放模式按钮统一**：原分散两处的 shuffle（左）与 loopMode（右）合并为**同一位置的单按钮**，点击循环 不循环 `repeat` 灰 → 列表循环 `repeat` 主色 → 单曲循环 `repeat_one` → 随机 `shuffle`；store 新增 `cyclePlayMode()` 联动 `isShuffle`/`loopMode`，移动端原有 toggle 保留不受影响。
-- **中央/右侧分组分隔**：中央控制行 `md:gap-8`→`md:gap-5`（原 8 按钮 ×2rem ≈424px 溢出 flex-1 中央区导致循环按钮"渗"入右侧组，单纯加 margin 被均分无效），右侧组开头加 `w-px h-5 bg-base-300` 竖分隔线，形成明确分组边界。
-- **store**：`player-store.ts` 新增 `transcriptMode: "read"|"dictate"` 共享状态（FullContentTranscript 与 PlayControlBar 跨组件感知听写模式，`closePlayer` 时复位）。
-
-### ⚠️ 踩过的坑（重要）
-
-**DaisyUI 5 不支持 JS 内联主题对象**（v4 语法静默失效，页面渲染默认紫/粉主题色）。
-解法：`globals.css` 中用 `html[data-theme="light/dark"]`（特异度 0,1,1 > daisy 的 0,1,0）覆写 `--color-primary` 等全套变量。
-
-**Chrome 135+ Android 的 `env(safe-area-inset-bottom)` 是滚动时动态变化的值**（edge-to-edge 底部 chin 收起/展开）。移动端底部 fixed 元素（底栏、Mini 播放器等）的 padding/bottom 一旦依赖它，就无法被合成器锚定，滚动时必现"先上移再跳回"的跳动；JS 监听 `visualViewport` 也无解（事件只在动画结束后触发一次）。
-解法：底部固定元素的间距一律用 `globals.css` 的 `--safe-bottom-max`（恒定 `safe-area-max-inset-bottom` + 回退），且 padding 与背景必须放在 fixed 元素自身。此问题只能在真机 Chrome（手势导航模式）复现，桌面 DevTools 模拟无效。详见 Step 20。
-
----
-
-## 三、未完成任务
-
-### 设计系统遗留
-
-- [x] **阴影统一**：卡片 e1/e2 与弹窗 e3 规范已在全站核心卡片、弹窗与列表小组件推广完成
-- [ ] z-index magic number（190/195/200/210）替换为 `--z-*` 变量 (部分完成)
-- [ ] `--header-height-mobile: 80px` 与实际 `h-14`(56px) 不一致
-- [ ] `bg-base-*` / `bg-ink-*` 混用清理（两套底色写法已同值，但类名未统一）
-
-### 待实施的 Step（来自实施 Prompt）
-
-- [x] **Step 4**：`components/ui/PodcastCard.tsx` 统一播客卡（4:3 封面、≤1 角标、meta 行难度圆点），替换 discover 页 3 处内联实现
-- [x] **Step 8**：播放器统一——`PlayControlBar` 悬浮药丸规范（h-16、rounded-full、e3）、进度条 h-1 + 12px 白圆点、播放中封面 4 柱 `animate-eq` 波形；下线遗留 `components/player/Player.tsx`
-- [x] **Step 9**：**听写模式**（新功能）——逐字稿区内 Tab 切换（非新路由）：单句循环 + 0.8x、隐藏 input 逐词比对（正确 `text-primary-600` / 错误 `text-error line-through` 保留用户输入 / 待填 dashed 下划线）、3 次失败出「提示」、自动通关跳转
-- [x] **Step 10**：学习报告页——累计里程大数字（分钟 ÷ 12 = km）、SVG 里程碑路图（1/5/21.1/42.2/100km 旗帜）、`ActivityChart` 单色化去网格、成就墙改里程碑体系
-- [x] **Step 11**：z-index/圆角/阴影 token 落地，并完成个人中心横幅与 Tabs 的改版
-
----
-
-## 四、下一步计划（建议顺序）
-
-1. **平板端字幕阅读页适配**（Step 22 的延续：桌面端已完成，平板端沿用同一套设计语言——顶栏紧凑化、学习面板收为抽屉/隐藏、药丸控件防溢出）
-2. **移动端字幕交互对齐**（`MobilePlayerSheet`/`InteractiveTranscript`：时间轨、生词高亮、句级操作条等能力视屏幕空间取舍同步）
-3. 深入清理设计系统遗留问题（如 `bg-base` 类名、固定高度变量不一致）
-4. 其他模块的响应式或移动端专项适配
-
-## 五、工作方式备忘
-
-- 校验三连：`npx tsc --noEmit` → `npm run lint` → dev 冒烟（curl 关键页面 200）
-- 换肤类批量修改一律走 `scripts/retheme.mjs` 式脚本 + grep 残留扫描（lookbehind 只排字母、**不能排连字符**，否则 `text-slate-` 全部漏网）
-- 截图验收时注意：移动端长截图的区块"重复"是拼接重影，非 bug
+# Web 组件与样式规范
+
+2026-11-17 对照源码整理；本文件保留长期规范，替代 UI 重设计流水账。
+
+| 事项                   | 唯一入口 / 约定                                                                                                                                                                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 色板、圆角、阴影、层级 | [tailwind.config.mjs](tailwind.config.mjs) + [app/globals.css](app/globals.css)：ink 暖纸、primary 远青、accent 曙光橙、info 黛蓝、error 陶土红                                                                                                          |
+| 圆角 / 阴影            | `--r-sm/md/lg/xl`=8/12/16/24px；`shadow-e1/e2/e3`；新组件优先现有 token                                                                                                                                                                                  |
+| 字体                   | [components/fonts.ts](components/fonts.ts)：Plus Jakarta Sans 用于 UI，Source Serif 4 用于英文精读，中文用系统栈                                                                                                                                         |
+| 深色主题               | Tailwind selector `[data-theme="dark"]`；DaisyUI 5 的 `--color-*` 在 globals.css 覆写，保持选择器优先级；不要恢复旧版内联主题配置                                                                                                                        |
+| 卡片 / 徽章            | [components/ui](components/ui)：PodcastCard（正方形封面）、ProBadge、DifficultyBadge；难度映射复用 [lib/difficulty.ts](lib/difficulty.ts)                                                                                                                |
+| 全局音频               | [components/player/GlobalAudio.tsx](components/player/GlobalAudio.tsx) + [store/player-store.ts](store/player-store.ts)                                                                                                                                  |
+| 桌面 / 移动控制        | [components/controls/PlayControlBar.tsx](components/controls/PlayControlBar.tsx)、MobilePlayerBar、MobilePlayerSheet（components/player/）                                                                                                               |
+| 字幕交互               | [components/episode/transcript](components/episode/transcript)：滚动/选择/键盘 hooks、SubtitleItem、DictationItem、TranscriptToolbar、VocabularyModal；逐词高亮见 [components/transcript/useWordHighlight.ts](components/transcript/useWordHighlight.ts) |
+| 会员浮层               | [components/subscription](components/subscription)；场景文案与埋点 source 复用现有定义                                                                                                                                                                   |
+
+## 需要继续遵守的细节
+
+- 底部固定导航/迷你条复用 `--safe-bottom-max` 与 `--mobile-bottom-*` 占位；背景和 padding 放在 fixed 元素自身，避免滚动时安全区变化造成跳动。
+- 新浮层用既有 z token，检查与移动底导、播放器、toast 的覆盖关系。代码仍有 190/200 等历史数值，不能声称已全量统一。
+- 复用现有听写的单句循环、0.8x、拼写反馈与自动跳句逻辑；时间轴不要另写第二套。
+- 里程展示沿用收听小时 ×5；业务日期统一用 core/utils/china-date.ts。
+- 小屏、平板、桌面分别检查字幕长句、键盘弹出、滚动与弹层遮挡；长文案不能因垂直居中被削顶。
+
+## 尚存的整理点
+
+globals.css 的 `--header-height-mobile=80px` 与部分 Header 高度、历史 z-index 数值及 base/ink 背景写法仍需按调用点清理；这些是后续代码工作，本轮只修文档。一次性 scripts/retheme.mjs 不作为日常全仓格式化/换肤命令。

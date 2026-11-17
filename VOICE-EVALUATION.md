@@ -1,71 +1,28 @@
-# 远路播客：语音评测功能开发任务清单 (Voice Evaluation Features)
+# 语音评测与媒体保留
 
-基于有道 ISE API 返回的详尽评测数据，为了充分发挥口语练习的数据价值，提升用户留存与学习体验，特制定以下分阶段开发任务清单。
+代码核对：2026-11-17。评测、保存的公共实现为 [core/speech/speech-evaluate.service.ts](core/speech/speech-evaluate.service.ts)；Web [lib/actions/speech.ts](lib/actions/speech.ts) 与 REST [app/api/speech](app/api/speech) 共用它。
 
-## 阶段一：数据基建与持久化 (Data Infrastructure)
+| 功能                      | 入口                                                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 请求/结果 DTO、配额与保存 | core/speech/speech-evaluate.service.ts；[lib/quota.ts](lib/quota.ts)                                                                                         |
+| 录音交互、原声、分数展示  | [components/voice](components/voice)、[components/voice/hooks/useSpeechEvaluation.ts](components/voice/hooks/useSpeechEvaluation.ts)                         |
+| 弱项查询与动态分数线      | [core/speech/weak-sentences.service.ts](core/speech/weak-sentences.service.ts)                                                                               |
+| 排行 / 能力画像 / 成就    | [core/speech/leaderboard.service.ts](core/speech/leaderboard.service.ts)、[core/speech-profile](core/speech-profile)、[core/achievements](core/achievements) |
+| 数据模型                  | prisma/schema.prisma：speech_recognition、user_profile.phonemeStats                                                                                          |
 
-**目标**：完善数据库结构，确保用户的每一次有效评测都能被结构化、完整地保存下来。
+## 权限与数据
 
-- [x] **1. 更新 Prisma Schema**
-  - 修改 `prisma/schema.prisma` 中的 `speech_recognition` 模型。
-  - 新增核心指标字段：`accuracyScore`, `fluencyScore`, `integrityScore`, `overallScore`, `speed` (Float 类型)。
-  - 新增详情数据字段：`detailUrl`（String 类型，将包含 `words`, `phonemes` 的完整 JSON 存入 OSS/S3，数据库仅保存其 URL 以避免字段臃肿）。
-  - 新增音频字段：`userAudioUrl`（String 类型，保存用户录音的 OSS/S3 链接）。
-  - 新增字幕关联字段：`subtitleId`（Int 类型，更稳定地关联原始字幕）。
-- [x] **2. 数据库迁移 (Migration)**
-  - 运行 `npx prisma migrate dev` 应用表结构变更并更新客户端。
-- [x] **3. 录音文件上传服务集成 (Audio Upload)**
-  - 开发或接入音频上传接口，将评测结束后的录音文件流式或直接上传至云存储（OSS），获取稳定的音频 URL。
-- [x] **4. 更新后端 Action (`lib/actions/speech.ts`)**
-  - 重构 `saveSpeechResult` 方法，使其支持接收并保存新增的核心分数、语速、音频 URL 和完整的 `detailJson`。
+免费评测已统一为跨入口日池（5 次承诺 +1 缓冲）；learn/review 只作场景维度，不再分别消耗月池/日池。配额和会员判定见 [会员说明](docs/MEMBERSHIP.md)。保留评测数据库行用于计数与统计，不能通过删旧行腾配额。
 
-## 阶段二：基础功能升级与可视化 (Core Visualization)
+saveSpeechResultCore 仅为会员保存 OSS 录音与 DB detailJson；免费用户保存分数等记录、更新音素画像，并可使用本次响应中的词级结果。新明细不再上传 OSS JSON；detail 路由优先 DB、兼容旧 detailUrl。历史接口按权限裁剪 URL/细节，客户端不能自行拼 OSS 地址。
 
-**目标**：在现有的练习页面中，展示更丰富的维度数据，并支持本地及历史音频对比。
+同一 `(userid, episodeid, targetText)` 保留最近 3 份录音；超额删除媒体、清空引用但保留记录。历史面板 [EvaluationHistoryPanel.tsx](components/voice/EvaluationHistoryPanel.tsx) 同样按句限制。剧集删除通过 deleteEpisodeSpeechMedia 清理关联对象。
 
-- [x] **1. 评测卡片多维分数展示**
-  - 完善 `SpeechEvaluationCard.tsx`，真实绑定并展示准确度、流利度、完整度的进度条和具体分数。
-- [x] **2. 单句历史对比与复盘**
-  - 在 `VoiceEvaluationClient` 中，当用户再次练习同一句话时，通过对比数据库中拉取出的历史记录，展示“最高分”或给与“进步”视觉提示。
-- [x] **3. 云端录音对比回放 (Audio Playback)**
-  - 评测卡片利用保存的 `userAudioUrl`，允许用户不仅在本次会话中，甚至在以后复习时，也能点击“我的发音”按钮回放自己当时录音，与原声进行深度对比。
+## 清理与运维
 
-## 阶段三：高级学习闭环 (Advanced Learning Loop)
+[core/speech/speech-cleanup.service.ts](core/speech/speech-cleanup.service.ts) 默认媒体保留 90 天；[lib/cleanupCron.ts](lib/cleanupCron.ts) 每日 03:30 调度，可由 SPEECH_MEDIA_RETENTION_DAYS 覆盖（调度时区取运行环境）。[instrumentation.ts](instrumentation.ts) 注册后台任务。
 
-**目标**：利用深度的 JSON 数据（音素级评分），构建用户的个性化学习资产和诊断体系。
+桶生命周期的规划值为 91 天，需在控制台独立核实；仓库里的 scripts/set-speech-lifecycle.ts 不代表当前桶规则已配置。应用保留期应比桶生命周期短，避免引用已消失的对象。
 
-- [x] **1. 音素级可视化纠错 (Phoneme-level Feedback)**
-  - 前端解析 `detailJson` 中的 `words[].phonemes` 数据。
-  - 实现交互：点击被标红/标黄的错误单词，展开该单词的具体音素级得分（例如明确指出是元音 `/æ/` 还是辅音 `/θ/` 发错），精确指出错误位置。
-- [x] **2. 智能发音错题本/弱项本 (Pronunciation Error Notebook)**
-  - 在系统的“学习中心 (Library)” 新增“发音弱项本”模块。
-  - 后端增加事件触发机制：自动筛选 `overallScore < 70` 或含有低分单词的句子，归入用户的弱项本。
-  - 支持在弱项本中集中过滤、复习和重新评测这些薄弱环节。
-- [x] **3. 个人发音弱点诊断报告 (Diagnostic Report)**
-  - 编写统计算法，聚合用户过去特定周期（如 30 天）的评测数据。
-  - 找出准确率持续偏低的特定音素（Phonemes），生成个性化雷达图和诊断报告。
-
-## 阶段四：产品运营与游戏化 (Gamification & Operations)
-
-**目标**：提升用户粘性、自适应推荐内容，打造高活跃社区。
-
-- [x] **1. 学习成就与激励体系**
-  - 设计并发放成就勋章（例如：累计获得 100 次 `overallScore >= 85` 可解锁“口语达人”勋章）。
-  - 实现：`core/achievements/constants.ts` 新增 5 枚口语徽章（开口先锋/勤学苦练/百炼成钢/出口成章/口语达人），沿用惰性评估架构（查看成就页时自动解锁并发通知）。
-- [x] **2. 发音达人排行榜 (Leaderboard)**
-  - 构建每日/每周口语排行榜，展示高分/高频练习用户，促进社区竞争。
-  - 实现：`/api/speech/leaderboard`（周期"近7天/今日" × 指标"平均分榜/勤奋榜"，平均分榜需 ≥5 次评测防单次满分霸榜）+ 页面 `/library/pronunciation/leaderboard`（含"我的排名"），弱项本页头部有入口。
-- [x] **3. 播客难度自适应推荐 (Adaptive Recommendation)**
-  - 根据用户的全局平均流利度和语速 (`speed`)，为其自动描绘能力等级画像（如 CEFR A2/B1）。
-  - 首页或播客列表页根据该画像，优先推荐语速与难度匹配的 Episode。
-  - 实现：`core/speech-profile` 服务聚合五维画像（准确/流利/完整/语速适配/综合）并推导 CEFR 等级（≥5 次评测生效）；弱项本页顶部展示画像雷达卡；首页"为你推荐"优先按画像等级匹配剧集难度（不足 5 次回退手动 learnLevel 设置）。
-
-## 存储策略（2026-10 冗余治理）
-
-**背景**：跟读录音原策略是"每次评测无条件上传 wav + detail json 到 OSS（`yuanlu/speech/{userid}/{episodeid}/` 时间戳命名）"，同一句反复重读各存一份，无去重、无清理。其中免费用户的录音回放/词级细节本就是 PRO 专属（practice-data 整条剥离 URL），属无消费方的死存储；剧集删除时 DB 行级联删但 OSS 文件残留为永久孤儿。治理后（`saveSpeechResultCore` 唯一维护点）：
-
-- **① 录音仅 PRO 上传**：免费用户只落 DB 分数行（配额计数、phonemeStats 弱项本、图表统计不受影响），不产生任何对象存储写入。
-- **② 评测明细存 DB**：新记录写 `speech_recognition.detailJson`（JSONB），不再上传 OSS json；`/api/speech/detail` 优先读 DB、回落存量 `detailUrl`；practice-data 以 `hasDetail` 标记驱动前端"细节"按钮。
-- **③ 同句保留 K=3**：同一 `(userid, episodeid, targetText)` 只保留最近 3 条录音的 OSS 文件（`SPEECH_AUDIO_KEEP_PER_SENTENCE`），超额旧文件删除并置空 DB 引用（行保留——配额计数/统计不依赖媒体文件，删行会导致免费配额被"重录同句"绕过）；历史面板（EvaluationHistoryPanel）同样按句最多展示最近 3 条（`MAX_PER_SENTENCE`，与文件保留数对齐）。
-- **④ 生命周期 + 对账**：Bucket 生命周期规则已配置——`yuanlu/speech/` 前缀、最后修改时间 **91 天**后删除（生命周期是**属主账号才能配置**的管理接口，应用 AK/SK 只有对象级权限，需控制台配置或用属主凭证运行 `scripts/set-speech-lifecycle.ts`）。应用侧 `lib/cleanupCron.ts` 每日 3:30 对账（`core/speech/speech-cleanup.service.ts`），保留期 **90 天 = 生命周期 - 1**：先删超期对象并置空行引用，OSS 次日删对象，避免 PRO 回放拿到已删对象的签名 URL（调任一侧须同步另一侧，可用 `SPEECH_MEDIA_RETENTION_DAYS` 覆盖 cron 侧）。补充工具：`scripts/sweep-speech-orphans.ts --days=N [--apply]` 清扫无 DB 引用的孤儿（历史剧集删除残留等）。手动存量清理：`scripts/cleanup-speech-oss.ts --days=N [--apply]`。
-- **⑤ 剧集删除级联**：`deleteEpisode` / `deleteEpisodeById` 在删剧集前清理该剧集全部用户的跟读录音 OSS 文件（`deleteEpisodeSpeechMedia`），杜绝孤儿。
+- scripts/cleanup-speech-oss.ts：存量清理；scripts/sweep-speech-orphans.ts：无引用孤儿对账。先按脚本参数 dry-run 核对，`--apply` 会实际删除。
+- 修改配额、弱项线、保存结构时运行相应 scripts/test-p3-\*.ts 与客户端回归；真实麦克风、原声 seek、云评测和历史回放仍需设备验证。

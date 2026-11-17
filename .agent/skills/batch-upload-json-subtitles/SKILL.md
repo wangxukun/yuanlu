@@ -1,35 +1,24 @@
 ---
 name: batch-upload-json-subtitles
-description: 批量上传指定本地目录下的 JSON 字幕文件，并将其关联至数据库中的对应单集（Episode），同时自动清理 OSS 上对应的旧版 SRT 字幕文件。
+description: 把指定目录中的词级双语 JSON 字幕关联上传到目标播客的已有剧集，清理旧 SRT 引用。
 ---
 
-# 批量上传 JSON 字幕 (Batch Upload JSON Subtitles)
+# 批量词级字幕上传
 
-此 Skill 用于帮助开发者或管理员将指定本地目录下的 `*.en-zh.word.json` 字幕文件批量上传至 OSS，自动关联至数据库的播客单集中，并清理过期的中英文 SRT 文件。
+实现：[scripts/upload-json-subtitles.ts](../../../scripts/upload-json-subtitles.ts)。从 yuanlu 根目录运行，使用当前数据库/OSS 配置；脚本会写库并删除旧 SRT，按用户的上传授权执行。
 
-## 使用前提
+取得源目录和 podcastId；缺少时再询问。命令：
 
-1. 你需要获取用户提供的**本地包含 JSON 字幕的目录路径** (dirPath)。
-2. 你需要获取目标播客的 **podcastId**。
+```powershell
+npx tsx scripts/upload-json-subtitles.ts "<dirPath>" "<podcastId>"
+```
 
-## 执行步骤
+## 匹配与更新（以代码为准）
 
-1. **确认参数**
-   如果你在上下文中没有找到 `dirPath` 和 `podcastId`，请主动询问用户提供这两个参数。
-2. **运行自动化脚本**
-   使用 `run_command` 工具，在终端中执行以下命令（注意将 `<本地目录路径>` 和 `<podcastId>` 替换为实际参数）：
+- 只读指定目录第一层的 `*.en-zh.word.json`；文件名必须为 **6 位 YYMMDD** + 下划线或连字符 + 标题，如 `250110_Title.en-zh.word.json`。不是旧说明中的 8 位日期。
+- 匹配只用 podcastId + 标题（去非英文字母、小写），**日期虽在文件名中却不参与数据库匹配**。重名时警告并使用第一条，执行前核对重名风险。
+- 目标已有 subtitleBilingualFileName 以 .json 结尾则跳过，不会覆盖修订版 JSON；替换已有 JSON 是另一个操作，不能靠重跑此脚本完成。
+- 新对象为 `yuanlu/podcastes/episodes/subtitles/<timestamp>_<random>.json`；成功后更新 subtitleBilingualUrl/FileName，尝试删除旧中/英文 SRT，并将对应字段置 null。
+- 文件失败隔离继续；汇报上传/跳过/异常/删除数。没有 dry-run 或自动事务回滚，不宣称异常后所有状态恢复。
 
-   ```bash
-   npx tsx scripts/upload-json-subtitles.ts "<本地目录路径>" "<podcastId>"
-   ```
-
-3. **结果确认与汇报**
-   - 观察命令行的输出。
-   - 脚本具备容错机制：未能匹配到的单集或者由于异常导致的个别上传失败不会中断整个流程。
-   - 成功完成后，向用户汇报已成功上传并更新的文件数量，以及遇到的任何警告或跳过的文件。
-
-## 底层逻辑说明（供参考）
-
-- **文件匹配逻辑**：通过文件名（如 `20250110_Title.en-zh.word.json`）提取日期和标题，然后分别把数据库中取得的剧集 title 和本地 json 文件中的 title 都去掉非字母字符（仅保留 `a-zA-Z`），转换为小写后再进行精确匹配。
-- **OSS 存储路径约定**：上传路径为 `podcastes/episodes/subtitles/{时间戳}_{随机字符串}.json`。
-- **数据库更新**：成功上传后，将会把 OSS URL 和文件名更新至该单集的 `subtitleBilingualUrl` 与 `subtitleBilingualFileName` 字段，并将原本旧版中英字幕 SRT 字段（`subtitleEnUrl`, `subtitleZhUrl` 等）置空 (`null`)。
+字幕上传后如需入库切片/场景，再按 [.agents/skills/corpus-ingest/SKILL.md](../../../.agents/skills/corpus-ingest/SKILL.md) 操作；原脚本本身不会构建语料索引。
