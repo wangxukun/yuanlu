@@ -89,6 +89,8 @@ export interface RelayRoomView {
   initiatorAvatar: string;
   likes: number;
   likedByMe: boolean;
+  /** 当前查看者是否发起人（撤销入口渲染依据） */
+  isMine: boolean;
   invitedUsers: {
     name: string;
     avatar: string;
@@ -432,6 +434,7 @@ async function buildRoomViews(
       initiatorAvatar: initiator?.avatar ?? PENDING_SLOT.avatar,
       likes: likeCount.get(room.roomid) ?? 0,
       likedByMe: likedSet.has(room.roomid),
+      isMine: room.initiatorUserid === viewerUserid,
       invitedUsers: [
         {
           name: `${PERSONA_ELENA.name} (已响应)`,
@@ -742,6 +745,49 @@ export async function joinRoom(params: {
 
   const [view] = await buildRoomViews([updated], userid);
   return { ok: true, data: { room: view } };
+}
+
+/**
+ * POST /api/relay/cancel —— 发起人撤销接力（任务单第十三项）。
+ * 可撤条件：发起人本人 + RECRUITING + 真人第 3 棒尚未完成（状态机保证，
+ * 再查第 3 棒无 USER 双保险）。
+ * 处置：硬删房间与棒次（FK 级联）；OSS 录音对象留待孤儿清理脚本回收；
+ * 评测行与连胜点亮保留——开口是真实学习事实，撤销的只是社交房间。
+ */
+export async function cancelRoom(
+  userid: string,
+  roomId: string,
+): Promise<{ ok: true } | { ok: false; code: string; message?: string }> {
+  const room = await prisma.relay_room.findUnique({
+    where: { roomid: roomId },
+    select: { initiatorUserid: true, status: true },
+  });
+  if (!room) {
+    return { ok: false, code: "ROOM_NOT_FOUND", message: "接力房不存在" };
+  }
+  if (room.initiatorUserid !== userid) {
+    return { ok: false, code: "NOT_INITIATOR", message: "只有发起人可以撤销" };
+  }
+  if (room.status !== "RECRUITING") {
+    return {
+      ok: false,
+      code: "NOT_CANCELLABLE",
+      message: "该接力已完成，无法撤销",
+    };
+  }
+  const baton3 = await prisma.relay_segment.findFirst({
+    where: { roomid: roomId, stepOrder: 3, kind: "USER" },
+    select: { segid: true },
+  });
+  if (baton3) {
+    return {
+      ok: false,
+      code: "NOT_CANCELLABLE",
+      message: "已有语伴接棒压轴，无法撤销",
+    };
+  }
+  await prisma.relay_room.delete({ where: { roomid: roomId } }); // 级联删棒次
+  return { ok: true };
 }
 
 /** POST /api/relay/like —— 当日幂等点赞（social_likes 读时 count） */
