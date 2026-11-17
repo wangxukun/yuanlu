@@ -706,7 +706,7 @@ export async function joinRoom(params: {
     decoratePublicUsers([userid]).then((m) => m.get(userid)),
   ]);
   const compilation = {
-    title: `🎬 《${room.topic || room.title}》三人跨界播客合集`,
+    title: `🎬 《${room.topic || room.title}》三人跨界节目合集`,
     chemistryScore,
     vibeBadge: vibeBadgeOf(chemistryScore),
     directorComment: directorCommentOf({
