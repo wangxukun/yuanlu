@@ -817,6 +817,27 @@ export async function joinRoom(params: {
 }
 
 /**
+ * POST /api/relay/admin-delete —— 管理员删除接力房/趣味合集（内容治理）。
+ * 不限状态不限归属；硬删房间与棒次（FK 级联）；OSS 录音留孤儿清理；
+ * 评测/连胜保留。与用户撤销的差别仅在权限与状态约束。
+ */
+export async function adminDeleteRoom(
+  _userid: string,
+  roomId: string,
+): Promise<{ ok: true } | { ok: false; code: string; message?: string }> {
+  void _userid; // 保留签名与 cancelRoom 对齐
+  const room = await prisma.relay_room.findUnique({
+    where: { roomid: roomId },
+    select: { roomid: true },
+  });
+  if (!room) {
+    return { ok: false, code: "ROOM_NOT_FOUND", message: "接力房不存在" };
+  }
+  await prisma.relay_room.delete({ where: { roomid: roomId } });
+  return { ok: true };
+}
+
+/**
  * POST /api/relay/cancel —— 发起人撤销接力（任务单第十三项）。
  * 可撤条件：发起人本人 + RECRUITING + 真人第 3 棒尚未完成（状态机保证，
  * 再查第 3 棒无 USER 双保险）。
