@@ -170,9 +170,9 @@ async function queryRingWindow(
         AND "wordsJson" IS NOT NULL AND "zhText" IS NOT NULL
         AND ("worthyScore" >= 0.4 OR "worthyScore" IS NULL)
         ${levelFilter}
-        AND (md5(episodeid || ':' || "subtitleId"::text) COLLATE "C")
+        AND (substring(md5(episodeid || ':' || "subtitleId"::text) FROM 1 FOR 16) COLLATE "C")
           ${head ? Prisma.sql`<` : Prisma.sql`>`} ${cursor}::text COLLATE "C"
-      ORDER BY md5(episodeid || ':' || "subtitleId"::text) COLLATE "C", clipid
+      ORDER BY substring(md5(episodeid || ':' || "subtitleId"::text) FROM 1 FOR 16) COLLATE "C", clipid
       LIMIT ${limit}
     `);
 
