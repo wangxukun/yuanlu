@@ -91,6 +91,8 @@ export interface RelayRoomView {
   likedByMe: boolean;
   /** 当前查看者是否发起人（撤销入口渲染依据） */
   isMine: boolean;
+  /** 起始切片 id（同句仅一接力：前端抽屉标记已发起句） */
+  starterClipId: string;
   invitedUsers: {
     name: string;
     avatar: string;
@@ -435,6 +437,7 @@ async function buildRoomViews(
       likes: likeCount.get(room.roomid) ?? 0,
       likedByMe: likedSet.has(room.roomid),
       isMine: room.initiatorUserid === viewerUserid,
+      starterClipId: room.starterClipId,
       invitedUsers: [
         {
           name: `${PERSONA_ELENA.name} (已响应)`,
@@ -593,6 +596,23 @@ export async function createRoom(params: {
   })) as (CompanionClip & { clipid: string }) | null;
   if (!starter) {
     return { ok: false, code: "CLIP_NOT_FOUND", message: "起始切片不存在" };
+  }
+  // T16：同一用户对同一起始切片，同时只允许一个在招募的接力房
+  // （撤销/24h 过期清扫后可重新发起）
+  const dup = await prisma.relay_room.findFirst({
+    where: {
+      initiatorUserid: userid,
+      starterClipId: clipId,
+      status: "RECRUITING",
+    },
+    select: { roomid: true },
+  });
+  if (dup) {
+    return {
+      ok: false,
+      code: "DUPLICATE_STARTER",
+      message: "这句话你已发起过接力，等语伴接棒或先撤销后再试",
+    };
   }
 
   const rec = await prisma.speech_recognition.findUnique({

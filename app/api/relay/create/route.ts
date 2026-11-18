@@ -10,6 +10,7 @@ import { createRoom } from "@/core/relay/relay.service";
  */
 const STATUS_OF: Record<string, number> = {
   CLIP_NOT_FOUND: 404,
+  DUPLICATE_STARTER: 409,
   INVALID_RECOGNITION: 400,
   EMPTY_AUDIO: 400,
   AUDIO_TOO_LARGE: 400,
