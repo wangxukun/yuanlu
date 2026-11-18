@@ -512,16 +512,65 @@ function directorCommentOf(params: {
 // ── 对外服务 ──
 
 /** GET /api/relay/list —— 招募房优先，updatedAt 倒序，top N */
+/** 分层小窗口响应（任务单第十五项）：三层房序 + 计数口径 */
+export interface RelayListView {
+  rooms: RelayRoomView[];
+  /** 全站招募中房间总数（hero「全站 N 个接力进行中」；过期清扫后的口径） */
+  totalRecruiting: number;
+  /** 推荐层是否还有下一批（「换一批」渲染依据） */
+  recruitHasMore: boolean;
+}
+
+/**
+ * GET /api/relay/list —— 分层小窗口（任务单第十五项，弃全局 top-N 平铺）：
+ * ①我的招募房（全量，封顶 5）②推荐接棒 ×5（非我发起、新鲜度优先，
+ * recruitBatch 换一批翻页，不做长列表/加载更多——行动型列表 3–7 为佳）
+ * ③最近完成合集 ×3（社交证明+回看）。
+ *
+ * T7 冷启动根治（用户定稿）：每次读取先懒清扫——招募房超时 24h 无接棒
+ * 过期自动撤销（deleteMany 级联棒次；OSS 录音留孤儿清理、评测/连胜保留，
+ * 同手动撤销口径），免部署任何定时器。
+ */
 export async function listRooms(
   viewerUserid: string,
-  limit = 20,
-): Promise<RelayRoomView[]> {
-  const rooms = await prisma.relay_room.findMany({
-    include: { segments: true },
-    orderBy: [{ status: "desc" }, { updatedAt: "desc" }], // RECRUITING 字典序 > COMPLETED
-    take: Math.min(50, Math.max(1, limit)),
+  recruitBatch = 1,
+): Promise<RelayListView> {
+  // T7：24h 过期懒清扫（updatedAt 在招募期≈创建时间；接棒即 COMPLETED 不受影响）
+  const expiredBefore = new Date(Date.now() - 24 * 3600 * 1000);
+  await prisma.relay_room.deleteMany({
+    where: { status: "RECRUITING", updatedAt: { lt: expiredBefore } },
   });
-  return buildRoomViews(rooms, viewerUserid);
+
+  const batch = Math.max(1, Math.floor(recruitBatch) || 1);
+  const [mine, others, done, totalRecruiting] = await Promise.all([
+    prisma.relay_room.findMany({
+      where: { initiatorUserid: viewerUserid, status: "RECRUITING" },
+      include: { segments: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
+    prisma.relay_room.findMany({
+      where: { status: "RECRUITING", initiatorUserid: { not: viewerUserid } },
+      include: { segments: true },
+      orderBy: { updatedAt: "desc" },
+      skip: (batch - 1) * 5,
+      take: 6, // 多取 1 判 hasMore
+    }),
+    prisma.relay_room.findMany({
+      where: { status: "COMPLETED" },
+      include: { segments: true },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+    }),
+    prisma.relay_room.count({ where: { status: "RECRUITING" } }),
+  ]);
+  const recruitHasMore = others.length > 5;
+  const recommended = others.slice(0, 5);
+  const rooms = await buildRoomViews(
+    [...mine, ...recommended, ...done],
+    viewerUserid,
+  );
+  return { rooms, totalRecruiting, recruitHasMore };
 }
 
 /**
