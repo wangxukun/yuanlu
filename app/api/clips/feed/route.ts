@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getReelsFeed,
   parseLevels,
+  parseFeedRanges,
   parseRingCursor,
 } from "@/core/corpus/reels-feed.service";
 
@@ -23,10 +24,18 @@ export async function GET(req: NextRequest) {
     const levels = parseLevels(sp.get("level"));
     const cursor = parseRingCursor(sp.get("cursor"));
 
+    const ranges = parseFeedRanges(sp);
+    if (!ranges)
+      return NextResponse.json(
+        { success: false, error: "Invalid filter range" },
+        { status: 400 },
+      );
+
     const data = await getReelsFeed({
       page,
       pageSize,
       levels,
+      ranges,
       cursor,
     });
 

@@ -4,7 +4,7 @@ import { registerHooks } from "node:module";
 
 const ROOT = new URL("../", import.meta.url).href;
 const stubs = {
-  "@/lib/prisma": "export default {};",
+  "@/lib/prisma": "export default globalThis.reelsPrisma;",
   "@/lib/oss": "export const signOssHttpUrl = async (u) => u;",
   "@/core/corpus/clip-audio.service":
     "export const clipAudioService = { ensureClipAudio: async () => null };",
@@ -37,6 +37,24 @@ registerHooks({
   },
 });
 
+const queries = [];
+const legacyCalls = [];
+globalThis.reelsPrisma = {
+  $queryRaw: async (q) => {
+    queries.push(q);
+    return [];
+  },
+  corpus_clips: {
+    findMany: async (args) => {
+      legacyCalls.push(args);
+      return [];
+    },
+    count: async (args) => {
+      legacyCalls.push(args);
+      return 0;
+    },
+  },
+};
 const feed = await import("../core/corpus/reels-feed.service.ts");
 
 assert.equal(feed.parseRingCursor(null), null);
@@ -48,6 +66,39 @@ assert.equal(
   "Invalid cursor falls back to legacy mode",
 );
 assert.deepEqual(feed.parseLevels("b1, B2, invalid, C1"), ["B1", "B2", "C1"]);
+
+const ranges = (q) => feed.parseFeedRanges(new URLSearchParams(q));
+assert.deepEqual(ranges(""), {});
+assert.deepEqual(ranges("maxWpm=120"), { wpm: { gte: 1, lte: 120 } });
+assert.deepEqual(ranges("minWords=7"), { wordCount: { gte: 7 } });
+for (const invalid of [
+  "minWords=12&maxWords=11",
+  "maxWpm=0",
+  "minWpm=1.5",
+  "maxWords=x",
+  "minWords=9999999999",
+]) {
+  assert.equal(ranges(invalid), null);
+}
+const bounds = ranges("minWords=8&maxWords=15&minWpm=110&maxWpm=145");
+const options = { levels: ["A2", "B1"], page: 1, pageSize: 12, ranges: bounds };
+await feed.getReelsFeed({ ...options, cursor: "ab" });
+assert.equal(queries.length, 2, "tail and wrapped head both queried");
+for (const query of queries) {
+  assert.match(query.sql, /"cefrLevel" IN \(\?,\?\)/);
+  assert.match(
+    query.sql,
+    /AND "wordCount" >= \? AND "wordCount" <= \? AND wpm >= \? AND wpm <= \?/,
+  );
+  assert.deepEqual(query.values.slice(0, 6), ["A2", "B1", 8, 15, 110, 145]);
+}
+await feed.getReelsFeed({ ...options, cursor: null });
+assert.deepEqual(legacyCalls[0].where, legacyCalls[1].where);
+assert.deepEqual(legacyCalls[0].where.wordCount, bounds.wordCount);
+assert.deepEqual(legacyCalls[0].where.wpm, bounds.wpm);
+assert.deepEqual(legacyCalls[0].where.cefrLevel.in, options.levels);
+await feed.getReelsFeed({ levels: [], page: 1, pageSize: 12, cursor: "ab" });
+assert.doesNotMatch(queries[2].sql, /"wordCount" >=|wpm >=|"cefrLevel" IN/);
 
 function makeRow(
   i,
@@ -111,6 +162,9 @@ console.log(
     cases: [
       "cursor-parse",
       "level-parse",
+      "range-validation",
+      "filtered-ring-head-and-tail",
+      "filtered-legacy-read-and-count",
       "ring-episode-cap",
       "ring-next-cursor",
       "legacy-shuffle-determinism",

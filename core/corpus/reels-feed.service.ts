@@ -108,6 +108,33 @@ export function parseLevels(raw: string | null): string[] {
     .slice(0, 6);
 }
 
+type Range = { gte: number; lte?: number };
+type FeedRanges = { wordCount?: Range; wpm?: Range };
+
+export function parseFeedRanges(sp: URLSearchParams): FeedRanges | null {
+  const ranges: FeedRanges = {};
+  for (const [field, low, high] of [
+    ["wordCount", "minWords", "maxWords"],
+    ["wpm", "minWpm", "maxWpm"],
+  ] as const) {
+    const from = sp.get(low) || "";
+    const to = sp.get(high) || "";
+    if (!from && !to) continue;
+    // 两种字段以 0 表示未知；设置任一端时只包含有测量值的切片。
+    const values = [from, to].filter(Boolean);
+    if (
+      !values.every(
+        (s) => /^\d+$/.test(s) && Number(s) >= 1 && Number(s) <= 2147483647,
+      )
+    )
+      return null;
+    const gte = from ? Number(from) : 1;
+    if (to && gte > Number(to)) return null;
+    ranges[field] = to ? { gte, lte: Number(to) } : { gte };
+  }
+  return ranges;
+}
+
 export function parseRingCursor(raw: string | null): string | null {
   if (raw === null) return null;
   const clean = raw.trim().toLowerCase();
@@ -154,10 +181,24 @@ async function queryRingWindow(
   cursor: string,
   levels: string[],
   take: number,
+  ranges: FeedRanges,
 ): Promise<{ rows: ReelsClipRow[]; wrapped: boolean }> {
   const levelFilter = levels.length
     ? Prisma.sql`AND "cefrLevel" IN (${Prisma.join(levels)})`
     : Prisma.empty;
+  const bounds: Prisma.Sql[] = [];
+  for (const field of ["wordCount", "wpm"] as const) {
+    const bound = ranges[field];
+    if (!bound) continue;
+    const column =
+      field === "wordCount" ? Prisma.sql`"wordCount"` : Prisma.sql`wpm`;
+    bounds.push(Prisma.sql`AND ${column} >= ${bound.gte}`);
+    if (bound.lte !== undefined)
+      bounds.push(Prisma.sql`AND ${column} <= ${bound.lte}`);
+  }
+  // 窄筛选池可能只有游标所在的一句，绕回时仍可作为已看候选返回。
+  const headOp =
+    levels.length || bounds.length ? Prisma.sql`<=` : Prisma.sql`<`;
   const range = (head: boolean, limit: number) =>
     prisma.$queryRaw<ReelsClipRow[]>(Prisma.sql`
       SELECT
@@ -170,8 +211,9 @@ async function queryRingWindow(
         AND "wordsJson" IS NOT NULL AND "zhText" IS NOT NULL
         AND ("worthyScore" >= 0.4 OR "worthyScore" IS NULL)
         ${levelFilter}
+        ${bounds.length ? Prisma.join(bounds, " ") : Prisma.empty}
         AND (substring(md5(episodeid || ':' || "subtitleId"::text) FROM 1 FOR 16) COLLATE "C")
-          ${head ? Prisma.sql`<` : Prisma.sql`>`} ${cursor}::text COLLATE "C"
+          ${head ? headOp : Prisma.sql`>`} ${cursor}::text COLLATE "C"
       ORDER BY substring(md5(episodeid || ':' || "subtitleId"::text) FROM 1 FOR 16) COLLATE "C", clipid
       LIMIT ${limit}
     `);
@@ -258,12 +300,18 @@ export async function getReelsFeed(params: {
   pageSize: number;
   levels: string[];
   cursor: string | null;
+  ranges?: FeedRanges;
 }): Promise<ReelsFeedPageDTO> {
-  const { page, pageSize, levels, cursor } = params;
+  const { page, pageSize, levels, cursor, ranges = {} } = params;
 
   if (cursor !== null) {
     const poolSize = Math.max(24, pageSize * RING_OVERFETCH);
-    const { rows, wrapped } = await queryRingWindow(cursor, levels, poolSize);
+    const { rows, wrapped } = await queryRingWindow(
+      cursor,
+      levels,
+      poolSize,
+      ranges,
+    );
     const { picked, nextCursor } = pickRingPage(rows, pageSize, wrapped);
     const items = await hydrateReelsItems(picked, true);
     return {
@@ -278,6 +326,7 @@ export async function getReelsFeed(params: {
   }
 
   const where = {
+    ...ranges,
     duration: { gte: REELS_MIN_SEC, lte: REELS_MAX_SEC },
     wordsJson: { not: Prisma.DbNull },
     zhText: { not: null },
