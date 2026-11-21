@@ -24,13 +24,15 @@ export interface UserHomeStatsDto {
 // 个人中心概览统计数据
 export interface UserProfileStatsDto {
   totalHours: number;
+  totalListeningSeconds: number;
+  savedSentenceCount: number;
   streakDays: number;
   wordsLearned: number;
   /** 累计语音评测次数（口语类成就判定用） */
   speechEvalCount: number;
   /** 综合分 ≥85 的评测次数（口语类成就判定用） */
   speechHighScoreCount: number;
-  /** 历史发音评测最高准确分（0=从未评测；「我的」四宫格·发音最高分） */
+  /** 历史发音评测最高准确分（0=从未评测） */
   bestPronunciation: number;
 }
 

@@ -9,6 +9,8 @@ const KM_PER_HOUR = 5;
 export default function StatsOverview() {
   const [stats, setStats] = useState<UserProfileStatsDto>({
     totalHours: 0,
+    totalListeningSeconds: 0,
+    savedSentenceCount: 0,
     streakDays: 0,
     wordsLearned: 0,
     speechEvalCount: 0,

@@ -117,6 +117,7 @@ export const statsService = {
     const [
       streakDays,
       totalSecondsResult,
+      savedSentenceCount,
       wordsCount,
       speechEvalCount,
       speechHighScoreCount,
@@ -127,6 +128,7 @@ export const statsService = {
         where: { userid: userId },
         _sum: { listeningSeconds: true },
       }),
+      prisma.savedSentence.count({ where: { userid: userId } }),
       prisma.vocabulary.count({
         where: { userid: userId },
       }),
@@ -147,6 +149,8 @@ export const statsService = {
 
     return {
       totalHours,
+      totalListeningSeconds,
+      savedSentenceCount,
       streakDays,
       wordsLearned: wordsCount,
       speechEvalCount,
