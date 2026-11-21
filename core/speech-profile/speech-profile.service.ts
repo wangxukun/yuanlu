@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { SpeechProfileDto, SpeechProfileRadarPoint } from "./dto";
+import type { SpeechProfileDto, SpeechProfileRadarPoint } from "./dto";
 
 /**
  * 发音能力画像服务（VOICE-EVALUATION 阶段四·任务3）
@@ -78,9 +78,12 @@ export const speechProfileService = {
   /**
    * 聚合用户的发音能力画像（全部评测）。
    */
-  async getSpeechProfile(userid: string): Promise<SpeechProfileDto> {
+  async getSpeechProfile(
+    userid: string,
+    before?: Date,
+  ): Promise<SpeechProfileDto> {
     const agg = await prisma.speech_recognition.aggregate({
-      where: { userid },
+      where: { userid, ...(before && { recognitionDate: { lt: before } }) },
       _count: { recognitionid: true },
       _avg: {
         overallScore: true,
@@ -115,8 +118,8 @@ export const speechProfileService = {
    * 获取可用于自适应推荐的 CEFR 等级；评测数据不足时返回 null
    * （调用方应回退到用户手动设置的 learnLevel）。
    */
-  async getDerivedLevel(userid: string): Promise<string | null> {
-    const profile = await this.getSpeechProfile(userid);
+  async getDerivedLevel(userid: string, before?: Date): Promise<string | null> {
+    const profile = await this.getSpeechProfile(userid, before);
     return profile.cefrLevel;
   },
 

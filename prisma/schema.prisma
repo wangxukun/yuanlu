@@ -64,6 +64,7 @@ model User {
   relay_segments          relay_segment[]
   social_likes_given      social_likes[]
   weapp_streak_logs       weapp_streak_log[]
+  blindTraining           blind_train_log[]
   daily_challenges       daily_challenge_assignment[]
 }
 
@@ -757,6 +758,7 @@ model episode_deep_dives {
 /// 刻意不建 episode 外键：语料索引独立于剧集生命周期（剧集下架不连锁删除，
 /// 重建索引用 episodeid 字符串对账），保持 additive 零侵入既有表。
 model corpus_clips {
+  blindTraining blind_train_log[]
   /// 切片 cuid（兼作 OSS 切片对象名 yuanlu/clips/{clipid}.mp3）
   clipid        String   @id @default(cuid())
   episodeid     String
@@ -988,4 +990,17 @@ model weapp_streak_log {
 
   @@unique([userid, date])
   @@index([userid, date(sort: Desc)])
+}
+
+model blind_train_log {
+  userid String
+  clipid String
+  day DateTime @db.Date
+  level String @db.VarChar(2)
+  position Int
+  cursor String @db.VarChar(32)
+  user User @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  clip corpus_clips @relation(fields: [clipid], references: [clipid], onDelete: Cascade, onUpdate: NoAction)
+  @@id([userid, clipid, day, level])
+  @@index([userid, day, level, position(sort: Desc)], map: "blind_train_progress")
 }

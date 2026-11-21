@@ -226,9 +226,10 @@ async function queryRingWindow(
   return { rows: tail.concat(head), wrapped: head.length > 0 };
 }
 
-async function hydrateReelsItems(
+export async function hydrateReelsItems(
   picked: ReelsClipRow[],
   includeRingKey: boolean,
+  preSignCount = PRE_SIGN_AUDIO,
 ): Promise<ReelsFeedItemDTO[]> {
   const episodeIds = [...new Set(picked.map((r) => r.episodeid))];
   const exclusiveMap = new Map<string, boolean>();
@@ -242,7 +243,7 @@ async function hydrateReelsItems(
 
   const preAudio = new Map<string, { url: string; clipOffset: number }>();
   await Promise.all(
-    picked.slice(0, PRE_SIGN_AUDIO).map(async (r) => {
+    picked.slice(0, preSignCount).map(async (r) => {
       const audio = await clipAudioService
         .ensureClipAudio(r.clipid, buildRealClipAudioDeps())
         .catch(() => null);
