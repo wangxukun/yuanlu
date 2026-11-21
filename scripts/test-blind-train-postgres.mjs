@@ -64,6 +64,15 @@ sql(
     "utf8",
   ),
 );
+sql(
+  readFileSync(
+    new URL(
+      "prisma/migrations/20261121193000_blind_train_exposure/migration.sql",
+      root,
+    ),
+    "utf8",
+  ),
+);
 const { GET, POST } = await import("../app/api/clips/blind-train/route.ts");
 const { default: prisma } = await import("../lib/prisma.ts");
 async function pages(level = "") {
@@ -109,7 +118,48 @@ try {
     position: 1,
     cursor: first.ringKey,
   };
+  const display = { ...attempt, event: "display" };
+  assert.equal((await POST({ json: async () => display })).status, 200);
+  const resumeBeforeReveal = await GET({
+    nextUrl: new URL("http://local/?resume=1"),
+  }).then((r) => r.json());
+  assert.equal(resumeBeforeReveal.data.items[0].clipid, first.clipid);
+  assert.equal(resumeBeforeReveal.data.firstNumber, 1);
+  const previousDay = new Date(Date.parse(page.day) - 86400000)
+    .toISOString()
+    .slice(0, 10);
+  assert.equal(
+    (await POST({ json: async () => ({ ...display, day: previousDay }) }))
+      .status,
+    200,
+  );
+  const followingDay = await pages();
+  assert.ok(!followingDay.includes(first.clipid));
+  assert.ok(
+    followingDay.includes(all[1]),
+    "prefetch alone must not exclude a clip",
+  );
+  sql(
+    "UPDATE blind_train_log SET day=day-6 WHERE NOT completed AND day < '" +
+      page.day +
+      "'",
+  );
+  assert.ok(
+    !(await pages()).includes(first.clipid),
+    "seven days ago is still excluded",
+  );
+  sql(
+    "UPDATE blind_train_log SET day=day-1 WHERE NOT completed AND day < '" +
+      page.day +
+      "'",
+  );
+  assert.ok(
+    (await pages()).includes(first.clipid),
+    "eligible again on day eight",
+  );
+  sql("DELETE FROM blind_train_log WHERE day < '" + page.day + "'");
   await POST({ json: async () => attempt });
+  await POST({ json: async () => display }); // late display cannot undo completion
   await POST({ json: async () => attempt });
   assert.equal(
     await prisma.$queryRaw`SELECT COUNT(*)::int AS n FROM blind_train_log`.then(

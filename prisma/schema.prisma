@@ -993,6 +993,7 @@ model weapp_streak_log {
 }
 
 model blind_train_log {
+  completed Boolean @default(true)
   userid String
   clipid String
   day DateTime @db.Date

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       { position: number; cursor: string }[]
     >`
       SELECT position, cursor FROM blind_train_log WHERE userid = ${user.userid} AND day = ${day}::date
-        AND level = ${level} ORDER BY position DESC LIMIT 1`;
+        AND level = ${level} AND completed ORDER BY position DESC LIMIT 1`;
     if (last) {
       cursor = last.cursor;
       firstNumber = last.position + 1;
@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     typeof body?.clipid !== "string" ||
     !body.clipid ||
     body.clipid.length > 128 ||
+    (body.event !== undefined && body.event !== "display") ||
     !Number.isSafeInteger(body.position) ||
     body.position < 1 ||
     body.position > 2147483646 ||
@@ -119,12 +120,30 @@ export async function POST(req: NextRequest) {
     !/^[a-f0-9]{32}$/.test(body.cursor)
   )
     return response({ success: false, error: "无效的切片" }, 400);
-  const day = chinaToday().toISOString().slice(0, 10);
-  if (body.day !== day)
+  const now = chinaToday();
+  const day = now.toISOString().slice(0, 10);
+  const completed = body.event !== "display";
+  const oldest = new Date(now.getTime() - 7 * 86400000)
+    .toISOString()
+    .slice(0, 10);
+  const date =
+    typeof body.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.day)
+      ? new Date(body.day + "T00:00:00Z")
+      : null;
+  if (
+    !date ||
+    !Number.isFinite(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== body.day ||
+    body.day < oldest ||
+    body.day > day ||
+    (completed && body.day !== day)
+  )
     return response({ success: false, error: "题目已跨日" }, 409);
-  await prisma.$executeRaw`INSERT INTO blind_train_log (userid, clipid, day, level, position, cursor)
-    SELECT ${auth.session.user.userid}, c.clipid, ${day}::date, ${body.level}, ${body.position}, ${body.cursor}
+  await prisma.$executeRaw`INSERT INTO blind_train_log (userid, clipid, day, level, position, cursor, completed)
+    SELECT ${auth.session.user.userid}, c.clipid, ${body.day}::date, ${body.level}, ${body.position}, ${body.cursor}, ${completed}
     FROM corpus_clips c WHERE c.clipid = ${body.clipid}
-    ON CONFLICT DO NOTHING`;
+    ON CONFLICT (userid, clipid, day, level) DO UPDATE
+    SET completed = TRUE, position = EXCLUDED.position, cursor = EXCLUDED.cursor
+    WHERE EXCLUDED.completed AND NOT blind_train_log.completed`;
   return response({ success: true });
 }
