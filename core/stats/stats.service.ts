@@ -1,5 +1,6 @@
 import { getWeappStreakDays } from "@/core/streak/weapp-streak.service";
 import prisma from "@/lib/prisma";
+import { countWeekWords, listWeekListeningDays } from "./weekly-activity";
 import { subWeeks } from "date-fns";
 import {
   chinaToday,
@@ -308,20 +309,7 @@ export const statsService = {
     const DAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
     // 查询该周的所有活动记录
-    const weekEnd = addUTCDays(weekStart, 6);
-    const activities = await prisma.user_daily_activity.findMany({
-      where: {
-        userid: userId,
-        date: {
-          gte: weekStart,
-          lte: weekEnd,
-        },
-      },
-      select: {
-        date: true,
-        listeningSeconds: true,
-      },
-    });
+    const activities = await listWeekListeningDays(userId, weekStart);
 
     // 构建日期到秒数的映射（用 UTC key 保证匹配）
     const dateMap = new Map<string, number>();
@@ -414,13 +402,5 @@ export const statsService = {
     });
   },
 
-  async getWeeklyWordsCount(userId: string, dateInWeek: Date): Promise<number> {
-    const start = chinaStartOfWeek(dateInWeek);
-    return prisma.vocabulary.count({
-      where: {
-        userid: userId,
-        addedDate: { gte: start },
-      },
-    });
-  },
+  getWeeklyWordsCount: countWeekWords,
 };

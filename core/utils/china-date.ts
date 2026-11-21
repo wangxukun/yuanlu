@@ -12,6 +12,11 @@
 
 const CHINA_OFFSET_MS = 8 * 60 * 60 * 1000; // UTC+8
 
+/** 将 @db.Date 的 UTC 午夜日期键转换为对应的北京时间零点。 */
+export function chinaMidnightInstant(day: Date): Date {
+  return new Date(day.getTime() - CHINA_OFFSET_MS);
+}
+
 /**
  * 获取中国时区"今天"对应的 UTC 午夜 Date
  * 例如: 北京时间 2026-07-27 20:00 → Date("2026-07-27T00:00:00.000Z")
