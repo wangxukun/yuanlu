@@ -13,6 +13,7 @@ export default function StatsOverview() {
     wordsLearned: 0,
     speechEvalCount: 0,
     speechHighScoreCount: 0,
+    bestPronunciation: 0,
   });
   const [loading, setLoading] = useState(true);
 

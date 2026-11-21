@@ -119,6 +119,7 @@ export const statsService = {
       wordsCount,
       speechEvalCount,
       speechHighScoreCount,
+      bestScoreResult,
     ] = await Promise.all([
       this.calculateStreak(userId),
       prisma.user_daily_activity.aggregate({
@@ -134,6 +135,10 @@ export const statsService = {
       prisma.speech_recognition.count({
         where: { userid: userId, overallScore: { gte: 85 } },
       }),
+      prisma.speech_recognition.aggregate({
+        where: { userid: userId },
+        _max: { accuracyScore: true },
+      }),
     ]);
 
     const totalListeningSeconds = totalSecondsResult._sum.listeningSeconds || 0;
@@ -145,6 +150,7 @@ export const statsService = {
       wordsLearned: wordsCount,
       speechEvalCount,
       speechHighScoreCount,
+      bestPronunciation: Math.round(bestScoreResult._max.accuracyScore ?? 0),
     };
   },
 

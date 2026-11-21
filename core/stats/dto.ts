@@ -30,6 +30,8 @@ export interface UserProfileStatsDto {
   speechEvalCount: number;
   /** 综合分 ≥85 的评测次数（口语类成就判定用） */
   speechHighScoreCount: number;
+  /** 历史发音评测最高准确分（0=从未评测；「我的」四宫格·发音最高分） */
+  bestPronunciation: number;
 }
 
 // 每周活动图表 - 每日数据项
