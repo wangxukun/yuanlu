@@ -1,3 +1,4 @@
+import { getWeappStreakDays } from "@/core/streak/weapp-streak.service";
 import prisma from "@/lib/prisma";
 import { subWeeks } from "date-fns";
 import {
@@ -112,7 +113,10 @@ export const statsService = {
   /**
    * 获取个人中心概览统计数据 (总时长、连续天数、总词汇)
    */
-  async getUserProfileStats(userId: string): Promise<UserProfileStatsDto> {
+  async getUserProfileStats(
+    userId: string,
+    weapp = false,
+  ): Promise<UserProfileStatsDto> {
     const [
       streakDays,
       totalSecondsResult,
@@ -121,7 +125,7 @@ export const statsService = {
       speechHighScoreCount,
       bestScoreResult,
     ] = await Promise.all([
-      this.calculateStreak(userId),
+      weapp ? getWeappStreakDays(userId) : this.calculateStreak(userId),
       prisma.user_daily_activity.aggregate({
         where: { userid: userId },
         _sum: { listeningSeconds: true },

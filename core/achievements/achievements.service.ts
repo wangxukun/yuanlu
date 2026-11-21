@@ -9,9 +9,12 @@ export const achievementsService = {
   /**
    * 获取用户成就列表（自动触发检查逻辑）
    */
-  async getUserAchievements(userId: string): Promise<AchievementItemDto[]> {
+  async getUserAchievements(
+    userId: string,
+    weapp = false,
+  ): Promise<AchievementItemDto[]> {
     // 1. 获取用户当前的各项统计数据 (利用现有的 StatsService)
-    const stats = await statsService.getUserProfileStats(userId);
+    const stats = await statsService.getUserProfileStats(userId, weapp);
 
     // 2. 获取数据库中已有的成就记录
     const earnedRecords = await prisma.achievements.findMany({

@@ -54,6 +54,15 @@ function computeStreak(dates: Date[]): number {
   return streak;
 }
 
+/** 个人中心和勋章解锁仅需本人的点亮日，沿用首页的连续日计算。 */
+export async function getWeappStreakDays(userid: string): Promise<number> {
+  const days = await prisma.weapp_streak_log.findMany({
+    where: { userid },
+    select: { date: true },
+  });
+  return computeStreak(days.map((row) => row.date));
+}
+
 /** 全表小体量（小程序专属，一人一日一行）——直接整表取行 JS 分组连算 */
 async function loadAllRows(): Promise<Map<string, Date[]>> {
   const rows = await prisma.weapp_streak_log.findMany({
