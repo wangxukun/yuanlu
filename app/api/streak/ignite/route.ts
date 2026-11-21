@@ -5,10 +5,11 @@ import { igniteStreak } from "@/core/streak/weapp-streak.service";
 /**
  * [weapp-backend] POST /api/streak/ignite — 点亮今日连胜（当日幂等，防刷天）。
  * Body: { recognitionId? }：带 = 跟读开口自动验收（校验归属+今日日界）；
- * 不带 = 手动点亮。→ { streakDays, ignitedToday, justIgnited, percentile }
+ * 不带 = 手动点亮。两者首次点亮都须达到当天收听目标，否则返回 409。
  * justIgnited=false 表示今日已点亮过（只出满格鼓励文案，不涨天）。
  */
 const STATUS_OF: Record<string, number> = {
+  DAILY_GOAL_PENDING: 409,
   INVALID_RECOGNITION: 400,
   STALE_RECOGNITION: 400,
 };

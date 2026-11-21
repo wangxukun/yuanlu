@@ -1,3 +1,4 @@
+import { DEFAULT_DAILY_GOAL_MINS } from "@/core/stats/daily-goal";
 import prisma from "@/lib/prisma";
 import {
   chinaToday,
@@ -9,13 +10,15 @@ import {
 /**
  * [weapp-backend] 小程序「每日学习连胜」域服务。
  *
- * 与网站版 user_daily_activity（收听秒数达标 isActive 口径）**完全隔离**：
- * 不写不读该表，验收标准独立——跟读开口（评测完成即点亮，不设分数线，
- * 接力评测也算）+ 手动点亮双通道；一人一日一行（中国日界，唯一约束权威
- * 判重防刷天）；streakDays 读时连算（最新行须为今天/昨天，否则断签归 0）。
+ * 按中国日界读取当天累计收听秒数。达标才能首次点亮，已点亮的日期保留。
  */
 
 export interface WeappStreakStatus {
+  dailyGoal: {
+    minutes: number;
+    listenedSeconds: number;
+    remainingMinutes: number;
+  };
   streakDays: number;
   ignitedToday: boolean;
   /** 领先全站 X% 语伴 = 参与者（近 60 天有记录）中当前连胜少于我的人数占比 */
@@ -31,12 +34,11 @@ export type IgniteResult =
   | { ok: false; code: string; message?: string };
 
 /** 连续日回溯（batchStreak 同款）：dates 为某用户全部打卡日（任意序） */
-function computeStreak(dates: Date[]): number {
+function computeStreak(dates: Date[], today = chinaToday()): number {
   if (!dates.length) return 0;
   const sorted = dates
     .map((d) => chinaDayOf(d))
     .sort((a, b) => b.getTime() - a.getTime());
-  const today = chinaToday();
   const yesterday = subUTCDays(today, 1);
   if (!isSameUTCDay(sorted[0], today) && !isSameUTCDay(sorted[0], yesterday)) {
     return 0; // 断签：最近一次打卡既非今天也非昨天
@@ -77,15 +79,39 @@ async function loadAllRows(): Promise<Map<string, Date[]>> {
   return byUser;
 }
 
+async function readDailyGoal(userid: string, date: Date) {
+  const [profile, activity] = await Promise.all([
+    prisma.user_profile.findUnique({
+      where: { userid },
+      select: { dailyStudyGoalMins: true },
+    }),
+    prisma.user_daily_activity.findUnique({
+      where: { userid_date: { userid, date } },
+      select: { listeningSeconds: true },
+    }),
+  ]);
+  const minutes = Math.max(
+    1,
+    profile?.dailyStudyGoalMins || DEFAULT_DAILY_GOAL_MINS,
+  );
+  const listenedSeconds = Math.max(0, activity?.listeningSeconds ?? 0);
+  const remainingMinutes = Math.max(
+    0,
+    Math.ceil((minutes * 60 - listenedSeconds) / 60),
+  );
+  return { minutes, listenedSeconds, remainingMinutes };
+}
+
 /** 参与者窗口：近 60 天有记录才计入百分位分母（长期弃用者不垫底掺水） */
 async function computeStatus(
   userid: string,
   byUser: Map<string, Date[]>,
+  today: Date,
+  dailyGoal: WeappStreakStatus["dailyGoal"],
 ): Promise<WeappStreakStatus> {
-  const today = chinaToday();
   const windowStart = subUTCDays(today, 59);
   const myDates = byUser.get(userid) ?? [];
-  const streakDays = computeStreak(myDates);
+  const streakDays = computeStreak(myDates, today);
   const daySet = new Set(myDates.map((d) => chinaDayOf(d).getTime()));
   const ignitedToday = daySet.has(today.getTime());
   const week = Array.from({ length: 7 }, (_, i) => {
@@ -107,18 +133,23 @@ async function computeStatus(
     );
     if (!active) continue;
     others++;
-    if (computeStreak(dates) < streakDays) fewer++;
+    if (computeStreak(dates, today) < streakDays) fewer++;
   }
   const percentile = others > 0 ? Math.floor((fewer / others) * 100) : 0;
 
-  return { streakDays, ignitedToday, percentile, week };
+  return { streakDays, ignitedToday, percentile, week, dailyGoal };
 }
 
 /** GET /api/streak —— 连胜状态（streakDays / ignitedToday / percentile） */
 export async function getStreakStatus(
   userid: string,
 ): Promise<WeappStreakStatus> {
-  return computeStatus(userid, await loadAllRows());
+  const today = chinaToday();
+  const [rows, goal] = await Promise.all([
+    loadAllRows(),
+    readDailyGoal(userid, today),
+  ]);
+  return computeStatus(userid, rows, today, goal);
 }
 
 /** 批量连胜（跟读开口口径）：日榜达人卡 streakDays 装饰共用——与主页连胜卡
@@ -143,6 +174,7 @@ export async function igniteStreak(
   userid: string,
   recognitionId?: number,
 ): Promise<IgniteResult> {
+  const today = chinaToday();
   let source = "MANUAL";
   let linkedRecognition: number | null = null;
 
@@ -167,7 +199,7 @@ export async function igniteStreak(
     }
     if (
       !rec.recognitionDate ||
-      !isSameUTCDay(chinaDayOf(rec.recognitionDate), chinaToday())
+      !isSameUTCDay(chinaDayOf(rec.recognitionDate), today)
     ) {
       return {
         ok: false,
@@ -179,22 +211,27 @@ export async function igniteStreak(
     linkedRecognition = recognitionId;
   }
 
-  const today = chinaToday();
   const existing = await prisma.weapp_streak_log.findUnique({
     where: { userid_date: { userid, date: today } },
     select: { id: true },
   });
 
+  const goal = await readDailyGoal(userid, today);
   let justIgnited = false;
   if (!existing) {
-    const created = await prisma.weapp_streak_log
-      .create({
-        data: { userid, date: today, source, recognitionid: linkedRecognition },
-      })
-      .catch(() => null); // 并发竞态下唯一冲突 → 视为已点亮
-    justIgnited = !!created;
+    if (goal.remainingMinutes > 0) {
+      return {
+        ok: false,
+        code: "DAILY_GOAL_PENDING",
+        message: `还需收听 ${goal.remainingMinutes} 分钟才能点亮今日火苗`,
+      };
+    }
+    const created = await prisma.weapp_streak_log.createMany({
+      data: [{ userid, date: today, source, recognitionid: linkedRecognition }],
+      skipDuplicates: true,
+    });
+    justIgnited = created.count > 0;
   }
-
-  const status = await computeStatus(userid, await loadAllRows());
+  const status = await computeStatus(userid, await loadAllRows(), today, goal);
   return { ok: true, data: { ...status, justIgnited } };
 }

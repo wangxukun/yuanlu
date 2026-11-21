@@ -4,9 +4,7 @@ import { getStreakStatus } from "@/core/streak/weapp-streak.service";
 
 /**
  * [weapp-backend] GET /api/streak — 小程序每日学习连胜状态。
- * 返回 { streakDays, ignitedToday, percentile }（跟读开口+手动点亮口径，
- * 与网站版收听打卡 user_daily_activity 完全隔离）。段位/里程碑/7 日火苗链
- * 由端上按 B 参照派生。
+ * 返回今日收听目标和进度、实际点亮的七日记录、连胜天数及百分位。
  */
 export async function GET() {
   const authResult = await requireAuth();
