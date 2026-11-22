@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { loadSceneStarters } from "./scene-starter";
 import { uploadFile, generateSignatureUrl } from "@/lib/oss";
 import {
   detectFastLinks,
@@ -269,14 +270,21 @@ function parseWords(wordsJson: Prisma.JsonValue | null): TimedWord[] {
  * USER 棒扫光词表：目标切片 wordsJson 按录音实际时长等比缩放
  * （评测词级时间戳仅 PRO 行落库，免费用户无法取真值；近似扫光 v1 够用）
  */
-function scaleWords(words: TimedWord[], factor: number): TimedWord[] {
-  if (!factor || !Number.isFinite(factor) || factor === 1 || !words.length) {
-    return words;
-  }
-  return words.map((w) => ({
-    ...w,
-    start: Math.round((w.start ?? 0) * factor),
-    end: Math.round((w.end ?? 0) * factor),
+function recordingWords(
+  words: TimedWord[],
+  clip: CompanionClip,
+  duration: number,
+): TimedWord[] {
+  if (!(clip.duration > 0 && duration > 0)) return [];
+  const toRecordingTime = (time: number | undefined) => {
+    if (time == null) return undefined;
+    const progress = (time - clip.startTime) / clip.duration;
+    return Math.min(1, Math.max(0, progress)) * duration;
+  };
+  return words.map((word) => ({
+    ...word,
+    start: toRecordingTime(word.start),
+    end: toRecordingTime(word.end),
   }));
 }
 
@@ -297,11 +305,12 @@ async function buildRoomViews(
       if (seg.userid) userIds.add(seg.userid);
     }
   }
-  const [clips, users, likeRows, myLikes] = await Promise.all([
+  const [clips, sceneStarters, users, likeRows, myLikes] = await Promise.all([
     prisma.corpus_clips.findMany({
       where: { clipid: { in: [...clipIds] } },
       select: companionSelect,
     }),
+    loadSceneStarters([...clipIds]),
     decoratePublicUsers([...userIds]),
     prisma.social_likes.groupBy({
       by: ["targetId"],
@@ -322,7 +331,9 @@ async function buildRoomViews(
       select: { targetId: true },
     }),
   ]);
-  const clipMap = new Map(clips.map((c) => [c.clipid, c]));
+  const clipMap = new Map(
+    [...clips, ...sceneStarters].map((c) => [c.clipid, c]),
+  );
   const likeCount = new Map(likeRows.map((r) => [r.targetId, r._count.id]));
   const likedSet = new Set(myLikes.map((r) => r.targetId));
 
@@ -375,12 +386,6 @@ async function buildRoomViews(
 
     const user = seg.userid ? users.get(seg.userid) : null;
     const recDuration = seg.duration ?? clip.duration;
-    // 扫光词表缩放：录音时长 / 目标切片末词时刻
-    const lastEnd = words.length ? (words[words.length - 1].end ?? 0) : 0;
-    const factor =
-      lastEnd > 0 && clip.duration > 0
-        ? (recDuration * 1000) / Math.min(lastEnd, clip.duration * 1000)
-        : 1;
     return {
       id: seg.segid,
       stepOrder: seg.stepOrder,
@@ -390,7 +395,7 @@ async function buildRoomViews(
       voiceStyle: "🎤 真人真声出镜",
       textEn: clip.enText,
       textCn: clip.zhText,
-      words: scaleWords(words, factor),
+      words: recordingWords(words, clip, recDuration),
       score: seg.score ?? 0,
       recordedAt: relativeTime(seg.createdAt),
       isCurrentUser: seg.userid === viewerUserid,
@@ -457,7 +462,7 @@ async function buildRoomViews(
         room.status === "RECRUITING"
           ? (() => {
               const pc = clipMap.get(room.promptClipId);
-              if (!pc) return null;
+              if (pc?.subtitleId == null) return null;
               const words = parseWords(pc.wordsJson);
               return {
                 clipid: pc.clipid,
@@ -590,10 +595,16 @@ export async function createRoom(params: {
 }): Promise<RelayResult<{ room: RelayRoomView }>> {
   const { userid, clipId, title, recognitionId, audioBase64 } = params;
 
-  const starter = (await prisma.corpus_clips.findUnique({
-    where: { clipid: clipId },
-    select: companionSelect,
-  })) as (CompanionClip & { clipid: string }) | null;
+  const sceneStarter = clipId.startsWith("ms:")
+    ? (await loadSceneStarters([clipId]))[0]
+    : null;
+  const starter =
+    sceneStarter && !sceneStarter.linkedClipId
+      ? sceneStarter
+      : await prisma.corpus_clips.findUnique({
+          where: { clipid: sceneStarter?.linkedClipId || clipId },
+          select: companionSelect,
+        });
   if (!starter) {
     return { ok: false, code: "CLIP_NOT_FOUND", message: "起始切片不存在" };
   }
@@ -602,7 +613,7 @@ export async function createRoom(params: {
   const dup = await prisma.relay_room.findFirst({
     where: {
       initiatorUserid: userid,
-      starterClipId: clipId,
+      starterClipId: starter.clipid,
       status: "RECRUITING",
     },
     select: { roomid: true },

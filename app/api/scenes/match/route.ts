@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { sceneStarterId } from "@/core/relay/scene-starter";
 import { signOssHttpUrl } from "@/lib/oss";
 import {
   detectFastLinks,
@@ -439,6 +440,7 @@ async function pickClips(
 }
 
 interface SceneSentence {
+  clipid: string;
   textEn: string;
   textCn: string | null;
   /** 所属字幕行 id（句子本真实收藏键；clipsJson 逐句自带） */
@@ -590,6 +592,10 @@ async function pickScenes(
         ?.clips || [];
     const sentences: SceneSentence[] = clips
       .map((c) => ({
+        clipid:
+          typeof c.clipid === "string" && c.clipid
+            ? c.clipid
+            : sceneStarterId(r.sceneid, Number(c.start), c.subtitleId),
         textEn: String(c.textEn || ""),
         textCn: c.textCn != null ? String(c.textCn) : null,
         subtitleId:
