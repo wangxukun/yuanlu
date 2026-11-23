@@ -9,14 +9,14 @@ import { Megaphone, X } from "lucide-react";
 // 游客可达的公告走这条横幅:内容与 /app 落地页同源,点击跳转。
 // 换公告时改 id(变了会对所有人重新展示,旧的关闭状态失效)+ 文案 + 链接。
 //
-// [暂时下线 2026-11-12] 小程序主体升级停服中,「正式上线」公告与实况矛盾
-// （已发退款致歉广播）——公告暂时下线,横幅不再渲染。恢复:改回 true 即可。
+// [恢复上线 2026-11-23] 小程序整改(类目申诉)通过、恢复服务,横幅重新开启。
+// id 已换新(weapp-recovery-2026-11):对所有人重新展示,旧的关闭状态失效。
 // ---------------------------------------------------------------------------
-const ANNOUNCEMENT_ENABLED = false;
+const ANNOUNCEMENT_ENABLED = true;
 
 const ANNOUNCEMENT = {
-  id: "weapp-launch-2026-10",
-  text: "远路播客微信小程序正式上线：微信扫码即用，账号与会员权益互通",
+  id: "weapp-recovery-2026-11",
+  text: "远路播客微信小程序已恢复上线：账号与会员权益互通",
   href: "/app",
 };
 const STORAGE_KEY = "yuanlu:announcement-dismissed";
