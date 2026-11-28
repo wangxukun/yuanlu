@@ -1,9 +1,8 @@
 // lib/podcast-service.ts
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 import { generateSignatureUrl } from "@/lib/oss"; // 引入签名方法
-import { isPremiumUser } from "@/core/auth/guard";
+import { authWithMobile, isPremiumUser } from "@/core/auth/guard";
 import { cache } from "react";
 
 // 由于 getPodcastDetail 是直接调用数据库（Prisma），为了避免在一个请求中重复查询数据库（一次在 Metadata，一次在 Page），
@@ -11,8 +10,8 @@ import { cache } from "react";
 export const getPodcastDetail = cache(async (id: string) => {
   if (!id) return null;
 
-  // 1. 获取当前用户 Session (Server Component 中可用)
-  const session = await auth();
+  // 1. 获取当前用户 Session（[B1] Cookie 优先、回退移动 Bearer，保证跨端权益与收藏态一致）
+  const session = await authWithMobile();
   const userId = session?.user?.userid;
 
   // 2. 查询数据库

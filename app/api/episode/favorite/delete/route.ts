@@ -12,21 +12,29 @@ export async function DELETE(request: NextRequest) {
     const stringifyField = (field: FormDataEntryValue | null) =>
       field instanceof File ? field.name : String(field || "");
 
+    const sessionUserId = authResult.session.user.userid;
     const episodeid = stringifyField(formData.get("episodeid"));
-    const userid = stringifyField(formData.get("userid"));
+    const clientUserId = stringifyField(formData.get("userid"));
 
     // 验证参数有效性
-    if (!episodeid || !userid) {
+    if (!episodeid) {
       return NextResponse.json({
         success: false,
         message: "缺少参数",
         status: 400,
       });
     }
+    // [B2] 归属固定取会话用户；兼容旧客户端传 userid，跨号越权直接拒绝
+    if (clientUserId && clientUserId !== sessionUserId) {
+      return NextResponse.json(
+        { success: false, message: "无权操作他人收藏", status: 403 },
+        { status: 403 },
+      );
+    }
 
     // 执行删除操作
     const result = await favoritesService.removeEpisodeFavorite(
-      userid,
+      sessionUserId,
       episodeid,
     );
 

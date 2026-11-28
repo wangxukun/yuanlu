@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { mergeSubtitles } from "@/lib/data";
 import { episodeRepository } from "@/core/episode/episode.repository";
 import { generateSignatureUrl } from "@/lib/oss";
-import { requireAuth } from "@/core/auth/guard";
+import { canAccessEpisode, requireAuth } from "@/core/auth/guard";
 
 /**
  * GET /api/episode/transcript-preview?episodeid=xxx
@@ -30,6 +30,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: "未找到对应单集" },
         { status: 404 },
+      );
+    }
+
+    // [B1] 专享剧集同样遵守会员访问墙，防止未授权用户通过文稿预览读取专享字幕
+    if (!(await canAccessEpisode(authResult.session.user, episode))) {
+      return NextResponse.json(
+        { success: false, error: "该剧集为会员专享内容，升级会员即可查看文稿" },
+        { status: 403 },
       );
     }
 

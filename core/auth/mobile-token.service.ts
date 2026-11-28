@@ -15,6 +15,8 @@ export interface MobileTokenPayload {
   role: string;
   nickname: string | null;
   avatarFileName: string | null;
+  /** [B4-2] 会话版本号：用于同步“踢出旧会话”，老 Token 缺省兼容 */
+  sessionVersion?: number;
 }
 
 /**
@@ -55,6 +57,9 @@ export async function signMobileToken(
     role: payload.role,
     nickname: payload.nickname,
     avatarFileName: payload.avatarFileName,
+    ...(typeof payload.sessionVersion === "number"
+      ? { sessionVersion: payload.sessionVersion }
+      : {}),
     // Mark this as a mobile token to distinguish from NextAuth tokens
     iss: "yuanlu-mobile",
   } as JWTPayload & MobileTokenPayload)
@@ -98,6 +103,10 @@ export async function verifyMobileToken(
       role: (payload.role as string) || "USER",
       nickname: (payload.nickname as string) || null,
       avatarFileName: (payload.avatarFileName as string) || null,
+      sessionVersion:
+        typeof payload.sessionVersion === "number"
+          ? payload.sessionVersion
+          : undefined,
       exp: payload.exp as number,
       iat: payload.iat as number,
     };

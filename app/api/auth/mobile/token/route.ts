@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Sign mobile JWT token
+    // Sign mobile JWT token（[B4-2] 写入当前 sessionVersion 以支持即时踢下线）
     const { token, expiresAt } = await signMobileToken({
       userid: user.userid,
       email: user.email,
@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
       role: user.role || "USER",
       nickname: user.user_profile?.nickname || null,
       avatarFileName: user.user_profile?.avatarFileName || null,
+      sessionVersion: user.sessionVersion ?? 0,
     });
 
     return NextResponse.json({

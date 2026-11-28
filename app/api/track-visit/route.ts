@@ -25,6 +25,20 @@ export async function POST(req: NextRequest) {
       return new NextResponse(null, { status: 204 });
     }
 
+    // [B4-1] 平台命名空间：支持 Android 独立上报 android/ 前缀；未指定时默认 wxapp/ 兼容老小程序
+    const rawPlatform =
+      (typeof body?.platform === "string" ? body.platform : "") ||
+      req.headers.get("x-client-platform") ||
+      "";
+    const prefix =
+      rawPlatform.trim().toLowerCase() === "android" ? "android" : "wxapp";
+    const normalizedPath = rawPath.replace(/^\/+/, "");
+    const prefixedPath =
+      normalizedPath.startsWith("android/") ||
+      normalizedPath.startsWith("wxapp/")
+        ? normalizedPath
+        : `${prefix}/${normalizedPath}`;
+
     // [T2.2] authWithMobile：cookie 优先、小程序/Android Bearer 回落，
     // 未登录返回 null → 记为游客（userid 空，按 IP 去重）
     const session = await authWithMobile();
@@ -35,7 +49,7 @@ export async function POST(req: NextRequest) {
     await recordVisitorLog({
       ip,
       userAgent: req.headers.get("user-agent") || "Unknown",
-      path: `wxapp/${rawPath}`,
+      path: prefixedPath,
       userid: session?.user?.userid ?? null,
     });
   } catch (error) {

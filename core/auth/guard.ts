@@ -68,6 +68,15 @@ async function getMobileSession(): Promise<Session | null> {
 
     if (!userInDb || userInDb.isLoginAllowed === false) return null;
 
+    // [B4-2] 温和兼容踢下线：仅当新签发 Token 携带了 sessionVersion 且与库内不一致时
+    // 判定会话已撤销；存量老版本未携带该声明的 Token 保持放行，实现平滑升级。
+    if (
+      typeof payload.sessionVersion === "number" &&
+      payload.sessionVersion !== (userInDb.sessionVersion ?? 0)
+    ) {
+      return null;
+    }
+
     // Generate avatar URL if available
     let avatarUrl: string | null = null;
     if (userInDb.user_profile?.avatarFileName) {

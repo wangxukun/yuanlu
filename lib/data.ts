@@ -9,6 +9,19 @@ import { User } from "@/core/user/user.entity";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+/** [B1] 统一转发调用方身份头（Cookie + Bearer），确保服务端内部取数对移动/Web 保持同一鉴权视角 */
+async function buildForwardedAuthHeaders(
+  extra: Record<string, string> = {},
+): Promise<Record<string, string>> {
+  const headersList = await headers();
+  const forwarded: Record<string, string> = { ...extra };
+  const cookie = headersList.get("cookie");
+  if (cookie) forwarded.Cookie = cookie;
+  const authorization = headersList.get("authorization");
+  if (authorization) forwarded.Authorization = authorization;
+  return forwarded;
+}
+
 /**
  * 获取标签列表
  */
@@ -28,11 +41,12 @@ export async function fetchTags(): Promise<Tag[]> {
  * fetch 需转发会话 Cookie（同文件既有先例），否则管理页 403。
  */
 export async function fetchUsers(): Promise<User[]> {
-  const headersList = await headers();
-  const cookie = headersList.get("cookie") || "";
   const res = await fetch(`${baseUrl}/api/user/list`, {
     method: "GET",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
+    headers: await buildForwardedAuthHeaders({
+      "Content-Type": "application/json",
+    }),
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error("Failed to fetch users");
@@ -60,13 +74,10 @@ export async function fetchUsers(): Promise<User[]> {
  */
 export async function fetchUserById(id: string): Promise<User> {
   // [安全收紧 2026-10-03] /api/user/detail 已加 requireAdmin——转发会话
-  // Cookie；转发凭据的请求不得复用缓存（原 revalidate 60 会按 URL 缓存
-  // 命中绕过守卫），改 no-store。
-  const headersList = await headers();
-  const cookie = headersList.get("cookie") || "";
+  // 凭据（Cookie/Bearer）；转发凭据的请求不得复用缓存，固定 no-store。
   const res = await fetch(`${baseUrl}/api/user/detail?id=${id}`, {
     method: "GET",
-    headers: { Cookie: cookie },
+    headers: await buildForwardedAuthHeaders(),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -203,11 +214,9 @@ export async function fetchPodcastById(id: string): Promise<Podcast> {
  * @param id episode id
  */
 export async function fetchEpisodeById(id: string): Promise<Episode> {
-  const headersList = await headers();
-  const cookie = headersList.get("cookie") || "";
   const res = await fetch(`${baseUrl}/api/episode/detail?id=${id}`, {
     method: "GET",
-    headers: { Cookie: cookie },
+    headers: await buildForwardedAuthHeaders(),
     cache: "no-store",
   });
   if (!res.ok) {

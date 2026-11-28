@@ -1,6 +1,7 @@
 // core/channel/channel.service.ts
 import prisma from "@/lib/prisma";
 import { generateSignatureUrl } from "@/lib/oss";
+import { authWithMobile, isPremiumUser } from "@/core/auth/guard";
 import { Prisma } from "@prisma/client";
 import { cache } from "react";
 
@@ -111,13 +112,20 @@ export const getChannelData = cache(async (platformName: string) => {
     }),
   );
 
-  // 4. Sign OSS URLs for episode covers and audio
+  // 4. [B1] 与剧集/播客详情保持同一专享墙：无会员权限时清空专享剧集媒体直链与文件名
+  const hasExclusive = topEpisodes.some((ep) => ep.isExclusive);
+  const canPlayExclusive = hasExclusive
+    ? await isPremiumUser((await authWithMobile())?.user)
+    : false;
+
+  // Sign OSS URLs for episode covers and audio
   const processedEpisodes = await Promise.all(
     topEpisodes.map(async (ep) => {
+      const lockedExclusive = !!ep.isExclusive && !canPlayExclusive;
       let coverUrl = ep.coverUrl;
-      let audioUrl = ep.audioUrl;
-      let subtitleEnUrl = ep.subtitleEnUrl;
-      let subtitleZhUrl = ep.subtitleZhUrl;
+      let audioUrl = lockedExclusive ? "" : ep.audioUrl;
+      let subtitleEnUrl = lockedExclusive ? "" : ep.subtitleEnUrl;
+      let subtitleZhUrl = lockedExclusive ? "" : ep.subtitleZhUrl;
 
       if (ep.coverFileName) {
         try {
@@ -126,14 +134,14 @@ export const getChannelData = cache(async (platformName: string) => {
           console.error(e);
         }
       }
-      if (ep.audioFileName) {
+      if (!lockedExclusive && ep.audioFileName) {
         try {
           audioUrl = await generateSignatureUrl(ep.audioFileName, 3600 * 3);
         } catch (e) {
           console.error(e);
         }
       }
-      if (ep.subtitleEnFileName) {
+      if (!lockedExclusive && ep.subtitleEnFileName) {
         try {
           subtitleEnUrl = await generateSignatureUrl(
             ep.subtitleEnFileName,
@@ -143,7 +151,7 @@ export const getChannelData = cache(async (platformName: string) => {
           console.error(e);
         }
       }
-      if (ep.subtitleZhFileName) {
+      if (!lockedExclusive && ep.subtitleZhFileName) {
         try {
           subtitleZhUrl = await generateSignatureUrl(
             ep.subtitleZhFileName,
@@ -169,6 +177,9 @@ export const getChannelData = cache(async (platformName: string) => {
 
       return {
         ...ep,
+        audioFileName: lockedExclusive ? "" : ep.audioFileName,
+        subtitleEnFileName: lockedExclusive ? "" : ep.subtitleEnFileName,
+        subtitleZhFileName: lockedExclusive ? "" : ep.subtitleZhFileName,
         coverUrl,
         audioUrl,
         subtitleEnUrl,
